@@ -1,0 +1,75 @@
+\begin{thebibliography}{1}
+
+\bibitem{Kolodziejczyk2015-vn}
+Aleksandra~A Kolodziejczyk, Jong~Kyoung Kim, Jason C~H Tsang, Tomislav Ilicic,
+  Johan Henriksson, Kedar~N Natarajan, Alex~C Tuck, Xuefei Gao, Marc
+  B{\"u}hler, Pentao Liu, John~C Marioni, and Sarah~A Teichmann.
+\newblock Single cell {RNA-Sequencing} of pluripotent states unlocks modular
+  transcriptional variation.
+\newblock {\em Cell Stem Cell}, 17(4):471--485, 1~October 2015.
+\newblock \href {http://dx.doi.org/10.1016/j.stem.2015.09.011}
+  {\path{doi:10.1016/j.stem.2015.09.011}}.
+
+\bibitem{Robinson2010-ni}
+Mark~D Robinson, Davis~J McCarthy, and Gordon~K Smyth.
+\newblock edger: a bioconductor package for differential expression analysis of
+  digital gene expression data.
+\newblock {\em Bioinformatics}, 26(1):139--140, 1~January 2010.
+\newblock \href {http://dx.doi.org/10.1093/bioinformatics/btp616}
+  {\path{doi:10.1093/bioinformatics/btp616}}.
+
+\bibitem{Love2014-je}
+Michael~I Love, Wolfgang Huber, and Simon Anders.
+\newblock Moderated estimation of fold change and dispersion for {RNA-seq} data
+  with {DESeq2}.
+\newblock {\em Genome Biol.}, 15(12):550, 2014.
+\newblock \href {http://dx.doi.org/10.1186/s13059-014-0550-8}
+  {\path{doi:10.1186/s13059-014-0550-8}}.
+
+\bibitem{Lun2016-ep}
+Aaron T~L Lun, Karsten Bach, and John~C Marioni.
+\newblock Pooling across cells to normalize single-cell {RNA} sequencing data
+  with many zero counts.
+\newblock {\em Genome Biol.}, 17:75, 27~April 2016.
+\newblock \href {http://dx.doi.org/10.1186/s13059-016-0947-7}
+  {\path{doi:10.1186/s13059-016-0947-7}}.
+
+\bibitem{Wu2015-uj}
+Hao Wu, Chi Wang, and Zhijin Wu.
+\newblock {PROPER}: comprehensive power evaluation for differential expression
+  using {RNA-seq}.
+\newblock {\em Bioinformatics}, 31(2):233--241, 15~January 2015.
+\newblock \href {http://dx.doi.org/10.1093/bioinformatics/btu640}
+  {\path{doi:10.1093/bioinformatics/btu640}}.
+
+\bibitem{Colin_Cameron2013-vb}
+A~Colin~Cameron and Pravin~K Trivedi.
+\newblock {\em Regression Analysis of Count Data (Econometric Society
+  Monographs)}.
+\newblock Cambridge University Press, 2 edition edition, 27~May 2013.
+
+\bibitem{Kim2013-qo}
+Jong~Kyoung Kim and John~C Marioni.
+\newblock Inferring the kinetics of stochastic gene expression from single-cell
+  {RNA-sequencing} data.
+\newblock {\em Genome Biol.}, 14(1):R7, 28~January 2013.
+\newblock \href {http://dx.doi.org/10.1186/gb-2013-14-1-r7}
+  {\path{doi:10.1186/gb-2013-14-1-r7}}.
+
+\bibitem{Delmans2016-ef}
+Mihails Delmans and Martin Hemberg.
+\newblock Discrete distributional differential expression ({D3E)--a} tool for
+  gene expression analysis of single-cell {RNA-seq} data.
+\newblock {\em BMC Bioinformatics}, 17:110, 29~February 2016.
+\newblock \href {http://dx.doi.org/10.1186/s12859-016-0944-6}
+  {\path{doi:10.1186/s12859-016-0944-6}}.
+
+\bibitem{Mi2015-ri}
+Gu~Mi, Yanming Di, and Daniel~W Schafer.
+\newblock Goodness-of-fit tests and model diagnostics for negative binomial
+  regression of {RNA} sequencing data.
+\newblock {\em PLoS One}, 10(3):e0119254, 18~March 2015.
+\newblock \href {http://dx.doi.org/10.1371/journal.pone.0119254}
+  {\path{doi:10.1371/journal.pone.0119254}}.
+
+\end{thebibliography}

@@ -1,0 +1,14 @@
+\contentsline {section}{\numberline {1}Installation guide}{3}{section.1}
+\contentsline {section}{\numberline {2}Introduction}{4}{section.2}
+\contentsline {section}{\numberline {3}\textsl {powsimR} workflow}{4}{section.3}
+\contentsline {section}{\numberline {4}Parameter estimation}{5}{section.4}
+\contentsline {section}{\numberline {5}Simulations}{6}{section.5}
+\contentsline {section}{\numberline {6}Evaluation}{8}{section.6}
+\contentsline {section}{\numberline {7}Additional Functionalities}{8}{section.7}
+\contentsline {subsection}{\numberline {7.1}Evaluate Simulation Framework}{8}{subsection.7.1}
+\contentsline {subsection}{\numberline {7.2}Negative Binomial Parameters}{9}{subsection.7.2}
+\contentsline {subsubsection}{\numberline {7.2.1}in silico Parameter Definition}{9}{subsubsection.7.2.1}
+\contentsline {subsubsection}{\numberline {7.2.2}Count matrices of single cell RNA-seq experiments}{10}{subsubsection.7.2.2}
+\contentsline {subsection}{\numberline {7.3}Simulation settings}{10}{subsection.7.3}
+\contentsline {section}{\numberline {8}Wrapper Function}{10}{section.8}
+\contentsline {section}{\numberline {9}Session info}{10}{section.9}
