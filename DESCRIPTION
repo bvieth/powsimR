@@ -1,23 +1,23 @@
 Package: powsimR
 Type: Package
 Title: Power Simulations
-Description: This package provides simulation based methods for
-        evaluating the statistical power to detect differential
-        expression in bulk and single cell RNA-seq experiments
-Version: 1.0.2
+Description: This package provides simulation based methods for evaluating the
+        statistical power to detect differential expression in bulk and
+        single cell RNA-seq experiments
+Version: 1.1.0
 Imports: methods, stats, moments, S4Vectors, AnnotationDbi, Biobase,
         SummarizedExperiment, BiocParallel, doParallel, parallel, snow,
         reshape2, dplyr, tidyr, data.table, ggplot2, ggthemes, ggExtra,
-        cowplot, scales, fitdistrplus, NBGOF, MASS, pscl, nonnest2,
-        cobs, msir, drc, scran, scater, edgeR, limma, DESeq2, baySeq,
-        NOISeq, EBSeq, DSS, MAST, scde, scDD, ROTS, BPSC, IHW, qvalue
-Remotes: kdkorthauer/scDD@develop, gu-mi/NBGOF, hms-dbmi/scde,
-        nghiavtr/BPSC
-Depends: R (>= 3.3), gamlss.dist, splines
+        cowplot, scales, fitdistrplus, NBGOF, MASS, pscl, nonnest2, cobs,
+        msir, drc, scran, scater, edgeR, limma, DESeq2, baySeq, NOISeq,
+        EBSeq, DSS, MAST, scde, scDD, ROTS, BPSC, IHW, qvalue
+Remotes: kdkorthauer/scDD@develop, gu-mi/NBGOF, hms-dbmi/scde, nghiavtr/BPSC
+Depends: R (>= 3.4.0), gamlss.dist, splines
 Suggests: BiocStyle, knitr
 VignetteBuilder: knitr
 License: GPL
 NeedsCompilation: no
 Author: Beate Vieth
-Date: 2017-04-16
+Date: 2017-05-17
 Maintainer: Beate Vieth <vieth.beate@gmail.com>
+RoxygenNote: 6.0.1
