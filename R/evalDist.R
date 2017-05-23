@@ -325,7 +325,7 @@ evaluateDist <- function(cnts, RNAseq, ncores=1, nsims=1, frac.genes=1, min.mean
   colnames(edgeR.res) <- c('edgeRglm_gofstat', 'edgeRglm_gofdf', 'edgeRglm_gofpval', 'edgeRglm_aic')
   rownames(edgeR.res) <- rownames(dge$counts)
   # observed zeros
-  ObservedZeros <- data.frame(ObsZero=rowSums(dge$counts==0))
+  ObservedZeros <- data.frame(ObsZero=rowSums(dge$counts==0), Dropout=rowMeans(dge$counts==0))
   rownames(ObservedZeros) <- rownames(dge$counts)
 
   # list result object:
