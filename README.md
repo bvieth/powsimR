@@ -29,7 +29,7 @@ ipak <- function(pkg, repository = c("CRAN", "Bioconductor", "github")) {
 cranpackages <- c("gamlss.dist", "methods", "stats", "moments", "doParallel", 
     "parallel", "reshape2", "dplyr", "tidyr", "data.table", "ggplot2", "ggthemes", 
     "ggExtra", "cowplot", "scales", "fitdistrplus", "MASS", "pscl", "nonnest2", 
-    "cobs", "msir", "drc", "devtools", "XML", "splines")
+    "cobs", "msir", "drc", "devtools", "XML", "splines", "gtools")
 ipak(cranpackages, repository = "CRAN")
 
 # BIOCONDUCTOR
@@ -52,7 +52,7 @@ devtools::install_github("bvieth/powsimR", build_vignettes = TRUE)
 User Guide
 ----------
 
-For examples and tips on using the package, please see the vignette PDF [here](https://github.com/bvieth/powsim/tree/master/vignettes/powsim.pdf) or open it in R by typing
+For examples and tips on using the package, please see the vignette PDF [here](https://github.com/bvieth/powsimR/tree/master/vignettes/powsimR.pdf) or open it in R by typing
 
 ``` r
 browseVignettes("powsimR")

@@ -58,7 +58,7 @@ devtools::install_github('bvieth/powsimR', build_vignettes = TRUE)
 ## User Guide
 
 For examples and tips on using the package, please see the vignette PDF 
-[here](https://github.com/bvieth/powsim/tree/master/vignettes/powsim.pdf) 
+[here](https://github.com/bvieth/powsimR/tree/master/vignettes/powsimR.pdf) 
 or open it in R by typing
 ```{r, echo=T, eval=F, tidy=T}
 browseVignettes('powsimR')
