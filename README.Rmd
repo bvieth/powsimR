@@ -36,20 +36,20 @@ ipak <- function(pkg, repository=c('CRAN', 'Bioconductor', 'github')){
 }
 
 # CRAN PACKAGES
-cranpackages <- c("gamlss.dist", "methods", "stats", "moments", "doParallel", "parallel", "reshape2", "dplyr", "tidyr", "data.table", 'ggplot2', 'ggthemes', 'ggExtra', 'cowplot', 'scales', 'fitdistrplus', 'MASS', 'pscl', 'nonnest2', 'cobs', 'msir', 'drc', 'devtools', 'XML', 'splines')
+cranpackages <- c("gamlss.dist", "methods", "stats", "moments", "doParallel", "parallel", "reshape2", "dplyr", "tidyr", "data.table", 'ggplot2', 'ggthemes', 'ggExtra', 'cowplot', 'scales', 'fitdistrplus', 'MASS', 'pscl', 'nonnest2', 'cobs', 'msir', 'drc', 'devtools', 'XML', 'splines', "gtools")
 ipak(cranpackages, repository='CRAN')
 
 # BIOCONDUCTOR
-biocpackages <- c('S4Vectors', 'AnnotationDbi', 'Biobase', 'BiocParallel', 'BiocStyle', 'scater', 'scran', 'edgeR', 'limma', 'DESeq2', 'baySeq', 'NOISeq', 'EBSeq', 'DSS', 'MAST', 'ROTS', "IHW", 'qvalue')
+biocpackages <- c('S4Vectors', 'AnnotationDbi', 'Biobase', 'BiocParallel', 'BiocStyle', 'scater', 'scran', 'edgeR', 'limma', 'DESeq2', 'baySeq', 'NOISeq', 'EBSeq', 'DSS', 'MAST', 'ROTS', "IHW", 'qvalue', 'scDD', 'monocle')
 ipak(biocpackages, repository='Bioconductor')
 
 # GITHUB
 githubpackages <- c('gu-mi/NBGOF', 'hms-dbmi/scde', 'nghiavtr/BPSC')
 ipak(githubpackages, repository = 'github')
-devtools::install_github('kdkorthauer/scDD', build_vignettes = FALSE, ref = 'develop')
+
 ```
 
-After installing the dependencies, powsim can be installed by using devtools as well.
+After installing the dependencies, powsimR can be installed by using devtools as well.
 
 ```{r, echo=T, eval=F, tidy=T}
 devtools::install_github('bvieth/powsimR', build_vignettes = TRUE)

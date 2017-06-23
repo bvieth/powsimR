@@ -4,17 +4,22 @@
 \alias{SimSetup}
 \title{DEA options for RNA-seq count simulations in two-group comparison.}
 \usage{
-SimSetup(desetup, params, size.factors='equal')
+SimSetup(desetup, params,
+size.factors = "equal",
+normalisation = c("TMM", "MR", "PosCounts", "UQ",
+"scran", "SCnorm", "Census"))
 }
 \arguments{
 \item{desetup}{The RNAseq simulation parameters created by \code{\link{DESetup}}.}
 
 \item{params}{The negative binomial parameters for simulations. This can be:
-(1) The output of \code{\link{estimateNBParam}}.
+(1) The output of \code{\link{estimateParam}}.
 (2) The output of \code{\link{insilicoNBParam}}.
 (3) A string specifying the name of precalculated estimates, see details.}
 
-\item{size.factors}{Size factors representing sample-specific differences/biases in expected mean values of the NB distribution: "equal" or "given". The default is "equal", i.e. equal size factor of 1. If the user defines it as given, the size factors are sampled from the size factors provided by the output of \code{\link{estimateNBParam}} or \code{\link{insilicoNBParam}}.}
+\item{size.factors}{Size factors representing sample-specific differences/biases in expected mean values of the NB distribution: "equal" or "given". The default is "equal", i.e. equal size factor of 1. If the user defines it as given, the size factors are sampled from the size factors provided by the output of \code{\link{estimateParam}} or \code{\link{insilicoNBParam}}.}
+
+\item{normalisation}{Normalisation method to use.}
 }
 \value{
 A list with the following entries:
@@ -31,7 +36,7 @@ desettings <- DESetup(ngenes=10000,
 nsims=25, p.DE=0.2,
 LFC=function(x) sample(c(-1,1), size=x,replace=TRUE)*rgamma(x, 3, 3))
 simsettings <- SimSetup(desetup=desettings,
-params=estparam, size.factors='equal')
+params=estparam, size.factors='equal', normalisation='scran')
 }
 }
 \author{

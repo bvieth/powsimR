@@ -35,16 +35,15 @@ ipak(cranpackages, repository = "CRAN")
 # BIOCONDUCTOR
 biocpackages <- c("S4Vectors", "AnnotationDbi", "Biobase", "BiocParallel", "BiocStyle", 
     "scater", "scran", "edgeR", "limma", "DESeq2", "baySeq", "NOISeq", "EBSeq", 
-    "DSS", "MAST", "ROTS", "IHW", "qvalue")
+    "DSS", "MAST", "ROTS", "IHW", "qvalue", "scDD", "monocle")
 ipak(biocpackages, repository = "Bioconductor")
 
 # GITHUB
 githubpackages <- c("gu-mi/NBGOF", "hms-dbmi/scde", "nghiavtr/BPSC")
 ipak(githubpackages, repository = "github")
-devtools::install_github("kdkorthauer/scDD", build_vignettes = FALSE, ref = "develop")
 ```
 
-After installing the dependencies, powsim can be installed by using devtools as well.
+After installing the dependencies, powsimR can be installed by using devtools as well.
 
 ``` r
 devtools::install_github("bvieth/powsimR", build_vignettes = TRUE)
@@ -95,8 +94,8 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] compiler_3.4.0  backports_1.0.5 magrittr_1.5    rprojroot_1.2  
+#>  [1] compiler_3.4.0  backports_1.1.0 magrittr_1.5    rprojroot_1.2  
 #>  [5] formatR_1.5     tools_3.4.0     htmltools_0.3.6 yaml_2.1.14    
-#>  [9] Rcpp_0.12.10    stringi_1.1.5   rmarkdown_1.5   knitr_1.15.1   
+#>  [9] Rcpp_0.12.11    stringi_1.1.5   rmarkdown_1.6   knitr_1.16     
 #> [13] stringr_1.2.0   digest_0.6.12   evaluate_0.10
 ```

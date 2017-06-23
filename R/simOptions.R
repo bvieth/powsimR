@@ -1,6 +1,5 @@
-######################################################################
-## Differential expression tag, lfc values, number of sims
-######################################################################
+
+# DESetup -----------------------------------------------------------------
 
 #' @name DESetup
 #' @aliases DESetup
@@ -62,21 +61,24 @@ DESetup <- function(ngenes, nsims=25, p.DE=0.1,
 }
 
 
-######################################################################
-## Combining DE settings with NB parameters
-######################################################################
+
+# SimSetup ----------------------------------------------------------------
 
 #' @name SimSetup
 #' @aliases SimSetup
 #' @title DEA options for RNA-seq count simulations in two-group comparison.
 #' @description This function adds user provided options for simulating RNA-seq data to RNAseq.SimSetup object. The resulting output list object is the input for \code{\link{simulateDE}} function.
-#' @usage SimSetup(desetup, params, size.factors='equal')
+#' @usage SimSetup(desetup, params,
+#' size.factors = "equal",
+#' normalisation = c("TMM", "MR", "PosCounts", "UQ",
+#' "scran", "SCnorm", "Census"))
 #' @param desetup The RNAseq simulation parameters created by \code{\link{DESetup}}.
 #' @param params The negative binomial parameters for simulations. This can be:
-#' (1) The output of \code{\link{estimateNBParam}}.
+#' (1) The output of \code{\link{estimateParam}}.
 #' (2) The output of \code{\link{insilicoNBParam}}.
 #' (3) A string specifying the name of precalculated estimates, see details.
-#' @param size.factors Size factors representing sample-specific differences/biases in expected mean values of the NB distribution: "equal" or "given". The default is "equal", i.e. equal size factor of 1. If the user defines it as given, the size factors are sampled from the size factors provided by the output of \code{\link{estimateNBParam}} or \code{\link{insilicoNBParam}}.
+#' @param size.factors Size factors representing sample-specific differences/biases in expected mean values of the NB distribution: "equal" or "given". The default is "equal", i.e. equal size factor of 1. If the user defines it as given, the size factors are sampled from the size factors provided by the output of \code{\link{estimateParam}} or \code{\link{insilicoNBParam}}.
+#' @param normalisation Normalisation method to use.
 #' @return A list with the following entries:
 #' \item{desetup}{The RNAseq simulation parameters.}
 #' \item{params}{The negative binomial parameters for simulations.}
@@ -88,36 +90,17 @@ DESetup <- function(ngenes, nsims=25, p.DE=0.1,
 #' nsims=25, p.DE=0.2,
 #' LFC=function(x) sample(c(-1,1), size=x,replace=TRUE)*rgamma(x, 3, 3))
 #' simsettings <- SimSetup(desetup=desettings,
-#' params=estparam, size.factors='equal')
+#' params=estparam, size.factors='equal', normalisation='scran')
 #' }
 #' @rdname SimSetup
 #' @export
-SimSetup <- function(desetup, params, size.factors='equal') {
+SimSetup <- function(desetup, params, size.factors='equal', normalisation=c('TMM','MR','PosCounts','UQ', 'scran', 'SCnorm', 'Census')) {
 
   ## return
-  res <- c(desetup, params, size.factors=size.factors)
+  res <- c(desetup, params, size.factors=size.factors, normalisation=normalisation)
   attr(res, 'param.type') <- attr(params, 'param.type')
+  attr(res, 'Distribution') <- attr(params, 'Distribution')
   return(res)
 
 }
 
-
-##############################################################
-## function to set fold change for DE genes
-##############################################################
-.setFC <- function(input, nDEgenes) {
-  if (is.vector(input)) { ## vector
-    if (length(input) == 1) { ## constant
-      lfc = rep(input, nDEgenes)
-    } else if (length(input) != nDEgenes) { ## vector
-      lfc = sample(input, nDEgenes, replace = TRUE)
-    } else {
-      lfc = input
-    }
-  } else if (is.function(input)) { # a function
-    lfc = input(nDEgenes)
-  }   else {
-    stop("Unrecognized form of lfc!\n")
-  }
-  lfc
-}

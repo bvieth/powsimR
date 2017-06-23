@@ -1,16 +1,39 @@
-######################################
-## Calculate AIC of model
-######################################
+
+# set LFC -----------------------------------------------------------------
+
+.setFC <- function(input, nDEgenes) {
+  if (is.vector(input)) { ## vector
+    if (length(input) == 1) { ## constant
+      lfc = rep(input, nDEgenes)
+    } else if (length(input) != nDEgenes) { ## vector
+      lfc = sample(input, nDEgenes, replace = TRUE)
+    } else {
+      lfc = input
+    }
+  } else if (is.function(input)) { # a function
+    lfc = input(nDEgenes)
+  }   else {
+    stop("Unrecognized form of lfc!\n")
+  }
+  lfc
+}
+
+# remove scientific notation ----------------------------------------------
+
+.plain <- function(x,...) {
+  format(x, ..., scientific = FALSE, trim = TRUE, digits=1)
+}
+
+# Calculate AIC of model --------------------------------------------------
+
 .myAIC <- function(resids, dat.n, npar, k) {
   sse0 <- rowSums(resids^2)
   aic <- dat.n + dat.n*log(2*pi) + dat.n * log(sse0/dat.n) + k*npar
   return(aic)
 }
 
-######################################
-## Calculate goodness of fit
-## based on deviance and chisquare
-######################################
+# Calculate goodness of fit -----------------------------------------------
+
 #' @importFrom stats pchisq
 .myGOF <- function(deviances, df.residuals) {
   data.frame(gof.stats = deviances,
@@ -19,10 +42,8 @@
              stringsAsFactors = F)
 }
 
-######################################
-## Calculate goodness of fit
-## chisquare test from fitdistrplus
-######################################
+# ## Calculate goodness of fit chisquare test from fitdistrplus ------------
+
 #' @importFrom fitdistrplus gofstat
 .fitdistrplusGOF <- function(fitdistobj) {
   gof <- fitdistrplus::gofstat(f = fitdistobj, discrete = T)
@@ -32,9 +53,8 @@
              stringsAsFactors = F)
 }
 
-######################################
-## convertToedgeR
-######################################
+# convertToedgeR ----------------------------------------------------------
+
 #' @importFrom edgeR DGEList
 #' @importFrom scater counts sizeFactors.SCESet
 .convertToedgeR <- function(sce.dat) {
@@ -48,9 +68,8 @@
   return(y)
 }
 
-######################################
-## convertToDESeq
-######################################
+# convertToDESeq ----------------------------------------------------------
+
 #' @importFrom DESeq2 DESeqDataSetFromMatrix sizeFactors
 #' @importFrom scater counts sizeFactors.SCESet
 .convertToDESeq <- function(sce.dat, coldat=NULL, designdat=NULL) {
@@ -68,31 +87,8 @@
   return(dds)
 }
 
-######################################
-## scran calculations
-######################################
-#' @importFrom scran computeSumFactors
-#' @importFrom scater newSCESet
-.scran.calc <- function(cnts) {
-  sce <- scater::newSCESet(countData=data.frame(cnts))
-  if(ncol(cnts)<=14) {
-    sce <- scran::computeSumFactors(sce, sizes=c(round(seq(from=2, to=trunc(ncol(cnts)/2), by = 1))), positive=FALSE)
-  }
-  if(ncol(cnts)>14 & ncol(cnts)<=50) {
-    sce <- scran::computeSumFactors(sce, sizes=c(round(seq(from=2, to=trunc(ncol(cnts)/2), length.out=6))), positive=FALSE)
-  }
-  if(ncol(cnts)>50 & ncol(cnts)<=1000) {
-    sce <- scran::computeSumFactors(sce, sizes=c(round(seq(from=10, to=trunc(ncol(cnts)/2), length.out=6))), positive=FALSE)
-  }
-  if(trunc(ncol(cnts))>1000) {
-    sce <- scran::computeSumFactors(sce, positive=FALSE)
-  }
-  return(sce)
-}
+# Poisson Beta Moments Estimation -----------------------------------------
 
-######################################
-## Poisson Beta Moments Estimation
-######################################
 #' @importFrom moments moment
 #' @importFrom stats rbeta rpois dpois
 .PoissonBetaFit <- function(x.raw, x.norm, nMC = 1e3) {

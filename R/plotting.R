@@ -1,65 +1,71 @@
-####################################################
-#### plotNBParam
-####################################################
-#' @name plotNBParam
-#' @aliases plotNBParam
+
+# plotParam -------------------------------------------------------------
+#' @name plotParam
+#' @aliases plotParam
 #' @title Visualize
-#' @description This function plots the results of the parameter estimation. This includes the absolute and relative sequencing depth (i.e. library size factor). Also the mean-dispersion relationship with loess fit for simulations is visualized. Lastly the mean-dropout rate is presented as a smooth scatter plot.
-#' @usage plotNBParam(estParam.out, annot=TRUE)
-#' @param estParam.out The output of \code{\link{estimateNBParam}} or a string specifying the name of precalculated estimates (see details).
+#' @description This function plots the results of the parameter estimation. This includes the absolute and relative sequencing depth (i.e. library size factor) and marginal mean, dispersion and dropout. Also the mean-dispersion relationship with loess fit for simulations is visualized. Lastly the mean-dropout rate is presented as a smooth scatter plot.
+#' @usage plotParam(estParam.out, annot=TRUE)
+#' @param estParam.out The output of \code{\link{estimateParam}} or a string specifying the name of precalculated estimates (see details).
 #' @param annot A logical vector. If \code{TRUE}, a short figure legend is included.
 #' @return A ggplot object.
 #' @examples
 #' \dontrun{
 #' ## for example see \code{\link{insilicoNBParam}}
 #' }
-#' @details Precalculated negative binomial parameters for simulations are available on \url{}.
+#' @details Precalculated negative binomial parameters for simulations are available via \url{}.
 #' @author Beate Vieth
-#' @importFrom ggplot2 ggplot geom_bar geom_line theme geom_hline xlab ylab coord_flip scale_y_continuous geom_point scale_fill_gradientn stat_density2d labs theme_minimal
+#' @importFrom ggplot2 ggplot geom_bar geom_line theme geom_hline xlab ylab coord_flip scale_y_continuous geom_point scale_fill_gradientn stat_density2d labs theme_minimal theme_classic
 #' @importFrom reshape2 melt
 #' @importFrom cowplot plot_grid add_sub ggdraw
 #' @importFrom ggExtra ggMarginal
+#' @importFrom ggthemes theme_base
 #' @importFrom stats reorder
-#' @rdname plotNBParam
+#' @rdname plotParam
 #' @export
-plotNBParam <- function(estParam.out, annot=TRUE) {
+plotParam <- function(estParam.out, annot=TRUE) {
 
   if(estParam.out$RNAseq=="bulk" | estParam.out$estS<15) {
     # library size
-    lib.size.dat <- data.frame(Seqdepth=estParam.out$seqDepth, Sample=names(estParam.out$seqDepth))
+    lib.size.dat <- data.frame(Seqdepth=estParam.out$seqDepth,
+                               Sample=names(estParam.out$seqDepth))
     libsize.plot <- ggplot2::ggplot(data=lib.size.dat, aes(reorder(Sample, Seqdepth),Seqdepth)) +
+      ggplot2::theme_minimal() +
       ggplot2::geom_bar(stat="identity",width=.5) +
       ggplot2::geom_hline(yintercept = median(lib.size.dat$Seqdepth), linetype = 2, colour="grey40") +
       ggplot2::theme(axis.text=element_text(size=6), axis.title=element_text(size=8, face="bold")) +
       ggplot2::xlab(NULL) +
       ggplot2::ylab("Sequencing depth") +
       ggplot2::scale_y_continuous(labels=.plain) +
-      ggplot2::coord_flip() +
-      ggplot2::theme_minimal()
+      ggplot2::coord_flip()
     # size factor plot
-    sf.dat <- data.frame(SizeFactor=estParam.out$sf, Sample=names(estParam.out$sf))
+    sf.dat <- data.frame(SizeFactor=estParam.out$sf,
+                         Sample=names(estParam.out$sf))
     sf.plot <- ggplot2::ggplot(data=sf.dat, aes(reorder(Sample, SizeFactor),SizeFactor)) +
+      ggplot2::theme_minimal() +
       ggplot2::geom_bar(stat="identity",width=.5) +
       ggplot2::geom_hline(yintercept = median(sf.dat$SizeFactor), linetype = 2, colour="grey40") +
-      ggplot2::theme(axis.title=element_text(size=8, face="bold"), axis.text=element_text(size=6)) +
+      ggplot2::theme(axis.text=element_text(size=6), axis.title=element_text(size=8, face="bold")) +
       ggplot2::xlab(NULL) +
       ggplot2::ylab("Library Size Factor") +
       ggplot2::scale_y_continuous(labels=.plain) +
-      ggplot2::coord_flip() +
-      ggplot2::theme_minimal()
+      ggplot2::coord_flip()
     # marginal distributions
-    margs.dat <- data.frame(Mean=log2(estParam.out$means+1), Dispersion=log2(estParam.out$dispersion), Dropout=estParam.out$p0)
+    margs.dat <- data.frame(Mean=log2(estParam.out$means+1),
+                            Dispersion=log2(estParam.out$dispersion),
+                            Dropout=estParam.out$p0)
     margs.dat <- suppressMessages(reshape2::melt(margs.dat))
     margs.plot <- ggplot2::ggplot(margs.dat, aes(value)) +
+      ggplot2::theme_minimal() +
       ggplot2::geom_density() +
-      ggplot2::theme(axis.title=element_text(size=8, face="bold"), axis.text=element_text(size=6)) +
+      ggplot2::theme(axis.text=element_text(size=6), axis.title=element_text(size=8, face="bold"), strip.text = element_text(size=8, face="bold")) +
       ggplot2::xlab(NULL) +
       ggplot2::ylab("Density") +
-      ggplot2::facet_wrap(~variable, scales = 'free') +
-      ggplot2::theme_minimal()
+      ggplot2::facet_wrap(~variable, scales = 'free')
     # mean vs dispersion plot
-    meanvsdisp.dat <- data.frame(Means=log2(estParam.out$means+1), Dispersion=log2(estParam.out$dispersion))
+    meanvsdisp.dat <- data.frame(Means=log2(estParam.out$means+1),
+                                 Dispersion=log2(estParam.out$dispersion))
     meanvsdisp.plot <- ggplot2::ggplot(data=meanvsdisp.dat, aes(x=Means, y=Dispersion)) +
+      ggplot2::theme_classic() +
       ggplot2::stat_density2d(geom="tile", aes(fill=..density..^0.25, alpha=1), contour=FALSE) +
       ggplot2::geom_point(size=0.5) +
       ggplot2::stat_density2d(geom="tile", aes(fill=..density..^0.25, alpha=ifelse(..density..^0.15<0.4,0,1)), contour=FALSE) +
@@ -68,26 +74,37 @@ plotNBParam <- function(estParam.out, annot=TRUE) {
       ggplot2::geom_line(aes(x=estParam.out$meandispfit$x, y=estParam.out$meandispfit$y), linetype=1, size=1.5, colour="orange") +
       ggplot2::geom_line(aes(x=estParam.out$meandispfit$x, y=estParam.out$meandispfit$upper), linetype=2, size=1, colour="orange") +
       ggplot2::geom_line(aes(x=estParam.out$meandispfit$x, y=estParam.out$meandispfit$lower), linetype=2, size=1, colour="orange") +
-      ggplot2::theme(legend.position='none') +
-      ggplot2::labs(y=expression(paste(Log[2], " Dispersion", sep="")), x=expression(paste(Log[2], " (Mean)"))) +
-      ggplot2::theme(legend.position="none") +
-      ggplot2::theme_minimal()
+      ggplot2::labs(y=expression(bold(paste(Log[2], " Dispersion", sep=""))), x=expression(bold(paste(Log[2], " (Mean)")))) +
+      ggplot2::theme(legend.position='none', axis.text=element_text(size=6), axis.title=element_text(size=8, face="bold"))
     # mean vs p0 plot
-    meanvsp0.dat <- data.frame(Means=log2(estParam.out$means+1), Dropout=estParam.out$p0)
+    meanvsp0.dat <- data.frame(Means=log2(estParam.out$means+1),
+                               Dropout=estParam.out$p0)
     meanvsp0.plot <- ggplot2::ggplot(data=meanvsp0.dat, aes(x=Means, y=Dropout)) +
+      ggplot2::theme_classic() +
       ggplot2::stat_density2d(geom="tile", aes(fill=..density..^0.25, alpha=1), contour=FALSE) +
       ggplot2::geom_point(size=0.5) +
       ggplot2::stat_density2d(geom="tile", aes(fill=..density..^0.25, alpha=ifelse(..density..^0.15<0.4,0,1)), contour=FALSE) +
       ggplot2::scale_fill_gradientn(colours = colorRampPalette(c("white", blues9))(256))+
       ylim(c(0,1)) +
-      ggplot2::labs(y="Dropout Fraction", x=expression(paste(Log[2], " (Mean)"))) +
-      ggplot2::theme(legend.position="none") +
-      ggplot2::theme_minimal()
+      ggplot2::labs(y="Dropout Fraction", x=expression(bold(paste(Log[2], " (Mean)")))) +
+      ggplot2::theme(legend.position='none', axis.text=element_text(size=6), axis.title=element_text(size=8, face="bold"))
+    if(estParam.out$RNAseq=="bulk" && !is.null(estParam.out$p0.cut)) {
+      meanvsp0.plot <- meanvsp0.plot + ggplot2::annotate("rect", xmin=0, ymax=1, ymin=0, xmax=estParam.out$p0.cut+1, fill="red", alpha=0.2)
+    }
 
-    top_row <- suppressWarnings(cowplot::plot_grid(libsize.plot,sf.plot, labels=c('A', 'B'), ncol=2, nrow=1))
-    bottom_row <- suppressWarnings(cowplot::plot_grid(meanvsdisp.plot, meanvsp0.plot, labels=c('D', 'E'), ncol=2, nrow=1))
-    middle_row <- suppressWarnings(cowplot::plot_grid(margs.plot, labels=c('C'), ncol=1, nrow=1))
-    p.final <- suppressWarnings(cowplot::plot_grid(top_row, middle_row, bottom_row, rel_heights = c(1, 1, 1.5), ncol=1, nrow=3))
+    top_row <- suppressWarnings(cowplot::plot_grid(libsize.plot,sf.plot,
+                                                   labels=c('A', 'B'),
+                                                   ncol=2, nrow=1))
+    bottom_row <- suppressWarnings(cowplot::plot_grid(meanvsdisp.plot,
+                                                      meanvsp0.plot,
+                                                      labels=c('D', 'E'),
+                                                      ncol=2, nrow=1))
+    middle_row <- suppressWarnings(cowplot::plot_grid(margs.plot, labels=c('C'),
+                                                      ncol=1, nrow=1))
+    p.final <- suppressWarnings(cowplot::plot_grid(top_row, middle_row,
+                                                   bottom_row,
+                                                   rel_heights = c(1, 1, 1.5),
+                                                   ncol=1, nrow=3))
     # annotation under plot
     if (annot) {
       p.final <- cowplot::add_sub(p.final, "A) Sequencing depth per sample with median sequencing depth (grey dashed line).
@@ -100,38 +117,43 @@ plotNBParam <- function(estParam.out, annot=TRUE) {
 
   if(estParam.out$RNAseq=="singlecell" | estParam.out$estS>15) {
     # library size
-    lib.size.dat <- data.frame(Seqdepth=estParam.out$seqDepth, Sample=names(estParam.out$seqDepth))
+    lib.size.dat <- data.frame(Seqdepth=estParam.out$seqDepth,
+                               Sample=names(estParam.out$seqDepth))
     libsize.plot <- ggplot2::ggplot(lib.size.dat, aes(Seqdepth)) +
+      ggplot2::theme_minimal() +
       ggplot2::geom_density() +
       ggplot2::geom_vline(xintercept = median(lib.size.dat$Seqdepth), linetype = 2, colour="grey40") +
       ggplot2::theme(axis.text=element_text(size=6), axis.title=element_text(size=8, face="bold")) +
       ggplot2::xlab("Sequencing Depth") +
       ggplot2::ylab("Density") +
-      ggplot2::scale_x_continuous(labels=.plain) +
-      ggplot2::theme_minimal()
+      ggplot2::scale_x_continuous(labels=.plain)
     # size factor plot
     sf.dat <- data.frame(SizeFactor=estParam.out$sf, Sample=names(estParam.out$sf))
     sf.plot <- ggplot2::ggplot(sf.dat, aes(SizeFactor)) +
+      ggplot2::theme_minimal() +
       ggplot2::geom_density() +
       ggplot2::geom_vline(xintercept = median(sf.dat$SizeFactor), linetype = 2, colour="grey40") +
       ggplot2::theme(axis.text=element_text(size=6), axis.title=element_text(size=8, face="bold")) +
       ggplot2::xlab("Library Size Factor") +
       ggplot2::ylab("Density") +
-      ggplot2::scale_x_continuous(labels=.plain) +
-      ggplot2::theme_minimal()
+      ggplot2::scale_x_continuous(labels=.plain)
     # marginal distributions
-    margs.dat <- data.frame(Mean=log2(estParam.out$means+1), Dispersion=log2(estParam.out$dispersion), Dropout=estParam.out$p0)
+    margs.dat <- data.frame(Mean=log2(estParam.out$means+1),
+                            Dispersion=log2(estParam.out$dispersion),
+                            Dropout=estParam.out$p0)
     margs.dat <- suppressMessages(reshape2::melt(margs.dat))
     margs.plot <- ggplot2::ggplot(margs.dat, aes(value)) +
+      ggplot2::theme_minimal() +
       ggplot2::geom_density() +
-      ggplot2::theme(axis.text=element_text(size=6), axis.title=element_text(size=8, face="bold")) +
+      ggplot2::theme(axis.text=element_text(size=6), axis.title=element_text(size=8, face="bold"), strip.text = element_text(size=8, face="bold")) +
       ggplot2::xlab(NULL) +
       ggplot2::ylab("Density") +
-      ggplot2::facet_wrap(~variable, scales = 'free') +
-      ggplot2::theme_minimal()
+      ggplot2::facet_wrap(~variable, scales = 'free')
     # mean vs dispersion plot
-    meanvsdisp.dat <- data.frame(Means=log2(estParam.out$means+1), Dispersion=log2(estParam.out$dispersion))
+    meanvsdisp.dat <- data.frame(Means=log2(estParam.out$means+1),
+                                 Dispersion=log2(estParam.out$dispersion))
     meanvsdisp.plot <- ggplot2::ggplot(data=meanvsdisp.dat, aes(x=Means, y=Dispersion)) +
+      ggplot2::theme_classic() +
       ggplot2::stat_density2d(geom="tile", aes(fill=..density..^0.25, alpha=1), contour=FALSE) +
       ggplot2::geom_point(size=0.5) +
       ggplot2::stat_density2d(geom="tile", aes(fill=..density..^0.25, alpha=ifelse(..density..^0.15<0.4,0,1)), contour=FALSE) +
@@ -140,24 +162,35 @@ plotNBParam <- function(estParam.out, annot=TRUE) {
       ggplot2::geom_line(aes(x=estParam.out$meandispfit$x, y=estParam.out$meandispfit$y), linetype=1, size=1.5, colour="orange") +
       ggplot2::geom_line(aes(x=estParam.out$meandispfit$x, y=estParam.out$meandispfit$upper), linetype=2, size=1, colour="orange") +
       ggplot2::geom_line(aes(x=estParam.out$meandispfit$x, y=estParam.out$meandispfit$lower), linetype=2, size=1, colour="orange") +
-      ggplot2::theme(legend.position='none') +
-      ggplot2::labs(y=expression(paste(Log[2], " Dispersion", sep="")), x=expression(paste(Log[2], " (Mean)"))) +
-      ggplot2::theme_minimal()
-      ggplot2::theme(legend.position="none")
+      ggplot2::labs(y=expression(bold(paste(Log[2], " Dispersion", sep=""))), x=expression(bold(paste(Log[2], " (Mean)")))) +
+      ggplot2::theme(legend.position='none', axis.text=element_text(size=6), axis.title=element_text(size=8, face="bold"))
     # mean vs p0 plot
-    meanvsp0.dat <- data.frame(Means=log2(estParam.out$means+1), Dropout=estParam.out$p0)
+    meanvsp0.dat <- data.frame(Means=log2(estParam.out$means+1),
+                                Dropout=estParam.out$p0)
     meanvsp0.plot <- ggplot2::ggplot(data=meanvsp0.dat, aes(x=Means, y=Dropout)) +
+      ggplot2::theme_classic() +
       ggplot2::stat_density2d(geom="tile", aes(fill=..density..^0.25, alpha=1), contour=FALSE) + ggplot2::geom_point(size=0.5) +
       ggplot2::stat_density2d(geom="tile", aes(fill=..density..^0.25, alpha=ifelse(..density..^0.15<0.4,0,1)), contour=FALSE) +
       ggplot2::scale_fill_gradientn(colours = colorRampPalette(c("white", blues9))(256))+ ylim(c(0,1)) +
-      ggplot2::theme_minimal()
-      ggplot2::labs(y="Dropout Fraction", x=expression(paste(Log[2], " (Mean)"))) +
-      ggplot2::theme(legend.position="none")
+      ggplot2::labs(y="Dropout Fraction", x=expression(bold(paste(Log[2], " (Mean)")))) +
+      ggplot2::theme(legend.position='none', axis.text=element_text(size=6), axis.title=element_text(size=8, face="bold"))
 
-    top_row <- suppressWarnings(cowplot::plot_grid(libsize.plot,sf.plot, labels=c('A', 'B'), ncol=2, nrow=1))
-    bottom_row <- suppressWarnings(cowplot::plot_grid(meanvsdisp.plot, meanvsp0.plot, labels=c('D', 'E'), ncol=2, nrow=1))
-    middle_row <- suppressWarnings(cowplot::plot_grid(margs.plot, labels=c('C'), ncol=1, nrow=1))
-    p.final <- suppressWarnings(cowplot::plot_grid(top_row, middle_row, bottom_row, rel_heights = c(1, 1, 1.5), ncol=1, nrow=3))
+    top_row <- suppressWarnings(cowplot::plot_grid(libsize.plot,
+                                                   sf.plot,
+                                                   labels=c('A', 'B'),
+                                                   ncol=2, nrow=1))
+    bottom_row <- suppressWarnings(cowplot::plot_grid(meanvsdisp.plot,
+                                                      meanvsp0.plot,
+                                                      labels=c('D', 'E'),
+                                                      ncol=2, nrow=1))
+    middle_row <- suppressWarnings(cowplot::plot_grid(margs.plot,
+                                                      labels=c('C'),
+                                                      ncol=1, nrow=1))
+    p.final <- suppressWarnings(cowplot::plot_grid(top_row,
+                                                   middle_row,
+                                                   bottom_row,
+                                                   rel_heights = c(1, 1, 1.5),
+                                                   ncol=1, nrow=3))
     # annotation under plot
     if (annot) {
       p.final <- cowplot::add_sub(p.final, "A) Sequencing depth per sample with median sequencing depth (grey dashed line).
@@ -172,9 +205,8 @@ plotNBParam <- function(estParam.out, annot=TRUE) {
   cowplot::ggdraw(p.final)
 }
 
-####################################################
-#### plotEvalRes
-####################################################
+
+# plotEvalRes -------------------------------------------------------------
 #' @name plotEvalRes
 #' @aliases plotEvalRes
 #' @title Visualize power assessment
@@ -304,10 +336,8 @@ plotEvalRes <- function(evalRes, rate=c('marginal', 'stratified'), quick=TRUE, a
   cowplot::ggdraw(p.final)
 }
 
+# plotEvalDist ------------------------------------------------------------
 
-####################################################
-#### plotEvalDist
-####################################################
 
 #' @name plotEvalDist
 #' @aliases plotEvalDist
@@ -438,32 +468,3 @@ plotEvalDist <- function(evalDist, annot=TRUE){
   # draw final plot
   cowplot::ggdraw(p.final)
 }
-
-
-####################################################
-#### emulate ggplot color palette
-####################################################
-#' #' @importFrom grDevices blues9 colorRampPalette hcl
-#' .ggplotColours <- function(n = 6, h = c(0, 360) + 15){
-#'   if ((diff(h) %% 360) < 1) h[2] <- h[2] - 360/n
-#'   hcl(h = (seq(h[1], h[2], length = n)), c = 100, l = 65)
-#' }
-
-####################################################
-#### remove scientific notation
-####################################################
-.plain <- function(x,...) {
-  format(x, ..., scientific = FALSE, trim = TRUE, digits=1)
-}
-
-####################################################
-#### extract legend from gpglot object
-####################################################
-
-#' #' @importFrom ggplot2 ggplot_gtable ggplot_build
-#' .g_legend<-function(a.gplot){
-#'   tmp <- ggplot2::ggplot_gtable(ggplot2::ggplot_build(a.gplot))
-#'   leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
-#'   legend <- tmp$grobs[[leg]]
-#'   legend
-#' }

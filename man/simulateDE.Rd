@@ -18,7 +18,7 @@ verbose=TRUE)
 
 \item{ncores}{integer positive number of cores for parallel processing, default is NULL, ie 1 core.}
 
-\item{DEmethod}{String to specify the DE detection method to be used. Available options are: limma, edgeR, DESeq2, ROTS, baySeq, NOISeq, EBSeq, DSS, MAST, scde, BPSC, scDD.}
+\item{DEmethod}{A character vector specifying the DE detection method to be used. Available options are: limma-trend, limma-voom, edgeR-LRT, edgeR-QL, DESeq2, ROTS, baySeq, NOISeq, EBSeq, DSS, MAST, scde, BPSC, scDD, monocle.}
 
 \item{verbose}{Logical value to indicate whether to show progress report of simulations. Default is TRUE.}
 }
@@ -27,7 +27,7 @@ A list with the following fields. The dimensions for the 3D arrays are ngenes * 
 \item{pvalue, fdr}{3D array for p-values and FDR from each simulation. Note that FDR values will be empty and the calculation will be done by \code{\link{evaluateSim}} whenever applicable.}
 \item{mu,disp,dropout}{3D array for mean, dispersion and dropout of library size factor normalized read counts}
 \item{n1,n2}{The input number of biological replicates in each group. The vectors must have the same length.}
-\item{time.taken}{The time taken for each simulation, given for read count simulation, DEA and moment estimation. }
+\item{time.taken}{The time taken for each simulation, given for read count simulation, DEA and moment estimation.}
 }
 \description{
 This function simulates RNA-seq count matrices considering differential expression specifications (number of samples per group, effect size, number of differential expressed genes etc.). The return object contains DE test results from all simulations as well as descriptive statistics.
@@ -63,7 +63,7 @@ ncores=10, DEmethod="MAST", verbose=TRUE)
 }
 }
 \seealso{
-\code{\link{estimateNBParam}},  \code{\link{insilicoNBParam}} for negative binomial parameter specifications;\cr
+\code{\link{estimateParam}},  \code{\link{insilicoNBParam}} for negative binomial parameter specifications;\cr
  \code{\link{DESetup}}, \code{\link{SimSetup}} for simulation setup
 }
 \author{

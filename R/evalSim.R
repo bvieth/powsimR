@@ -27,7 +27,7 @@
 #' @param delta A threshold used for defining "biologically important" genes. Genes with absolute log2 fold changes (when target.by is "lfc") or effect sizes (when target.by is "effectsize") greater than this value are deemed DE in error rates calculations. If \code{delta=0} then no threshold is applied. See "Details" for more description.
 #' @return A list with the following entries:
 #' \item{TN, TP, FP, FN, TNR, TPR, FPR, FNR, FDR}{3D array representing the number of true negatives, true positives, false positives, false negatives and their proportions/rates as well as false discovery rate for all simulation settings. The dimension of the arrays are nstrata * N * nsims. Here nstrata is number of specified strata. N is number of different sample sizes settings, and nsims is number of simulations.}
-#' #' \item{TN.marginal, TP.marginal,FP.marginal, FN.marginal}{Matrix representing the number of true negatives, true positives, false positives, false negatives for all simulation settings. The dimension of the matrices are N * nsims. Here N is number of different sample sizes settings, and nsims is number of simulations.}
+#' \item{TN.marginal, TP.marginal,FP.marginal, FN.marginal}{Matrix representing the number of true negatives, true positives, false positives, false negatives for all simulation settings. The dimension of the matrices are N * nsims. Here N is number of different sample sizes settings, and nsims is number of simulations.}
 #' \item{TNR.marginal, TPR.marginal,FPR.marginal, FNR.marginal,FDR.marginal}{Matrix representing the marginal rates for all simulation settings. The dimension of the matrices are N * nsims.}
 #' \item{stratagenes, stratadiffgenes}{Number of genes per stratum and number of DE genes per stratum.}
 #' \item{stratify.by}{The input stratify.by.}
@@ -36,10 +36,10 @@
 #' \item{target.by}{The input method to define "biologically important" DE genes, either by log fold change or effect size.}
 #' \item{delta}{The input delta for biologically important genes. If delta=0, all target.by will be considered.}
 #' @author Beate Vieth
-#' @seealso \code{\link{estimateNBParam}} for negative binomial parameters, \code{\link{SimSetup}} and \code{\link{DESetup}} for setting up simulation parameters and \code{\link{simulateDE}} for simulating differential expression.
+#' @seealso \code{\link{estimateParam}} for negative binomial parameters, \code{\link{SimSetup}} and \code{\link{DESetup}} for setting up simulation parameters and \code{\link{simulateDE}} for simulating differential expression.
 #' @examples
 #' \dontrun{
-#' ## for example DE simulation result see \code{\link{simulateDE}}
+#' ## for example DE simulation result see simulateDE
 #' evalres <- evaluateSim(simRes=simres,
 #' alpha.type="adjusted",
 #' MTC="BH", alpha.nominal=0.1,

@@ -1,6 +1,6 @@
-####################################################
-#### insilicoNBParam:
-####################################################
+
+# insilicoNBParam ---------------------------------------------------------
+
 #' @name insilicoNBParam
 #' @aliases insilicoNBParam
 #' @title In Silico Simulation Parameters
@@ -84,30 +84,35 @@ insilicoNBParam <- function(means, dispersion, dropout=NULL, sf=NULL, RNAseq=c("
 
   res <- list(means = means, dispersion = dispersion, p0 = dropout, sf = sf, RNAseq = RNAseq, estFramework = "in silico")
   attr(res, 'param.type') <- "insilico"
+  attr(params, 'Distribution') <- "NB"
 
   return(res)
 }
 
-####################################################
-#### estimateNBParam:
-####################################################
-#' @name estimateNBParam
-#' @aliases estimateNBParam
+# estimateParam ---------------------------------------------------------
+
+#' @name estimateParam
+#' @aliases estimateParam
 #' @title Estimate simulation parameters
 #' @description This function estimates and returns parameters needed for power simulations assuming a negative binomial read count distribution.
-#' @usage estimateNBParam(countData, cData=NULL, design=NULL,
-#' RNAseq=c("bulk", "singlecell"),
-#' estFramework=c('edgeR', 'DESeq2', 'MatchMoments'),
-#' sigma=1.96)
+#' @usage estimateParam(countData,
+#' spikeData=NULL, spikeInfo = NULL,
+#' Lengths=NULL, MeanFragLengths=NULL,
+#' Distribution=c('NB', 'ZINB'), RNAseq=c('bulk', 'singlecell'),
+#' normalisation=c('TMM','MR','PosCounts','UQ',
+#' 'scran', 'SCnorm', 'RUVg', 'BASiCS', 'Census'),
+#' sigma=1.96, NCores=NULL)
 #' @param countData is a count \code{matrix}. Rows correspond to genes, columns to samples.
-#' @param cData A \code{data.frame} with at least a single column. Rows of \code{colData} \strong{must correspond} to columns of \code{countData}. Default is \code{NULL}, i.e. the dispersion estimation is 'blind' to sample information, see \code{\link[DESeq2]{varianceStabilizingTransformation}}.
-#' @param design A \code{formula} which expresses how the counts for each gene depend on the variables in colData. Designs with multiple covariates and/or interactions are supported. Default is \code{NULL}, i.e. no design information is considered.
+#' @param spikeData is a count \code{matrix}. Rows correspond to spike-ins, columns to samples. The order of columns should be the same as in the \code{countData}.
+#' @param spikeInfo is a molecule count \code{matrix} of spike-ins. Rows correspond to spike-ins. The order of rows should be the same as in the \code{spikeData}. The column names should be 'SpikeID' and 'SpikeInput' for molecule counts of spike-ins.
+#' @param Lengths is a numeric vector of transcript lengths with the same length as rows in countData. This variable is only used for internal TPM calculations if Census normalization is specified.
+#' @param MeanFragLengths is a numeric vector of mean fragment lengths with the same length as columns in countData. This variable is only used for internal TPM calculations if Census normalization is specified.
+#' @param Distribution is a character value: "NB" for negative binomial or "ZINB" for zero-inflated negative binomial.
 #' @param RNAseq is a character value: "bulk" or "singlecell".
-#' @param estFramework is a character value: "edgeR", "DESeq2" and "MatchMoments".
-#' "edgeR" or "DESeq2" employs the edgeR or DESeq2 style mean and dispersion estimation, respectively. For details, please consult \code{\link[edgeR]{estimateDisp}} and \code{\link[DESeq2]{estimateDispersions}}.
-#' "MatchMoments" employs moments matching technique for of mean, dispersion and dropout estimation.
+#' @param normalisation is a character value: "TMM", "MR" and "PosCounts", "UQ", "scran", "SCnorm", "RUVg", "BASiCS". For more information, please consult the details section.
 #' @param sigma The variability band width for mean-dispersion loess fit defining the prediction interval for read cound simulation. Default is 1.96, i.e. 95\% interval. For more information see \code{\link[msir]{loess.sd}}.
-#' @return List with the following vectors
+#' @param NCores The number of cores for normalisation method SCnorm and Census. If NULL, the number of detected cores minus 1 is used.
+#' @return List object with the following entries
 #' \item{seqDepth}{Library size, i.e. total number of reads per library}
 #' \item{means}{Mean normalized read counts per gene.}
 #' \item{dispersion}{Dispersion estimate per gene.}
@@ -122,8 +127,17 @@ insilicoNBParam <- function(means, dispersion, dropout=NULL, sf=NULL, RNAseq=c("
 #' \item{totalS,totalG}{Number of samples and genes provided.}
 #' \item{estS,estG}{Number of samples and genes for which parameters can be estimated.}
 #' \item{RNAseq}{The type of RNAseq: bulk or single cell.}
-#' \item{estFramework}{The estimation framework for NB parameters.}
+#' \item{normFramework}{The normalisation method used to calculate normalized parameters and library size factors.}
 #' \item{sigma}{The width of the variability band.}
+#' @details
+#' Normalisation methods
+#' \describe{
+#' \item{TMM, UQ}{employ the edgeR style normalization of weighted trimmed mean of M-values and upperquartile as implemented in \code{\link[edgeR]{calcNormFactors}}, respectively.}
+#' \item{MR, PosCounts}{employ the DESeq2 style normalization of median ratio method and a modified geometric mean method as implemented in \code{\link[DESeq2]{estimateSizeFactors}}, respectively.}
+#' \item{scran, SCnorm}{apply the deconvolution and quantile regression normalization methods developed for sparse RNA-seq data as implemented in \code{\link[scran]{computeSumFactors}} and \code{\link[SCnorm]{SCnorm}}, respectively. For \code{SCnorm}, the user can also supply \code{spikeData}.}
+#' \item{RUVg}{removes unwanted variation by utilizing negative control genes, i.e. spike-ins stored in \code{spikeData}, as implemented in \code{\link[RUVSeq]{RUVg}}.}
+#' \item{BASiCS}{removes technical variation by utilizing negative control genes, i.e. spike-ins stored in \code{spikeData}, as implemented in \code{\link[BASiCS]{DenoisedCounts}}. Furthermore, the molecule counts of spike-ins added to the cell lysate need to be supplied in \code{spikeInfo}.}
+#' }
 #' @examples
 #' \dontrun{
 #' ## simulating single cell RNA-seq experiment
@@ -134,639 +148,100 @@ insilicoNBParam <- function(means, dispersion, dropout=NULL, sf=NULL, RNAseq=c("
 #' sf.values <- 2^rnorm(ncells, sd=0.5)
 #' sf.means <- outer(true.means, sf.values, '*')
 #' cnts <- matrix(rnbinom(ngenes*ncells,
-#' mu=sf.means, size=1/true.dispersions),
-#' ncol=ncells)
+#'                        mu=sf.means, size=1/true.dispersions),
+#'                ncol=ncells)
 #' ## estimating negative binomial parameters
-#' estparam <- estimateNBParam(cnts, RNAseq = 'singlecell',
-#' estFramework = 'MatchMoments', sigma=1.96)
-#' plotNBParam(estparam)
+#' estparam <- estimateParam(countData=cnts,
+#'                           spikeData=NULL, spikeInfo = NULL,
+#'                           Lengths=NULL, MeanFragLengths=NULL,
+#'                           Distribution='NB',
+#'                           RNAseq="singlecell",
+#'                           normalisation='scran',
+#'                           NCores=NULL,
+#'                           sigma=1.96)
+#' plotParam(estparam, annot=F)
 #'
 #' ## simulating bulk RNA-seq experiment
 #' ngenes <- 10000
 #' nsamples <- 10
 #' true.means <- 2^rnorm(ngenes, mean=8, sd=2)
-#' true.dispersions <- rgamma(ngenes, 2, 6)
+#' true.dispersions <- 3/true.means + 0.1
 #' sf.values <- rnorm(nsamples, mean=1, sd=0.1)
 #' sf.means <- outer(true.means, sf.values, '*')
 #' cnts <- matrix(rnbinom(ngenes*nsamples,
-#' mu=sf.means, size=1/true.dispersions),
-#' ncol=nsamples)
+#'                        mu=sf.means, size=1/true.dispersions),
+#'                ncol=nsamples)
 #' ## estimating negative binomial parameters
-#' estparam <- estimateNBParam(cnts, RNAseq = 'bulk',
-#' estFramework = 'MatchMoments', sigma=1.96)
-#' plotNBParam(estparam)
+#' estparam <- estimateParam(countData=cnts,
+#'                           Distribution='NB', RNAseq="bulk",
+#'                           normalisation='MR', sigma=1.96)
+#' plotParam(estparam, annot=F)
 #' }
-#' @author Beate
-#' @rdname estimateNBParam
+#' @author Beate Vieth
+#' @rdname estimateParam
 #' @export
-estimateNBParam <- function(countData, cData=NULL, design=NULL,
-                     RNAseq=c("bulk", "singlecell"),
-                     estFramework=c('edgeR', 'DESeq2', 'MatchMoments'),
-                     sigma=1.96) {
-  if (RNAseq == 'bulk') {
-    if (estFramework == 'edgeR') { #use edgeR
-      res = .getDist.edgeR.bulk(countData, cData, design, sigma)
-    }
-    if (estFramework == 'DESeq2') { #use DESeq2
-      res = .getDist.DESeq2.bulk(countData, cData, design, sigma)
-    }
-    if (estFramework == 'MatchMoments') { #use MatchMoments
-      message("Design information will be ignored! Please provide count measurements of one group only, e.g. the control group")
-      res = .getDist.MatchMoments.bulk(countData, sigma)
+estimateParam <- function(countData,
+                          spikeData=NULL,
+                          spikeInfo = NULL,
+                          Lengths=NULL,
+                          MeanFragLengths=NULL,
+                          Distribution=c('NB', 'ZINB'),
+                          RNAseq=c("bulk", "singlecell"),
+                          normalisation=c('TMM','MR','PosCounts','UQ', 'scran', 'SCnorm', 'RUVg', 'BASiCS', 'Census'),
+                          sigma=1.96,
+                          NCores=NULL) {
+
+  # Inform users of inappropiate choices
+  if (RNAseq == 'bulk' && Distribution=='ZINB') {
+    message("Zero-inflated negative binomial is not implemented for bulk data. Setting it to negative binomial.")
+    Distribution="NB"
+  }
+  if (RNAseq=='singlecell' && normalisation=='MR') {
+    message(paste0(normalisation, " has been developed for bulk data and it is rather likely that it will not work. \nPlease consider using a method that can handle single cell data, e.g. PosCounts, scran, SCnorm."))
+  }
+  if (normalisation=='Census') {
+    message(paste0(normalisation, " should only be used for non-UMI methods! \nFor more information, please consult the monocle vignette."))
+    if (normalisation=='Census' && is.null(Lengths)) {
+      message(paste0(normalisation, " should be used in combination with transcript lengths. \nIf the library is paired-end, please also provide the mean fragment length which can be determined by e.g. Picard."))
     }
   }
 
-  if (RNAseq == 'singlecell') {
-    if (estFramework == 'edgeR') { #use edgeR
-      res = .getDist.edgeR.sc(countData, cData, design, sigma)
-    }
-    if (estFramework == 'DESeq2') { #use DESeq2
-      res = .getDist.DESeq2.sc(countData, cData, design, sigma)
-    }
-    if (estFramework == 'MatchMoments') { #use MatchMoments method
-      message("Design information will be ignored! Please provide count measurements of one group only, e.g. the control group.")
-      res = .getDist.MatchMoments.sc(countData, sigma)
-    }
+  # STOP if combination of options is not supported/would not work!
+  if (RNAseq=='bulk' && normalisation %in% c('BASiCS', 'Census')) {
+    stop(message(paste0(normalisation, " is only developed and implemented for single cell RNA-seq experiments.")))
   }
-  res2 <- c(res, list(RNAseq = RNAseq, estFramework = estFramework, sigma=sigma))
-  attr(res2, 'param.type') <- "estimated"
+  if (normalisation %in% c('RUVg', 'BASiCS') && is.null(spikeData)) {
+    stop(message(paste0(normalisation, " needs spike-in information! \nPlease provide an additional table of spike-in read counts.")))
+  }
+  if (normalisation=='BASiCS' && is.null(spikeInfo)) {
+    stop(message(paste0(normalisation, " needs spike-in information! \nPlease provide an additional table of spike-in molecule counts, see the BASiCS vignette for details.")))
+  }
+
+
+  # run estimation
+  res = .run.estParam(countData=countData,
+                      spikeData=spikeData,
+                      spikeInfo=spikeInfo,
+                      Lengths=Lengths,
+                      MeanFragLengths=MeanFragLengths,
+                      Distribution=Distribution,
+                      RNAseq=RNAseq,
+                      normalisation=normalisation,
+                      sigma=sigma,
+                      NCores=NCores)
+
   # inform users
-  if (RNAseq=='bulk' && c(res$grand.dropout>0.5 || is.null(res$p0.cut) )) {message('The provided bulk data has frequent dropouts. Consider using single cell estimation framework and testing.')}
+  if (RNAseq=='bulk' && c(res$grand.dropout>0.5 || is.null(res$p0.cut) ))
+  {message('The provided bulk data has frequent dropouts.
+             Consider using single cell estimation framework.')}
+
+  # make output
+  res2 <- c(res, list(RNAseq = RNAseq,
+                      normFramework=normalisation,
+                      sigma=sigma))
+  attr(res2, 'param.type') <- "estimated"
+  attr(res2, 'distribution.type') <- Distribution
 
   return(res2)
 }
 
-####################################################
-#### estParam:   edgeR
-####################################################
-
-#' @importFrom edgeR DGEList calcNormFactors cpm.default estimateDisp cpm.default
-#' @importFrom msir loess.sd
-# #' @importFrom drc drm LL.2
-#' @importFrom cobs cobs
-#' @importFrom stats model.matrix runif predict
-.getDist.edgeR.bulk <- function(countData=countData, cData=cData, design=design, sigma=sigma){
-
-  # kick out empty samples
-  totalS <- ncol(countData)
-  totalG <- nrow(countData)
-  fullS <- colSums(countData) > 0
-  estS <- sum(fullS, na.rm = T)
-  DetectG <- rowSums(countData) > 0
-  countData <- countData[DetectG,fullS]
-  grand.dropout <- sum(countData == 0)/(nrow(countData)*ncol(countData))
-
-  # fill in pseudonames if missing
-  if (is.null(rownames(countData))) {
-    rownames(countData) <- paste0("G", 1:nrow(countData))
-  }
-  if (is.null(colnames(countData))) {
-    colnames(countData) <- paste0("S", 1:ncol(countData))
-  }
-
-  if (is.null(cData)) {
-    cData <- NULL
-  } else {
-    cData = as.data.frame(cData, stringsAsFactors = F)
-    cData = cData[fullS,]
-  }
-
-  dge = edgeR::DGEList(counts = countData,lib.size = colSums(countData), samples = cData)
-  dge = edgeR::calcNormFactors(dge)
-
-  libsize = dge$samples$lib.size
-  names(libsize) = rownames(dge$samples)
-
-  # dropout component
-  if (!is.null(design)) {
-    modelmat <- stats::model.matrix(design, data = cData)
-    dge2 <- edgeR::estimateDisp(y = dge, design = modelmat, verbose = F)
-  }
-  if (is.null(design)) {
-    dge2 = edgeR::estimateDisp(y = dge)
-  }
-
-  mu = base::rowMeans(dge2$counts / dge2$samples$norm.factors)
-  lmu = log2(mu + 1)
-
-  nsamples = ncol(dge2$counts)
-  counts0 = dge2$counts == 0
-  nn0 = rowSums(!counts0)
-  p0 = (nsamples - nn0)/nsamples
-
-  #meanp0fit
-  # meanp0fit = suppressWarnings(drc::drm(p0 ~ lmu, fct = LL.2(), type = "binomial"))
-
-  # cut for p0
-  cobs.fit <- cobs::cobs(x = lmu, y = p0, constraint = 'decrease', nknots = 20, print.warn = F, print.mesg = F)
-  cobs.sim <- stats::runif(1000, min(lmu),  max(lmu))
-  cobs.predict <- as.data.frame(stats::predict(cobs.fit, cobs.sim))
-  cobs.predict[,"fit"] <- ifelse(cobs.predict$fit < 0, 0, cobs.predict[,"fit"])
-  cobs.predict <- cobs.predict[cobs.predict[,'fit'] < 0.05,]
-  p0.cut <- as.numeric(cobs.predict[which.max(cobs.predict[,'fit']), 'z'])
-
-  # expressed component
-
-  # kick out lowly expressed genes
-  min.cpm <- as.numeric(edgeR::cpm.default(5, mean(dge$samples$lib.size)))
-  keep <- rowSums(edgeR::cpm.default(countData) > min.cpm) >= 2
-  estG <- sum(keep, na.rm = T)
-  dge3 <- edgeR::DGEList(counts = countData[keep,],lib.size = colSums(countData[keep,]), samples = cData)
-  dge3 <- edgeR::calcNormFactors(dge3)
-
-  # mean, dispersion and size
-  if (!is.null(design)) {
-    modelmat = stats::model.matrix(~design, data = cData)
-    dge3 = edgeR::estimateDisp(y = dge3, design = modelmat, verbose = F)
-    mu2 = base::rowMeans(dge3$counts / dge3$samples$norm.factors)
-    phi.g = dge3$tagwise.dispersion
-    phi.c = dge3$common.dispersion
-    size = 1 / phi.g
-  }
-  if (is.null(design)) {
-    dge3 = edgeR::estimateDisp(y = dge3, verbose = F)
-    mu2 = base::rowMeans(dge3$counts / dge3$samples$norm.factors)
-    phi.g = dge3$tagwise.dispersion
-    phi.c = dge3$common.dispersion
-    size = 1 / phi.g
-  }
-
-  lmu2 = log2(mu2 + 1)
-  ldisp = log2(phi.g)
-  lsize = log2(size)
-  sf = dge3$samples$norm.factors
-  names(sf) = rownames(dge3$samples)
-  p0 = p0[keep]
-
-  # meansizefit
-  meansizefit = msir::loess.sd(lsize ~ lmu2, nsigma = sigma)
-
-  # meandispfit
-  meandispfit = msir::loess.sd(ldisp ~ lmu2, nsigma = sigma)
-
-  list(seqDepth = libsize, means = mu2, dispersion = phi.g, common.dispersion = phi.c, size = size, p0 = p0, meansizefit = meansizefit, meandispfit = meandispfit, p0.cut = p0.cut, grand.dropout = grand.dropout, sf = sf, totalS = totalS, totalG = totalG, estS = estS, estG = estG)
-}
-
-#' @importFrom edgeR DGEList calcNormFactors cpm.default estimateDisp cpm.default
-#' @importFrom msir loess.sd
-# #' @importFrom drc drm LL.2
-#' @importFrom cobs cobs
-#' @importFrom stats model.matrix runif predict
-#' @importFrom scater sizeFactors newSCESet
-.getDist.edgeR.sc <- function(countData=countData, cData=cData, design=design, sigma=sigma){
-
-  # kick out empty samples and lowly expressed genes
-  totalS <- ncol(countData)
-  totalG <- nrow(countData)
-  fullS <- colSums(countData) > 0
-  DetectG <- rowMeans(countData) > 0
-  countData <- countData[DetectG,fullS]
-  grand.dropout <- sum(countData == 0)/(nrow(countData)*ncol(countData))
-
-  # fill in pseudonames if missing
-  if (is.null(rownames(countData))) {
-    rownames(countData) <- paste0("G", 1:nrow(countData))
-  }
-  if (is.null(colnames(countData))) {
-    colnames(countData) <- paste0("S", 1:ncol(countData))
-  }
-
-  # scran size factors
-  sce <- .scran.calc(cnts = countData)
-
-  # kick out zero size factor samples
-  sf <- scater::sizeFactors(sce)
-  sce2 <- suppressWarnings(scater::newSCESet(countData = data.frame(countData[,sf > 0])))
-  scater::sizeFactors(sce2) <- sf[sf > 0]
-  estS <- sum(sf > 0, na.rm = T)
-
-  # convert to edgeR object
-  dge1 <- .convertToedgeR(sce2)
-
-  if (is.null(cData)) {
-    cData <- NULL
-    dge <- dge1
-  }else {
-    cData <- as.data.frame(cData, stringsAsFactors = F)
-    cData <- cData[sf > 0,]
-    dge <- edgeR::DGEList(counts = dge1$counts, lib.size = dge1$samples$lib.size,
-                                  norm.factors = dge1$samples$norm.factors, samples = cData)
-  }
-
-  libsize = dge$samples$lib.size
-  names(libsize) = rownames(dge$samples)
-
-  # dropout and expressed component
-  if (!is.null(design)) {
-    modelmat = stats::model.matrix(design, data = cData)
-    dge2 = edgeR::estimateDisp(y = dge, design = modelmat, verbose = F)
-    mu2 = rowMeans(dge2$counts / dge2$samples$norm.factors)
-    phi.g = dge2$tagwise.dispersion
-    phi.c = dge2$common.dispersion
-    size = 1 / phi.g
-  }
-  if (is.null(design)) {
-    dge2 = edgeR::estimateDisp(y = dge, verbose = F)
-    mu2 = rowMeans(dge2$counts / dge2$samples$norm.factors)
-    phi.g = dge2$tagwise.dispersion
-    phi.c = dge2$common.dispersion
-    size = 1 / phi.g
-  }
-
-  estG <- length(mu2)
-  # dropout
-  nsamples = ncol(dge2$counts)
-  counts0 = dge2$counts == 0
-  nn0 = rowSums(!counts0)
-  p0 = (nsamples - nn0)/nsamples
-
-  # mean, dispersion and size
-  lmu2 = log2(mu2 + 1)
-  ldisp = log2(phi.g)
-  lsize = log2(size)
-  sf = dge2$samples$norm.factors
-  names(sf) = rownames(dge$samples)
-
-  #meanp0fit
-  # meanp0fit = suppressWarnings(drc::drm(p0 ~ lmu2, fct = LL.2(), type = "binomial"))
-
-  # cut for p0
-  cobs.fit <- cobs::cobs(x = lmu2, y = p0, constraint = 'decrease', nknots = 20, print.warn = F, print.mesg = F)
-  cobs.sim <- runif(1000, min(lmu2),  max(lmu2))
-  cobs.predict <- as.data.frame(stats::predict(cobs.fit, cobs.sim))
-  cobs.predict[,"fit"] <- ifelse(cobs.predict$fit < 0, 0, cobs.predict[,"fit"])
-  cobs.predict <- cobs.predict[cobs.predict[,'fit'] < 0.05,]
-  p0.cut <- as.numeric(cobs.predict[which.max(cobs.predict[,'fit']), 'z'])
-
-  # meansizefit
-  meansizefit = msir::loess.sd(lsize ~ lmu2, nsigma = sigma)
-
-  # meandispfit
-  meandispfit = msir::loess.sd(ldisp ~ lmu2, nsigma = sigma)
-
-  list(seqDepth = libsize, means = mu2, dispersion = phi.g, common.dispersion = phi.c, size = size, p0 = p0, meansizefit = meansizefit, meandispfit = meandispfit, p0.cut = p0.cut, grand.dropout = grand.dropout, sf = sf, totalS = totalS, totalG = totalG, estS = estS, estG = estG)
-}
-
-####################################################
-#### estParam: DESeq2
-####################################################
-
-#' @importFrom DESeq2 DESeqDataSetFromMatrix estimateSizeFactors estimateDispersions dispersionFunction sizeFactors counts
-#' @importFrom S4Vectors mcols
-#' @importFrom msir loess.sd
-# #' @importFrom drc drm LL.2
-#' @importFrom cobs cobs
-#' @importFrom stats model.matrix runif predict
-.getDist.DESeq2.bulk <- function(countData=countData, cData=cData, design=design, sigma=sigma) {
-
-  # kick out empty samples
-  totalS <- ncol(countData)
-  totalG <- nrow(countData)
-  fullS <- colSums(countData) > 0
-  estS <- sum(fullS, na.rm = T)
-  DetectG <- rowSums(countData) > 0
-  countData <- countData[DetectG,fullS]
-  grand.dropout <- sum(countData == 0)/(nrow(countData)*ncol(countData))
-
-  # fill in pseudonames if missing
-  if (is.null(rownames(countData))) {
-    rownames(countData) <- paste0("G", 1:nrow(countData))
-  }
-  if (is.null(colnames(countData))) {
-    colnames(countData) <- paste0("S", 1:ncol(countData))
-  }
-  if (!is.null(cData) && !rownames(cData)==colnames(countData)) {
-    rownames(cData) <- colnames(countData)
-  }
-
-  if (is.null(cData)) {
-    group.df <- data.frame(group = rep("A", ncol(countData)), row.names=colnames(countData), stringsAsFactors = T)
-    design <- ~1
-  }
-  if (!is.null(cData)) {
-    tmp <- cData[fullS,]
-    group.df <- data.frame(tmp, stringsAsFactors = T, row.names=colnames(countData))
-    colnames(group.df) <- colnames(cData)
-  }
-
-  dds <- suppressWarnings(DESeq2::DESeqDataSetFromMatrix(countData = countData,
-                                        colData = group.df,
-                                        design = design,
-                                        tidy = FALSE, ignoreRank = FALSE))
-  dds  <- DESeq2::estimateSizeFactors(dds)
-  dds  <- DESeq2::estimateDispersions(dds, quiet = T)
-  libsize <- as.vector(colSums(DESeq2::counts(dds)))
-  names(libsize) <- colnames(counts(dds))
-
-  # dropout component
-  mu <- as.vector(S4Vectors::mcols(dds)[, "baseMean"])
-  lmu <- log2(mu + 1)
-  nsamples = ncol(counts(dds, normalize = F))
-  counts0 = counts(dds, normalize = F) == 0
-  nn0 = rowSums(!counts0)
-  p0 = (nsamples - nn0)/nsamples
-
-  #meanp0fit
-  # meanp0fit <- suppressWarnings(drc::drm(p0 ~ lmu, fct = LL.2(), type = "binomial"))
-
-  # cut for p0
-  cobs.fit <- cobs::cobs(x = lmu, y = p0, constraint = 'decrease', nknots = 20, print.warn = F, print.mesg = F)
-  cobs.sim <- runif(1000, min(lmu),  max(lmu))
-  cobs.predict <- as.data.frame(stats::predict(cobs.fit, cobs.sim))
-  cobs.predict[,"fit"] <- ifelse(cobs.predict$fit < 0, 0, cobs.predict[,"fit"])
-  cobs.predict <- cobs.predict[cobs.predict[,'fit'] < 0.05,]
-  p0.cut <- as.numeric(cobs.predict[which.max(cobs.predict[,'fit']), 'z'])
-
-  # expressed component
-
-  # kick out lowly expressed genes
-  idx <- rowSums( counts(dds, normalized = TRUE) >= 5 ) >= 1
-  p0 <- p0[idx]
-  dds2 <- dds[idx,]
-  dds2  <- DESeq2::estimateSizeFactors(dds2)
-  dds2  <- DESeq2::estimateDispersions(dds2, quiet = T)
-
-  mindisp <- which(S4Vectors::mcols(dds2)$dispGeneEst > 1e-4)
-  estG <- length(mindisp)
-  mu2 <- as.vector(S4Vectors::mcols(dds2)[mindisp, "baseMean"])
-  phi.g <- as.vector(S4Vectors::mcols(dds2)[mindisp, "dispGeneEst"])
-  p0 <- p0[mindisp]
-  phi.c <- mean(phi.g)
-  size <- 1 / phi.g
-  lsize = log2(size)
-  lmu2 = log2(mu2 + 1)
-  ldisp = log2(phi.g)
-
-  sf <- DESeq2::sizeFactors(dds2)
-
-  # meansizefit
-  meansizefit = msir::loess.sd(lsize ~ lmu2, nsigma = sigma)
-
-  # meandispfit
-  meandispfit = msir::loess.sd(ldisp ~ lmu2, nsigma = sigma)
-
-  list(seqDepth = libsize, means = mu2, dispersion = phi.g, common.dispersion = phi.c, size = size, p0 = p0, meansizefit = meansizefit, meandispfit = meandispfit, p0.cut = p0.cut, grand.dropout = grand.dropout, sf = sf, totalS = totalS, totalG = totalG, estS = estS, estG = estG)
-}
-
-#' @importFrom DESeq2 DESeqDataSetFromMatrix estimateSizeFactors estimateDispersions dispersionFunction sizeFactors counts
-#' @importFrom S4Vectors mcols
-#' @importFrom msir loess.sd
-# #' @importFrom drc drm LL.2
-#' @importFrom cobs cobs
-#' @importFrom stats model.matrix runif predict
-#' @importFrom scater newSCESet sizeFactors counts
-.getDist.DESeq2.sc <- function(countData=countData, cData=cData, design=design, sigma=sigma) {
-
-  # kick out empty samples and lowly expressed genes
-  totalS <- ncol(countData)
-  totalG <- nrow(countData)
-  fullS <- colSums(countData) > 0
-  DetectG <- rowMeans(countData) > 0
-  countData <- countData[DetectG,fullS]
-  cData <- cData[fullS,]
-  grand.dropout <- sum(countData == 0)/(nrow(countData)*ncol(countData))
-
-  # fill in pseudonames if missing
-  if (is.null(rownames(countData))) {
-    rownames(countData) <- paste0("G", 1:nrow(countData))
-  }
-  if (is.null(colnames(countData))) {
-    colnames(countData) <- paste0("S", 1:ncol(countData))
-  }
-  if (!is.null(cData) && !rownames(cData)==colnames(countData)) {
-    rownames(cData) <- colnames(countData)
-  }
-
-  # scran size factors
-  sce <- .scran.calc(cnts = countData)
-
-  # kick out zero size factor samples
-  sf <- scater::sizeFactors(sce)
-  sce2 <- suppressWarnings(scater::newSCESet(countData = data.frame(countData[,sf > 0])))
-  scater::sizeFactors(sce2) <- sf[sf > 0]
-  countData <- scater::counts(sce2)
-
-  if (is.null(cData)) {
-    group.df <- data.frame(group = rep("A", ncol(countData)), row.names=colnames(countData), stringsAsFactors = T)
-    design <- ~1
-  }
-  if (!is.null(cData)) {
-    tmp <- cData[fullS,]
-    group.df <- data.frame(tmp, stringsAsFactors = T, row.names=colnames(countData))
-    colnames(group.df) <- colnames(cData)
-  }
-
-  dds <- DESeq2::DESeqDataSetFromMatrix(countData = countData,
-                                        colData = group.df,
-                                        design = design,
-                                        tidy = FALSE, ignoreRank = FALSE)
-  DESeq2::sizeFactors(dds)  <- scater::sizeFactors(sce2)
-  dds  <- DESeq2::estimateDispersions(dds, quiet = T)
-  libsize <- as.vector(colSums(DESeq2::counts(dds)))
-  names(libsize) <- colnames(DESeq2::counts(dds))
-  sf <- DESeq2::sizeFactors(dds)
-
-  # NB parameters and dropout
-  mindisp <- which(S4Vectors::mcols(dds)$dispGeneEst > 1e-4)
-  mu <- as.vector(S4Vectors::mcols(dds)[mindisp, "baseMean"])
-  phi.g <- as.vector(S4Vectors::mcols(dds)[mindisp, "dispGeneEst"])
-  phi.c <- mean(phi.g)
-  size <- 1 / phi.g
-  lsize = log2(size)
-  lmu <- log2(mu + 1)
-  ldisp <- log2(phi.g)
-  nsamples = ncol(DESeq2::counts(dds, normalize = F))
-  counts0 = DESeq2::counts(dds, normalize = F) == 0
-  nn0 = rowSums(!counts0)
-  p0 = (nsamples - nn0)/nsamples
-
-  estS <- length(sf)
-  estG <- length(mu)
-
-  # cut for p0
-  cobs.fit <- cobs::cobs(x = lmu, y = p0, constraint = 'decrease', nknots = 20, print.warn = F, print.mesg = F)
-  cobs.sim <- runif(1000, min(lmu),  max(lmu))
-  cobs.predict <- as.data.frame(stats::predict(cobs.fit, cobs.sim))
-  cobs.predict[,"fit"] <- ifelse(cobs.predict$fit < 0, 0, cobs.predict[,"fit"])
-  cobs.predict <- cobs.predict[cobs.predict[,'fit'] < 0.05,]
-  p0.cut <- as.numeric(cobs.predict[which.max(cobs.predict[,'fit']), 'z'])
-
-  #meanp0fit
-  # meanp0fit = suppressWarnings(drc::drm(p0 ~ lmu, fct = LL.2(), type = "binomial"))
-
-  # meansizefit
-  meansizefit = msir::loess.sd(lsize ~ lmu, nsigma = sigma)
-
-  # meandispfit
-  meandispfit = msir::loess.sd(ldisp ~ lmu, nsigma = sigma)
-
-  list(seqDepth = libsize, means = mu, dispersion = phi.g, common.dispersion = phi.c, size = size, p0 = p0, meansizefit = meansizefit, meandispfit = meandispfit, p0.cut = p0.cut, grand.dropout = grand.dropout, sf = sf, totalS = totalS, totalG = totalG, estS = estS, estG = estG)
-}
-
-####################################################
-#### estParam: MatchMoments
-####################################################
-
-#' @importFrom msir loess.sd
-# #' @importFrom drc drm LL.2
-#' @importFrom cobs cobs
-#' @importFrom stats model.matrix runif predict median
-.getDist.MatchMoments.bulk <- function(countData = countData, sigma=sigma){
-
-  totalS <- ncol(countData)
-  totalG <- nrow(countData)
-  nsamples = dim(countData)[2]
-
-  # fill in pseudonames if missing
-  if (is.null(rownames(countData))) {
-    rownames(countData) <- paste0("G", 1:nrow(countData))
-  }
-  if (is.null(colnames(countData))) {
-    colnames(countData) <- paste0("S", 1:ncol(countData))
-  }
-
-  counts0 = countData == 0
-  nn0 = rowSums(!counts0)
-  if (any(nn0 == 1)) {
-    countData = countData[nn0 > 1, ]
-    nn0 = nn0[nn0 > 1]
-    counts0 = countData == 0
-  }
-  grand.dropout <- sum(countData == 0)/(nrow(countData)*ncol(countData))
-
-  seqDepth <- colSums(countData)
-  names(seqDepth) <- colnames(countData)
-  sf <- seqDepth/stats::median(seqDepth)
-  X2 <- sweep(countData, 2, sf, FUN = "/")
-  names(sf) <- colnames(countData)
-
-  # the negative binomial portion
-  mu = rowSums((!counts0) * X2)/nn0
-  s2 = rowSums((!counts0) * (X2 - mu) ^ 2)/(nn0 - 1)
-  size = mu ^ 2 / (s2 - mu + 1e-04)
-  size = ifelse(size > 0, size, NA)
-  p0 = (nsamples - nn0)/nsamples
-  mu = mu[!is.na(size)]
-  p0 = p0[!is.na(size)]
-  size = size[!is.na(size)]
-  phi.g = 1/size
-  phi.c = mean(phi.g)
-  lmu = log2(mu+1)
-  ldisp = log2(phi.g)
-  lsize = log2(size)
-
-  estG <- length(mu)
-  estS <- length(sf)
-
-  #meanp0fit
-  # meanp0fit = suppressWarnings(drc::drm(p0 ~ lmu, fct = LL.2(), type = "binomial"))
-
-  # cut for p0
-  cobs.fit <- cobs::cobs(x = lmu, y = p0, constraint = 'decrease', nknots = 20, print.warn = F, print.mesg = F)
-  cobs.sim <- runif(1000, min(lmu),  max(lmu))
-  cobs.predict <- as.data.frame(stats::predict(cobs.fit, cobs.sim))
-  cobs.predict[,"fit"] <- ifelse(cobs.predict$fit < 0, 0, cobs.predict[,"fit"])
-  cobs.predict <- cobs.predict[cobs.predict[,'fit'] < 0.05,]
-  p0.cut <- as.numeric(cobs.predict[which.max(cobs.predict[,'fit']), 'z'])
-
-  # meansizefit
-  meansizefit = msir::loess.sd(lsize ~ lmu, nsigma = sigma)
-
-  # meandispfit
-  meandispfit = msir::loess.sd(ldisp ~ lmu, nsigma = sigma)
-
-  list(seqDepth = seqDepth, means = mu, dispersion = phi.g, common.dispersion = phi.c, size = size, p0 = p0, meansizefit = meansizefit, meandispfit = meandispfit, p0.cut = p0.cut, grand.dropout = grand.dropout, sf = sf, totalS = totalS, totalG = totalG, estS = estS, estG = estG)
-}
-
-#' @importFrom msir loess.sd
-# #' @importFrom drc drm LL.2
-#' @importFrom cobs cobs
-#' @importFrom stats model.matrix runif predict
-#' @importFrom scater newSCESet sizeFactors
-.getDist.MatchMoments.sc <- function(countData = countData, sigma=sigma){
-
-  # kick out empty samples
-  totalS <- ncol(countData)
-  totalG <- nrow(countData)
-  fullS <- colSums(countData) > 0
-  DetectG <- rowSums(countData) > 0
-  countData <- countData[DetectG,fullS]
-
-  # fill in pseudonames if missing
-  if (is.null(rownames(countData))) {
-    rownames(countData) <- paste0("G", 1:nrow(countData))
-  }
-  if (is.null(colnames(countData))) {
-    colnames(countData) <- paste0("S", 1:ncol(countData))
-  }
-
-  grand.dropout <- sum(countData == 0)/(nrow(countData)*ncol(countData))
-
-  # scran size factors
-  sce <- .scran.calc(cnts = countData)
-
-  # kick out zero size factor samples
-  sf <- scater::sizeFactors(sce)
-  countData <- countData[,sf > 0]
-  sce2 <- suppressWarnings(newSCESet(countData  = data.frame(countData)))
-  scater::sizeFactors(sce2) <- sf[sf > 0]
-
-  sf <- scater::sizeFactors(sce2)
-
-  nsamples = dim(countData)[2]
-  counts0 = countData == 0
-  nn0 = rowSums(!counts0)
-  if (any(nn0 == 1)) {
-    countData = countData[nn0 > 1, ]
-    nn0 = nn0[nn0 > 1]
-    counts0 = countData == 0
-  }
-
-  seqDepth = colSums(countData)
-  names(seqDepth) = colnames(countData)
-  nf <- log(sf/seqDepth)
-  nf <- exp(nf - mean(nf, na.rm = T))
-  sf <- nf
-
-  X2 = sweep(countData, 2, sf, FUN = "/")
-
-
-  # the negative binomial portion
-  mu = rowSums(X2)/ncol(X2)
-  s2 = rowSums((X2 - mu) ^ 2) / ncol(X2)
-  size = mu ^ 2 / (s2 - mu + 1e-04)
-  size = ifelse(size > 0, size, NA)
-  p0 = (nsamples - nn0)/nsamples
-  mu = mu[!is.na(size)]
-  p0 = p0[!is.na(size)]
-  size = size[!is.na(size)]
-  phi.g = 1/size
-  phi.c = mean(phi.g)
-  ldisp = log2(phi.g)
-  lsize = log2(size)
-  lmu = log2(mu + 1)
-
-  estG <- length(mu)
-  estS <- length(sf)
-
-  #meanp0fit
-  # meanp0fit = suppressWarnings(drc::drm(p0 ~ lmu, fct = LL.2(), type = "binomial"))
-
-  # cut for p0
-  cobs.fit <- cobs::cobs(x = lmu, y = p0, constraint = 'decrease', nknots = 20, print.warn = F, print.mesg = F)
-  cobs.sim <- runif(1000, min(lmu),  max(lmu))
-  cobs.predict <- as.data.frame(stats::predict(cobs.fit, cobs.sim))
-  cobs.predict[,"fit"] <- ifelse(cobs.predict$fit < 0, 0, cobs.predict[,"fit"])
-  cobs.predict <- cobs.predict[cobs.predict[,'fit'] < 0.05,]
-  p0.cut <- as.numeric(cobs.predict[which.max(cobs.predict[,'fit']), 'z'])
-
-
-  # meansizefit
-  meansizefit = msir::loess.sd(lsize ~ lmu, nsigma = sigma)
-
-  # meandispfit
-  meandispfit = msir::loess.sd(ldisp ~ lmu, nsigma = sigma)
-
-  list(seqDepth = seqDepth, means = mu, dispersion = phi.g, common.dispersion = phi.c, size = size, p0 = p0, meansizefit = meansizefit, meandispfit = meandispfit, p0.cut = p0.cut, grand.dropout = grand.dropout, sf = sf, totalS = totalS, totalG = totalG, estS = estS, estG = estG)
-
-}
