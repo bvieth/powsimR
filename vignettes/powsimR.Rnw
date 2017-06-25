@@ -115,7 +115,7 @@ The basic workflow of \Rpackage{powsimR} is illustrated in figure \ref{fig:powsi
 \label{fig:powsim_scheme}
 \end{figure}
 
-\section{Parameter estimation}
+\section{Parameter Estimation}
 
 The parameters of the negative binomial distribution, i.e. mean and dispersion are estimated by the function \Rfunction{estimateParam}. In addition, the dropout probability, i.e. the fraction of zero counts per gene, is calculated.
 The user can choose between two estimation frameworks:
@@ -257,7 +257,7 @@ plotEvalRes(evalRes = evalDE,
 \subsection{Evaluate Simulation Framework}
 
 It is important to validate the appropiateness of the chosen simulation framework. The function \Rfunction{evaluateDist} compares the theoretical fit of the Poisson, negative binomial, zero-inflated Poisson and zero-inflated negative binomial and beta-Poisson distribution to the empirical RNA-seq read counts (\cite{Colin_Cameron2013-vb}, \cite{Kim2013-qo}, \cite{Delmans2016-ef}).
-The evaluation is then summarized with the function \Rfunction{summariseDist} which chooses the best fitting distribution per gene based on goodness-of-fit statistics (Chi-square test), Akaike Information Criterium and comparing observed dropouts with zero count prediction of the models.
+The evaluation is then plotted with the function \Rfunction{plotEvalDist} which summarizes the best fitting distribution per gene based on goodness-of-fit statistics (Chi-square test), Akaike Information Criterium, comparing observed dropouts with zero count prediction of the models and comparing the model fitness with Likelihood Ratio Test and Vuong Test.
 % As noted by other developers, goodness-of-fit tests are not an objective tool and heavily depend on sample sizes (\cite{Delignette-Muller2015-ie}). A graphical evaluation of the fitted distribution is considered the most appropiate way but for high-throughput sequencing an unrealistic recommendation.
 Bulk RNA-seq experiments are usually conducted with a small number of samples. We therefore recommend to rely on the goodness-of-fit validation by \cite{Mi2015-ri}. To use this approach in \Rfunction{evaluateDist}, the user should allow for permutation simulations by setting the value of nsims to at least 100. If available, the computation can be run on multiple cores by setting the number of cores (ncores).
 
