@@ -750,55 +750,67 @@
 
 # NBPSeq ------------------------------------------------------------------
 
-#' #' @importFrom NBPSeq nbp.test
-#' #' @importFrom edgeR DGEList calcNormFactors
-#' .run.NBPSeq <- function(dat) {
-#'
-#'   dge <- edgeR::DGEList(counts=dat$counts, group=factor(dat$designs))
-#'   if (dat$RNAseq=="bulk") {
-#'     start.time.params <- Sys.time()
-#'     dge <- edgeR::calcNormFactors(dge, method='TMM')
-#'     end.time.params <- Sys.time()
-#'     start.time.DE <- Sys.time()
-#'     res <- NBPSeq::nbp.test(counts=dge$counts, grp.ids=dat$designs, grp1=-1, grp2=1, norm.factors = dge$samples$norm.factors, lib.sizes = colSums(dge$counts), model.disp = "NBQ", print.level = 0)
-#'     end.time.DE <- Sys.time()
-#'   }
-#'   if (dat$RNAseq=="singlecell") {
-#'     # make sceset and calculate size factors
-#'     start.time.params <- Sys.time()
-#'     # make sceset and calculate size factors
-#'     sce <- .scran.calc(cnts = dat$counts)
-#'     dge <- .convertToedgeR(sce)
-#'     dge$samples$group <- factor(dat$designs)
-#'     end.time.params <- Sys.time()
-#'     start.time.DE <- Sys.time()
-#'     res <- NBPSeq::nbp.test(counts=dge$counts, grp.ids=dat$designs, grp1=-1, grp2=1, norm.factors = dge$samples$norm.factors, lib.sizes = colSums(dge$counts), model.disp = "NBQ", print.level = 0)
-#'     end.time.DE <- Sys.time()
-#'   }
-#'
-#'   # mean, disp, dropout
-#'   start.time.NB <- Sys.time()
-#'   norm.counts <- dge$counts / dge$samples$norm.factors
-#'   nsamples <- ncol(norm.counts)
-#'   counts0 <- norm.counts == 0
-#'   nn0 <- rowSums(!counts0)
-#'   p0 <- (nsamples - nn0)/nsamples
-#'   means = rowSums(norm.counts)/nsamples
-#'   s2 = rowSums((norm.counts - means)^2)/(nsamples - 1)
-#'   size = means^2/(s2 - means + 1e-04)
-#'   size = ifelse(size > 0, size, NA)
-#'   dispersion = 1/size
-#'   end.time.NB <- Sys.time()
-#'
-#'   ## construct results
-#'   result <- data.frame(geneIndex=rownames(dat$counts), means=means, dispersion=dispersion, dropout=p0, pval=res$pv.alues, fdr=rep(NA, nrow(dat$counts)), stringsAsFactors = F)
-#'   time.taken.params <- difftime(end.time.params, start.time.params, units="mins")
-#'   time.taken.DE <- difftime(end.time.DE, start.time.DE, units="mins")
-#'   time.taken.NB <- difftime(end.time.NB, start.time.NB, units="mins")
-#'   timing <- rbind(time.taken.params, time.taken.DE, time.taken.NB)
-#'   res <- list(result=result, timing=timing)
-#'   return(res)
-#' }
+#' @importFrom NBPSeq nbp.test
+#' @importFrom edgeR DGEList calcNormFactors
+.run.NBPSeq <- function(dat) {
+  start.time.params <- Sys.time()
+  # run normalisation
+  normData <- .norm.calc(normalisation=dat$normalisation,
+                         countData=dat$counts,
+                         spikeData=NULL,
+                         spikeInfo=NULL,
+                         Lengths=NULL,
+                         MeanFragLengths=NULL,
+                         NCores=ifelse(is.null(dat$ncores), 1, dat$ncores))
+  sf <- normData$size.factors
+  sf[sf<0] <- min(sf[sf > 0])
+  end.time.params <- Sys.time()
+
+  #run DE testing
+  start.time.DE <- Sys.time()
+  res <- NBPSeq::nbp.test(counts=dat$counts,
+                          grp.ids=dat$designs,
+                          grp1=-1, grp2=1,
+                          norm.factors = sf,
+                          lib.sizes = colSums(dat$counts),
+                          model.disp = "NBQ", print.level = 0)
+  end.time.DE <- Sys.time()
+
+  # parameter estimation
+  start.time.NB <- Sys.time()
+  means <- rowMeans(normData$NormCounts)
+  nsamples <- ncol(normData$NormCounts)
+  s2 = rowSums((normData$NormCounts - means)^2)/(nsamples - 1)
+  size = means^2/(s2 - means + 1e-04)
+  size = ifelse(size > 0, size, NA)
+  dispersion = 1/size
+  counts0 <- dat$counts == 0
+  nn0 <- rowSums(!counts0)
+  p0 <- (nsamples - nn0)/nsamples
+  end.time.NB <- Sys.time()
+
+  ## construct results
+  result <- data.frame(geneIndex=rownames(dat$counts),
+                       means=means,
+                       dispersion=dispersion,
+                       dropout=p0,
+                       pval=res$pv.alues,
+                       fdr=rep(NA, nrow(dat$counts)),
+                       lfc=res$log.fc,
+                       stringsAsFactors = F)
+  time.taken.params <- difftime(end.time.params,
+                                start.time.params,
+                                units="mins")
+  time.taken.DE <- difftime(end.time.DE,
+                            start.time.DE,
+                            units="mins")
+  time.taken.NB <- difftime(end.time.NB,
+                            start.time.NB,
+                            units="mins")
+  timing <- rbind(time.taken.params, time.taken.DE, time.taken.NB)
+  res <- list(result=result, timing=timing)
+  return(res)
+}
 
 
 # MAST --------------------------------------------------------------------
@@ -1103,70 +1115,86 @@
 
 # monocle -----------------------------------------------------------------
 
-#' #' @importFrom monocle newCellDataSet differentialGeneTest
-#' #' @importFrom VGAM tobit
-#' #' @importFrom edgeR cpm.DGEList
-#' #' @importFrom scater sizeFactors
-#' #' @importFrom methods new
-#' .run.monocle <- function(dat) {
-#'   if (dat$RNAseq=="bulk") {
-#'     stop("monocle is only for single cell RNAseq data analysis")
-#'   }
-#'   if (dat$RNAseq=="singlecell") {
-#'     start.time.params <- Sys.time()
-#'     # make sceset and calculate size factors
-#'     sce <- .scran.calc(cnts = dat$counts)
-#'     dge <- .convertToedgeR(sce)
-#'     dge$samples$group <- factor(dat$designs)
-#'     out.sf <- scater::sizeFactors(sce)
-#'     out.sf[out.sf<0] <- min(out.sf[out.sf > 0])
-#'     out.cpm <- edgeR::cpm.DGEList(dge, normalized.lib.sizes = T, log = F)
-#'   }
-#'     # make annotated dataframes for monocle
-#'     gene.dat <- data.frame(row.names = rownames(dge$counts), biotype=rep("protein_coding", nrow(dge$counts)), num_cells_expressed=rowSums(dge$counts>0))
-#'     cell.dat <- data.frame(row.names=colnames(dge$counts), Group=dge$samples$group)
-#'     fd <- new("AnnotatedDataFrame", data = gene.dat)
-#'     pd <- new("AnnotatedDataFrame", data = cell.dat)
-#'     ed <- out.cpm
-#'     # construct cell data set
-#'     cds <- monocle::newCellDataSet(cellData = ed, phenoData = pd, featureData = fd, expressionFamily = VGAM::tobit())
-#'     end.time.params <- Sys.time()
-#'
-#'     # run the testing
-#'     if(!is.null(dat$ncores)) {
-#'       start.time.DE <- Sys.time()
-#'       diff_test_res <- monocle::differentialGeneTest(cds, fullModelFormulaStr = "~Group", reducedModelFormulaStr = "~1", relative_expr = FALSE, cores = dat$ncores, verbose = FALSE)
-#'     }
-#'     if(is.null(dat$ncores)) {
-#'       start.time.DE <- Sys.time()
-#'       diff_test_res <- monocle::differentialGeneTest(cds, fullModelFormulaStr = "~Group", reducedModelFormulaStr = "~1", relative_expr = FALSE, cores = 1, verbose = FALSE)
-#'     }
-#'     res <- diff_test_res[match(rownames(dge$counts), rownames(diff_test_res)),]
-#'     end.time.DE <- Sys.time()
-#'
-#'     # mean, disp, droput
-#'     start.time.NB <- Sys.time()
-#'     norm.counts <- dge$counts / dge$samples$norm.factors
-#'     nsamples <- ncol(norm.counts)
-#'     counts0 <- norm.counts == 0
-#'     nn0 <- rowSums(!counts0)
-#'     p0 <- (nsamples - nn0)/nsamples
-#'     means = rowSums(norm.counts)/nsamples
-#'     s2 = rowSums((norm.counts - means)^2)/(nsamples - 1)
-#'     size = means^2/(s2 - means + 1e-04)
-#'     size = ifelse(size > 0, size, NA)
-#'     dispersion = 1/size
-#'     end.time.NB <- Sys.time()
-#'
-#'     # construct result data frame
-#'     result=data.frame(geneIndex=rownames(res), means=means, dispersion=dispersion, dropout=p0, pval=res$pval, fdr=rep(NA, nrow(res)), stringsAsFactors = F)
-#'     time.taken.params <- difftime(end.time.params, start.time.params, units="mins")
-#'     time.taken.DE <- difftime(end.time.DE, start.time.DE, units="mins")
-#'     time.taken.NB <- difftime(end.time.NB, start.time.NB, units="mins")
-#'     timing <- rbind(time.taken.params, time.taken.DE, time.taken.NB)
-#'     res <- list(result=result, timing=timing)
-#'     return(res)
-#' }
+#' @importFrom monocle newCellDataSet differentialGeneTest
+#' @importFrom BiocGenerics sizeFactors estimateDispersions sizeFactors<-
+#' @importFrom VGAM negbinomial.size
+#' @importFrom methods new
+.run.monocle <- function(dat) {
+  start.time.params <- Sys.time()
+  coldat <- data.frame(design=factor(dat$designs))
+  # run normalisation
+  normData <- .norm.calc(normalisation=dat$normalisation,
+                         countData=dat$counts,
+                         spikeData=NULL,
+                         spikeInfo=NULL,
+                         Lengths=NULL,
+                         MeanFragLengths=NULL,
+                         NCores=ifelse(is.null(dat$ncores), 1, dat$ncores))
+  sf <- normData$size.factors
+  sf[sf<0] <- min(sf[sf > 0])
+  # make annotated dataframes for monocle
+  gene.dat <- data.frame(row.names = rownames(dat$counts),
+                         biotype=rep("protein_coding", nrow(dat$counts)),
+                         num_cells_expressed=rowSums(dat$counts>0))
+  cell.dat <- data.frame(row.names=colnames(dat$counts),
+                         Group=dat$designs)
+  fd <- new("AnnotatedDataFrame", data = gene.dat)
+  pd <- new("AnnotatedDataFrame", data = cell.dat)
+  ed <- dat$counts
+  # construct cell data set
+  cds <- monocle::newCellDataSet(cellData = ed,
+                                 phenoData = pd,
+                                 featureData = fd,
+                                 expressionFamily = VGAM::negbinomial.size())
+  sizeFactors(cds) <- sf
+  cds <- estimateDispersions(cds, cores = ifelse(is.null(dat$ncores), 1, dat$ncores))
+  end.time.params <- Sys.time()
+  # run the testing
+  start.time.DE <- Sys.time()
+  diff_test_res <- monocle::differentialGeneTest(cds,
+                                                 fullModelFormulaStr = "~Group",
+                                                 reducedModelFormulaStr = "~1",
+                                                 relative_expr = FALSE,
+                                                 cores = ifelse(is.null(dat$ncores), 1, dat$ncores),
+                                                 verbose = FALSE)
+  res <- diff_test_res[match(rownames(dat$counts), rownames(diff_test_res)),]
+  end.time.DE <- Sys.time()
+
+  # parameter estimation
+  start.time.NB <- Sys.time()
+  means <- rowMeans(normData$NormCounts)
+  nsamples <- ncol(normData$NormCounts)
+  s2 = rowSums((normData$NormCounts - means)^2)/(nsamples - 1)
+  size = means^2/(s2 - means + 1e-04)
+  size = ifelse(size > 0, size, NA)
+  dispersion = 1/size
+  counts0 <- dat$counts == 0
+  nn0 <- rowSums(!counts0)
+  p0 <- (nsamples - nn0)/nsamples
+  end.time.NB <- Sys.time()
+
+  ## construct results
+  result <- data.frame(geneIndex=rownames(res),
+                       means=means,
+                       dispersion=dispersion,
+                       dropout=p0,
+                       pval=res$pvalue,
+                       fdr=rep(NA, nrow(dat$counts)),
+                       lfc=rep(NA, nrow(dat$counts)),
+                       stringsAsFactors = F)
+  time.taken.params <- difftime(end.time.params,
+                                start.time.params,
+                                units="mins")
+  time.taken.DE <- difftime(end.time.DE,
+                            start.time.DE,
+                            units="mins")
+  time.taken.NB <- difftime(end.time.NB,
+                            start.time.NB,
+                            units="mins")
+  timing <- rbind(time.taken.params, time.taken.DE, time.taken.NB)
+  res <- list(result=result, timing=timing)
+  return(res)
+}
 
 
 # scDD --------------------------------------------------------------------
@@ -1233,5 +1261,7 @@
   return(res)
 }
 
+
+# D3E ---------------------------------------------------------------------
 
 # TODO: Do a system call since D3E is written in python

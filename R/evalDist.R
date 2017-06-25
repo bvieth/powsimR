@@ -50,7 +50,6 @@
 #' @author Beate Vieth
 #' @rdname evaluateDist
 #' @importFrom edgeR DGEList calcNormFactors cpm.DGEList estimateDisp glmFit zscoreNBinom
-#' @importFrom scater sizeFactors newSCESet
 #' @importFrom stats model.matrix glm logLik AIC dnbinom dpois fitted
 #' @importFrom MASS glm.nb
 #' @importFrom pscl zeroinfl vuong
@@ -91,17 +90,25 @@ evaluateDist <- function(cnts, RNAseq, ncores=1, nsims=1, frac.genes=1, min.mean
   }
 
   if (RNAseq=="singlecell") {
-    # make sceset and calculate size factors
-    sce <- suppressWarnings(.scran.calc(cnts = cnts))
-    # kick out negative size factor samples
-    sf <- scater::sizeFactors(sce)
-    sce2 <- suppressWarnings(scater::newSCESet(countData=data.frame(cnts[,sf>0])))
-    scater::sizeFactors(sce2) <- sf[sf>0]
-    # convert to edgeR object
-    dge <- .convertToedgeR(sce2)
-    dds <- .convertToDESeq(sce2)
-    # calculate normalised counts
-    out.normcounts <- DESeq2::counts(dds, normalized=T)
+    # run normalisation
+    normData <- .norm.calc(normalisation='scran',
+                           countData=cnts,
+                           spikeData=NULL,
+                           spikeInfo=NULL,
+                           Lengths=NULL,
+                           MeanFragLengths=NULL,
+                           NCores=ifelse(is.null(ncores), 1, ncores))
+    # calculate normalisation factors
+    sf <- normData$size.factors
+    sf[sf<0] <- min(sf[sf > 0])
+    nsf <- log(sf/colSums(cnts))
+    nsf <- exp(nsf - mean(nsf, na.rm=T))
+    # construct input object
+    dge <- edgeR::DGEList(counts = dat$counts,
+                          lib.size = colSums(dat$counts),
+                          norm.factors = nsf,
+                          group = factor(dat$designs),
+                          remove.zeros = FALSE)
     # calculate CPM values
     out.cpm <- edgeR::cpm.DGEList(dge, normalized.lib.sizes = T, log = F)
     # estimate dispersions
@@ -333,5 +340,15 @@ evaluateDist <- function(cnts, RNAseq, ncores=1, nsims=1, frac.genes=1, min.mean
   # estimated parameters
   # observed zeros
   # setup settings for estimation
-  return(list(edgeR_res= edgeR.res, GOF_res=gof.res, EST_res=estimate.res, ObservedZeros=ObservedZeros, evalDistsetup=c(ncores=ncores, nsims=nsims, frac.genes=frac.genes, min.meancount=min.meancount, min.libsize=min.libsize)))
+  return(list(edgeR_res= edgeR.res,
+              GOF_res=gof.res,
+              EST_res=estimate.res,
+              ObservedZeros=ObservedZeros,
+              evalDistsetup=c(ncores=ncores,
+                              nsims=nsims,
+                              frac.genes=frac.genes,
+                              min.meancount=min.meancount,
+                              min.libsize=min.libsize)
+              )
+         )
 }
