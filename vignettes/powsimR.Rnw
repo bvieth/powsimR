@@ -77,11 +77,11 @@ ipak <- function(pkg, repository=c('CRAN', 'Bioconductor', 'github')){
 }
 
 # CRAN PACKAGES
-cranpackages <- c("gamlss.dist", "methods", "stats", "moments", "doParallel", "parallel", "reshape2", "dplyr", "tidyr", "data.table", 'ggplot2', 'ggthemes', 'ggExtra', 'cowplot', 'scales', 'fitdistrplus', 'MASS', 'pscl', 'nonnest2', 'cobs', 'msir', 'drc', 'devtools', 'XML', 'splines')
+cranpackages <- c("gamlss.dist", "methods", "stats", "moments", "doParallel", "parallel", "reshape2", "dplyr", "tidyr", "data.table", 'ggplot2', 'ggthemes', 'ggExtra', 'cowplot', 'scales', 'fitdistrplus', 'MASS', 'pscl', 'nonnest2', 'cobs', 'msir', 'drc', 'devtools', 'XML', 'splines', 'msir')
 ipak(cranpackages, repository='CRAN')
 
 # BIOCONDUCTOR
-biocpackages <- c('S4Vectors', 'AnnotationDbi', 'Biobase', 'BiocParallel', 'BiocStyle', 'scater', 'scran', 'edgeR', 'limma', 'DESeq2', 'baySeq', 'NOISeq', 'EBSeq', 'DSS', 'MAST', 'ROTS', "IHW", 'qvalue', 'scDD', 'monocle')
+biocpackages <- c('S4Vectors', 'AnnotationDbi', 'Biobase', 'BiocParallel', 'BiocStyle', 'BiocGenerics', 'scater', 'scran', 'edgeR', 'limma', 'DESeq2', 'baySeq', 'NOISeq', 'EBSeq', 'DSS', 'MAST', 'ROTS', "IHW", 'qvalue', 'scDD', 'monocle')
 ipak(biocpackages, repository='Bioconductor')
 
 # GITHUB
@@ -110,7 +110,7 @@ The basic workflow of \Rpackage{powsimR} is illustrated in figure \ref{fig:powsi
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.9\linewidth]{powsim_schematic.jpeg}
+\includegraphics[width=0.95\linewidth]{powsim_schematic.pdf}
 \caption{\textbf{PowsimR schematic overview.} (A) Estimation: (B) Simulation: (C) Evaluation. Functions given in orange.}
 \label{fig:powsim_scheme}
 \end{figure}
