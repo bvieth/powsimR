@@ -32,7 +32,8 @@
 #' insilico.bulk <- insilicoNBParam(means=function(x) 2^runif(x, 9, 12),
 #' dispersion=0.2,
 #' dropout=function(x) runif(x, min = 0, max = 0.25),
-#' sf=function(x) rnorm(n=x, mean=1, sd=0.1), RNAseq='bulk')
+#' sf=function(x) truncnorm::rtruncnorm(x, a = 0.6, b = 1.4, mean=1, sd=0.2),
+#' RNAseq='bulk')
 #' ## Single cell RNA-seq experiment in silico parameters:
 #' insilico.singlecell <- insilicoNBParam(means=function(x) rgamma(x, 4, 2),
 #' dispersion=function(x) 2 + 150/x,
@@ -84,7 +85,7 @@ insilicoNBParam <- function(means, dispersion, dropout=NULL, sf=NULL, RNAseq=c("
 
   res <- list(means = means, dispersion = dispersion, p0 = dropout, sf = sf, RNAseq = RNAseq, estFramework = "in silico")
   attr(res, 'param.type') <- "insilico"
-  attr(params, 'Distribution') <- "NB"
+  attr(res, 'Distribution') <- "NB"
 
   return(res)
 }
@@ -100,7 +101,7 @@ insilicoNBParam <- function(means, dispersion, dropout=NULL, sf=NULL, RNAseq=c("
 #' Lengths=NULL, MeanFragLengths=NULL,
 #' Distribution=c('NB', 'ZINB'), RNAseq=c('bulk', 'singlecell'),
 #' normalisation=c('TMM','MR','PosCounts','UQ',
-#' 'scran', 'SCnorm', 'RUVg', 'BASiCS', 'Census'),
+#' 'scran', 'SCnorm', 'RUVg', 'BASiCS', 'Census', 'none'),
 #' sigma=1.96, NCores=NULL)
 #' @param countData is a count \code{matrix}. Rows correspond to genes, columns to samples.
 #' @param spikeData is a count \code{matrix}. Rows correspond to spike-ins, columns to samples. The order of columns should be the same as in the \code{countData}.
@@ -137,6 +138,7 @@ insilicoNBParam <- function(means, dispersion, dropout=NULL, sf=NULL, RNAseq=c("
 #' \item{scran, SCnorm}{apply the deconvolution and quantile regression normalization methods developed for sparse RNA-seq data as implemented in \code{\link[scran]{computeSumFactors}} and \code{\link[SCnorm]{SCnorm}}, respectively. For \code{SCnorm}, the user can also supply \code{spikeData}.}
 #' \item{RUVg}{removes unwanted variation by utilizing negative control genes, i.e. spike-ins stored in \code{spikeData}, as implemented in \code{\link[RUVSeq]{RUVg}}.}
 #' \item{BASiCS}{removes technical variation by utilizing negative control genes, i.e. spike-ins stored in \code{spikeData}, as implemented in \code{\link[BASiCS]{DenoisedCounts}}. Furthermore, the molecule counts of spike-ins added to the cell lysate need to be supplied in \code{spikeInfo}.}
+#' \item{none}{No normalisation is applied. This approach can be used for prenormalized expression estimates, e.g. cufflinks, RSEM or salmon.}
 #' }
 #' @examples
 #' \dontrun{
@@ -187,7 +189,7 @@ estimateParam <- function(countData,
                           MeanFragLengths=NULL,
                           Distribution=c('NB', 'ZINB'),
                           RNAseq=c("bulk", "singlecell"),
-                          normalisation=c('TMM','MR','PosCounts','UQ', 'scran', 'SCnorm', 'RUVg', 'BASiCS', 'Census'),
+                          normalisation=c('TMM','MR','PosCounts','UQ', 'scran', 'SCnorm', 'RUVg', 'BASiCS', 'Census', 'none'),
                           sigma=1.96,
                           NCores=NULL) {
 
@@ -206,6 +208,10 @@ estimateParam <- function(countData,
     }
   }
 
+  if (RNAseq=='singlecell' && normalisation=='MR') {
+    message(paste0(normalisation, " has been developed for bulk data and it is rather likely that it will not work. \nPlease consider using a method that can handle single cell data, e.g. PosCounts, scran, SCnorm."))
+  }
+
   # STOP if combination of options is not supported/would not work!
   if (RNAseq=='bulk' && normalisation %in% c('BASiCS', 'Census')) {
     stop(message(paste0(normalisation, " is only developed and implemented for single cell RNA-seq experiments.")))
@@ -213,8 +219,8 @@ estimateParam <- function(countData,
   if (normalisation %in% c('RUVg', 'BASiCS') && is.null(spikeData)) {
     stop(message(paste0(normalisation, " needs spike-in information! \nPlease provide an additional table of spike-in read counts.")))
   }
-  if (normalisation=='BASiCS' && is.null(spikeInfo)) {
-    stop(message(paste0(normalisation, " needs spike-in information! \nPlease provide an additional table of spike-in molecule counts, see the BASiCS vignette for details.")))
+  if (normalisation=='none' && any(apply(countData, 1, function(x) {is.integer(x)}))) {
+    stop(message(paste0(normalisation, " should only be done with pre-normalized data, eg. RSEM output.")))
   }
 
 
@@ -240,7 +246,7 @@ estimateParam <- function(countData,
                       normFramework=normalisation,
                       sigma=sigma))
   attr(res2, 'param.type') <- "estimated"
-  attr(res2, 'distribution.type') <- Distribution
+  attr(res2, 'Distribution') <- Distribution
 
   return(res2)
 }

@@ -93,10 +93,10 @@
                         remove.zeros = FALSE)
   # run DE testing
   design.mat <- stats::model.matrix( ~ dat$designs)
-  dge <- edgeR::estimateGLMRobustDisp(y=dge, design = design.mat)
+  dge <- edgeR::estimateDisp(y=dge, design = design.mat)
   end.time.params <- Sys.time()
   start.time.DE <- Sys.time()
-  fit.edgeR <- edgeR::glmQLFit(dge, design = design.mat)
+  fit.edgeR <- edgeR::glmQLFit(dge, design = design.mat, robust=TRUE)
   ql.edgeR <- edgeR::glmQLFTest(fit.edgeR)
   res.edgeR <- edgeR::topTags(ql.edgeR, adjust.method="BH", n=Inf, sort.by = 'none')
   end.time.DE <- Sys.time()
@@ -171,6 +171,7 @@
   fit <- limma::lmFit(object = v, design = design.mat)
   fit <- limma::eBayes(fit, proportion=p.DE, robust=T)
   resT <- limma::topTable(fit=fit, coef=2, number=Inf, adjust.method = "BH", sort.by = "none")
+  end.time.DE <- Sys.time()
   # parameter estimation
   start.time.NB <- Sys.time()
   means <- rowMeans(normData$NormCounts)
@@ -234,13 +235,14 @@
   # run DE testing
   p.DE <- dat$p.DE
   design.mat <- stats::model.matrix( ~ dat$designs)
-  y <- new("Elist")
+  y <- new("EList")
   y$E <- edgeR::cpm(dge, log = TRUE, prior.count = 3)
   end.time.params <- Sys.time()
   start.time.DE <- Sys.time()
   fit <- limma::lmFit(object = y, design = design.mat)
   fit <- limma::eBayes(fit, trend=TRUE, proportion=p.DE, robust=TRUE)
   resT <- limma::topTable(fit=fit, coef=2, number=Inf, adjust.method = "BH", sort.by = "none")
+  end.time.DE <- Sys.time()
   # parameter estimation
   start.time.NB <- Sys.time()
   means <- rowMeans(normData$NormCounts)
@@ -382,7 +384,7 @@
   # run DE testing
   start.time.DE <- Sys.time()
   res <-  ROTS::ROTS(data = out.expr,
-                     groups = factor(dat$designs) ,
+                     groups = factor(dat$designs),
                      B = 50,
                      K = floor(nrow(out.expr)/2) , progress=F)
   end.time.DE <- Sys.time()
@@ -815,7 +817,7 @@
 
 # MAST --------------------------------------------------------------------
 
-#' @importFrom MAST FromMatrix zlm.SingleCellAssay lrTest
+#' @importFrom MAST FromMatrix zlm.SingleCellAssay lrTest summary
 #' @importFrom S4Vectors mcols
 #' @importFrom AnnotationDbi as.list
 #' @importFrom edgeR DGEList calcNormFactors cpm.DGEList
@@ -849,10 +851,10 @@
   end.time.params <- Sys.time()
 
   # 2.: cell (sample ID, CDR, condition) and gene (gene name) annotation
-  ids=colnames(out.expr)
-  ngeneson=colSums(out.expr>0)
-  cngeneson=ngeneson-mean(ngeneson)
-  cond=factor(dat$designs)
+  ids = colnames(out.expr)
+  ngeneson = colSums(out.expr>0)
+  cngeneson = ngeneson-mean(ngeneson)
+  cond = factor(dat$designs)
   cdat <- data.frame(wellKey=ids,
                      ngeneson=ngeneson,
                      cngeneson=cngeneson,
@@ -879,16 +881,16 @@
               ebayes = TRUE,
               ebayesControl = list(method = "MLE", model = "H1"))
   )
-  summaryZLM <- suppressMessages(summary(zlm))
+  summaryZLM <- suppressMessages(MAST::summary(zlm))
   summaryDt <- summaryZLM$datatable
   # 5.: LRT
   lrt <- suppressMessages(MAST::lrTest(zlm, "condition"))
   # results table extraction
   res_gene <- data.table::data.table(reshape2::melt(lrt))
-  res_gene_hurdle <- res_gene[metric=="Pr(>Chisq)" & test.type=="hurdle"]
+  res_gene_hurdle <- res_gene[metric=="Pr(>Chisq)" & test.type=="hurdle", .(primerid, value)]
   res_gene_hurdle <- data.frame(res_gene_hurdle, stringsAsFactors = F)
   res_gene_hurdle <- res_gene_hurdle[match(S4Vectors::mcols(sca)$primerid, res_gene_hurdle$primerid),]
-  res_lfc_hurdle <- summaryDt[contrast=='condition' & component=='logFC', .(primerid, coef, ci.hi, ci.lo)]
+  res_lfc_hurdle <- summaryDt[contrast=='condition1' & component=='logFC', .(primerid, coef)]
   res_lfc_hurdle <- data.frame(res_lfc_hurdle, stringsAsFactors = F)
   res_lfc_hurdle <- res_lfc_hurdle[match(S4Vectors::mcols(sca)$primerid, res_lfc_hurdle$primerid),]
   end.time.DE <- Sys.time()
@@ -907,7 +909,7 @@
   end.time.NB <- Sys.time()
 
   ## construct results
-  result <- data.frame(geneIndex=res$primerid,
+  result <- data.frame(geneIndex=res_gene_hurdle$primerid,
                        means=means,
                        dispersion=dispersion,
                        dropout=p0,
@@ -1062,17 +1064,33 @@
     start.time.DE <- Sys.time()
     cl <- parallel::makeCluster(dat$ncores)
     doParallel::registerDoParallel(cl)
-    res <- BPglm(data = exprmat, controlIds = controlIDs, design = design.mat, coef = coef, useParallel=TRUE)
+    res <- BPglm(data = exprmat,
+                 controlIds = controlIDs,
+                 design = design.mat,
+                 coef = coef,
+                 keepFit = TRUE,
+                 useParallel=TRUE)
+    invisible(capture.output(
+      summary_BPglm <- suppressMessages(summary(res))
+      ))
+    summaryDt <- summary_BPglm$topTable
+    res_lfc <- as.data.frame(summaryDt)
+    res_lfc <- res_lfc[gtools::mixedsort(rownames(res_lfc)),]
     parallel::stopCluster(cl)
     end.time.DE <- Sys.time()
   }
   if(is.null(dat$ncores)) {
     start.time.DE <- Sys.time()
-    res <- BPSC::BPglm(data = exprmat, controlIds = controlIDs, design = design.mat, coef = coef, keepFit = TRUE)
-    summary_BPglm <- summary(res)
-    summaryDt <-  summary_BPglm$topTable
-    res_lfc <- as.data.frame(summaryDt)
-    res_lfc <- res_lfc[gtools::mixedsort(rownames(res_lfc)),]
+    res <- BPSC::BPglm(data = exprmat,
+                       controlIds = controlIDs,
+                       design = design.mat,
+                       coef = coef,
+                       keepFit = TRUE,
+                       useParallel = FALSE)
+    invisible(capture.output(summary_BPglm <- suppressMessages(summary(res))))
+    summaryDt <- summary_BPglm$topTable
+    res <- as.data.frame(summaryDt)
+    res <- res[gtools::mixedsort(rownames(res)),]
     end.time.DE <- Sys.time()
   }
 
@@ -1090,13 +1108,13 @@
   end.time.NB <- Sys.time()
 
   # construct result data frame
-  result=data.frame(geneIndex=rownames(exprmat),
+  result=data.frame(geneIndex=rownames(res),
                     means=means,
                     dispersion=dispersion,
                     dropout=p0,
-                    pval=res$PVAL,
-                    fdr=rep(NA, nrow(dat$counts)),
-                    lfc=res_lfc$Estimate,
+                    pval=res$`Pr(>|t|)`,
+                    fdr=rep(NA, nrow(res)),
+                    lfc=res$Estimate,
                     stringsAsFactors = F)
   time.taken.params <- difftime(end.time.params,
                                 start.time.params,
@@ -1147,16 +1165,19 @@
                                  featureData = fd,
                                  expressionFamily = VGAM::negbinomial.size())
   sizeFactors(cds) <- sf
-  cds <- estimateDispersions(cds, cores = ifelse(is.null(dat$ncores), 1, dat$ncores))
+  cds <- estimateDispersions(cds,
+                             cores = ifelse(is.null(dat$ncores), 1, dat$ncores))
   end.time.params <- Sys.time()
   # run the testing
   start.time.DE <- Sys.time()
-  diff_test_res <- monocle::differentialGeneTest(cds,
-                                                 fullModelFormulaStr = "~Group",
-                                                 reducedModelFormulaStr = "~1",
-                                                 relative_expr = FALSE,
-                                                 cores = ifelse(is.null(dat$ncores), 1, dat$ncores),
-                                                 verbose = FALSE)
+  diff_test_res <- suppressMessages(
+    monocle::differentialGeneTest(cds,
+                                  fullModelFormulaStr = "~Group",
+                                  reducedModelFormulaStr = "~1",
+                                  relative_expr = FALSE,
+                                  cores = ifelse(is.null(dat$ncores), 1, dat$ncores),
+                                  verbose = FALSE)
+    )
   res <- diff_test_res[match(rownames(dat$counts), rownames(diff_test_res)),]
   end.time.DE <- Sys.time()
 
@@ -1178,7 +1199,7 @@
                        means=means,
                        dispersion=dispersion,
                        dropout=p0,
-                       pval=res$pvalue,
+                       pval=res$pval,
                        fdr=rep(NA, nrow(dat$counts)),
                        lfc=rep(NA, nrow(dat$counts)),
                        stringsAsFactors = F)
@@ -1203,18 +1224,30 @@
 #' @importFrom edgeR cpm.DGEList
 #' @importFrom SummarizedExperiment SummarizedExperiment
 .run.scDD <- function(dat) {
-  if (dat$RNAseq=="bulk") {
-    stop("scDD is only for single cell RNAseq data analysis")
-  }
-  if (dat$RNAseq=="singlecell") {
-    start.time.params <- Sys.time()
-    # make sceset and calculate size factors
-    sce <- .scran.calc(cnts = dat$counts)
-    dge <- .convertToedgeR(sce)
-    dge$samples$group <- factor(dat$designs)
-  }
-  # size factor normalised CPM values.
+  start.time.params <- Sys.time()
+  # run normalisation
+  normData <- .norm.calc(normalisation=dat$normalisation,
+                         countData=dat$counts,
+                         spikeData=NULL,
+                         spikeInfo=NULL,
+                         Lengths=NULL,
+                         MeanFragLengths=NULL,
+                         NCores=ifelse(is.null(dat$ncores), 1, dat$ncores))
+  # calculate normalisation factors
+  sf <- normData$size.factors
+  sf[sf<0] <- min(sf[sf > 0])
+  nsf <- log(sf/colSums(dat$counts))
+  nsf <- exp(nsf - mean(nsf, na.rm=T))
+  # construct input object
+  dge <- edgeR::DGEList(counts = dat$counts,
+                        lib.size = colSums(dat$counts),
+                        norm.factors = nsf,
+                        group = factor(dat$designs),
+                        remove.zeros = FALSE)
+  # 1. size factor normalised log2(CPM+1) values. Note that the function in scater gave negative values and when cpm.DGEList was allowed to take the log itself all CPMs were nonzero!
   out.cpm <- edgeR::cpm.DGEList(dge, normalized.lib.sizes = T, log = F)
+  out.expr <- out.cpm
+  end.time.params <- Sys.time()
 
   # create input data
   exprmat <- out.cpm
@@ -1227,35 +1260,65 @@
   # DE testing
   if(!is.null(dat$ncores)) {
     start.time.DE <- Sys.time()
-    res.tmp <- scDD::scDD(SCdat, prior_param = list(alpha = 0.1, mu0 = 0, s0 = 0.01, a0 = 0.01, b0 = 0.01), permutations = 0, testZeroes = FALSE, adjust.perms = FALSE, param = BiocParallel::MulticoreParam(dat$ncores), parallelBy = "Genes", condition = "condition")
+    res.tmp <- suppressMessages(
+      scDD::scDD(SCdat,
+                 prior_param = list(alpha = 0.1, mu0 = 0, s0 = 0.01, a0 = 0.01, b0 = 0.01),
+                 permutations = 0,
+                 testZeroes = FALSE,
+                 adjust.perms = FALSE,
+                 param = BiocParallel::MulticoreParam(dat$ncores),
+                 parallelBy = "Genes",
+                 condition = "condition")
+      )
     end.time.DE <- Sys.time()
   }
   if(is.null(dat$ncores)) {
     start.time.DE <- Sys.time()
-    res.tmp <- scDD(SCdat, prior_param = list(alpha = 0.1, mu0 = 0, s0 = 0.01, a0 = 0.01, b0 = 0.01), permutations = 0, testZeroes = FALSE, adjust.perms = FALSE, parallelBy = "Genes", condition = "condition")
+    res.tmp <- suppressMessages(
+      scDD::scDD(SCdat,
+                 prior_param = list(alpha = 0.1, mu0 = 0, s0 = 0.01, a0 = 0.01, b0 = 0.01),
+                 permutations = 0,
+                 testZeroes = FALSE,
+                 adjust.perms = FALSE,
+                 parallelBy = "Genes",
+                 condition = "condition")
+    )
     end.time.params <- Sys.time()
   }
-  res <- res.tmp$Genes
+  res <- scDD::results(res.tmp)
 
-  # mean, disp, dropout
+  # parameter estimation
   start.time.NB <- Sys.time()
-  norm.counts <- dge$counts / dge$samples$norm.factors
-  nsamples <- ncol(norm.counts)
-  counts0 <- norm.counts == 0
-  nn0 <- rowSums(!counts0)
-  p0 <- (nsamples - nn0)/nsamples
-  means = rowSums(norm.counts)/nsamples
-  s2 = rowSums((norm.counts - means)^2)/(nsamples - 1)
+  means <- rowMeans(normData$NormCounts)
+  nsamples <- ncol(normData$NormCounts)
+  s2 = rowSums((normData$NormCounts - means)^2)/(nsamples - 1)
   size = means^2/(s2 - means + 1e-04)
   size = ifelse(size > 0, size, NA)
   dispersion = 1/size
+  counts0 <- dat$counts == 0
+  nn0 <- rowSums(!counts0)
+  p0 <- (nsamples - nn0)/nsamples
   end.time.NB <- Sys.time()
 
+
   # construct result data frame
-  result=data.frame(geneIndex=as.character(res$gene), means=means, dispersion=dispersion, dropout=p0, pval=res$nonzero.pvalue, fdr=rep(NA, nrow(dat$counts)), stringsAsFactors = F)
-  time.taken.params <- difftime(end.time.params, start.time.params, units="mins")
-  time.taken.DE <- difftime(end.time.DE, start.time.DE, units="mins")
-  time.taken.NB <- difftime(end.time.NB, start.time.NB, units="mins")
+  result=data.frame(geneIndex=as.character(res$gene),
+                    means=means,
+                    dispersion=dispersion,
+                    dropout=p0,
+                    pval=res$nonzero.pvalue,
+                    fdr=rep(NA, nrow(dat$counts)),
+                    lfc=rep(NA, nrow(dat$counts)),
+                    stringsAsFactors = F)
+  time.taken.params <- difftime(end.time.params,
+                                start.time.params,
+                                units="mins")
+  time.taken.DE <- difftime(end.time.DE,
+                            start.time.DE,
+                            units="mins")
+  time.taken.NB <- difftime(end.time.NB,
+                            start.time.NB,
+                            units="mins")
   timing <- rbind(time.taken.params, time.taken.DE, time.taken.NB)
   res <- list(result=result, timing=timing)
   return(res)

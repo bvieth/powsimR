@@ -9,7 +9,7 @@ spikeData=NULL, spikeInfo = NULL,
 Lengths=NULL, MeanFragLengths=NULL,
 Distribution=c('NB', 'ZINB'), RNAseq=c('bulk', 'singlecell'),
 normalisation=c('TMM','MR','PosCounts','UQ',
-'scran', 'SCnorm', 'RUVg', 'BASiCS', 'Census'),
+'scran', 'SCnorm', 'RUVg', 'BASiCS', 'Census', 'none'),
 sigma=1.96, NCores=NULL)
 }
 \arguments{
@@ -63,6 +63,7 @@ Normalisation methods
 \item{scran, SCnorm}{apply the deconvolution and quantile regression normalization methods developed for sparse RNA-seq data as implemented in \code{\link[scran]{computeSumFactors}} and \code{\link[SCnorm]{SCnorm}}, respectively. For \code{SCnorm}, the user can also supply \code{spikeData}.}
 \item{RUVg}{removes unwanted variation by utilizing negative control genes, i.e. spike-ins stored in \code{spikeData}, as implemented in \code{\link[RUVSeq]{RUVg}}.}
 \item{BASiCS}{removes technical variation by utilizing negative control genes, i.e. spike-ins stored in \code{spikeData}, as implemented in \code{\link[BASiCS]{DenoisedCounts}}. Furthermore, the molecule counts of spike-ins added to the cell lysate need to be supplied in \code{spikeInfo}.}
+\item{none}{No normalisation is applied. This approach can be used for prenormalized expression estimates, e.g. cufflinks, RSEM or salmon.}
 }
 }
 \examples{

@@ -43,7 +43,8 @@ With this function, the user can define the parameters of the negative binomial 
 insilico.bulk <- insilicoNBParam(means=function(x) 2^runif(x, 9, 12),
 dispersion=0.2,
 dropout=function(x) runif(x, min = 0, max = 0.25),
-sf=function(x) rnorm(n=x, mean=1, sd=0.1), RNAseq='bulk')
+sf=function(x) truncnorm::rtruncnorm(x, a = 0.6, b = 1.4, mean=1, sd=0.2),
+RNAseq='bulk')
 ## Single cell RNA-seq experiment in silico parameters:
 insilico.singlecell <- insilicoNBParam(means=function(x) rgamma(x, 4, 2),
 dispersion=function(x) 2 + 150/x,

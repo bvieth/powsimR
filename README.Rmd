@@ -64,7 +64,7 @@ or open it in R by typing
 browseVignettes('powsimR')
 ```
 
-A preprint paper describing powsim is now on [bioRxiv](https://doi.org/10.1101/117150).
+A preprint paper describing powsimR is now on [bioRxiv](https://doi.org/10.1101/117150).
 
 ## Notes
 

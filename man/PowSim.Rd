@@ -70,7 +70,7 @@ save.plots=TRUE, verbose=TRUE)
 }
 }
 \seealso{
-\code{\link{estimateNBParam}}, \code{\link{insilicoNBParam}}, \code{\link{DESetup}}, \code{\link{SimSetup}}, \code{\link{simulateDE}}, \code{\link{evaluateSim}}
+\code{\link{estimateParam}}, \code{\link{insilicoNBParam}}, \code{\link{DESetup}}, \code{\link{SimSetup}}, \code{\link{simulateDE}}, \code{\link{evaluateSim}}
 }
 \author{
 Beate Vieth

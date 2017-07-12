@@ -25,6 +25,7 @@
   if(normalisation=='BASiCS') {NormData <- .BASiCS.calc(countData = countData,
                                                         spikeData = spikeData,
                                                         spikeInfo = spikeInfo)}
+  if(normalisation=='none') {NormData <- .none.calc(countData = countData)}
   return(NormData)
 }
 
@@ -248,19 +249,19 @@
 .counts_to_tpm <- function(countData, Lengths, MeanFragLengths) {
 
   # Ensure valid arguments.
-  stopifnot(length(featureLength) == nrow(counts))
-  stopifnot(length(meanFragmentLength) == ncol(counts))
+  stopifnot(length(Lengths) == nrow(counts))
+  stopifnot(length(MeanFragLengths) == ncol(counts))
 
   # Compute effective lengths of features in each library.
   effLen <- do.call(cbind, lapply(1:ncol(counts), function(i) {
-    featureLength - meanFragmentLength[i] + 1
+    Lengths - MeanFragLengths[i] + 1
   }))
 
   # Exclude genes with length less than the mean fragment length.
   idx <- apply(effLen, 1, function(x) min(x) > 1)
   counts <- counts[idx,]
   effLen <- effLen[idx,]
-  featureLength <- featureLength[idx]
+  Lengths <- Lengths[idx]
 
   # Process one column at a time.
   tpm <- do.call(cbind, lapply(1:ncol(counts), function(i) {
@@ -357,3 +358,17 @@
   return(res)
 
 }
+
+
+# No normalisation --------------------------------------------------------
+
+.none.calc <- function(countData) {
+  sf <- rep(1, ncol(countData))
+  names(sf) <- colnames(countData)
+  norm.counts <- countData
+  res <- list(NormCounts=norm.counts,
+              RoundNormCounts=round(norm.counts),
+              size.factors=sf)
+  return(res)
+}
+

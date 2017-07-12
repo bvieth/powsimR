@@ -29,17 +29,18 @@ ipak <- function(pkg, repository = c("CRAN", "Bioconductor", "github")) {
 cranpackages <- c("gamlss.dist", "methods", "stats", "moments", "doParallel", 
     "parallel", "reshape2", "dplyr", "tidyr", "data.table", "ggplot2", "ggthemes", 
     "ggExtra", "cowplot", "scales", "fitdistrplus", "MASS", "pscl", "nonnest2", 
-    "cobs", "msir", "drc", "devtools", "XML", "splines", "gtools")
+    "cobs", "msir", "drc", "devtools", "XML", "splines", "gtools", "NBPSeq")
 ipak(cranpackages, repository = "CRAN")
 
 # BIOCONDUCTOR
 biocpackages <- c("S4Vectors", "AnnotationDbi", "Biobase", "BiocParallel", "BiocStyle", 
     "scater", "scran", "edgeR", "limma", "DESeq2", "baySeq", "NOISeq", "EBSeq", 
-    "DSS", "MAST", "ROTS", "IHW", "qvalue", "scDD", "monocle")
+    "DSS", "MAST", "ROTS", "IHW", "qvalue", "scDD", "monocle", "RUVSeq")
 ipak(biocpackages, repository = "Bioconductor")
 
 # GITHUB
-githubpackages <- c("gu-mi/NBGOF", "hms-dbmi/scde", "nghiavtr/BPSC")
+githubpackages <- c("gu-mi/NBGOF", "hms-dbmi/scde", "nghiavtr/BPSC", "rhondabacher/SCnorm", 
+    "catavallejos/BASiCS")
 ipak(githubpackages, repository = "github")
 ```
 
@@ -58,7 +59,7 @@ For examples and tips on using the package, please see the vignette PDF [here](h
 browseVignettes("powsimR")
 ```
 
-A preprint paper describing powsim is now on [bioRxiv](https://doi.org/10.1101/117150).
+A preprint paper describing powsimR is now on [bioRxiv](https://doi.org/10.1101/117150).
 
 Notes
 -----

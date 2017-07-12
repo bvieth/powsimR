@@ -11,10 +11,10 @@
 
   # generate read counts
   if (simOptions$RNAseq == "singlecell") {
-    if (attr(sim.options, 'Distribution') == 'NB') {
+    if (attr(simOptions, 'Distribution') == 'NB') {
       simcounts = .sc.NB.RNAseq_counts(sim.options = simOptions, modelmatrix = mod)
     }
-    if (attr(sim.options, 'Distribution') == 'ZINB') {
+    if (attr(simOptions, 'Distribution') == 'ZINB') {
       simcounts = .sc.ZINB.RNAseq_counts(sim.options = simOptions, modelmatrix = mod)
     }
   }
@@ -23,8 +23,13 @@
   }
 
   simcounts <- apply(simcounts,2,function(x) {storage.mode(x) <- 'integer'; x})
-  colnames(simcounts) <- paste0("S", 1:ncol(simcounts))
-  rownames(simcounts) <- paste0("G", 1:nrow(simcounts))
+  # fill in pseudonames if missing
+  if (is.null(rownames(simcounts))) {
+    rownames(simcounts) <- paste0("G", 1:nrow(simcounts))
+  }
+  if (is.null(colnames(simcounts))) {
+    colnames(simcounts) <- paste0("S", 1:ncol(simcounts))
+  }
 
   ## return
   list(counts = simcounts, designs = design, simOptions = simOptions)
@@ -188,6 +193,7 @@
 
     meanp0fit.nonamplified = sim.options$meanp0fit.nonamplified
     meanp0fit.amplified = sim.options$meanp0fit.amplified
+    meanp0fit = sim.options$meanp0fit
     nonamplified = sim.options$nonamplified
 
     if(!is.null(meanp0fit.nonamplified) && !is.null(meanp0fit.amplified)) {

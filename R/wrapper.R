@@ -52,7 +52,7 @@
 #' For both types of experiment, we assume no differences in relative sequencing depth across samples.\\
 #' We have included precalculated negative binomial parameters for simulations. There are parameters estimated from several real datasets distributed with the package. Available string options are: (1) "buettner". (2) "islam2011". (3) "islam2014". (4) "kolodziejczk". (5) "soumillon".\\
 #' @author Beate Vieth
-#' @seealso \code{\link{estimateNBParam}}, \code{\link{insilicoNBParam}}, \code{\link{DESetup}}, \code{\link{SimSetup}}, \code{\link{simulateDE}}, \code{\link{evaluateSim}}
+#' @seealso \code{\link{estimateParam}}, \code{\link{insilicoNBParam}}, \code{\link{DESetup}}, \code{\link{SimSetup}}, \code{\link{simulateDE}}, \code{\link{evaluateSim}}
 #' @examples
 #' \dontrun{
 #' ## simulating in silico single cell RNAseq data

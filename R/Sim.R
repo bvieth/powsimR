@@ -80,7 +80,9 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120), sim.settings, ncores=NU
 
   #set up output arrays
   pvalues = fdrs = lfcs = mus = disps = dropouts = array(NA,dim=c(sim.settings$ngenes,length(n1), nsims))
-  time.taken = array(NA,dim = c(3,length(n1), nsims), dimnames = list(c("params", "DE", "NB"), NULL, NULL))
+  time.taken = array(NA,dim = c(3,length(n1), nsims),
+                     dimnames = list(c("params", "DE", "NB"),
+                                     NULL, NULL))
 
   ## start simulation
   for (i in 1:nsims) {
@@ -108,12 +110,14 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120), sim.settings, ncores=NU
       ix.valid = rowSums(tmp.cnts) > 0
       tmp.cnts.red = tmp.cnts[ix.valid,, drop = FALSE]
 
-      ## create an object to pass into DE detection with mean, disp, dropout estimation
+      ## create an object to pass into DE detection
+      # with integrated mean, disp, dropout estimation
       data0 = list(counts = tmp.cnts.red,
                    designs = tmp.design,
                    p.DEs = tmp.simOpts$p.DE,
                    RNAseq = tmp.simOpts$RNAseq,
-                   ncores = tmp.simOpts$ncores)
+                   ncores = tmp.simOpts$ncores,
+                   normalisation = tmp.simOpts$normalisation)
 
       # methods developed for bulk
         if (DEmethod == "edgeR-LRT")

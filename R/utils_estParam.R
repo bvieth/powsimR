@@ -121,7 +121,7 @@
 # single cell ZINB Parameters ---------------------------------------------
 
 #' @importFrom cobs cobs
-#' @importFrom stats predict
+#' @importFrom stats predict complete.cases
 #' @importFrom msir loess.sd
 #' @importFrom matrixStats rowSds
 .est.ZINB.sc <- function(countData, NormData, sigma){
@@ -209,12 +209,12 @@
     p0.cut.amplified <- as.numeric(cobs.predict.amplified[which.max(cobs.predict.amplified[,'fit']), 'z'])
     if(length(p0.cut.amplified)==0) {
       amplified.dat <- cbind.data.frame(lmu.amplified, p0.amplified)
-      amplified.dat <- amplified.dat[complete.cases(amplified.dat),]
+      amplified.dat <- amplified.dat[stats::complete.cases(amplified.dat),]
       meanp0fit.amplified = msir::loess.sd(x = amplified.dat$lmu.amplified, y=amplified.dat$p0.amplified, nsigma = sigma)
     }
     if(!length(p0.cut.amplified)==0) {
     amplified.dat <- cbind.data.frame(lmu.amplified, p0.amplified)
-    amplified.dat <- amplified.dat[complete.cases(amplified.dat),]
+    amplified.dat <- amplified.dat[stats::complete.cases(amplified.dat),]
     amplified.dat <- amplified.dat[amplified.dat$lmu.amplified<p0.cut.amplified,]
     meanp0fit.amplified = msir::loess.sd(x = amplified.dat$lmu.amplified, y=amplified.dat$p0.amplified, nsigma = sigma)
     }
@@ -231,12 +231,12 @@
     cobs.predict.nonamplified <- cobs.predict.nonamplified[cobs.predict.nonamplified[,'fit'] < 0.05,]
     p0.cut.nonamplified <- log(10)
     nonamplified.dat <- cbind.data.frame(lmu.nonamplified, p0.nonamplified)
-    nonamplified.dat <- nonamplified.dat[complete.cases(nonamplified.dat),]
+    nonamplified.dat <- nonamplified.dat[stats::complete.cases(nonamplified.dat),]
     nonamplified.dat <- nonamplified.dat[nonamplified.dat$lmu.nonamplified<p0.cut.nonamplified,]
 
     if(nrow(nonamplified.dat)==0) {
       nonamplified.dat <- cbind.data.frame(lmu.nonamplified, p0.nonamplified)
-      nonamplified.dat <- nonamplified.dat[complete.cases(nonamplified.dat),]
+      nonamplified.dat <- nonamplified.dat[stats::complete.cases(nonamplified.dat),]
       meanp0fit.nonamplified = msir::loess.sd(x = nonamplified.dat$lmu.nonamplified, y=nonamplified.dat$p0.nonamplified, nsigma = sigma)
     }
     if(nrow(nonamplified.dat)>0) {
@@ -253,13 +253,13 @@
 
     if(length(p0.cut)==0) {
       all.dat <- cbind.data.frame(lmu, p0)
-      all.dat <- all.dat[complete.cases(all.dat),]
+      all.dat <- all.dat[stats::complete.cases(all.dat),]
       meanp0fit = msir::loess.sd(x=all.dat$lmu, y=all.dat$p0, nsigma = sigma)
     }
 
     if(!length(p0.cut)==0) {
       all.dat <- cbind.data.frame(lmu, p0)
-      all.dat <- all.dat[complete.cases(all.dat),]
+      all.dat <- all.dat[stats::complete.cases(all.dat),]
       all.dat <- all.dat[all.dat$lmu<p0.cut,]
       meanp0fit = msir::loess.sd(x=all.dat$lmu, y=all.dat$p0, nsigma = sigma)
     }
@@ -292,7 +292,7 @@
 # bulk NB parameters ------------------------------------------------------
 
 #' @importFrom cobs cobs
-#' @importFrom stats predict
+#' @importFrom stats predict complete.cases
 #' @importFrom msir loess.sd
 .est.NB.bulk <- function(countData, NormData, sigma) {
 
