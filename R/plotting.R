@@ -210,18 +210,18 @@ plotParam <- function(estParam.out, annot=TRUE) {
 #' @name plotEvalRes
 #' @aliases plotEvalRes
 #' @title Visualize power assessment
-#' @description This function plots the results of \code{\link{evaluateSim}} for assessing the error rates and sample size requirements.
+#' @description This function plots the results of \code{\link{evaluateDE}} for assessing the error rates and sample size requirements.
 #' @usage plotEvalRes(evalRes, rate=c('marginal', 'stratified'),
 #'                    quick=TRUE, annot=TRUE)
-#' @param evalRes The output of \code{\link{evaluateSim}}.
-#' @param rate Character vector defining whether the marginal or condtional rates should be plotted. Conditional depends on the choice of stratify.by in \code{\link{evaluateSim}}.
+#' @param evalRes The output of \code{\link{evaluateDE}}.
+#' @param rate Character vector defining whether the marginal or condtional rates should be plotted. Conditional depends on the choice of stratify.by in \code{\link{evaluateDE}}.
 #' @param quick A logical vector. If \code{TRUE}, the TPR and FDR are only plotted. If \code{FALSE}, then all rates are plotted.
 #' @param annot A logical vector. If \code{TRUE}, a short figure legend under the plot is included.
 #' @return A ggplot object.
 #' @examples
 #' \dontrun{
 #' ## for example simres object see \code{\link{simulateDE}}
-#' evalres <- evaluateSim(simRes=simres,
+#' evalres <- evaluateDE(simRes=simres,
 #' alpha.type="adjusted",
 #' MTC="BH", alpha.nominal=0.1,
 #' stratify.by="mean", filter.by="none",

@@ -4,10 +4,9 @@
 \alias{SimSetup}
 \title{DEA options for RNA-seq count simulations in two-group comparison.}
 \usage{
-SimSetup(desetup, params,
-size.factors = "equal",
-normalisation = c("TMM", "MR", "PosCounts", "UQ",
-"scran", "SCnorm", "Census"))
+SimSetup(desetup,
+params,
+size.factors = "equal")
 }
 \arguments{
 \item{desetup}{The RNAseq simulation parameters created by \code{\link{DESetup}}.}
@@ -17,26 +16,48 @@ normalisation = c("TMM", "MR", "PosCounts", "UQ",
 (2) The output of \code{\link{insilicoNBParam}}.
 (3) A string specifying the name of precalculated estimates, see details.}
 
-\item{size.factors}{Size factors representing sample-specific differences/biases in expected mean values of the NB distribution: "equal" or "given". The default is "equal", i.e. equal size factor of 1. If the user defines it as given, the size factors are sampled from the size factors provided by the output of \code{\link{estimateParam}} or \code{\link{insilicoNBParam}}.}
-
-\item{normalisation}{Normalisation method to use.}
+\item{size.factors}{Size factors representing sample-specific differences/biases in expected mean values of the NB distribution:
+"equal" or "given". The default is "equal", i.e. equal size factor of 1.
+If the user defines it as given, the size factors are sampled from the size factors provided by the output of \code{\link{estimateParam}} or \code{\link{insilicoNBParam}}.}
 }
 \value{
 A list with the following entries:
 \item{desetup}{The RNAseq simulation parameters.}
-\item{params}{The negative binomial parameters for simulations.}
-\item{size.factors}{Size factor definition: "equal" or "given"}
+\item{params}{The distributional parameters for simulations of genes.}
+\item{size.factors}{Size factor definition: "equal" means no difference in size factors between samples.
+"given" means that the size factors will be randomly drawn from the size factors provided by \code{params}.
+Defaul is \code{"equal"}.}
 }
 \description{
 This function adds user provided options for simulating RNA-seq data to RNAseq.SimSetup object. The resulting output list object is the input for \code{\link{simulateDE}} function.
 }
 \examples{
 \dontrun{
-desettings <- DESetup(ngenes=10000,
-nsims=25, p.DE=0.2,
-LFC=function(x) sample(c(-1,1), size=x,replace=TRUE)*rgamma(x, 3, 3))
+# example of estimated parameters:
+## simulating single cell RNA-seq experiment
+ngenes <- 10000
+ncells <- 100
+true.means <- 2^runif(ngenes, 3, 6)
+true.dispersions <- 3 + 100/true.means
+sf.values <- 2^rnorm(ncells, sd=0.5)
+sf.means <- outer(true.means, sf.values, '*')
+cnts <- matrix(rnbinom(ngenes*ncells,
+                       mu=sf.means, size=1/true.dispersions),
+               ncol=ncells)
+## estimating negative binomial parameters
+estparam <- estimateParam(countData=cnts, batchData = NULL,
+                          spikeData=NULL, spikeInfo = NULL,
+                          Lengths=NULL, MeanFragLengths=NULL,
+                          Distribution='NB',
+                          RNAseq="singlecell",
+                          normalisation='scran',
+                          NCores=NULL,
+                          sigma=1.96, verbose=TRUE)
+desettings <- DESetup(ngenes = 10000, nsims=25,
+p.DE=0.1,
+pLFC = function(x) sample(c(-1,1), size=x,replace=T)*rgamma(x, 2, 4), sim.seed)
 simsettings <- SimSetup(desetup=desettings,
-params=estparam, size.factors='equal', normalisation='scran')
+params=estparam, size.factors='equal')
 }
 }
 \author{

@@ -5,26 +5,43 @@
                        countData,
                        spikeData,
                        spikeInfo,
+                       batchData,
                        Lengths,
                        MeanFragLengths,
+                       PreclustNumber,
                        NCores) {
   if(normalisation=='TMM') {NormData <- .TMM.calc(countData = countData)}
   if(normalisation=='UQ') {NormData <- .UQ.calc(countData = countData)}
   if(normalisation=='MR') {NormData <- .MR.calc(countData = countData)}
   if(normalisation=='PosCounts') {NormData <- .PosCounts.calc(countData = countData)}
   if(normalisation=='scran') {NormData <- .scran.calc(countData = countData)}
+  if(normalisation=='scran' && !is.null(PreclustNumber)) {NormData <- suppressWarnings(
+    .scranclust.calc(countData = countData,
+                     PreclustNumber=PreclustNumber))}
   if(normalisation=='SCnorm') {NormData <- .SCnorm.calc(countData = countData,
                                                         spikeData = spikeData,
+                                                        batchData = batchData,
+                                                        NCores = NCores)}
+  if(normalisation=='SCnorm' && !is.null(PreclustNumber)) {NormData <- .SCnormclust.calc(countData = countData,
+                                                        spikeData = spikeData,
+                                                        batchData = batchData,
+                                                        PreclustNumber=PreclustNumber,
                                                         NCores = NCores)}
   if(normalisation=='Census') {NormData <- .Census.calc(countData=countData,
+                                                        batchData=batchData,
                                                         Lengths=Lengths,
                                                         MeanFragLengths=MeanFragLengths,
+                                                        spikeData=spikeData,
+                                                        spikeInfo = spikeInfo,
                                                         NCores=NCores)}
-  if(normalisation=='RUVg') {NormData <- .RUVg.calc(countData = countData,
-                                                    spikeData = spikeData)}
+  if(normalisation=='RUV') {NormData <- .RUV.calc(countData = countData,
+                                                  spikeData = spikeData,
+                                                  batchData = batchData)}
   if(normalisation=='BASiCS') {NormData <- .BASiCS.calc(countData = countData,
                                                         spikeData = spikeData,
-                                                        spikeInfo = spikeInfo)}
+                                                        spikeInfo = spikeInfo,
+                                                        batchData = batchData)}
+  if(normalisation=='depth') {NormData <- .depth.calc(countData = countData)}
   if(normalisation=='none') {NormData <- .none.calc(countData = countData)}
   return(NormData)
 }
@@ -35,12 +52,13 @@
 .TMM.calc <- function(countData) {
   norm.factors <- edgeR::calcNormFactors(object=countData, method='TMM')
   sf <- norm.factors * colSums(countData)
-  sf <- sf / mean(sf, na.rm=T)
+  sf <- sf/exp(mean(log(sf)))
   names(sf) <- colnames(countData)
   norm.counts <- t(t(countData)/sf)
   res <- list(NormCounts=norm.counts,
               RoundNormCounts=round(norm.counts),
               size.factors=sf)
+  attr(res, 'normFramework') <- "TMM"
   return(res)
 }
 
@@ -52,12 +70,13 @@
   norm.factors <- edgeR::calcNormFactors(object=countData,
                                          method='upperquartile')
   sf <- norm.factors * colSums(countData)
-  sf <- sf / mean(sf, na.rm=T)
+  sf <- sf/exp(mean(log(sf)))
   names(sf) <- colnames(countData)
   norm.counts <- t(t(countData)/sf)
   res <- list(NormCounts=norm.counts,
               RoundNormCounts=round(norm.counts),
               size.factors=sf)
+  attr(res, 'normFramework') <- "UQ"
   return(res)
 }
 
@@ -75,6 +94,7 @@
   res <- list(NormCounts=norm.counts,
               RoundNormCounts=round(norm.counts),
               size.factors=sf)
+  attr(res, 'normFramework') <- "MR"
   return(res)
 }
 
@@ -94,31 +114,38 @@
   res <- list(NormCounts=norm.counts,
               RoundNormCounts=round(norm.counts),
               size.factors=sf)
+  attr(res, 'normFramework') <- "PosCounts"
   return(res)
 }
 
 # scran calculations ------------------------------------------------------
+
+### TO DO: add clustering functionality, should help for norm calc of distinct cells!
 
 #' @importFrom scran computeSumFactors
 #' @importFrom scater newSCESet
 .scran.calc <- function(countData) {
   sce <- scater::newSCESet(countData=data.frame(countData))
   if(ncol(countData)<=14) {
+    sizes <- c(round(seq(from=2, to=trunc(ncol(countData)/2), by = 1)))
     sf <- scran::computeSumFactors(sce,
-                                   sizes=c(round(seq(from=2, to=trunc(ncol(countData)/2), by = 1))),
+                                   sizes=sizes,
                                    positive=FALSE, sf.out=TRUE)
   }
   if(ncol(countData)>14 & ncol(countData)<=50) {
+    sizes <- c(round(seq(from=2, to=trunc(ncol(countData)/2), length.out=6)))
     sf <- scran::computeSumFactors(sce,
-                                   sizes=c(round(seq(from=2, to=trunc(ncol(countData)/2), length.out=6))),
+                                   sizes=sizes,
                                    positive=FALSE, sf.out=TRUE)
   }
   if(ncol(countData)>50 & ncol(countData)<=1000) {
+    sizes <- c(round(seq(from=10, to=trunc(ncol(countData)/2), length.out=6)))
     sf <- scran::computeSumFactors(sce,
-                                   sizes=c(round(seq(from=10, to=trunc(ncol(countData)/2), length.out=6))),
+                                   sizes=sizes,
                                    positive=FALSE, sf.out=TRUE)
   }
   if(trunc(ncol(countData))>1000) {
+    sizes <- c(round(seq(from=20, to=trunc(ncol(countData)/2), length.out=6)))
     sf <- scran::computeSumFactors(sce, positive=FALSE, sf.out=TRUE)
   }
   names(sf) <- colnames(countData)
@@ -126,6 +153,62 @@
   res <- list(NormCounts=norm.counts,
               RoundNormCounts=round(norm.counts),
               size.factors=sf)
+  attr(res, 'normFramework') <- "scran"
+  return(res)
+}
+
+#' @importFrom scran computeSumFactors quickCluster
+#' @importFrom scater newSCESet
+.scranclust.calc <- function(countData, PreclustNumber) {
+  sce <- scater::newSCESet(countData=data.frame(countData))
+  if(ncol(countData)<=14) {
+    clusters <- scran::quickCluster(sce, method="hclust", min.size=floor(PreclustNumber/2))
+    sizes <- unique(c(round(seq(from=2, to=min(table(clusters))-1, by = 1))))
+    sf <- scran::computeSumFactors(sce,
+                                   sizes=sizes,
+                                   cluster=clusters,
+                                   positive=FALSE, sf.out=TRUE)
+  }
+  if(ncol(countData)>14 & ncol(countData)<=50) {
+    clusters <- scran::quickCluster(sce, method="hclust", min.size=floor(PreclustNumber/2))
+    sizes <- unique(c(round(seq(from=2, to=min(table(clusters))-1, length.out=6))))
+    sf <- scran::computeSumFactors(sce,
+                                   sizes=sizes,
+                                   cluster=clusters,
+                                   positive=FALSE, sf.out=TRUE)
+  }
+  if(ncol(countData)>50 & ncol(countData)<=1000) {
+    clusters <- scran::quickCluster(sce, method="hclust", min.size=floor(PreclustNumber/2))
+    sizes <- unique(c(round(seq(from=10, to=min(table(clusters))-1, length.out=6))))
+    sf <- scran::computeSumFactors(sce,
+                                   sizes=sizes,
+                                   cluster=clusters,
+                                   positive=FALSE, sf.out=TRUE)
+  }
+  if(ncol(countData)>1000 & ncol(countData)<=5000) {
+    clusters <- scran::quickCluster(sce, method="hclust", min.size=floor(PreclustNumber/2))
+    sizes <- unique(c(round(seq(from=20, to=min(table(clusters))-1, length.out=6))))
+    sf <- scran::computeSumFactors(sce,
+                                   sizes=sizes,
+                                   cluster=clusters,
+                                   positive=FALSE, sf.out=TRUE)
+    sf <- scran::computeSumFactors(sce, positive=FALSE, sf.out=TRUE)
+  }
+  if(ncol(countData)>5000) {
+    clusters <- scran::quickCluster(sce, method="igraph", min.size=floor(PreclustNumber/2))
+    sizes <- unique(c(round(seq(from=20, to=min(table(clusters))-1, length.out=6))))
+    sf <- scran::computeSumFactors(sce,
+                                   sizes=sizes,
+                                   cluster=clusters,
+                                   positive=FALSE, sf.out=TRUE)
+    sf <- scran::computeSumFactors(sce, positive=FALSE, sf.out=TRUE)
+  }
+  names(sf) <- colnames(countData)
+  norm.counts <- t(t(countData)/sf)
+  res <- list(NormCounts=norm.counts,
+              RoundNormCounts=round(norm.counts),
+              size.factors=sf)
+  attr(res, 'normFramework') <- "scranCLUST"
   return(res)
 }
 
@@ -134,7 +217,8 @@
 #' @importFrom SCnorm SCnorm
 #' @importFrom parallel detectCores
 #' @importFrom stats median
-.SCnorm.calc <- function(countData, spikeData, NCores) {
+.SCnorm.calc <- function(countData, spikeData, batchData, NCores) {
+
   spike = ifelse(is.null(spikeData), FALSE, TRUE)
   if(spike==TRUE) {
     rownames(spikeData) = paste('ERCC', 1:nrow(spikeData), sep="-")
@@ -143,15 +227,19 @@
   if(spike==FALSE) {
     cnts = countData
   }
+  if(!is.null(batchData)) {
+    cond <- batchData[,1]
+  }
+  if(is.null(batchData)) {
+    cond <- rep('a', ncol(cnts))
+  }
 
-  cond <- rep("A", ncol(cnts))
-
-  ncores = ifelse(is.null(NCores), parallel::detectCores() - 1, NCores)
+  ncores = ifelse(is.null(NCores), 1, NCores)
 
   invisible(capture.output(
     scnorm.out <- suppressMessages(SCnorm::SCnorm(Data = cnts,
                                                   Conditions = cond,
-                                                  OutputName = "/dev/null",
+                                                  OutputName = NULL,
                                                   SavePDF = FALSE,
                                                   PropToUse = .25,
                                                   Tau = .5,
@@ -163,14 +251,76 @@
                                                   Thresh = .1,
                                                   ditherCounts = FALSE,
                                                   withinSample = NULL,
-                                                  useSpikes = spike))
+                                                  useSpikes = spike,
+                                                  useZerosToScale=FALSE))
   ))
 
-  sf <- apply(scnorm.out$ScaleFactors, 2, stats::median)
+  sf <- apply(scnorm.out@metadata$ScaleFactors, 2, stats::median)
   names(sf) <- colnames(cnts)
-  res <- list(NormCounts=scnorm.out$NormalizedData,
-              RoundNormCounts=round(scnorm.out$NormalizedData),
-              size.factors=sf)
+  gsf <- scnorm.out@metadata$ScaleFactors
+  res <- list(NormCounts=scnorm.out@metadata$NormalizedData,
+              RoundNormCounts=round(scnorm.out@metadata$NormalizedData),
+              size.factors=sf,
+              scale.factors=gsf)
+  attr(res, 'normFramework') <- "SCnorm"
+  return(res)
+}
+
+#' @importFrom SCnorm SCnorm
+#' @importFrom parallel detectCores
+#' @importFrom stats median
+.SCnormclust.calc <- function(countData, spikeData, batchData, PreclustNumber, NCores) {
+
+  spike = ifelse(is.null(spikeData), FALSE, TRUE)
+  if(spike==TRUE) {
+    rownames(spikeData) = paste('ERCC', 1:nrow(spikeData), sep="-")
+    cnts = rbind(countData, spikeData)
+  }
+  if(spike==FALSE) {
+    cnts = countData
+  }
+  if(!is.null(batchData)) {
+    cond <- batchData[,1]
+  }
+  if(is.null(batchData) && !is.null(PreclustNumber)) {
+    if(ncol(countData)<=5000) {
+      clusters <- scran::quickCluster(cnts, method="hclust", min.size=floor(PreclustNumber/2))
+      }
+    if(ncol(countData)>5000) {
+      clusters <- scran::quickCluster(cnts, method="igraph", min.size=floor(PreclustNumber/2))
+      }
+    cond <- as.character(clusters)
+  }
+
+  ncores = ifelse(is.null(NCores), 1, NCores)
+
+  invisible(capture.output(
+    scnorm.out <- suppressMessages(SCnorm::SCnorm(Data = cnts,
+                                                  Conditions = cond,
+                                                  OutputName = NULL,
+                                                  SavePDF = FALSE,
+                                                  PropToUse = .25,
+                                                  Tau = .5,
+                                                  reportSF = TRUE,
+                                                  FilterCellNum = 10,
+                                                  K = NULL,
+                                                  NCores = ncores,
+                                                  FilterExpression = 0,
+                                                  Thresh = .1,
+                                                  ditherCounts = FALSE,
+                                                  withinSample = NULL,
+                                                  useSpikes = spike,
+                                                  useZerosToScale=FALSE))
+  ))
+
+  sf <- apply(scnorm.out@metadata$ScaleFactors, 2, stats::median)
+  names(sf) <- colnames(cnts)
+  gsf <- scnorm.out@metadata$ScaleFactors
+  res <- list(NormCounts=scnorm.out@metadata$NormalizedData,
+              RoundNormCounts=round(scnorm.out@metadata$NormalizedData),
+              size.factors=sf,
+              scale.factors=gsf)
+  attr(res, 'normFramework') <- "SCnorm"
   return(res)
 }
 
@@ -178,12 +328,12 @@
 # Census normalisation ----------------------------------------------------
 
 #' @importFrom monocle newCellDataSet relative2abs
-# #' @importMethodsFrom monocle estimateSizeFactors sizeFactors
+#' @importFrom Biobase exprs
 #' @importFrom VGAM tobit negbinomial.size
 #' @importFrom parallel detectCores
-.Census.calc <- function(countData, Lengths, MeanFragLengths, NCores) {
+.Census.calc <- function(countData, batchData, spikeData, spikeInfo, Lengths, MeanFragLengths, NCores) {
 
-  ncores = ifelse(is.null(NCores), parallel::detectCores() - 1, NCores)
+  ncores = ifelse(is.null(NCores), 1, NCores)
 
   # calculate TPM / CPM
   if(!is.null(Lengths) && !is.null(MeanFragLengths)) {
@@ -199,21 +349,35 @@
   }
   # make annotated dataframes for monocle
   gene.dat <- data.frame(row.names = rownames(countData),
+                         gene_short_name = rownames(countData),
                          biotype=rep("protein_coding", nrow(countData)),
                          num_cells_expressed=rowSums(countData>0))
-  cell.dat <- data.frame(row.names=colnames(countData),
-                         Group=rep("A", ncol(countData)))
+
+  if(!is.null(batchData)) {
+    cell.dat <- data.frame(row.names=colnames(countData),
+                           Group=batchData[,1])
+    ModelFormula <- "~Group"
+  }
+  if(is.null(batchData)) {
+    cell.dat <- data.frame(row.names=colnames(countData),
+                           Group=rep("A", ncol(countData)))
+    ModelFormula <- "~1"
+  }
+
   fd <- new("AnnotatedDataFrame", data = gene.dat)
   pd <- new("AnnotatedDataFrame", data = cell.dat)
 
   # construct cell data set with expression values
-  cds <- monocle::newCellDataSet(cellData = ed,
+  cds <- monocle::newCellDataSet(cellData = as.matrix(ed),
                                  phenoData = pd,
                                  featureData = fd,
                                  lowerDetectionLimit=0.1,
                                  expressionFamily=VGAM::tobit(Lower=0.1))
   # estimate RNA counts
-  rpc_matrix <- monocle::relative2abs(cds, cores = ncores)
+  rpc_matrix <- monocle::relative2abs(relative_cds = cds,
+                                      modelFormulaStr = ModelFormula,
+                                      method = "num_genes",
+                                      cores = ncores)
   #create cell data set wih RPC
   eds <- monocle::newCellDataSet(cellData = as.matrix(rpc_matrix),
                                  phenoData = pd,
@@ -221,85 +385,119 @@
                                  lowerDetectionLimit=0.5,
                                  expressionFamily=VGAM::negbinomial.size())
   # apply normalisation
-  eds.proc <- estimateSizeFactors(eds)
+  sf <- monocle:::estimateSizeFactorsForMatrix(counts=Biobase::exprs(eds))
+  names(sf) <- colnames(Biobase::exprs(eds))
 
-  norm.counts <- eds@assayData$exprs
-
-  # extract output
-  sf <- sizeFactors(eds.proc)
-  names(sf) <- colnames(norm.counts)
+  norm.counts <- t(t(countData)/sf)
 
   res <- list(NormCounts=norm.counts,
               RoundNormCounts=round(norm.counts),
-              size.factors=sf)
+              size.factors=sf,
+              RPC=as.matrix(rpc_matrix))
+  attr(res, 'normFramework') <- "Census"
   return(res)
 }
 
-.calculateTPM <- function(countData, Lengths) {
-  rate <- countData / Lengths
-  TPM <- rate / sum(rate) * 1e6
-  return(TPM)
-}
-
-.calculateCPM <- function(countData) {
-  CPM <- apply(countData,2, function(x) { (x/sum(x))*1000000 })
-  return(CPM)
-}
-
-.counts_to_tpm <- function(countData, Lengths, MeanFragLengths) {
-
-  # Ensure valid arguments.
-  stopifnot(length(Lengths) == nrow(counts))
-  stopifnot(length(MeanFragLengths) == ncol(counts))
-
-  # Compute effective lengths of features in each library.
-  effLen <- do.call(cbind, lapply(1:ncol(counts), function(i) {
-    Lengths - MeanFragLengths[i] + 1
-  }))
-
-  # Exclude genes with length less than the mean fragment length.
-  idx <- apply(effLen, 1, function(x) min(x) > 1)
-  counts <- counts[idx,]
-  effLen <- effLen[idx,]
-  Lengths <- Lengths[idx]
-
-  # Process one column at a time.
-  tpm <- do.call(cbind, lapply(1:ncol(counts), function(i) {
-    rate = log(counts[,i]) - log(effLen[,i])
-    denom = log(sum(exp(rate)))
-    exp(rate - denom + log(1e6))
-  }))
-
-  # Copy the row and column names from the original matrix.
-  colnames(tpm) <- colnames(counts)
-  rownames(tpm) <- rownames(counts)
-  return(tpm)
-}
-
-# RUVg spike-in normalisation ---------------------------------------------
+# RUV spike-in normalisation ---------------------------------------------
 
 #' @importFrom RUVSeq RUVg
-.RUVg.calc <- function(countData, spikeData) {
-  #RUVg calculation
-  rownames(spikeData) = paste('ERCC', 1:nrow(spikeData), sep="-")
-  cnts = rbind(countData, spikeData)
-  spike = grepl(pattern='ERCC', rownames(cnts))
-  RUVg.out = RUVSeq::RUVg(x=as.matrix(cnts),
-                          cIdx=spike,
-                          k=1,
-                          drop=0,
-                          center=TRUE,
-                          round=TRUE,
-                          epsilon=1,
-                          tolerance=1e-8,
-                          isLog=FALSE)
+#' @importFrom tibble rownames_to_column
+#' @importFrom tidyr %>%
+#' @importFrom dplyr rename_
+.RUV.calc <- function(countData, spikeData, batchData) {
+
+  if(is.null(batchData) && !is.null(spikeData)) {
+    # annotate spike-ins and genes
+    rownames(spikeData) = paste('ERCC', 1:nrow(spikeData), sep="-")
+    cnts = rbind(countData, spikeData)
+    spike = grepl(pattern='ERCC', rownames(cnts))
+
+    #RUVg calculation
+    RUV.out = RUVSeq::RUVg(x=as.matrix(cnts),
+                            cIdx=spike,
+                            k=1,
+                            drop=0,
+                            center=TRUE,
+                            round=FALSE,
+                            epsilon=1,
+                            tolerance=1e-8,
+                            isLog=FALSE)
+  }
+
+  if(!is.null(batchData) && !is.null(spikeData)) {
+    # prepare replicate sample annotation matrix
+    tmp <- batchData %>%
+      dplyr::rename_(Batch = names(.)[1]) %>%
+      tibble::rownames_to_column(var="SampleID")  %>%
+      tibble::rownames_to_column(var="SampleNumber")
+    tmp2 <- split(x = tmp, f = as.factor(tmp$Batch))
+    longestbatch <- max(sapply(tmp2, nrow))
+    tmp3 <- sapply(tmp2, function(x) {
+      tmp <- as.numeric(x$SampleNumber)
+      tmp1 <- c(tmp, rep(-1, longestbatch-length(tmp)))
+      tmp1
+    })
+    differences = t(tmp3)
+
+    # annotate spike-ins and genes
+    rownames(spikeData) = paste('ERCC', 1:nrow(spikeData), sep="-")
+    cnts = rbind(countData, spikeData)
+    spike = grepl(pattern='ERCC', rownames(cnts))
+
+    #RUVs calculation
+    RUV.out = RUVSeq::RUVs(x=as.matrix(cnts),
+                           cIdx=spike,
+                           scIdx = differences,
+                           k=1,
+                           round=FALSE,
+                           epsilon=1,
+                           tolerance=1e-8,
+                           isLog=FALSE)
+  }
+
+  if(!is.null(batchData) && is.null(spikeData)) {
+    # prepare replicate sample annotation matrix
+    tmp <- batchData %>%
+      dplyr::rename_(Batch = names(.)[1]) %>%
+      tibble::rownames_to_column(var="SampleID")  %>%
+      tibble::rownames_to_column(var="SampleNumber")
+    tmp2 <- split(x = tmp, f = as.factor(tmp$Batch))
+    longestbatch <- max(sapply(tmp2, nrow))
+    tmp3 <- sapply(tmp2, function(x) {
+      tmp <- as.numeric(x$SampleNumber)
+      tmp1 <- c(tmp, rep(-1, longestbatch-length(tmp)))
+      tmp1
+    })
+    differences = t(tmp3)
+
+    # annotate genes
+    cnts = countData
+    controls = rownames(countData)
+
+    #RUVs calculation
+    RUV.out = RUVSeq::RUVs(x=as.matrix(cnts),
+                           cIdx=controls,
+                           scIdx = differences,
+                           k=1,
+                           round=FALSE,
+                           epsilon=1,
+                           tolerance=1e-8,
+                           isLog=FALSE)
+  }
 
   # return object
-  sf <- apply(cnts/RUVg.out$normalizedCounts, 2, function(x) {median(x, na.rm = T)})
-  names(sf) <- colnames(cnts)
-  res <- list(NormCounts=RUVg.out$normalizedCounts,
-              RoundNormCounts=round(RUVg.out$normalizedCounts),
-              size.factors=sf)
+  # normalized counts
+  normCounts <- RUV.out$normalizedCounts
+  normCounts[normCounts<0] <- 0
+  # RUV does not return size factors, so make them constant
+  sf <- rep(1, ncol(countData))
+  # sf <- apply(countData/normCounts, 2, function(x) {median(x, na.rm = T)})
+  names(sf) <- colnames(countData)
+  res <- list(NormCounts = normCounts,
+              RoundNormCounts = round(normCounts),
+              size.factors = sf,
+              RUV.W = RUV.out$W)
+  attr(res, 'normFramework') <- "RUV"
   return(res)
 }
 
@@ -308,28 +506,36 @@
 # BASiCS spike-in normalisation -------------------------------------------
 
 #' @importFrom BASiCS newBASiCS_Data BASiCS_Filter BASiCS_MCMC BASiCS_DenoisedCounts
-.BASiCS.calc <- function(countData, spikeData, spikeInfo) {
+.BASiCS.calc <- function(countData, spikeData, spikeInfo, batchData) {
 
   # create input
   spike = c(rep(FALSE, nrow(countData)), rep(TRUE, nrow(spikeData)))
   cnts = rbind(countData, spikeData)
   cnts = as.matrix(cnts)
 
+  if(!is.null(batchData)) {
+    cond <- batchData[,1]
+  }
+  if(is.null(batchData)) {
+    cond <- NULL
+  }
+
   # perform filtering
   Filter = suppressMessages(BASiCS::BASiCS_Filter(Counts=cnts,
                                  Tech=spike,
                                  SpikeInput=spikeInfo$SpikeInput,
-                                 BatchInfo = NULL,
+                                 BatchInfo = cond,
                                  MinTotalCountsPerCell = 2,
                                  MinTotalCountsPerGene = 2,
                                  MinCellsWithExpression = 2,
                                  MinAvCountsPerCellsWithExpression = 2))
-  SpikeInfoFilter = spikeInfo[spikeInfo$SpikeID %in% names(Filter$IncludeGenes)[Filter$IncludeGenes == TRUE],]
+  SpikeInfoFilter = spikeInfo[rownames(spikeInfo) %in% names(Filter$IncludeGenes)[Filter$IncludeGenes == TRUE],]
 
   invisible(capture.output(
-    FilterData <- newBASiCS_Data(Counts = Filter$Counts,
+    FilterData <- BASiCS::newBASiCS_Data(Counts = Filter$Counts,
                                  Tech = Filter$Tech,
-                                 SpikeInfo = SpikeInfoFilter)
+                                 SpikeInfo = SpikeInfoFilter,
+                                 BatchInfo = Filter$BatchInfo)
   ))
 
   # fit MCMC
@@ -337,7 +543,7 @@
     MCMC_Output <- suppressMessages(BASiCS::BASiCS_MCMC(FilterData,
                                                         N = 10000,
                                                         Thin = 10,
-                                                        Burn = 5000,
+                                                        Burn =  5000,
                                                         PrintProgress = FALSE))
   ))
 
@@ -354,11 +560,27 @@
   # return object
   res <- list(NormCounts=DenoisedCounts,
               RoundNormCounts=round(DenoisedCounts),
-              size.factors=sf)
+              size.factors=sf,
+              MCMC_Output=MCMC_Output,
+              FilterData=FilterData)
+  attr(res, 'normFramework') <- "BASiCS"
   return(res)
 
 }
 
+
+# Depth normalisation (spike-ins) -----------------------------------------
+
+.depth.calc <- function(countData) {
+  sf <- colSums(countData) / mean(colSums(countData))
+  names(sf) <- colnames(countData)
+  norm.counts <- t(t(countData)/sf)
+  res <- list(NormCounts=norm.counts,
+              RoundNormCounts=round(norm.counts),
+              size.factors=sf)
+  attr(res, 'normFramework') <- "depth"
+  return(res)
+}
 
 # No normalisation --------------------------------------------------------
 
@@ -369,6 +591,8 @@
   res <- list(NormCounts=norm.counts,
               RoundNormCounts=round(norm.counts),
               size.factors=sf)
+  attr(res, 'normFramework') <- "none"
   return(res)
 }
+
 

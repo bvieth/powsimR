@@ -5,33 +5,55 @@
 \title{Estimate simulation parameters}
 \usage{
 estimateParam(countData,
-spikeData=NULL, spikeInfo = NULL,
-Lengths=NULL, MeanFragLengths=NULL,
-Distribution=c('NB', 'ZINB'), RNAseq=c('bulk', 'singlecell'),
-normalisation=c('TMM','MR','PosCounts','UQ',
-'scran', 'SCnorm', 'RUVg', 'BASiCS', 'Census', 'none'),
-sigma=1.96, NCores=NULL)
+batchData = NULL,
+spikeData = NULL,
+spikeInfo = NULL,
+Lengths = NULL,
+MeanFragLengths = NULL,
+Distribution = c('NB', 'ZINB'),
+RNAseq = c('bulk', 'singlecell'),
+normalisation = c('TMM', 'MR', 'PosCounts', 'UQ', 'scran',
+                  'SCnorm', 'RUV', 'BASiCS', 'Census', 'depth', 'none'),
+sigma = 1.96,
+NCores = NULL,
+verbose=TRUE)
 }
 \arguments{
-\item{countData}{is a count \code{matrix}. Rows correspond to genes, columns to samples.}
+\item{countData}{is a count \code{matrix}.
+Rows correspond to genes, columns to samples.
+The gene names should be given as rownames without "_" in the names. The samples names should be given as colnames.}
 
-\item{spikeData}{is a count \code{matrix}. Rows correspond to spike-ins, columns to samples. The order of columns should be the same as in the \code{countData}.}
+\item{batchData}{is a \code{data.frame} for batch annotation.
+Rows correspond to samples. The first column should contain the batches, e.g. 'a', 'b', 'c', etc.}
 
-\item{spikeInfo}{is a molecule count \code{matrix} of spike-ins. Rows correspond to spike-ins. The order of rows should be the same as in the \code{spikeData}. The column names should be 'SpikeID' and 'SpikeInput' for molecule counts of spike-ins.}
+\item{spikeData}{is a count \code{matrix}.
+Rows correspond to spike-ins, columns to samples.
+The order of columns should be the same as in the \code{countData}.}
 
-\item{Lengths}{is a numeric vector of transcript lengths with the same length as rows in countData. This variable is only used for internal TPM calculations if Census normalization is specified.}
+\item{spikeInfo}{is a molecule count \code{matrix} of spike-ins.
+Rows correspond to spike-ins. The order of rows should be the same as in the \code{spikeData}.
+The column names should be 'SpikeID' and 'SpikeInput' for molecule counts of spike-ins.}
 
-\item{MeanFragLengths}{is a numeric vector of mean fragment lengths with the same length as columns in countData. This variable is only used for internal TPM calculations if Census normalization is specified.}
+\item{Lengths}{is a numeric vector of transcript lengths with the same length as rows in countData.
+This variable is only used for internal TPM calculations if Census normalization is specified.}
+
+\item{MeanFragLengths}{is a numeric vector of mean fragment lengths with the same length as columns in countData.
+This variable is only used for internal TPM calculations if Census normalization is specified.}
 
 \item{Distribution}{is a character value: "NB" for negative binomial or "ZINB" for zero-inflated negative binomial.}
 
 \item{RNAseq}{is a character value: "bulk" or "singlecell".}
 
-\item{normalisation}{is a character value: "TMM", "MR" and "PosCounts", "UQ", "scran", "SCnorm", "RUVg", "BASiCS". For more information, please consult the details section.}
+\item{normalisation}{is a character value: 'TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'scranCLUST',
+'SCnorm', 'RUV', 'BASiCS', 'Census', 'depth', 'none'.
+For more information, please consult the details section.}
 
 \item{sigma}{The variability band width for mean-dispersion loess fit defining the prediction interval for read cound simulation. Default is 1.96, i.e. 95\% interval. For more information see \code{\link[msir]{loess.sd}}.}
 
-\item{NCores}{The number of cores for normalisation method SCnorm and Census. If NULL, the number of detected cores minus 1 is used.}
+\item{NCores}{The number of cores for normalisation method SCnorm and Census.
+If \code{NULL}, the number of detected cores minus 1 is used.}
+
+\item{verbose}{Logical value to indicate whether to print function information. Default is \code{TRUE}.}
 }
 \value{
 List object with the following entries
@@ -53,16 +75,30 @@ List object with the following entries
 \item{sigma}{The width of the variability band.}
 }
 \description{
-This function estimates and returns parameters needed for power simulations assuming a negative binomial read count distribution.
+This function estimates and returns parameters needed for power
+simulations assuming a (zero-inflated) negative binomial read count distribution.
 }
 \details{
 Normalisation methods
 \describe{
-\item{TMM, UQ}{employ the edgeR style normalization of weighted trimmed mean of M-values and upperquartile as implemented in \code{\link[edgeR]{calcNormFactors}}, respectively.}
-\item{MR, PosCounts}{employ the DESeq2 style normalization of median ratio method and a modified geometric mean method as implemented in \code{\link[DESeq2]{estimateSizeFactors}}, respectively.}
-\item{scran, SCnorm}{apply the deconvolution and quantile regression normalization methods developed for sparse RNA-seq data as implemented in \code{\link[scran]{computeSumFactors}} and \code{\link[SCnorm]{SCnorm}}, respectively. For \code{SCnorm}, the user can also supply \code{spikeData}.}
-\item{RUVg}{removes unwanted variation by utilizing negative control genes, i.e. spike-ins stored in \code{spikeData}, as implemented in \code{\link[RUVSeq]{RUVg}}.}
-\item{BASiCS}{removes technical variation by utilizing negative control genes, i.e. spike-ins stored in \code{spikeData}, as implemented in \code{\link[BASiCS]{DenoisedCounts}}. Furthermore, the molecule counts of spike-ins added to the cell lysate need to be supplied in \code{spikeInfo}.}
+\item{TMM, UQ}{employ the edgeR style normalization of weighted trimmed mean of M-values and upperquartile
+as implemented in \code{\link[edgeR]{calcNormFactors}}, respectively.}
+\item{MR, PosCounts}{employ the DESeq2 style normalization of median ratio method and a modified geometric mean method
+as implemented in \code{\link[DESeq2]{estimateSizeFactors}}, respectively.}
+\item{scran, SCnorm}{apply the deconvolution and quantile regression normalization methods developed for sparse RNA-seq data
+as implemented in \code{\link[scran]{computeSumFactors}} and \code{\link[SCnorm]{SCnorm}}, respectively.
+For \code{SCnorm}, the user can also supply \code{spikeData}.}
+\item{RUV}{removes unwanted variation. There are two approaches implemented:
+(1) utilizing negative control genes, i.e. spike-ins stored in \code{spikeData} (\code{\link[RUVSeq]{RUVg}}).
+(2) utilizing replicate samples, i.e. samples for which the covariates of interest are considered constant.
+This annotation is stored in \code{batchData} (\code{\link[RUVSeq]{RUVs}}).}
+\item{BASiCS}{removes technical variation by utilizing negative control genes, i.e. spike-ins stored in \code{spikeData},
+as implemented in \code{\link[BASiCS]{DenoisedCounts}}.
+Furthermore, the molecule counts of spike-ins added to the cell lysate need to be supplied in \code{spikeInfo}.}
+#' \item{Census}{converts relative measures of TPM/FPKM values into mRNAs per cell (RPC) without the need of spike-in standards.
+Census at least needs \code{Lengths} for single-end data and preferably \code{MeanFragLengths} for paired-end data.
+Do not use this algorithm for UMI data!}
+\item{depth}{Sequencing depth normalisation.}
 \item{none}{No normalisation is applied. This approach can be used for prenormalized expression estimates, e.g. cufflinks, RSEM or salmon.}
 }
 }
@@ -79,14 +115,14 @@ cnts <- matrix(rnbinom(ngenes*ncells,
                        mu=sf.means, size=1/true.dispersions),
                ncol=ncells)
 ## estimating negative binomial parameters
-estparam <- estimateParam(countData=cnts,
+estparam <- estimateParam(countData=cnts, batchData = NULL,
                           spikeData=NULL, spikeInfo = NULL,
                           Lengths=NULL, MeanFragLengths=NULL,
                           Distribution='NB',
                           RNAseq="singlecell",
                           normalisation='scran',
                           NCores=NULL,
-                          sigma=1.96)
+                          sigma=1.96, verbose=TRUE)
 plotParam(estparam, annot=F)
 
 ## simulating bulk RNA-seq experiment
@@ -100,10 +136,28 @@ cnts <- matrix(rnbinom(ngenes*nsamples,
                        mu=sf.means, size=1/true.dispersions),
                ncol=nsamples)
 ## estimating negative binomial parameters
-estparam <- estimateParam(countData=cnts,
-                          Distribution='NB', RNAseq="bulk",
-                          normalisation='MR', sigma=1.96)
+estparam <- estimateParam(countData=cnts, batchData = NULL,
+                          spikeData=NULL, spikeInfo = NULL,
+                          Lengths=NULL, MeanFragLengths=NULL,
+                          Distribution='NB',
+                          RNAseq="bulk",
+                          normalisation='MR',
+                          NCores=NULL,
+                          sigma=1.96, verbose=TRUE)
 plotParam(estparam, annot=F)
+
+# download count table
+githubURL <- "https://github.com/bvieth/powsimRData/raw/master/data-raw/kolodziejczk_cnts.rda"
+download.file(url = githubURL, destfile= "kolodziejczk_cnts.rda", method = "wget")
+load('kolodziejczk_cnts.rda')
+kolodziejczk_cnts <- kolodziejczk_cnts[, grep('standard', colnames(kolodziejczk_cnts))]
+## estimate NB parameters:
+estparams <- estimateParam(countData=cnts
+                          Distribution='NB',
+                          RNAseq="singlecell",
+                          normalisation='scran',
+                          NCores=NULL,
+                          sigma=1.96, verbose=TRUE)
 }
 }
 \author{

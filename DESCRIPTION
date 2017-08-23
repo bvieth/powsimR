@@ -1,15 +1,15 @@
 Package: powsimR
 Type: Package
 Title: Power Simulations for RNA-sequencing
-Description: This package provides simulation based methods for evaluating the statistical
-          power to detect differential expression in bulk and single cell RNA-seq experiments
-Version: 1.0.0
-Imports: methods, stats, matrixStats, moments, S4Vectors, gtools, AnnotationDbi, Biobase,
-          BiocGenerics, SummarizedExperiment, BiocParallel, doParallel, parallel, snow,
-          reshape2, dplyr, tidyr, data.table, ggplot2, ggthemes, ggExtra, cowplot, scales,
-          fitdistrplus, NBGOF, MASS, pscl, nonnest2, cobs, msir, drc, RUVSeq, scran, scater,
-          SCnorm, edgeR, limma, DESeq2, baySeq, NOISeq, NBPSeq, EBSeq, DSS, BASiCS, MAST,
-          scde, scDD, ROTS, BPSC, monocle, VGAM, IHW, qvalue
+Description: This package provides simulation based methods for evaluating the statistical power to detect
+            differential expression in bulk and single cell RNA-seq experiments
+Version: 1.0.1
+Imports: methods, stats, matrixStats, Rtsne, moments, minpack.lm, glmnet, cluster, MASS, S4Vectors, gtools,
+            DEDS, AnnotationDbi, Biobase, BiocGenerics, SummarizedExperiment, BiocParallel, doParallel,
+            parallel, snow, reshape2, plyr, dplyr, tidyr, tibble, data.table, ggplot2, ggthemes, ggExtra,
+            cowplot, scales, fitdistrplus, NBGOF, pscl, nonnest2, cobs, msir, drc, RUVSeq, scran, scater,
+            SCnorm, edgeR, limma, DESeq2, baySeq, NOISeq, NBPSeq, EBSeq, DSS, BASiCS, MAST, scde, scDD, ROTS,
+            BPSC, monocle, VGAM, IHW, qvalue
 Remotes: gu-mi/NBGOF, hms-dbmi/scde, nghiavtr/BPSC, catavallejos/BASiCS, rhondabacher/SCnorm
 Depends: R (>= 3.4), gamlss.dist, splines
 Suggests: BiocStyle, knitr
@@ -17,6 +17,6 @@ VignetteBuilder: knitr
 License: GPL
 NeedsCompilation: no
 Author: Beate Vieth
-Date: 2017-07-12
+Date: 2017-08-23
 Maintainer: Beate Vieth <vieth.beate@gmail.com>
 RoxygenNote: 6.0.1

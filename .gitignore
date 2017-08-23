@@ -3,6 +3,8 @@
 .Rapp.history
 .RData
 .Ruserdata
+R/_description.R
+.Rbuildignore
 
 # Example code in package build process
 *-Ex.R
@@ -25,3 +27,5 @@ vignettes/powsim_schematic.pdf
 .httr-oauth
 
 .Rproj.user
+
+powsimR\.Rproj

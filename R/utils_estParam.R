@@ -1,7 +1,116 @@
-# estParam: single cell ---------------------------------------------------
+
+# Estimate mean, dispersion, dropout from read counts ---------------------
+#' @importFrom DEDS comp.FC
+.run.params <- function(countData, normData, group) {
+
+  # calculate mean, dispersion and dropout
+  means = rowMeans(normData$NormCounts)
+  nsamples = ncol(normData$NormCounts)
+  s2 = rowSums((normData$NormCounts - means)^2)/(nsamples - 1)
+  size = means^2/(s2 - means + 1e-04)
+  size = ifelse(size > 0, size, NA)
+  dispersion = 1/size
+  counts0 = countData == 0
+  nn0 = rowSums(!counts0)
+  p0 = (nsamples - nn0)/nsamples
+  cnts = normData$NormCounts
+  fc.foo = DEDS::comp.FC(L=group, is.log = F, FUN = mean)
+  fc = fc.foo(cnts)
+  lfc = log2(fc)
+
+  res = data.frame(geneIndex=rownames(normData$NormCounts),
+                    means=means,
+                    dispersion=dispersion,
+                    dropout=p0,
+                    lfcs=lfc,
+                    stringsAsFactors = F)
+  return(res)
+}
+
+# checkup -----------------------------------------------------------------
+
+.run.checkup <- function(countData, batchData, spikeData, spikeInfo, Lengths, MeanFragLengths, verbose) {
+
+  if (!is.null(batchData) && is.null(rownames(batchData)) && is.null(colnames(countData)) ) {
+    rownames(batchData) <- paste0("S", 1:nrow(batchData))
+    message(paste0("No samples names were provided for batch information so that pseudo sample names are assigned."))
+  }
+  if (!is.null(batchData) && is.null(rownames(batchData)) && !is.null(colnames(countData)) ) {
+    rownames(batchData) <- colnames(countData)
+    message(paste0("No samples names were provided for batch information so that pseudo sample names are assigned."))
+  }
+  if (!is.null(Lengths) && is.null(names(Lengths)) && is.null(rownames(countData)) ) {
+    stop(message(paste0("The gene lengths vector and the count data have no names so that correct matching is not possible. Please provide names in both input objects")))
+  }
+  if (!is.null(Lengths) && !is.null(names(Lengths)) && !is.null(rownames(countData)) ) {
+    # match and sort Lengths based on countData
+    Lengths <- Lengths[names(Lengths) %in% rownames(countData)]
+    Lengths <- Lengths[match(rownames(countData), names(Lengths))]
+    if (length(Lengths)==0) {
+      stop(message(paste0("Please provide Lengths and countData with matching gene names!")))
+    }
+    if (!is.null(rownames(countData)) && any(grepl(pattern = "_", rownames(countData))) ) {
+      message(paste0("Some of the gene names contain '_' which will interfere with simulations later on. They will be replaced with '--'."))
+      rownames(countData) <- gsub(pattern = "_",
+                                  replacement = "--",
+                                  x = rownames(countData))
+      names(Lengths) <- gsub(pattern = "_",
+                             replacement = "--",
+                             x = names(Lengths))
+    }
+  }
+
+  if (!is.null(MeanFragLengths) && is.null(names(MeanFragLengths)) && is.null(colnames(countData)) ) {
+    stop(message(paste0("The mean fragment lengths vector and the count data samples have no names so that correct matching is not possible. Please provide names in both input objects.")))
+  }
+  if (!is.null(MeanFragLengths) && !is.null(names(MeanFragLengths)) && !is.null(colnames(countData)) ) {
+    # match and sort mean fragment lengths based on countData
+    MeanFragLengths <- MeanFragLengths[names(MeanFragLengths) %in% colnames(countData)]
+    MeanFragLengths <- MeanFragLengths[match(colnames(countData), names(MeanFragLengths))]
+    if (length(MeanFragLengths)==0) {
+      stop(message(paste0("Please provide MeanFragLengths and countData with matching sample names!")))
+    }
+  }
+
+  # stop if spikes and info do not match!
+  if ( !is.null(spikeData) && is.null(rownames(spikeData)) && !is.null(spikeInfo) && is.null(rownames(spikeInfo)) ) {
+    stop(message(paste0("No spike-in names were provided! Please provide spike molecule information only with matching rownames of spikeData and spikeInfo.")))
+  }
+  if ( !is.null(spikeData) && !is.null(rownames(spikeData)) && !is.null(spikeInfo) && !is.null(rownames(spikeInfo)) ) {
+    # match and sort spikeData and spikeInfo
+    spikeInfo <- spikeInfo[rownames(spikeInfo) %in% rownames(spikeData), , drop = FALSE]
+    spikeInfo <- spikeInfo[match(rownames(spikeData), rownames(spikeInfo)), , drop = FALSE ]
+    if (nrow(spikeInfo)==0) {
+      stop(message(paste0("Please provide spike molecule information only with matching rownames of spikeData and spikeInfo.")))
+    }
+  }
+
+  # fill in pseudonames if missing and count data is the only input
+  if(is.null(batchData) && is.null(spikeData) && is.null(spikeInfo) && is.null(Lengths)) {
+    if (is.null(rownames(countData))) {
+      rownames(countData) <- paste0("G", 1:nrow(countData))
+      message(paste0("No gene names were provided so that pseudo gene names are assigned."))
+    }
+    if (is.null(colnames(countData))) {
+      colnames(countData) <- paste0("S", 1:ncol(countData))
+      message(paste0("No sample names were provided for counts so that pseudo sample names are assigned."))
+    }
+  }
+
+  return(list(countData = countData,
+              batchData = batchData,
+              spikeData = spikeData,
+              spikeInfo = spikeInfo,
+              Lengths = Lengths,
+              MeanFragLengths =MeanFragLengths))
+}
+
+
+# estParam ----------------------------------------------------------------
 
 #' @importFrom parallel detectCores
 .run.estParam <- function(countData,
+                          batchData,
                           spikeData,
                           spikeInfo,
                           Lengths,
@@ -10,34 +119,59 @@
                           RNAseq,
                           normalisation,
                           NCores,
-                          sigma) {
+                          sigma,
+                          verbose=verbose) {
   # kick out empty samples and keep only expressed genes
   totalS <- ncol(countData)
   totalG <- nrow(countData)
   fullS <- colSums(countData, na.rm = TRUE) > 0
   DetectG <- rowMeans(countData, na.rm = TRUE) > 0
   countData <- countData[DetectG,fullS]
+
+  if(!is.null(Lengths)) {
+    Lengths <- Lengths[DetectG]
+  }
+  if(!is.null(MeanFragLengths)) {
+    MeanFragLengths <- MeanFragLengths[fullS]
+  }
+  if(!is.null(batchData)) {
+    batchData <- batchData[fullS, , drop=F]
+  }
+
+  if(!is.null(spikeData) && !is.null(spikeInfo)) {
+    # kick out undetected spike-ins
+    spikeData <- spikeData[rowSums(spikeData)>0, colSums(spikeData)>100]
+    if(verbose) {message(paste0(nrow(spikeData), " spike-ins have been detected in ", ncol(spikeData), " samples."))}
+    # sort them if needed
+    spikeInfo <- spikeInfo[rownames(spikeInfo) %in% rownames(spikeData), , drop = FALSE]
+    spikeInfo <- spikeInfo[match(rownames(spikeData), rownames(spikeInfo)), , drop = FALSE ]
+    if(nrow(spikeData)<10 || nrow(spikeInfo)<10) {
+      stop(message(paste0("Not enough spike-ins detected to allow reliable normalisation. Please proceed with spike-in independent methods, e.g. TMM, scran, SCnorm, etc.")))
+      }
+  }
+
+  if(!is.null(spikeData) && is.null(spikeInfo)) {
+    # kick out undetected spike-ins
+    spikeData <- spikeData[rowSums(spikeData)>0, colSums(spikeData)>100]
+    if(verbose) { message(paste0(nrow(spikeData), " spike-ins have been detected in ", ncol(spikeData), " samples."))}
+    if(nrow(spikeData)<10) {
+      stop(message(paste0("Not enough spike-ins detected to allow reliable normalusation. Please proceed with spike-in indepdent methods, e.g. TMM, scran, SCnorm etc.")))
+    }
+  }
+
   countData0 <- countData == 0
   grand.dropout <- sum(countData0)/(nrow(countData)*ncol(countData))
-
-  # fill in pseudonames if missing
-  if (is.null(rownames(countData))) {
-    rownames(countData) <- paste0("G", 1:nrow(countData))
-  }
-  if (is.null(colnames(countData))) {
-    colnames(countData) <- paste0("S", 1:ncol(countData))
-  }
-
-  ncores = ifelse(is.null(NCores), parallel::detectCores() - 1, NCores)
 
   # normalisation
   NormData <- .norm.calc(normalisation=normalisation,
                          countData=countData,
                          spikeData=spikeData,
                          spikeInfo=spikeInfo,
+                         batchData=batchData,
                          Lengths=Lengths,
                          MeanFragLengths=MeanFragLengths,
-                         NCores=ncores)
+                         PreclustNumber=NULL,
+                         NCores=NCores)
 
   # parameters: mean, dispersion, dropout
   # fitting: mean vs dispersion, mean vs dropout
@@ -59,7 +193,9 @@
   res <- c(ParamData, list(totalS=totalS,
                            totalG=totalG,
                            grand.dropout=grand.dropout,
-                           sf=NormData$size.factors))
+                           sf=NormData$size.factors,
+                           Lengths=Lengths,
+                           MeanFragLengths=MeanFragLengths))
   return(res)
 }
 

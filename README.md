@@ -75,7 +75,7 @@ R Session Info
 
 ``` r
 sessionInfo()
-#> R version 3.4.0 (2017-04-21)
+#> R version 3.4.1 (2017-06-30)
 #> Platform: x86_64-pc-linux-gnu (64-bit)
 #> Running under: Ubuntu 14.04.5 LTS
 #> 
@@ -95,8 +95,8 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] compiler_3.4.0  backports_1.1.0 magrittr_1.5    rprojroot_1.2  
-#>  [5] formatR_1.5     tools_3.4.0     htmltools_0.3.6 yaml_2.1.14    
-#>  [9] Rcpp_0.12.11    stringi_1.1.5   rmarkdown_1.6   knitr_1.16     
-#> [13] stringr_1.2.0   digest_0.6.12   evaluate_0.10
+#>  [1] compiler_3.4.1  backports_1.1.0 magrittr_1.5    rprojroot_1.2  
+#>  [5] formatR_1.5     tools_3.4.1     htmltools_0.3.6 yaml_2.1.14    
+#>  [9] Rcpp_0.12.12    stringi_1.1.5   rmarkdown_1.6   knitr_1.17     
+#> [13] stringr_1.2.0   digest_0.6.12   evaluate_0.10.1
 ```

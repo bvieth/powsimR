@@ -1,42 +1,67 @@
 
 # Simulate DE between 2 groups (DE of mean) -------------------------------
 
-#' @importFrom stats model.matrix
+#' @importFrom stats model.matrix coef poisson sd
 .simRNAseq.2grp <- function(simOptions, n1, n2) {
 
-  ## make group labels
-  design <- c(rep(-1, n1), rep(1, n2))
-  ## make model matrix
-  mod = stats::model.matrix(~-1 + design)
+  if(is.null(simOptions$bLFC)) {
+    ## make group labels for phenotype LFC
+    phenotype <- c(rep(-1, n1), rep(1, n2))
+    ## make model matrix
+    mod = stats::model.matrix(~-1 + phenotype)
+    coeffs = cbind(simOptions$pLFC)
+  }
+
+  if(!is.null(simOptions$bLFC)) {
+    # make group labels for phenotype LFC
+    phenotype <- c(rep(-1, n1), rep(1, n2))
+    # make batch labels for batch LFC
+    batch <- rep_len(c(-1,1), n1+n2)
+    # make model matrix
+    mod = stats::model.matrix(~-1 + batch + phenotype)
+    coeffs = cbind(simOptions$bLFC, simOptions$pLFC)
+  }
 
   # generate read counts
   if (simOptions$RNAseq == "singlecell") {
     if (attr(simOptions, 'Distribution') == 'NB') {
-      simcounts = .sc.NB.RNAseq_counts(sim.options = simOptions, modelmatrix = mod)
+      sim.data = .sc.NB.RNAseq_counts(sim.options = simOptions,
+                                      phenotype = phenotype,
+                                      modelmatrix = mod,
+                                      coef.dat=coeffs)
     }
     if (attr(simOptions, 'Distribution') == 'ZINB') {
-      simcounts = .sc.ZINB.RNAseq_counts(sim.options = simOptions, modelmatrix = mod)
+      sim.data = .sc.ZINB.RNAseq_counts(sim.options = simOptions,
+                                        phenotype = phenotype,
+                                        modelmatrix = mod,
+                                        coef.dat=coeffs)
     }
   }
   if (simOptions$RNAseq == "bulk") {
-    simcounts = .bulk.NB.RNAseq_counts(sim.options = simOptions, modelmatrix = mod)
+    sim.data = .bulk.NB.RNAseq_counts(sim.options = simOptions,
+                                      phenotype = phenotype,
+                                       modelmatrix = mod,
+                                       coef.dat=coeffs)
   }
 
-  simcounts <- apply(simcounts,2,function(x) {storage.mode(x) <- 'integer'; x})
+  sim.counts = sim.data$counts
+  sf.value = sim.data$sf
+
+  sim.counts <- apply(sim.counts,2,function(x) {storage.mode(x) <- 'integer'; x})
   # fill in pseudonames if missing
-  if (is.null(rownames(simcounts))) {
-    rownames(simcounts) <- paste0("G", 1:nrow(simcounts))
+  if (is.null(rownames(sim.counts))) {
+    rownames(sim.counts) <- paste0("G", 1:nrow(sim.counts))
   }
-  if (is.null(colnames(simcounts))) {
-    colnames(simcounts) <- paste0("S", 1:ncol(simcounts))
+  if (is.null(colnames(sim.counts))) {
+    colnames(sim.counts) <- paste0("S", 1:ncol(sim.counts))
   }
 
   ## return
-  list(counts = simcounts, designs = design, simOptions = simOptions)
+  list(counts = sim.counts, designs = phenotype, sf = sf.value, simOptions = simOptions)
 }
 
 #' @importFrom stats rnorm rnbinom
-.sc.NB.RNAseq_counts <- function(sim.options, modelmatrix) {
+.sc.NB.RNAseq_counts <- function(sim.options, phenotype, modelmatrix, coef.dat) {
 
   set.seed(sim.options$sim.seed)
   print(sim.options$sim.seed)
@@ -44,7 +69,7 @@
   nsamples = nrow(modelmatrix)
   ngenes = sim.options$ngenes
   mod = modelmatrix
-  beta = cbind(sim.options$lfc)
+  beta = coef.dat
 
   if (attr(sim.options, 'param.type') == 'estimated') {
     # define NB params
@@ -55,14 +80,18 @@
     index = sample(1:length(mu), size = ngenes, replace = T)
     true.means = mu[index]
 
-    # estimate size parameter associated with mean values
+    # estimate size parameter associated with true mean values
     lmu = log2(true.means + 1)
     predsize.mean = approx(meansizefit$x, meansizefit$y, xout = lmu)$y
     predsize.sd = approx(meansizefit$x, meansizefit$sd, xout = lmu)$y
     sizevec = rnorm(n = length(lmu), mean = predsize.mean, sd = predsize.sd)
 
 
-    # capture efficiency (size factor)
+    # size factor
+    if(is.list(sim.options$size.factors)) {
+      all.facs <- c(sim.options$size.factors$n1(length(which(phenotype==-1))),
+                   sim.options$size.factors$n2(length(which(phenotype==1))))
+    }
     if (sim.options$size.factors == "equal") {
       all.facs <- rep(1, nsamples)
     }
@@ -74,7 +103,8 @@
         all.facs <- sample(sim.options$sf, nsamples, replace = TRUE)
       }
       if (is.null(sim.options$sf)) {
-        all.facs <- rep(1, nsamples)
+        stop(message(paste0("You chose to draw from the given size factors,
+                            however the sf vector is empty!")))
       }
     }
 
@@ -89,7 +119,12 @@
     mumat[mumat < 0] = 0
 
     # result count matrix
-    counts = matrix(stats::rnbinom(nsamples * ngenes, mu = 2 ^ mumat - 1, size = 2 ^ sizevec), ncol = nsamples, nrow = ngenes)
+    counts = matrix(
+      stats::rnbinom(nsamples * ngenes, mu = 2 ^ mumat - 1, size = 2 ^ sizevec),
+      ncol = nsamples,
+      nrow = ngenes,
+      dimnames = list(paste0(rownames(mumat),"_", seq_len(ngenes)),
+                      paste0('S', seq_len(nsamples))))
   }
 
   if (attr(sim.options, 'param.type') == 'insilico') {
@@ -105,7 +140,11 @@
       disp = sim.options$dispersion(true.means)
     }
 
-    # capture efficiency (size factor)
+    # size factor
+    if(is.list(sim.options$size.factors)) {
+      all.facs <- c(sim.options$size.factors$n1(length(which(phenotype==-1))),
+                   sim.options$size.factors$n2(length(which(phenotype==1))))
+    }
     if (sim.options$size.factors == "equal") {
       all.facs <- rep(1, nsamples)
     }
@@ -117,7 +156,8 @@
         all.facs <- sample(sim.options$sf, nsamples, replace = TRUE)
       }
       if (is.null(sim.options$sf)) {
-        all.facs <- rep(1, nsamples)
+        stop(message(paste0("You chose to draw from the given size factors,
+                            however the sf vector is empty!")))
       }
     }
 
@@ -135,11 +175,11 @@
     counts = matrix(stats::rnbinom(nsamples * ngenes, mu = 2 ^ mumat - 1, size = 1/disp), ncol = nsamples, nrow = ngenes)
   }
 
-  return(counts)
+  return(list(counts=counts, sf=all.facs))
 }
 
 #' @importFrom stats rnorm rnbinom runif approx
-.sc.ZINB.RNAseq_counts <- function(sim.options, modelmatrix) {
+.sc.ZINB.RNAseq_counts <- function(sim.options, phenotype, modelmatrix, coef.dat) {
 
   set.seed(sim.options$sim.seed)
   print(sim.options$sim.seed)
@@ -147,7 +187,7 @@
   nsamples = nrow(modelmatrix)
   ngenes = sim.options$ngenes
   mod = modelmatrix
-  beta = cbind(sim.options$lfc)
+  beta = coef.dat
 
   if (attr(sim.options, 'param.type') == 'estimated') {
     # define NB params
@@ -158,13 +198,17 @@
     index = sample(1:length(mu), size = ngenes, replace = T)
     true.means = mu[index]
 
-    # estimate size parameter associated with mean values
+    # estimate size parameter associated with true mean values
     lmu = log2(true.means + 1)
     predsize.mean = approx(meansizefit$x, meansizefit$y, xout = lmu)$y
     predsize.sd = approx(meansizefit$x, meansizefit$sd, xout = lmu)$y
     sizevec = rnorm(n = length(lmu), mean = predsize.mean, sd = predsize.sd)
 
-    # capture efficiency (size factor)
+    # size factor
+    if(is.list(sim.options$size.factors)) {
+      all.facs <- c(sim.options$size.factors$n1(length(which(phenotype==-1))),
+                    sim.options$size.factors$n2(length(which(phenotype==1))))
+    }
     if (sim.options$size.factors == "equal") {
       all.facs <- rep(1, nsamples)
     }
@@ -176,7 +220,8 @@
         all.facs <- sample(sim.options$sf, nsamples, replace = TRUE)
       }
       if (is.null(sim.options$sf)) {
-        all.facs <- rep(1, nsamples)
+        stop(message(paste0("You chose to draw from the given size factors,
+                            however the sf vector is empty!")))
       }
     }
 
@@ -198,9 +243,9 @@
 
     if(!is.null(meanp0fit.nonamplified) && !is.null(meanp0fit.amplified)) {
       # predict the dropout probabilities associated with sampled mean
-      p0.split = rbinom(length(muvec), prob = nonamplified, size = 1)
-      muvec.dat.nonamplified = abs(muvec)[p0.split==1]
-      muvec.dat.amplified = abs(muvec)[p0.split==0]
+      p0.split = rbinom(length(lmu), prob = nonamplified, size = 1)
+      muvec.dat.nonamplified = abs(lmu)[p0.split==1]
+      muvec.dat.amplified = abs(lmu)[p0.split==0]
 
       predp0.amplified.mean = approx(meanp0fit.amplified$x,
                                      meanp0fit.amplified$y,
@@ -223,7 +268,7 @@
                                       rule=2:1)$y
       predp0.nonamplified.sd[is.na(predp0.nonamplified.sd)] = min(meanp0fit.amplified$sd)/2
 
-      p0vec = rep(NA, length(muvec))
+      p0vec = rep(NA, length(lmu))
       p0vec[p0.split==0] = rnorm(n=length(which(p0.split==0)),
                                  mean=predp0.amplified.mean,
                                  sd=predp0.amplified.sd)
@@ -234,24 +279,24 @@
       p0vec[p0vec<0] = runif(length(which(p0vec<0)),0,0.05)
       p0vec[p0vec>1] = runif(length(which(p0vec>1)),0.85,1)
 
-      zero.mark = sapply (p0vec, function(x) {
-        rbinom(length(x), prob = (1 - x), size = 1)
-      })
+      zero.mark = sapply(p0vec, function(x) {
+        rbinom(nsamples,  prob = (1 - x), size = 1)
+      }, simplify = T)
 
-      p0mat = matrix(zero.mark, nrow = ngenes)
+      p0mat = matrix(t(zero.mark), nrow = ngenes, ncol = nsamples)
 
       # result count matrix
       counts.nb = matrix(stats::rnbinom(nsamples * ngenes,
                                         mu = 2 ^ mumat - 1,
                                         size = 2 ^ sizevec),
-                         ncol = nsamples, nrow = ngenes) * p0mat
+                         ncol = nsamples, nrow = ngenes)
       counts = counts.nb * p0mat
     }
 
     if(any(is.null(meanp0fit.nonamplified), is.null(meanp0fit.amplified)) && !is.null(meanp0fit)) {
       # predict the dropout probabilities associated with sampled mean
-      p0.split = rbinom(length(muvec), prob = nonamplified, size = 1)
-      muvec.dat = abs(muvec)
+      p0.split = rbinom(length(lmu), prob = nonamplified, size = 1)
+      muvec.dat = abs(lmu)
 
       predp0.mean = approx(meanp0fit$x,
                            meanp0fit$y,
@@ -264,7 +309,6 @@
                          rule=2:1)$y
       predp0.sd[is.na(predp0.sd)] = min(meanp0fit$sd)/2
 
-
       p0vec = rnorm(n=length(muvec.dat),
                     mean=predp0.mean,
                     sd=predp0.sd)
@@ -272,34 +316,37 @@
       p0vec[p0vec<0] = runif(length(which(p0vec<0)),0,0.05)
       p0vec[p0vec>1] = runif(length(which(p0vec>1)),0.85,1)
 
-      zero.mark = sapply (p0vec, function(x) {
-        rbinom(length(x), prob = (1 - x), size = 1)
-      })
+      zero.mark = sapply(p0vec, function(x) {
+        rbinom(nsamples,  prob = (1 - x), size = 1)
+      }, simplify = T)
 
-      p0mat = matrix(zero.mark, nrow = ngenes)
+      p0mat = matrix(t(zero.mark), nrow = ngenes, ncol = nsamples)
 
       # result count matrix
       counts.nb = matrix(stats::rnbinom(nsamples * ngenes,
                                         mu = 2 ^ mumat - 1,
                                         size = 2 ^ sizevec),
-                         ncol = nsamples, nrow = ngenes) * p0mat
+                         ncol = nsamples, nrow = ngenes)
       counts = counts.nb * p0mat
     }
 
     if(is.null(meanp0fit.nonamplified) && is.null(meanp0fit.amplified) && is.null(meanp0fit)) {
       # result count matrix
       counts = matrix(stats::rnbinom(nsamples * ngenes,
-                                        mu = 2 ^ mumat - 1,
-                                        size = 2 ^ sizevec),
-                         ncol = nsamples, nrow = ngenes)
+                                     mu = 2 ^ mumat - 1,
+                                     size = 2 ^ sizevec),
+                      ncol = nsamples, nrow = ngenes)
     }
   }
 
-  return(counts)
+  dimnames(counts) <- list(paste0(rownames(mumat),"_", seq_len(ngenes)),
+                           paste0('S', seq_len(nsamples)))
+
+  return(list(counts=counts, sf=all.facs))
 }
 
 #' @importFrom stats rnorm rbinom rnbinom approx
-.bulk.NB.RNAseq_counts <- function(sim.options, modelmatrix) {
+.bulk.NB.RNAseq_counts <- function(sim.options, phenotype, modelmatrix, coef.dat) {
 
   set.seed(sim.options$sim.seed)
   print(sim.options$sim.seed)
@@ -307,7 +354,7 @@
   nsamples = nrow(modelmatrix)
   ngenes = sim.options$ngenes
   mod = modelmatrix
-  beta = cbind(sim.options$lfc)
+  beta = coef.dat
 
   if (attr(sim.options, 'param.type') == 'estimated') {
     # define NB params
@@ -331,7 +378,11 @@
       stats::rbinom(nsamples, prob = 1 - x, size = 1)
     }, simplify = T))
 
-    # capture efficiency (size factor)
+    # size factor
+    if(is.list(sim.options$size.factors)) {
+      all.facs <- c(sim.options$size.factors$n1(length(which(phenotype==-1))),
+                    sim.options$size.factors$n2(length(which(phenotype==1))))
+    }
     if (sim.options$size.factors == "equal") {
       all.facs <- rep(1, nsamples)
     }
@@ -343,7 +394,8 @@
         all.facs <- sample(sim.options$sf, nsamples, replace = TRUE)
       }
       if (is.null(sim.options$sf)) {
-        all.facs <- rep(1, nsamples)
+        stop(message(paste0("You chose to draw from the given size factors,
+                            however the sf vector is empty!")))
       }
     }
 
@@ -358,7 +410,11 @@
     mumat[mumat < 0] = 0
 
     # result count matrix
-    cnts = matrix(stats::rnbinom(nsamples * ngenes, mu = 2 ^ mumat - 1, size = 2 ^ sizevec), ncol = nsamples, nrow = ngenes)
+    cnts = matrix(
+      stats::rnbinom(nsamples * ngenes, mu = 2 ^ mumat - 1, size = 2 ^ sizevec),
+      ncol = nsamples, nrow = ngenes,
+      dimnames = list(paste0(rownames(mumat),"_", seq_len(ngenes)),
+                      paste0('S', seq_len(nsamples))))
     counts = p0mat * cnts
   }
 
@@ -386,7 +442,11 @@
       disp = sim.options$dispersion(true.means)
     }
 
-    # capture efficiency (size factor)
+    # size factor
+    if(is.list(sim.options$size.factors)) {
+      all.facs <- c(sim.options$size.factors$n1(length(which(phenotype==-1))),
+                    sim.options$size.factors$n2(length(which(phenotype==1))))
+    }
     if (sim.options$size.factors == "equal") {
       all.facs <- rep(1, nsamples)
     }
@@ -398,7 +458,8 @@
         all.facs <- sample(sim.options$sf, nsamples, replace = TRUE)
       }
       if (is.null(sim.options$sf)) {
-        all.facs <- rep(1, nsamples)
+        stop(message(paste0("You chose to draw from the given size factors,
+                            however the sf vector is empty!")))
       }
     }
 
@@ -413,9 +474,12 @@
     mumat[mumat < 0] = 0
 
     # result count matrix
-    cnts = matrix(stats::rnbinom(nsamples * ngenes, mu = 2 ^ mumat - 1, size = 1/disp), ncol = nsamples, nrow = ngenes)
+    cnts = matrix(stats::rnbinom(nsamples * ngenes,
+                                 mu = 2 ^ mumat - 1,
+                                 size = 1/disp),
+                  ncol = nsamples, nrow = ngenes)
     counts = p0mat * cnts
   }
 
-  return(counts)
+  return(list(counts=counts, sf=all.facs))
 }

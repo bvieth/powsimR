@@ -1,138 +1,158 @@
+# NOTES -------------------------------------------------------------------
+
+# Note that the function in scater gave negative values and when cpm.DGEList was allowed to take the log itself all CPMs were nonzero!
+
+# ROTS, NOISeq, EBSeq, monocle, scDD have no log fold changes internally calculated?
+
+# DE TOOLS WRAPPER --------------------------------------------------------
+
+# normData is normalized counts
+# countData is raw counts
+# DEOpts is a list of designs, p.DE,
+# spikeData is a spike-in count table
+# spikeInfo is a table of molecules counts of spike-ins
+# Lengths is a named vector of gene lengths
+# MeanFragLengths is the average fragment length for paired end designs
+# NCores is number of cores
+
+.de.calc <- function(DEmethod,
+                     normData,
+                     countData,
+                     DEOpts,
+                     spikeData,
+                     spikeInfo,
+                     Lengths,
+                     MeanFragLengths,
+                     NCores) {
+  # methods developed for bulk
+  if (DEmethod == "edgeR-LRT") {DERes = .run.edgeRLRT(normData=normData,
+                                                      countData=countData,
+                                                      DEOpts=DEOpts)}
+  if (DEmethod == "edgeR-QL") {DERes = .run.edgeRQL(normData=normData,
+                                                    countData=countData,
+                                                    DEOpts=DEOpts)}
+  if (DEmethod == "limma-voom") {DERes = .run.limma.voom(normData=normData,
+                                                         countData=countData,
+                                                         DEOpts=DEOpts)}
+  if (DEmethod == "limma-trend") {DERes = .run.limma.trend(normData=normData,
+                                                           countData=countData,
+                                                           DEOpts=DEOpts)}
+  if (DEmethod == "DESeq2") {DERes = .run.DESeq2(normData=normData,
+                                                 countData=countData,
+                                                 DEOpts=DEOpts,
+                                                 NCores=NCores)}
+  if (DEmethod == "ROTS") {DERes = .run.ROTS(normData=normData,
+                                             countData=countData,
+                                             DEOpts=DEOpts)}
+  if (DEmethod == "baySeq") {DERes = .run.baySeq(normData=normData,
+                                                 countData=countData,
+                                                 DEOpts=DEOpts,
+                                                 NCores=NCores)}
+  if (DEmethod == "NOISeq") {DERes = .run.NOISeq(normData=normData,
+                                                 countData=countData,
+                                                 DEOpts=DEOpts)}
+  if (DEmethod == "DSS") {DERes = .run.DSS(normData=normData,
+                                           countData=countData,
+                                           DEOpts=DEOpts)}
+  if (DEmethod=='EBSeq') {DERes = .run.EBSeq(normData=normData,
+                                             countData=countData,
+                                             DEOpts=DEOpts)}
+  # methods developed for single cell
+  if (DEmethod == "MAST") {DERes = .run.MAST(normData=normData,
+                                             countData=countData,
+                                             DEOpts=DEOpts,
+                                             NCores=NCores)}
+  if (DEmethod == "scde") {DERes = .run.scde(normData=normData,
+                                             countData=countData,
+                                             DEOpts=DEOpts,
+                                             NCores=NCores)}
+  if (DEmethod == "BPSC") {DERes = .run.BPSC(normData=normData,
+                                             countData=countData,
+                                             DEOpts=DEOpts,
+                                             NCores)}
+  if (DEmethod == "scDD") {DERes = .run.scDD(normData=normData,
+                                             countData=countData,
+                                             DEOpts=DEOpts,
+                                             NCores=NCores)}
+  if (DEmethod == "monocle") {DERes = .run.monocle(normData=normData,
+                                                   countData=countData,
+                                                   DEOpts=DEOpts,
+                                                   NCores=NCores)}
+  # if (DEmethod == "BASiCS") {DERes = .run.BASiCS(normData=normData,
+  #                                                countData=countData,
+  #                                                DEOpts=DEOpts,
+  #                                                NCores=NCores)}
+  # if (DEmethod == "D3E") {DERes = .run.D3E(normData=normData,
+  #                                          countData=countData,
+  #                                          DEOpts=DEOpts,
+  #                                          NCores=NCores)}
+
+  return(DERes)
+
+}
 
 # edgeR -------------------------------------------------------------------
 
 #' @importFrom edgeR DGEList estimateGLMRobustDisp glmFit glmLRT topTags
 #' @importFrom stats model.matrix
-.run.edgeRLRT <- function(dat) {
-  start.time.params <- Sys.time()
-  # run normalisation
-  normData <- .norm.calc(normalisation=dat$normalisation,
-                         countData=dat$counts,
-                         spikeData=NULL,
-                         spikeInfo=NULL,
-                         Lengths=NULL,
-                         MeanFragLengths=NULL,
-                         NCores=ifelse(is.null(dat$ncores), 1, dat$ncores))
+.run.edgeRLRT <- function(normData, countData, DEOpts) {
+
   # calculate normalisation factors
   sf <- normData$size.factors
   sf[sf<0] <- min(sf[sf > 0])
-  nsf <- log(sf/colSums(dat$counts))
+  nsf <- log(sf/colSums(countData))
   nsf <- exp(nsf - mean(nsf, na.rm=T))
   # construct input object
-  dge <- edgeR::DGEList(counts = dat$counts,
-                        lib.size = colSums(dat$counts),
+  dge <- edgeR::DGEList(counts = countData,
+                        lib.size = colSums(countData),
                         norm.factors = nsf,
-                        group = factor(dat$designs),
+                        group = factor(DEOpts$designs),
                         remove.zeros = FALSE)
   # run DE testing
-  design.mat <- stats::model.matrix( ~ dat$designs)
+  design.mat <- stats::model.matrix( ~ DEOpts$designs)
   dge <- edgeR::estimateGLMRobustDisp(y=dge, design = design.mat)
-  end.time.params <- Sys.time()
-  start.time.DE <- Sys.time()
   fit.edgeR <- edgeR::glmFit(dge, design = design.mat)
   lrt.edgeR <- edgeR::glmLRT(fit.edgeR)
   res.edgeR <- edgeR::topTags(lrt.edgeR, adjust.method="BH", n=Inf, sort.by = 'none')
-  end.time.DE <- Sys.time()
-  # parameter estimation
-  start.time.NB <- Sys.time()
-  means <- rowMeans(normData$NormCounts)
-  nsamples <- ncol(normData$NormCounts)
-  s2 = rowSums((normData$NormCounts - means)^2)/(nsamples - 1)
-  size = means^2/(s2 - means + 1e-04)
-  size = ifelse(size > 0, size, NA)
-  dispersion = 1/size
-  counts0 <- dat$counts == 0
-  nn0 <- rowSums(!counts0)
-  p0 <- (nsamples - nn0)/nsamples
-  end.time.NB <- Sys.time()
+
   ## construct results
   result <- data.frame(geneIndex=rownames(res.edgeR$table),
-                       means=means,
-                       dispersion=dispersion,
-                       dropout=p0,
                        pval=res.edgeR$table$PValue,
                        fdr=rep(NA, nrow(res.edgeR$table)),
                        lfc=res.edgeR$table$logFC,
                        stringsAsFactors = F)
-  time.taken.params <- difftime(end.time.params,
-                                start.time.params,
-                                units="mins")
-  time.taken.DE <- difftime(end.time.DE,
-                            start.time.DE,
-                            units="mins")
-  time.taken.NB <- difftime(end.time.NB,
-                            start.time.NB,
-                            units="mins")
-  timing <- rbind(time.taken.params, time.taken.DE, time.taken.NB)
-  res <- list(result=result, timing=timing)
-  return(res)
+  return(result)
 }
 
 #' @importFrom edgeR DGEList estimateGLMRobustDisp topTags glmQLFit glmQLFTest
 #' @importFrom stats model.matrix
-.run.edgeRQL <- function(dat) {
-  start.time.params <- Sys.time()
-  # run normalisation
-  normData <- .norm.calc(normalisation=dat$normalisation,
-                         countData=dat$counts,
-                         spikeData=NULL,
-                         spikeInfo=NULL,
-                         Lengths=NULL,
-                         MeanFragLengths=NULL,
-                         NCores=ifelse(is.null(dat$ncores), 1, dat$ncores))
+.run.edgeRQL <- function(normData, countData, DEOpts) {
+
   # calculate normalisation factors
   sf <- normData$size.factors
   sf[sf<0] <- min(sf[sf > 0])
-  nsf <- log(sf/colSums(dat$counts))
+  nsf <- log(sf/colSums(countData))
   nsf <- exp(nsf - mean(nsf, na.rm=T))
   # construct input object
-  dge <- edgeR::DGEList(counts = dat$counts,
-                        lib.size = colSums(dat$counts),
+  dge <- edgeR::DGEList(counts = countData,
+                        lib.size = colSums(countData),
                         norm.factors = nsf,
-                        group = factor(dat$designs),
+                        group = factor(DEOpts$designs),
                         remove.zeros = FALSE)
   # run DE testing
-  design.mat <- stats::model.matrix( ~ dat$designs)
+  design.mat <- stats::model.matrix( ~DEOpts$designs)
   dge <- edgeR::estimateDisp(y=dge, design = design.mat)
-  end.time.params <- Sys.time()
-  start.time.DE <- Sys.time()
   fit.edgeR <- edgeR::glmQLFit(dge, design = design.mat, robust=TRUE)
   ql.edgeR <- edgeR::glmQLFTest(fit.edgeR)
   res.edgeR <- edgeR::topTags(ql.edgeR, adjust.method="BH", n=Inf, sort.by = 'none')
-  end.time.DE <- Sys.time()
-  # parameter estimation
-  start.time.NB <- Sys.time()
-  means <- rowMeans(normData$NormCounts)
-  nsamples <- ncol(normData$NormCounts)
-  s2 = rowSums((normData$NormCounts - means)^2)/(nsamples - 1)
-  size = means^2/(s2 - means + 1e-04)
-  size = ifelse(size > 0, size, NA)
-  dispersion = 1/size
-  counts0 <- dat$counts == 0
-  nn0 <- rowSums(!counts0)
-  p0 <- (nsamples - nn0)/nsamples
-  end.time.NB <- Sys.time()
+
   ## construct results
   result <- data.frame(geneIndex=rownames(res.edgeR$table),
-                       means=means,
-                       dispersion=dispersion,
-                       dropout=p0,
                        pval=res.edgeR$table$PValue,
                        fdr=rep(NA, nrow(res.edgeR$table)),
                        lfc=res.edgeR$table$logFC,
                        stringsAsFactors = F)
-  time.taken.params <- difftime(end.time.params,
-                                start.time.params,
-                                units="mins")
-  time.taken.DE <- difftime(end.time.DE,
-                            start.time.DE,
-                            units="mins")
-  time.taken.NB <- difftime(end.time.NB,
-                            start.time.NB,
-                            units="mins")
-  timing <- rbind(time.taken.params, time.taken.DE, time.taken.NB)
-  res <- list(result=result, timing=timing)
-  return(res)
+  return(result)
 }
 
 
@@ -141,142 +161,68 @@
 #' @importFrom limma lmFit eBayes voom topTable
 #' @importFrom edgeR DGEList
 #' @importFrom stats model.matrix
-.run.limma.voom <- function(dat) {
-  start.time.params <- Sys.time()
-  # run normalisation
-  normData <- .norm.calc(normalisation=dat$normalisation,
-                         countData=dat$counts,
-                         spikeData=NULL,
-                         spikeInfo=NULL,
-                         Lengths=NULL,
-                         MeanFragLengths=NULL,
-                         NCores=ifelse(is.null(dat$ncores), 1, dat$ncores))
+.run.limma.voom <- function(normData, countData, DEOpts) {
+
   # calculate normalisation factors
   sf <- normData$size.factors
   sf[sf<0] <- min(sf[sf > 0])
-  nsf <- log(sf/colSums(dat$counts))
+  nsf <- log(sf/colSums(countData))
   nsf <- exp(nsf - mean(nsf, na.rm=T))
   # construct input object
-  dge <- edgeR::DGEList(counts = dat$counts,
-                        lib.size = colSums(dat$counts),
+  dge <- edgeR::DGEList(counts = countData,
+                        lib.size = colSums(countData),
                         norm.factors = nsf,
-                        group = factor(dat$designs),
+                        group = factor(DEOpts$designs),
                         remove.zeros = FALSE)
   # run DE testing
-  p.DE <- dat$p.DE
-  design.mat <- stats::model.matrix( ~ dat$designs)
+  p.DE <- DEOpts$p.DE
+  design.mat <- stats::model.matrix( ~ DEOpts$designs)
   v <- limma::voom(dge, design.mat, plot=FALSE)
-  end.time.params <- Sys.time()
-  start.time.DE <- Sys.time()
   fit <- limma::lmFit(object = v, design = design.mat)
   fit <- limma::eBayes(fit, proportion=p.DE, robust=T)
   resT <- limma::topTable(fit=fit, coef=2, number=Inf, adjust.method = "BH", sort.by = "none")
-  end.time.DE <- Sys.time()
-  # parameter estimation
-  start.time.NB <- Sys.time()
-  means <- rowMeans(normData$NormCounts)
-  nsamples <- ncol(normData$NormCounts)
-  s2 = rowSums((normData$NormCounts - means)^2)/(nsamples - 1)
-  size = means^2/(s2 - means + 1e-04)
-  size = ifelse(size > 0, size, NA)
-  dispersion = 1/size
-  counts0 <- dat$counts == 0
-  nn0 <- rowSums(!counts0)
-  p0 <- (nsamples - nn0)/nsamples
-  end.time.NB <- Sys.time()
 
-  ## construct results
+  # construct results
   result <- data.frame(geneIndex=rownames(resT),
-                       means=means,
-                       dispersion=dispersion,
-                       dropout=p0,
                        pval=resT$P.Value,
                        fdr=rep(NA, nrow(resT)),
                        lfc=resT$logFC,
                        stringsAsFactors = F)
-  time.taken.params <- difftime(end.time.params,
-                                start.time.params,
-                                units="mins")
-  time.taken.DE <- difftime(end.time.DE,
-                            start.time.DE,
-                            units="mins")
-  time.taken.NB <- difftime(end.time.NB,
-                            start.time.NB,
-                            units="mins")
-  timing <- rbind(time.taken.params, time.taken.DE, time.taken.NB)
-  res <- list(result=result, timing=timing)
-  return(res)
+  return(result)
 }
 
 #' @importFrom limma lmFit eBayes voom topTable
 #' @importFrom edgeR DGEList cpm
 #' @importFrom stats model.matrix
-.run.limma.trend <- function(dat) {
-  start.time.params <- Sys.time()
-  # run normalisation
-  normData <- .norm.calc(normalisation=dat$normalisation,
-                         countData=dat$counts,
-                         spikeData=NULL,
-                         spikeInfo=NULL,
-                         Lengths=NULL,
-                         MeanFragLengths=NULL,
-                         NCores=ifelse(is.null(dat$ncores), 1, dat$ncores))
+.run.limma.trend <- function(normData, countData, DEOpts) {
+
   # calculate normalisation factors
   sf <- normData$size.factors
   sf[sf<0] <- min(sf[sf > 0])
-  nsf <- log(sf/colSums(dat$counts))
+  nsf <- log(sf/colSums(countData))
   nsf <- exp(nsf - mean(nsf, na.rm=T))
   # construct input object
-  dge <- edgeR::DGEList(counts = dat$counts,
-                        lib.size = colSums(dat$counts),
+  dge <- edgeR::DGEList(counts = countData,
+                        lib.size = colSums(countData),
                         norm.factors = nsf,
-                        group = factor(dat$designs),
+                        group = factor(DEOpts$designs),
                         remove.zeros = FALSE)
   # run DE testing
-  p.DE <- dat$p.DE
-  design.mat <- stats::model.matrix( ~ dat$designs)
+  p.DE <- DEOpts$p.DE
+  design.mat <- stats::model.matrix( ~ DEOpts$designs)
   y <- new("EList")
   y$E <- edgeR::cpm(dge, log = TRUE, prior.count = 3)
-  end.time.params <- Sys.time()
-  start.time.DE <- Sys.time()
   fit <- limma::lmFit(object = y, design = design.mat)
   fit <- limma::eBayes(fit, trend=TRUE, proportion=p.DE, robust=TRUE)
   resT <- limma::topTable(fit=fit, coef=2, number=Inf, adjust.method = "BH", sort.by = "none")
-  end.time.DE <- Sys.time()
-  # parameter estimation
-  start.time.NB <- Sys.time()
-  means <- rowMeans(normData$NormCounts)
-  nsamples <- ncol(normData$NormCounts)
-  s2 = rowSums((normData$NormCounts - means)^2)/(nsamples - 1)
-  size = means^2/(s2 - means + 1e-04)
-  size = ifelse(size > 0, size, NA)
-  dispersion = 1/size
-  counts0 <- dat$counts == 0
-  nn0 <- rowSums(!counts0)
-  p0 <- (nsamples - nn0)/nsamples
-  end.time.NB <- Sys.time()
 
-  ## construct results
+  # construct results
   result <- data.frame(geneIndex=rownames(resT),
-                       means=means,
-                       dispersion=dispersion,
-                       dropout=p0,
                        pval=resT$P.Value,
                        fdr=rep(NA, nrow(resT)),
                        lfc=resT$logFC,
                        stringsAsFactors = F)
-  time.taken.params <- difftime(end.time.params,
-                                start.time.params,
-                                units="mins")
-  time.taken.DE <- difftime(end.time.DE,
-                            start.time.DE,
-                            units="mins")
-  time.taken.NB <- difftime(end.time.NB,
-                            start.time.NB,
-                            units="mins")
-  timing <- rbind(time.taken.params, time.taken.DE, time.taken.NB)
-  res <- list(result=result, timing=timing)
-  return(res)
+  return(result)
 }
 
 
@@ -286,142 +232,75 @@
 #' @importFrom BiocParallel MulticoreParam
 #' @importFrom scater sizeFactors
 #' @importFrom stats model.matrix
-.run.DESeq2 <- function(dat) {
-  start.time.params <- Sys.time()
-  coldat <- data.frame(design=factor(dat$designs))
-  # run normalisation
-  normData <- .norm.calc(normalisation=dat$normalisation,
-                         countData=dat$counts,
-                         spikeData=NULL,
-                         spikeInfo=NULL,
-                         Lengths=NULL,
-                         MeanFragLengths=NULL,
-                         NCores=ifelse(is.null(dat$ncores), 1, dat$ncores))
+.run.DESeq2 <- function(normData, countData, DEOpts, NCores) {
+
+  # construct input object
+  coldat <- data.frame(design=factor(DEOpts$designs))
   sf <- normData$size.factors
   sf[sf<0] <- min(sf[sf > 0])
-  # construct input object
-  dds <- DESeq2::DESeqDataSetFromMatrix(dat$counts,
+  dds <- DESeq2::DESeqDataSetFromMatrix(countData,
                                         coldat, ~design,
                                         tidy = FALSE, ignoreRank = FALSE)
   DESeq2::sizeFactors(dds) <- sf
-  end.time.params <- Sys.time()
+
   # run DE testing
-  start.time.DE <- Sys.time()
-  if (is.null(dat$ncores)) {
-    fit.DeSeq <- DESeq2::DESeq(dds, test="Wald", quiet = TRUE, parallel=FALSE)
+  if (is.null(NCores)) {
+    fit.DeSeq <- DESeq2::DESeq(dds,
+                               test="Wald",
+                               quiet = TRUE,
+                               parallel=FALSE)
   }
-  if (!is.null(dat$ncores)) {
-    fit.DeSeq <- DESeq2::DESeq(dds, test="Wald", quiet = TRUE, parallel=T, BPPARAM = BiocParallel::MulticoreParam(dat$ncores))
+  if (!is.null(NCores)) {
+    fit.DeSeq <- DESeq2::DESeq(dds, test="Wald",
+                               quiet = TRUE,
+                               parallel=T,
+                               BPPARAM = BiocParallel::MulticoreParam(NCores))
   }
   res.DeSeq <- DESeq2::results(fit.DeSeq)
-  end.time.DE <- Sys.time()
-  # parameter estimation
-  start.time.NB <- Sys.time()
-  means <- rowMeans(normData$NormCounts)
-  nsamples <- ncol(normData$NormCounts)
-  s2 = rowSums((normData$NormCounts - means)^2)/(nsamples - 1)
-  size = means^2/(s2 - means + 1e-04)
-  size = ifelse(size > 0, size, NA)
-  dispersion = 1/size
-  counts0 <- dat$counts == 0
-  nn0 <- rowSums(!counts0)
-  p0 <- (nsamples - nn0)/nsamples
-  end.time.NB <- Sys.time()
 
   ## construct results
   result <- data.frame(geneIndex=rownames(res.DeSeq),
-                       means=means,
-                       dispersion=dispersion,
-                       dropout=p0,
                        pval=res.DeSeq$pvalue,
-                       fdr=rep(NA, nrow(dat$counts)),
+                       fdr=rep(NA, nrow(countData)),
                        lfc=res.DeSeq$log2FoldChange,
                        stringsAsFactors = F)
-  time.taken.params <- difftime(end.time.params,
-                                start.time.params,
-                                units="mins")
-  time.taken.DE <- difftime(end.time.DE,
-                            start.time.DE,
-                            units="mins")
-  time.taken.NB <- difftime(end.time.NB,
-                            start.time.NB,
-                            units="mins")
-  timing <- rbind(time.taken.params, time.taken.DE, time.taken.NB)
-  res <- list(result=result, timing=timing)
-  return(res)
+  return(result)
 }
 
 # ROTS --------------------------------------------------------------------
 
 #' @importFrom edgeR DGEList cpm.DGEList
 #' @importFrom ROTS ROTS
-.run.ROTS <- function(dat) {
-  start.time.params <- Sys.time()
-  # run normalisation
-  normData <- .norm.calc(normalisation=dat$normalisation,
-                         countData=dat$counts,
-                         spikeData=NULL,
-                         spikeInfo=NULL,
-                         Lengths=NULL,
-                         MeanFragLengths=NULL,
-                         NCores=ifelse(is.null(dat$ncores), 1, dat$ncores))
+.run.ROTS <- function(normData, countData, DEOpts) {
+
   # calculate normalisation factors
   sf <- normData$size.factors
   sf[sf<0] <- min(sf[sf > 0])
-  nsf <- log(sf/colSums(dat$counts))
+  nsf <- log(sf/colSums(countData))
   nsf <- exp(nsf - mean(nsf, na.rm=T))
   # construct input object
-  dge <- edgeR::DGEList(counts = dat$counts,
-                        lib.size = colSums(dat$counts),
+  dge <- edgeR::DGEList(counts = countData,
+                        lib.size = colSums(countData),
                         norm.factors = nsf,
-                        group = factor(dat$designs),
+                        group = factor(DEOpts$designs),
                         remove.zeros = FALSE)
-  # size factor normalised log2(CPM+1) values. Note that the function in scater gave negative values and when cpm.DGEList was allowed to take the log itself all CPMs were nonzero!
+  # size factor normalised log2(CPM+1) values.
   out.cpm <- edgeR::cpm.DGEList(dge, normalized.lib.sizes = T, log = F)
   out.expr <- log2(out.cpm+1)
-  end.time.params <- Sys.time()
 
   # run DE testing
-  start.time.DE <- Sys.time()
   res <-  ROTS::ROTS(data = out.expr,
-                     groups = factor(dat$designs),
+                     groups = factor(DEOpts$designs),
                      B = 50,
                      K = floor(nrow(out.expr)/2) , progress=F)
-  end.time.DE <- Sys.time()
-  # parameter estimation
-  start.time.NB <- Sys.time()
-  means <- rowMeans(normData$NormCounts)
-  nsamples <- ncol(normData$NormCounts)
-  s2 = rowSums((normData$NormCounts - means)^2)/(nsamples - 1)
-  size = means^2/(s2 - means + 1e-04)
-  size = ifelse(size > 0, size, NA)
-  dispersion = 1/size
-  counts0 <- dat$counts == 0
-  nn0 <- rowSums(!counts0)
-  p0 <- (nsamples - nn0)/nsamples
-  end.time.NB <- Sys.time()
 
-  ## construct results
+  # construct results
   result <- data.frame(geneIndex=rownames(res$data),
-                       means=means,
-                       dispersion=dispersion,
-                       dropout=p0,
                        pval=res$pvalue,
-                       fdr=rep(NA, nrow(dat$counts)),
-                       lfc=rep(NA, nrow(dat$counts)),
+                       fdr=rep(NA, nrow(res$data)),
+                       lfc=rep(NA, nrow(res$data)),
                        stringsAsFactors = F)
-  time.taken.params <- difftime(end.time.params,
-                                start.time.params,
-                                units="mins")
-  time.taken.DE <- difftime(end.time.DE,
-                            start.time.DE,
-                            units="mins")
-  time.taken.NB <- difftime(end.time.NB,
-                            start.time.NB,
-                            units="mins")
-  timing <- rbind(time.taken.params, time.taken.DE, time.taken.NB)
-  res <- list(result=result, timing=timing)
-  return(res)
+  return(result)
 }
 
 
@@ -430,43 +309,35 @@
 #' @importFrom snow makeCluster stopCluster
 #' @importMethodsFrom baySeq libsizes
 #' @importFrom baySeq getPriors.NB getLikelihoods topCounts
-.run.baySeq <- function(dat) {
-  start.time.params <- Sys.time()
-  # run normalisation
-  normData <- .norm.calc(normalisation=dat$normalisation,
-                         countData=dat$counts,
-                         spikeData=NULL,
-                         spikeInfo=NULL,
-                         Lengths=NULL,
-                         MeanFragLengths=NULL,
-                         NCores=ifelse(is.null(dat$ncores), 1, dat$ncores))
+.run.baySeq <- function(normData, countData, DEOpts, NCores) {
+
   sf <- normData$size.factors
   sf[sf<0] <- min(sf[sf > 0])
 
   # set multiple cores
-  if(is.null(dat$ncores)) {
+  if(is.null(NCores)) {
     cl <- NULL
   }
-  if(!is.null(dat$ncores)) {
-    cl <- snow::makeCluster(dat$ncores)
+  if(!is.null(NCores)) {
+    cl <- snow::makeCluster(NCores)
   }
 
   # make input data sets for baySeq
-  replicates <- ifelse(dat$designs==-1, "A", "B")
-  groups <- list(NDE = c(rep(1, length(dat$designs))),
-                 DE = c(ifelse(dat$designs==-1, 1, 2)))
-  CD <- new("countData", data = dat$counts, replicates = replicates, groups = groups)
+  replicates <- ifelse(DEOpts$designs==min(DEOpts$designs), "A", "B")
+  groups <- list(NDE = c(rep(1, length(DEOpts$designs))),
+                 DE = c(ifelse(DEOpts$designs==min(DEOpts$designs), 1, 2)))
+  CD <- new("countData", data = countData,
+            replicates = replicates,
+            groups = groups)
   # fill in library size factors
   CD@sampleObservables$libsizes <- sf
-  CD@annotation <- data.frame(name = rownames(dat$counts),
+  CD@annotation <- data.frame(name = rownames(countData),
                               stringsAsFactors = F)
   # run prior estimation
   CD <- baySeq::getPriors.NB(CD,
-                             samplesize = nrow(dat$counts),
+                             samplesize = ifelse(nrow(countData)<1e5, nrow(countData), 1e5),
                              estimation = "QL", cl = cl,
                              equalDispersions=TRUE, verbose=F)
-  end.time.params <- Sys.time()
-  start.time.DE <- Sys.time()
   # run likelihood ratio test
   CD <- baySeq::getLikelihoods(CD, cl = cl,
                                bootStraps = 10,
@@ -477,45 +348,18 @@
                            number = Inf,
                            normaliseData = FALSE)
   res <- res[match(CD@annotation$name, res$annotation),]
-  end.time.DE <- Sys.time()
+
   # free multiple cores
-  if(!is.null(dat$ncores)) {
+  if(!is.null(NCores)) {
     snow::stopCluster(cl)
   }
 
-  # parameter estimation
-  start.time.NB <- Sys.time()
-  means <- rowMeans(normData$NormCounts)
-  nsamples <- ncol(normData$NormCounts)
-  s2 = rowSums((normData$NormCounts - means)^2)/(nsamples - 1)
-  size = means^2/(s2 - means + 1e-04)
-  size = ifelse(size > 0, size, NA)
-  dispersion = 1/size
-  counts0 <- dat$counts == 0
-  nn0 <- rowSums(!counts0)
-  p0 <- (nsamples - nn0)/nsamples
-  end.time.NB <- Sys.time()
-
   # construct result data frame
-  result=data.frame(geneIndex=res$annotation,
-                    means=means,
-                    dispersion=dispersion,
-                    dropout=p0,
-                    pval=rep(NA, nrow(dat$counts)),
-                    fdr=res$FDR.DE,
-                    stringsAsFactors = F)
-  time.taken.params <- difftime(end.time.params,
-                                start.time.params,
-                                units="mins")
-  time.taken.DE <- difftime(end.time.DE,
-                            start.time.DE,
-                            units="mins")
-  time.taken.NB <- difftime(end.time.NB,
-                            start.time.NB,
-                            units="mins")
-  timing <- rbind(time.taken.params, time.taken.DE, time.taken.NB)
-  res <- list(result=result, timing=timing)
-  return(res)
+  result = data.frame(geneIndex=res$annotation,
+                      pval=rep(NA, nrow(countData)),
+                      fdr=res$FDR.DE,
+                      stringsAsFactors = F)
+  return(result)
 }
 
 
@@ -523,37 +367,27 @@
 
 #' @importFrom NOISeq readData noiseqbio
 #' @importFrom edgeR DGEList cpm.DGEList
-.run.NOISeq <- function(dat) {
-  start.time.params <- Sys.time()
-  groups <- data.frame(Group=factor(dat$designs))
-  # run normalisation
-  normData <- .norm.calc(normalisation=dat$normalisation,
-                         countData=dat$counts,
-                         spikeData=NULL,
-                         spikeInfo=NULL,
-                         Lengths=NULL,
-                         MeanFragLengths=NULL,
-                         NCores=ifelse(is.null(dat$ncores), 1, dat$ncores))
+.run.NOISeq <- function(normData, countData, DEOpts) {
+
   # calculate normalisation factors
   sf <- normData$size.factors
   sf[sf<0] <- min(sf[sf > 0])
-  nsf <- log(sf/colSums(dat$counts))
+  nsf <- log(sf/colSums(countData))
   nsf <- exp(nsf - mean(nsf, na.rm=T))
   # construct dge object
-  dge <- edgeR::DGEList(counts = dat$counts,
-                        lib.size = colSums(dat$counts),
+  dge <- edgeR::DGEList(counts = countData,
+                        lib.size = colSums(countData),
                         norm.factors = nsf,
-                        group = factor(dat$designs),
+                        group = factor(DEOpts$designs),
                         remove.zeros = FALSE)
-  # size factor normalised log2(CPM+1) values. Note that the function in scater gave negative values and when cpm.DGEList was allowed to take the log itself all CPMs were nonzero!
+  # size factor normalised log2(CPM+1) values
   out.cpm <- edgeR::cpm.DGEList(dge, normalized.lib.sizes = T, log = F)
-  end.time.params <- Sys.time()
+
   # make input data set
+  groups <- data.frame(Group=factor(DEOpts$designs))
   in.noiseq <- NOISeq::readData(data = out.cpm, factors = groups)
-  end.time.params <- Sys.time()
 
   # run DE detection
-  start.time.DE <- Sys.time()
   calc.noiseq <- NOISeq::noiseqbio(in.noiseq,
                                    k = NULL,
                                    norm = "n",
@@ -565,42 +399,15 @@
                                    a0per = 0.9, filter = 0)
   res <- calc.noiseq@results[[1]]
   res$fdr <- 1-res$prob
-  end.time.DE <- Sys.time()
-
-  # parameter estimation
-  start.time.NB <- Sys.time()
-  means <- rowMeans(normData$NormCounts)
-  nsamples <- ncol(normData$NormCounts)
-  s2 = rowSums((normData$NormCounts - means)^2)/(nsamples - 1)
-  size = means^2/(s2 - means + 1e-04)
-  size = ifelse(size > 0, size, NA)
-  dispersion = 1/size
-  counts0 <- dat$counts == 0
-  nn0 <- rowSums(!counts0)
-  p0 <- (nsamples - nn0)/nsamples
-  end.time.NB <- Sys.time()
 
   # construct result data frame
-  result=data.frame(geneIndex=rownames(res),
-                    means=means,
-                    dispersion=dispersion,
-                    dropout=p0,
-                    pval=rep(NA, nrow(res)),
-                    fdr=res$fdr,
-                    lfc=rep(NA, nrow(res)),
-                    stringsAsFactors = F)
-  time.taken.params <- difftime(end.time.params,
-                                start.time.params,
-                                units="mins")
-  time.taken.DE <- difftime(end.time.DE,
-                            start.time.DE,
-                            units="mins")
-  time.taken.NB <- difftime(end.time.NB,
-                            start.time.NB,
-                            units="mins")
-  timing <- rbind(time.taken.params, time.taken.DE, time.taken.NB)
-  res <- list(result=result, timing=timing)
-  return(res)
+  result = data.frame(geneIndex=rownames(res),
+                      pval=rep(NA, nrow(res)),
+                      fdr=res$fdr,
+                      lfc=rep(NA, nrow(res)),
+                      stringsAsFactors = F)
+
+  return(result)
 }
 
 
@@ -609,72 +416,33 @@
 #' @importFrom DSS newSeqCountSet estNormFactors estDispersion waldTest
 #' @importFrom splines ns
 #' @importFrom edgeR DGEList
-.run.DSS <- function(dat) {
-  start.time.params <- Sys.time()
-  # run normalisation
-  normData <- .norm.calc(normalisation=dat$normalisation,
-                         countData=dat$counts,
-                         spikeData=NULL,
-                         spikeInfo=NULL,
-                         Lengths=NULL,
-                         MeanFragLengths=NULL,
-                         NCores=ifelse(is.null(dat$ncores), 1, dat$ncores))
+.run.DSS <- function(normData, countData, DEOpts) {
+
   sf <- normData$size.factors
   sf[sf<0] <- min(sf[sf > 0])
 
   # make input data set
-  designs <- ifelse(dat$designs==-1, 0, 1)
-  cd <- dat$counts
+  designs <- ifelse(DEOpts$designs==min(DEOpts$designs), 0, 1)
+  cd <- countData
   rownames(cd) <- NULL
   colnames(cd) <- NULL
   seqData <- DSS::newSeqCountSet(counts = cd, designs = designs)
   seqData@normalizationFactor <- sf
   seqData <- DSS::estDispersion(seqData)
-  end.time.params <- Sys.time()
 
   # run DE detection
-  start.time.DE <- Sys.time()
   res.dss <- suppressWarnings(DSS::waldTest(seqData = seqData,
                                             sampleA = 0, sampleB = 1))
   res.dss <- res.dss[order(res.dss$geneIndex),]
   pval <- res.dss$pval
-  end.time.DE <- Sys.time()
-
-  # parameter estimation
-  start.time.NB <- Sys.time()
-  means <- rowMeans(normData$NormCounts)
-  nsamples <- ncol(normData$NormCounts)
-  s2 = rowSums((normData$NormCounts - means)^2)/(nsamples - 1)
-  size = means^2/(s2 - means + 1e-04)
-  size = ifelse(size > 0, size, NA)
-  dispersion = 1/size
-  counts0 <- dat$counts == 0
-  nn0 <- rowSums(!counts0)
-  p0 <- (nsamples - nn0)/nsamples
-  end.time.NB <- Sys.time()
-
 
   # construct result data frame
-  result=data.frame(geneIndex=rownames(dat$counts),
-                    means=means,
-                    dispersion=dispersion,
-                    dropout=p0,
-                    pval=pval,
-                    fdr=rep(NA, nrow(dat$counts)),
-                    lfc=res$lfc,
-                    stringsAsFactors = F)
-  time.taken.params <- difftime(end.time.params,
-                                start.time.params,
-                                units="mins")
-  time.taken.DE <- difftime(end.time.DE,
-                            start.time.DE,
-                            units="mins")
-  time.taken.NB <- difftime(end.time.NB,
-                            start.time.NB,
-                            units="mins")
-  timing <- rbind(time.taken.params, time.taken.DE, time.taken.NB)
-  res <- list(result=result, timing=timing)
-  return(res)
+  result = data.frame(geneIndex=rownames(countData),
+                      pval=pval,
+                      fdr=rep(NA, nrow(countData)),
+                      lfc=res.dss$lfc,
+                      stringsAsFactors = F)
+  return(result)
 }
 
 
@@ -683,25 +451,16 @@
 #' @importFrom EBSeq MedianNorm EBTest
 #' @importFrom edgeR DGEList calcNormFactors
 #' @importFrom scater sizeFactors
-.run.EBSeq <- function(dat) {
-  start.time.params <- Sys.time()
-  groups <- data.frame(Group=factor(dat$designs))
-  # run normalisation
-  normData <- .norm.calc(normalisation=dat$normalisation,
-                         countData=dat$counts,
-                         spikeData=NULL,
-                         spikeInfo=NULL,
-                         Lengths=NULL,
-                         MeanFragLengths=NULL,
-                         NCores=ifelse(is.null(dat$ncores), 1, dat$ncores))
+.run.EBSeq <- function(normData, countData, DEOpts) {
+
+  groups <- data.frame(Group=factor(DEOpts$designs))
   sf <- normData$size.factors
   sf[sf<0] <- min(sf[sf > 0])
-  end.time.params <- Sys.time()
+
   # run DE detection
-  start.time.DE <- Sys.time()
   calc.ebseq <- suppressMessages(
-    EBSeq::EBTest(Data = dat$counts, NgVector = NULL,
-                  Conditions = factor(dat$designs),
+    EBSeq::EBTest(Data = countData, NgVector = NULL,
+                  Conditions = factor(DEOpts$designs),
                   sizeFactors = sf,
                   maxround = 20,
                   Pool = F, NumBin = 1000,
@@ -711,42 +470,14 @@
                   PoolUpper = .75, Print = F,
                   Qtrm = 1,QtrmCut=0))
   fdr <- 1-calc.ebseq$PPDE
-  end.time.DE <- Sys.time()
-
-  # parameter estimation
-  start.time.NB <- Sys.time()
-  means <- rowMeans(normData$NormCounts)
-  nsamples <- ncol(normData$NormCounts)
-  s2 = rowSums((normData$NormCounts - means)^2)/(nsamples - 1)
-  size = means^2/(s2 - means + 1e-04)
-  size = ifelse(size > 0, size, NA)
-  dispersion = 1/size
-  counts0 <- dat$counts == 0
-  nn0 <- rowSums(!counts0)
-  p0 <- (nsamples - nn0)/nsamples
-  end.time.NB <- Sys.time()
 
   ## construct results
-  result <- data.frame(geneIndex=rownames(dat$counts),
-                       means=means,
-                       dispersion=dispersion,
-                       dropout=p0,
-                       pval=rep(NA, nrow(dat$counts)),
-                       fdr=fdr,
-                       lfc=rep(NA, nrow(dat$counts)),
-                       stringsAsFactors = F)
-  time.taken.params <- difftime(end.time.params,
-                                start.time.params,
-                                units="mins")
-  time.taken.DE <- difftime(end.time.DE,
-                            start.time.DE,
-                            units="mins")
-  time.taken.NB <- difftime(end.time.NB,
-                            start.time.NB,
-                            units="mins")
-  timing <- rbind(time.taken.params, time.taken.DE, time.taken.NB)
-  res <- list(result=result, timing=timing)
-  return(res)
+  result = data.frame(geneIndex=rownames(countData),
+                      pval=rep(NA, nrow(countData)),
+                      fdr=fdr,
+                      lfc=rep(NA, nrow(countData)),
+                      stringsAsFactors = F)
+  return(result)
 }
 
 
@@ -754,64 +485,27 @@
 
 #' @importFrom NBPSeq nbp.test
 #' @importFrom edgeR DGEList calcNormFactors
-.run.NBPSeq <- function(dat) {
-  start.time.params <- Sys.time()
-  # run normalisation
-  normData <- .norm.calc(normalisation=dat$normalisation,
-                         countData=dat$counts,
-                         spikeData=NULL,
-                         spikeInfo=NULL,
-                         Lengths=NULL,
-                         MeanFragLengths=NULL,
-                         NCores=ifelse(is.null(dat$ncores), 1, dat$ncores))
+.run.NBPSeq <- function(normData, countData, DEOpts) {
+
   sf <- normData$size.factors
   sf[sf<0] <- min(sf[sf > 0])
-  end.time.params <- Sys.time()
 
   #run DE testing
-  start.time.DE <- Sys.time()
-  res <- NBPSeq::nbp.test(counts=dat$counts,
-                          grp.ids=dat$designs,
-                          grp1=-1, grp2=1,
+  grp.ids <- ifelse(DEOpts$designs==min(DEOpts$designs), 1, 2)
+  res <- NBPSeq::nbp.test(counts=countData,
+                          grp.ids=grp.ids,
+                          grp1=1, grp2=2,
                           norm.factors = sf,
-                          lib.sizes = colSums(dat$counts),
+                          lib.sizes = colSums(countData),
                           model.disp = "NBQ", print.level = 0)
-  end.time.DE <- Sys.time()
-
-  # parameter estimation
-  start.time.NB <- Sys.time()
-  means <- rowMeans(normData$NormCounts)
-  nsamples <- ncol(normData$NormCounts)
-  s2 = rowSums((normData$NormCounts - means)^2)/(nsamples - 1)
-  size = means^2/(s2 - means + 1e-04)
-  size = ifelse(size > 0, size, NA)
-  dispersion = 1/size
-  counts0 <- dat$counts == 0
-  nn0 <- rowSums(!counts0)
-  p0 <- (nsamples - nn0)/nsamples
-  end.time.NB <- Sys.time()
 
   ## construct results
-  result <- data.frame(geneIndex=rownames(dat$counts),
-                       means=means,
-                       dispersion=dispersion,
-                       dropout=p0,
-                       pval=res$pv.alues,
-                       fdr=rep(NA, nrow(dat$counts)),
-                       lfc=res$log.fc,
-                       stringsAsFactors = F)
-  time.taken.params <- difftime(end.time.params,
-                                start.time.params,
-                                units="mins")
-  time.taken.DE <- difftime(end.time.DE,
-                            start.time.DE,
-                            units="mins")
-  time.taken.NB <- difftime(end.time.NB,
-                            start.time.NB,
-                            units="mins")
-  timing <- rbind(time.taken.params, time.taken.DE, time.taken.NB)
-  res <- list(result=result, timing=timing)
-  return(res)
+  result = data.frame(geneIndex=rownames(countData),
+                      pval=res$pv.alues,
+                      fdr=rep(NA, nrow(countData)),
+                      lfc=res$log.fc,
+                      stringsAsFactors = F)
+  return(result)
 }
 
 
@@ -824,37 +518,28 @@
 #' @importFrom data.table data.table
 #' @importFrom reshape2 melt
 #' @importFrom parallel mclapply
-.run.MAST <- function(dat) {
-  start.time.params <- Sys.time()
-  # run normalisation
-  normData <- .norm.calc(normalisation=dat$normalisation,
-                         countData=dat$counts,
-                         spikeData=NULL,
-                         spikeInfo=NULL,
-                         Lengths=NULL,
-                         MeanFragLengths=NULL,
-                         NCores=ifelse(is.null(dat$ncores), 1, dat$ncores))
+.run.MAST <- function(normData, countData, DEOpts, NCores) {
+
   # calculate normalisation factors
   sf <- normData$size.factors
   sf[sf<0] <- min(sf[sf > 0])
-  nsf <- log(sf/colSums(dat$counts))
+  nsf <- log(sf/colSums(countData))
   nsf <- exp(nsf - mean(nsf, na.rm=T))
   # construct input object
-  dge <- edgeR::DGEList(counts = dat$counts,
-                        lib.size = colSums(dat$counts),
+  dge <- edgeR::DGEList(counts = countData,
+                        lib.size = colSums(countData),
                         norm.factors = nsf,
-                        group = factor(dat$designs),
+                        group = factor(DEOpts$designs),
                         remove.zeros = FALSE)
-  # 1. size factor normalised log2(CPM+1) values. Note that the function in scater gave negative values and when cpm.DGEList was allowed to take the log itself all CPMs were nonzero!
+  # 1. size factor normalised log2(CPM+1) values.
   out.cpm <- edgeR::cpm.DGEList(dge, normalized.lib.sizes = T, log = F)
   out.expr <- log2(out.cpm+1)
-  end.time.params <- Sys.time()
 
   # 2.: cell (sample ID, CDR, condition) and gene (gene name) annotation
   ids = colnames(out.expr)
   ngeneson = colSums(out.expr>0)
   cngeneson = ngeneson-mean(ngeneson)
-  cond = factor(dat$designs)
+  cond = factor(DEOpts$designs)
   cdat <- data.frame(wellKey=ids,
                      ngeneson=ngeneson,
                      cngeneson=cngeneson,
@@ -867,11 +552,9 @@
                     exprsArray=out.expr,
                     cData = cdat,
                     fData = fdat)
-  end.time.params <- Sys.time()
   # 4.: Model Fit
-  start.time.DE <- Sys.time()
-  if (!is.null(dat$ncores)) {
-    options(mc.cores=dat$ncores)
+  if (!is.null(NCores)) {
+    options(mc.cores=NCores)
   }
 
   zlm <- suppressMessages(
@@ -893,42 +576,14 @@
   res_lfc_hurdle <- summaryDt[contrast=='condition1' & component=='logFC', .(primerid, coef)]
   res_lfc_hurdle <- data.frame(res_lfc_hurdle, stringsAsFactors = F)
   res_lfc_hurdle <- res_lfc_hurdle[match(S4Vectors::mcols(sca)$primerid, res_lfc_hurdle$primerid),]
-  end.time.DE <- Sys.time()
-
-  # parameter estimation
-  start.time.NB <- Sys.time()
-  means <- rowMeans(normData$NormCounts)
-  nsamples <- ncol(normData$NormCounts)
-  s2 = rowSums((normData$NormCounts - means)^2)/(nsamples - 1)
-  size = means^2/(s2 - means + 1e-04)
-  size = ifelse(size > 0, size, NA)
-  dispersion = 1/size
-  counts0 <- dat$counts == 0
-  nn0 <- rowSums(!counts0)
-  p0 <- (nsamples - nn0)/nsamples
-  end.time.NB <- Sys.time()
 
   ## construct results
   result <- data.frame(geneIndex=res_gene_hurdle$primerid,
-                       means=means,
-                       dispersion=dispersion,
-                       dropout=p0,
                        pval=res_gene_hurdle$value,
-                       fdr=rep(NA, nrow(dat$counts)),
+                       fdr=rep(NA, nrow(res_gene_hurdle)),
                        lfc=res_lfc_hurdle$coef,
                        stringsAsFactors = F)
-  time.taken.params <- difftime(end.time.params,
-                                start.time.params,
-                                units="mins")
-  time.taken.DE <- difftime(end.time.DE,
-                            start.time.DE,
-                            units="mins")
-  time.taken.NB <- difftime(end.time.NB,
-                            start.time.NB,
-                            units="mins")
-  timing <- rbind(time.taken.params, time.taken.DE, time.taken.NB)
-  res <- list(result=result, timing=timing)
-  return(res)
+  return(result)
 }
 
 
@@ -936,30 +591,21 @@
 
 #' @importFrom scde scde.error.models scde.expression.prior scde.expression.difference
 #' @importFrom stats pnorm
-.run.scde <- function(dat) {
-  start.time.params <- Sys.time()
-  # run normalisation
-  normData <- .norm.calc(normalisation=dat$normalisation,
-                         countData=dat$counts,
-                         spikeData=NULL,
-                         spikeInfo=NULL,
-                         Lengths=NULL,
-                         MeanFragLengths=NULL,
-                         NCores=ifelse(is.null(dat$ncores), 1, dat$ncores))
+.run.scde <- function(normData, countData, DEOpts, NCores) {
 
   # make group vector
-  groups <- factor(dat$designs)
-  names(groups) <- colnames(counts)
+  groups <- factor(DEOpts$designs)
+  names(groups) <- colnames(countData)
 
-  if(is.null(dat$ncores)) {
+  if(is.null(NCores)) {
     ncores = 1
   }
-  if(!is.null(dat$ncores)) {
-    ncores = dat$ncores
+  if(!is.null(NCores)) {
+    ncores = NCores
   }
 
   # calculate error models
-  o.ifm <- scde::scde.error.models(counts = dat$counts,
+  o.ifm <- scde::scde.error.models(counts = countData,
                                    groups = groups,
                                    n.cores = ncores,
                                    min.count.threshold = 1,
@@ -969,56 +615,26 @@
                                    verbose = 0)
   # estimate gene expression prior
   o.prior <- scde::scde.expression.prior(models = o.ifm,
-                                         counts = dat$counts,
+                                         counts = countData,
                                          length.out = 400,
                                          show.plot = FALSE)
-  end.time.params <- Sys.time()
   # run differential expression tests on all genes.
-  start.time.DE <- Sys.time()
   ediff <- scde::scde.expression.difference(models=o.ifm,
-                                            counts=dat$counts,
+                                            counts=countData,
                                             prior=o.prior,
                                             groups = groups,
                                             n.cores = ncores,
                                             n.randomizations  =  100,
                                             verbose  =  0)
   pval <- 2 * (1 - pnorm(abs(ediff$Z)))
-  end.time.DE <- Sys.time()
-
-  # parameter estimation
-  start.time.NB <- Sys.time()
-  means <- rowMeans(normData$NormCounts)
-  nsamples <- ncol(normData$NormCounts)
-  s2 = rowSums((normData$NormCounts - means)^2)/(nsamples - 1)
-  size = means^2/(s2 - means + 1e-04)
-  size = ifelse(size > 0, size, NA)
-  dispersion = 1/size
-  counts0 <- dat$counts == 0
-  nn0 <- rowSums(!counts0)
-  p0 <- (nsamples - nn0)/nsamples
-  end.time.NB <- Sys.time()
 
   ## construct results
-  result=data.frame(geneIndex=rownames(ediff),
-                    means=means,
-                    dispersion=dispersion,
-                    dropout=p0,
-                    pval=pval,
-                    fdr=rep(NA, nrow(dat$counts)),
-                    lfc=ediff$ce,
-                    stringsAsFactors = F)
-  time.taken.params <- difftime(end.time.params,
-                                start.time.params,
-                                units="mins")
-  time.taken.DE <- difftime(end.time.DE,
-                            start.time.DE,
-                            units="mins")
-  time.taken.NB <- difftime(end.time.NB,
-                            start.time.NB,
-                            units="mins")
-  timing <- rbind(time.taken.params, time.taken.DE, time.taken.NB)
-  res <- list(result=result, timing=timing)
-  return(res)
+  result = data.frame(geneIndex=rownames(ediff),
+                      pval=pval,
+                      fdr=rep(NA, nrow(countData)),
+                      lfc=ediff$ce,
+                      stringsAsFactors = F)
+  return(result)
 }
 
 
@@ -1027,43 +643,31 @@
 #' @importFrom BPSC BPglm
 #' @importFrom gtools mixedsort
 #' @importFrom edgeR DGEList cpm.DGEList
-#' @importFrom parallel makeCluster stopCluster
-#' @importFrom doParallel registerDoParallel
+#' @importFrom doParallel registerDoParallel stopImplicitCluster
 #' @importFrom stats model.matrix
-.run.BPSC <- function(dat) {
-  start.time.params <- Sys.time()
-  # run normalisation
-  normData <- .norm.calc(normalisation=dat$normalisation,
-                         countData=dat$counts,
-                         spikeData=NULL,
-                         spikeInfo=NULL,
-                         Lengths=NULL,
-                         MeanFragLengths=NULL,
-                         NCores=ifelse(is.null(dat$ncores), 1, dat$ncores))
+.run.BPSC <- function(normData, countData, DEOpts, NCores) {
+
   # calculate normalisation factors
   sf <- normData$size.factors
   sf[sf<0] <- min(sf[sf > 0])
-  nsf <- log(sf/colSums(dat$counts))
+  nsf <- log(sf/colSums(countData))
   nsf <- exp(nsf - mean(nsf, na.rm=T))
   # construct input object
-  dge <- edgeR::DGEList(counts = dat$counts,
-                        lib.size = colSums(dat$counts),
+  dge <- edgeR::DGEList(counts = countData,
+                        lib.size = colSums(countData),
                         norm.factors = nsf,
-                        group = factor(dat$designs),
+                        group = factor(DEOpts$designs),
                         remove.zeros = FALSE)
   # size factor normalised log2(CPM+1) values. Note that the function in scater gave negative values and when cpm.DGEList was allowed to take the log itself all CPMs were nonzero!
   out.cpm <- edgeR::cpm.DGEList(dge, normalized.lib.sizes = T, log = F)
   exprmat <- out.cpm
-  group <- dat$designs
-  controlIDs <- which(group == -1)
+  group <- DEOpts$designs
+  controlIDs <- which(group == min(group))
   design.mat <- stats::model.matrix( ~ group)
   coef <- 2
-  end.time.params <- Sys.time()
 
-  if(!is.null(dat$ncores)) {
-    start.time.DE <- Sys.time()
-    cl <- parallel::makeCluster(dat$ncores)
-    doParallel::registerDoParallel(cl)
+  if(!is.null(NCores)) {
+    doParallel::registerDoParallel(cores=NCores)
     res <- BPglm(data = exprmat,
                  controlIds = controlIDs,
                  design = design.mat,
@@ -1076,11 +680,9 @@
     summaryDt <- summary_BPglm$topTable
     res_lfc <- as.data.frame(summaryDt)
     res_lfc <- res_lfc[gtools::mixedsort(rownames(res_lfc)),]
-    parallel::stopCluster(cl)
-    end.time.DE <- Sys.time()
+    doParallel::stopImplicitCluster()
   }
-  if(is.null(dat$ncores)) {
-    start.time.DE <- Sys.time()
+  if(is.null(NCores)) {
     res <- BPSC::BPglm(data = exprmat,
                        controlIds = controlIDs,
                        design = design.mat,
@@ -1091,43 +693,15 @@
     summaryDt <- summary_BPglm$topTable
     res <- as.data.frame(summaryDt)
     res <- res[gtools::mixedsort(rownames(res)),]
-    end.time.DE <- Sys.time()
   }
 
-  # parameter estimation
-  start.time.NB <- Sys.time()
-  means <- rowMeans(normData$NormCounts)
-  nsamples <- ncol(normData$NormCounts)
-  s2 = rowSums((normData$NormCounts - means)^2)/(nsamples - 1)
-  size = means^2/(s2 - means + 1e-04)
-  size = ifelse(size > 0, size, NA)
-  dispersion = 1/size
-  counts0 <- dat$counts == 0
-  nn0 <- rowSums(!counts0)
-  p0 <- (nsamples - nn0)/nsamples
-  end.time.NB <- Sys.time()
-
   # construct result data frame
-  result=data.frame(geneIndex=rownames(res),
-                    means=means,
-                    dispersion=dispersion,
-                    dropout=p0,
-                    pval=res$`Pr(>|t|)`,
-                    fdr=rep(NA, nrow(res)),
-                    lfc=res$Estimate,
-                    stringsAsFactors = F)
-  time.taken.params <- difftime(end.time.params,
-                                start.time.params,
-                                units="mins")
-  time.taken.DE <- difftime(end.time.DE,
-                            start.time.DE,
-                            units="mins")
-  time.taken.NB <- difftime(end.time.NB,
-                            start.time.NB,
-                            units="mins")
-  timing <- rbind(time.taken.params, time.taken.DE, time.taken.NB)
-  res <- list(result=result, timing=timing)
-  return(res)
+  result = data.frame(geneIndex=rownames(res),
+                      pval=res$`Pr(>|t|)`,
+                      fdr=rep(NA, length(rownames(res))),
+                      lfc=res$Estimate,
+                      stringsAsFactors = F)
+  return(result)
 }
 
 
@@ -1137,84 +711,80 @@
 #' @importFrom BiocGenerics sizeFactors estimateDispersions sizeFactors<-
 #' @importFrom VGAM negbinomial.size
 #' @importFrom methods new
-.run.monocle <- function(dat) {
-  start.time.params <- Sys.time()
-  coldat <- data.frame(design=factor(dat$designs))
-  # run normalisation
-  normData <- .norm.calc(normalisation=dat$normalisation,
-                         countData=dat$counts,
-                         spikeData=NULL,
-                         spikeInfo=NULL,
-                         Lengths=NULL,
-                         MeanFragLengths=NULL,
-                         NCores=ifelse(is.null(dat$ncores), 1, dat$ncores))
-  sf <- normData$size.factors
-  sf[sf<0] <- min(sf[sf > 0])
-  # make annotated dataframes for monocle
-  gene.dat <- data.frame(row.names = rownames(dat$counts),
-                         biotype=rep("protein_coding", nrow(dat$counts)),
-                         num_cells_expressed=rowSums(dat$counts>0))
-  cell.dat <- data.frame(row.names=colnames(dat$counts),
-                         Group=dat$designs)
-  fd <- new("AnnotatedDataFrame", data = gene.dat)
-  pd <- new("AnnotatedDataFrame", data = cell.dat)
-  ed <- dat$counts
-  # construct cell data set
-  cds <- monocle::newCellDataSet(cellData = ed,
-                                 phenoData = pd,
-                                 featureData = fd,
-                                 expressionFamily = VGAM::negbinomial.size())
-  sizeFactors(cds) <- sf
-  cds <- estimateDispersions(cds,
-                             cores = ifelse(is.null(dat$ncores), 1, dat$ncores))
-  end.time.params <- Sys.time()
-  # run the testing
-  start.time.DE <- Sys.time()
-  diff_test_res <- suppressMessages(
-    monocle::differentialGeneTest(cds,
-                                  fullModelFormulaStr = "~Group",
-                                  reducedModelFormulaStr = "~1",
-                                  relative_expr = FALSE,
-                                  cores = ifelse(is.null(dat$ncores), 1, dat$ncores),
-                                  verbose = FALSE)
-    )
-  res <- diff_test_res[match(rownames(dat$counts), rownames(diff_test_res)),]
-  end.time.DE <- Sys.time()
+.run.monocle <- function(normData, countData, DEOpts, NCores) {
 
-  # parameter estimation
-  start.time.NB <- Sys.time()
-  means <- rowMeans(normData$NormCounts)
-  nsamples <- ncol(normData$NormCounts)
-  s2 = rowSums((normData$NormCounts - means)^2)/(nsamples - 1)
-  size = means^2/(s2 - means + 1e-04)
-  size = ifelse(size > 0, size, NA)
-  dispersion = 1/size
-  counts0 <- dat$counts == 0
-  nn0 <- rowSums(!counts0)
-  p0 <- (nsamples - nn0)/nsamples
-  end.time.NB <- Sys.time()
+  if(!attr(normData, 'normFramework') == 'Census') {
+    sf <- normData$size.factors
+    sf[sf<0] <- min(sf[sf > 0])
+    # make annotated dataframes for monocle
+    gene.dat <- data.frame(row.names = rownames(countData),
+                           biotype=rep("protein_coding", nrow(countData)),
+                           num_cells_expressed=rowSums(countData>0))
+    cell.dat <- data.frame(row.names=colnames(countData),
+                           Group=DEOpts$designs)
+    fd <- new("AnnotatedDataFrame", data = gene.dat)
+    pd <- new("AnnotatedDataFrame", data = cell.dat)
+    ed <- countData
+    # construct cell data set
+    cds <- monocle::newCellDataSet(cellData = ed,
+                                   phenoData = pd,
+                                   featureData = fd,
+                                   expressionFamily = VGAM::negbinomial.size())
+    sizeFactors(cds) <- sf
+    cds <- estimateDispersions(cds,
+                               cores = ifelse(is.null(NCores), 1, NCores))
+    # run the testing
+    diff_test_res <- suppressMessages(
+      monocle::differentialGeneTest(cds,
+                                    fullModelFormulaStr = "~Group",
+                                    reducedModelFormulaStr = "~1",
+                                    relative_expr = FALSE,
+                                    cores = ifelse(is.null(NCores), 1, NCores),
+                                    verbose = FALSE)
+    )
+    res <- diff_test_res[match(rownames(countData), rownames(diff_test_res)),]
+  }
+
+  if(attr(normData, 'normFramework') == 'Census') {
+    sf <- normData$size.factors
+    # make annotated dataframes for monocle
+    gene.dat <- data.frame(row.names = rownames(countData),
+                           biotype=rep("protein_coding", nrow(countData)),
+                           num_cells_expressed=rowSums(countData>0))
+    cell.dat <- data.frame(row.names=colnames(countData),
+                           Group=DEOpts$designs)
+    fd <- new("AnnotatedDataFrame", data = gene.dat)
+    pd <- new("AnnotatedDataFrame", data = cell.dat)
+    ed <- normData$RPC
+    # construct cell data set
+    cds <- monocle::newCellDataSet(cellData = ed,
+                                   phenoData = pd,
+                                   featureData = fd,
+                                   lowerDetectionLimit=0.5,
+                                   expressionFamily = VGAM::negbinomial.size())
+    sizeFactors(cds) <- sf
+    cds <- estimateDispersions(cds,
+                               relative_expr = TRUE,
+                               cores = ifelse(is.null(NCores), 1, NCores))
+    # run the testing
+    diff_test_res <- suppressMessages(
+      monocle::differentialGeneTest(cds,
+                                    fullModelFormulaStr = "~Group",
+                                    reducedModelFormulaStr = "~1",
+                                    relative_expr = TRUE,
+                                    cores = ifelse(is.null(NCores), 1, NCores),
+                                    verbose = FALSE)
+    )
+    res <- diff_test_res[match(rownames(countData), rownames(diff_test_res)),]
+  }
 
   ## construct results
   result <- data.frame(geneIndex=rownames(res),
-                       means=means,
-                       dispersion=dispersion,
-                       dropout=p0,
                        pval=res$pval,
-                       fdr=rep(NA, nrow(dat$counts)),
-                       lfc=rep(NA, nrow(dat$counts)),
+                       fdr=rep(NA, nrow(countData)),
+                       lfc=rep(NA, nrow(countData)),
                        stringsAsFactors = F)
-  time.taken.params <- difftime(end.time.params,
-                                start.time.params,
-                                units="mins")
-  time.taken.DE <- difftime(end.time.DE,
-                            start.time.DE,
-                            units="mins")
-  time.taken.NB <- difftime(end.time.NB,
-                            start.time.NB,
-                            units="mins")
-  timing <- rbind(time.taken.params, time.taken.DE, time.taken.NB)
-  res <- list(result=result, timing=timing)
-  return(res)
+  return(result)
 }
 
 
@@ -1223,57 +793,42 @@
 #' @importFrom scDD scDD
 #' @importFrom edgeR cpm.DGEList
 #' @importFrom SummarizedExperiment SummarizedExperiment
-.run.scDD <- function(dat) {
-  start.time.params <- Sys.time()
-  # run normalisation
-  normData <- .norm.calc(normalisation=dat$normalisation,
-                         countData=dat$counts,
-                         spikeData=NULL,
-                         spikeInfo=NULL,
-                         Lengths=NULL,
-                         MeanFragLengths=NULL,
-                         NCores=ifelse(is.null(dat$ncores), 1, dat$ncores))
+.run.scDD <- function(normData, countData, DEOpts, NCores) {
   # calculate normalisation factors
   sf <- normData$size.factors
   sf[sf<0] <- min(sf[sf > 0])
-  nsf <- log(sf/colSums(dat$counts))
+  nsf <- log(sf/colSums(countData))
   nsf <- exp(nsf - mean(nsf, na.rm=T))
   # construct input object
-  dge <- edgeR::DGEList(counts = dat$counts,
-                        lib.size = colSums(dat$counts),
+  dge <- edgeR::DGEList(counts = countData,
+                        lib.size = colSums(countData),
                         norm.factors = nsf,
-                        group = factor(dat$designs),
+                        group = factor(DEOpts$designs),
                         remove.zeros = FALSE)
-  # 1. size factor normalised log2(CPM+1) values. Note that the function in scater gave negative values and when cpm.DGEList was allowed to take the log itself all CPMs were nonzero!
+  # 1. size factor normalised log2(CPM+1) values.
   out.cpm <- edgeR::cpm.DGEList(dge, normalized.lib.sizes = T, log = F)
   out.expr <- out.cpm
-  end.time.params <- Sys.time()
 
-  # create input data
+    # create input data
   exprmat <- out.cpm
-  condition <- ifelse(dat$designs==-1, 1, 2)
+  condition <- ifelse(DEOpts$designs==min(DEOpts$designs), 1, 2)
   cell.dat <- data.frame(row.names=colnames(exprmat), condition=condition)
   SCdat <- SummarizedExperiment::SummarizedExperiment(assays=list('NormCounts'=exprmat), colData=cell.dat)
-  # SCdat <- Biobase::ExpressionSet(assayData=exprmat, phenoData=as(cell.dat, "AnnotatedDataFrame"))
-  end.time.params <- Sys.time()
 
   # DE testing
-  if(!is.null(dat$ncores)) {
-    start.time.DE <- Sys.time()
+  if(!is.null(NCores)) {
     res.tmp <- suppressMessages(
       scDD::scDD(SCdat,
                  prior_param = list(alpha = 0.1, mu0 = 0, s0 = 0.01, a0 = 0.01, b0 = 0.01),
                  permutations = 0,
                  testZeroes = FALSE,
                  adjust.perms = FALSE,
-                 param = BiocParallel::MulticoreParam(dat$ncores),
+                 param = BiocParallel::MulticoreParam(NCores),
                  parallelBy = "Genes",
                  condition = "condition")
       )
-    end.time.DE <- Sys.time()
   }
-  if(is.null(dat$ncores)) {
-    start.time.DE <- Sys.time()
+  if(is.null(NCores)) {
     res.tmp <- suppressMessages(
       scDD::scDD(SCdat,
                  prior_param = list(alpha = 0.1, mu0 = 0, s0 = 0.01, a0 = 0.01, b0 = 0.01),
@@ -1283,46 +838,22 @@
                  parallelBy = "Genes",
                  condition = "condition")
     )
-    end.time.params <- Sys.time()
   }
   res <- scDD::results(res.tmp)
 
-  # parameter estimation
-  start.time.NB <- Sys.time()
-  means <- rowMeans(normData$NormCounts)
-  nsamples <- ncol(normData$NormCounts)
-  s2 = rowSums((normData$NormCounts - means)^2)/(nsamples - 1)
-  size = means^2/(s2 - means + 1e-04)
-  size = ifelse(size > 0, size, NA)
-  dispersion = 1/size
-  counts0 <- dat$counts == 0
-  nn0 <- rowSums(!counts0)
-  p0 <- (nsamples - nn0)/nsamples
-  end.time.NB <- Sys.time()
-
-
   # construct result data frame
-  result=data.frame(geneIndex=as.character(res$gene),
-                    means=means,
-                    dispersion=dispersion,
-                    dropout=p0,
+  result = data.frame(geneIndex=as.character(res$gene),
                     pval=res$nonzero.pvalue,
-                    fdr=rep(NA, nrow(dat$counts)),
-                    lfc=rep(NA, nrow(dat$counts)),
+                    fdr=rep(NA, nrow(res)),
+                    lfc=rep(NA, nrow(res)),
                     stringsAsFactors = F)
-  time.taken.params <- difftime(end.time.params,
-                                start.time.params,
-                                units="mins")
-  time.taken.DE <- difftime(end.time.DE,
-                            start.time.DE,
-                            units="mins")
-  time.taken.NB <- difftime(end.time.NB,
-                            start.time.NB,
-                            units="mins")
-  timing <- rbind(time.taken.params, time.taken.DE, time.taken.NB)
-  res <- list(result=result, timing=timing)
-  return(res)
+  return(result)
 }
+
+
+# BASiCS ------------------------------------------------------------------
+
+#TODO: Implement testing for BASiCS normalized data
 
 
 # D3E ---------------------------------------------------------------------

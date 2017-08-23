@@ -8,9 +8,9 @@ plotEvalRes(evalRes, rate=c('marginal', 'stratified'),
                    quick=TRUE, annot=TRUE)
 }
 \arguments{
-\item{evalRes}{The output of \code{\link{evaluateSim}}.}
+\item{evalRes}{The output of \code{\link{evaluateDE}}.}
 
-\item{rate}{Character vector defining whether the marginal or condtional rates should be plotted. Conditional depends on the choice of stratify.by in \code{\link{evaluateSim}}.}
+\item{rate}{Character vector defining whether the marginal or condtional rates should be plotted. Conditional depends on the choice of stratify.by in \code{\link{evaluateDE}}.}
 
 \item{quick}{A logical vector. If \code{TRUE}, the TPR and FDR are only plotted. If \code{FALSE}, then all rates are plotted.}
 
@@ -20,12 +20,12 @@ plotEvalRes(evalRes, rate=c('marginal', 'stratified'),
 A ggplot object.
 }
 \description{
-This function plots the results of \code{\link{evaluateSim}} for assessing the error rates and sample size requirements.
+This function plots the results of \code{\link{evaluateDE}} for assessing the error rates and sample size requirements.
 }
 \examples{
 \dontrun{
 ## for example simres object see \\code{\\link{simulateDE}}
-evalres <- evaluateSim(simRes=simres,
+evalres <- evaluateDE(simRes=simres,
 alpha.type="adjusted",
 MTC="BH", alpha.nominal=0.1,
 stratify.by="mean", filter.by="none",

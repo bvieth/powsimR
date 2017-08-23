@@ -83,7 +83,7 @@ insilicoNBParam <- function(means, dispersion, dropout=NULL, sf=NULL, RNAseq=c("
     sf <- sf
   }
 
-  res <- list(means = means, dispersion = dispersion, p0 = dropout, sf = sf, RNAseq = RNAseq, estFramework = "in silico")
+  res <- list(means = means, dispersion = dispersion, p0 = dropout, sf = sf, RNAseq = RNAseq)
   attr(res, 'param.type') <- "insilico"
   attr(res, 'Distribution') <- "NB"
 
@@ -95,24 +95,45 @@ insilicoNBParam <- function(means, dispersion, dropout=NULL, sf=NULL, RNAseq=c("
 #' @name estimateParam
 #' @aliases estimateParam
 #' @title Estimate simulation parameters
-#' @description This function estimates and returns parameters needed for power simulations assuming a negative binomial read count distribution.
+#' @description This function estimates and returns parameters needed for power
+#' simulations assuming a (zero-inflated) negative binomial read count distribution.
 #' @usage estimateParam(countData,
-#' spikeData=NULL, spikeInfo = NULL,
-#' Lengths=NULL, MeanFragLengths=NULL,
-#' Distribution=c('NB', 'ZINB'), RNAseq=c('bulk', 'singlecell'),
-#' normalisation=c('TMM','MR','PosCounts','UQ',
-#' 'scran', 'SCnorm', 'RUVg', 'BASiCS', 'Census', 'none'),
-#' sigma=1.96, NCores=NULL)
-#' @param countData is a count \code{matrix}. Rows correspond to genes, columns to samples.
-#' @param spikeData is a count \code{matrix}. Rows correspond to spike-ins, columns to samples. The order of columns should be the same as in the \code{countData}.
-#' @param spikeInfo is a molecule count \code{matrix} of spike-ins. Rows correspond to spike-ins. The order of rows should be the same as in the \code{spikeData}. The column names should be 'SpikeID' and 'SpikeInput' for molecule counts of spike-ins.
-#' @param Lengths is a numeric vector of transcript lengths with the same length as rows in countData. This variable is only used for internal TPM calculations if Census normalization is specified.
-#' @param MeanFragLengths is a numeric vector of mean fragment lengths with the same length as columns in countData. This variable is only used for internal TPM calculations if Census normalization is specified.
+#' batchData = NULL,
+#' spikeData = NULL,
+#' spikeInfo = NULL,
+#' Lengths = NULL,
+#' MeanFragLengths = NULL,
+#' Distribution = c('NB', 'ZINB'),
+#' RNAseq = c('bulk', 'singlecell'),
+#' normalisation = c('TMM', 'MR', 'PosCounts', 'UQ', 'scran',
+#'                   'SCnorm', 'RUV', 'BASiCS', 'Census', 'depth', 'none'),
+#' sigma = 1.96,
+#' NCores = NULL,
+#' verbose=TRUE)
+#' @param countData is a count \code{matrix}.
+#' Rows correspond to genes, columns to samples.
+#' The gene names should be given as rownames without "_" in the names. The samples names should be given as colnames.
+#' @param batchData is a \code{data.frame} for batch annotation.
+#' Rows correspond to samples. The first column should contain the batches, e.g. 'a', 'b', 'c', etc.
+#' @param spikeData is a count \code{matrix}.
+#' Rows correspond to spike-ins, columns to samples.
+#' The order of columns should be the same as in the \code{countData}.
+#' @param spikeInfo is a molecule count \code{matrix} of spike-ins.
+#' Rows correspond to spike-ins. The order of rows should be the same as in the \code{spikeData}.
+#' The column names should be 'SpikeID' and 'SpikeInput' for molecule counts of spike-ins.
+#' @param Lengths is a numeric vector of transcript lengths with the same length as rows in countData.
+#' This variable is only used for internal TPM calculations if Census normalization is specified.
+#' @param MeanFragLengths is a numeric vector of mean fragment lengths with the same length as columns in countData.
+#' This variable is only used for internal TPM calculations if Census normalization is specified.
 #' @param Distribution is a character value: "NB" for negative binomial or "ZINB" for zero-inflated negative binomial.
 #' @param RNAseq is a character value: "bulk" or "singlecell".
-#' @param normalisation is a character value: "TMM", "MR" and "PosCounts", "UQ", "scran", "SCnorm", "RUVg", "BASiCS". For more information, please consult the details section.
+#' @param normalisation is a character value: 'TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'scranCLUST',
+#' 'SCnorm', 'RUV', 'BASiCS', 'Census', 'depth', 'none'.
+#' For more information, please consult the details section.
 #' @param sigma The variability band width for mean-dispersion loess fit defining the prediction interval for read cound simulation. Default is 1.96, i.e. 95\% interval. For more information see \code{\link[msir]{loess.sd}}.
-#' @param NCores The number of cores for normalisation method SCnorm and Census. If NULL, the number of detected cores minus 1 is used.
+#' @param NCores The number of cores for normalisation method SCnorm and Census.
+#' If \code{NULL}, the number of detected cores minus 1 is used.
+#' @param verbose Logical value to indicate whether to print function information. Default is \code{TRUE}.
 #' @return List object with the following entries
 #' \item{seqDepth}{Library size, i.e. total number of reads per library}
 #' \item{means}{Mean normalized read counts per gene.}
@@ -133,11 +154,24 @@ insilicoNBParam <- function(means, dispersion, dropout=NULL, sf=NULL, RNAseq=c("
 #' @details
 #' Normalisation methods
 #' \describe{
-#' \item{TMM, UQ}{employ the edgeR style normalization of weighted trimmed mean of M-values and upperquartile as implemented in \code{\link[edgeR]{calcNormFactors}}, respectively.}
-#' \item{MR, PosCounts}{employ the DESeq2 style normalization of median ratio method and a modified geometric mean method as implemented in \code{\link[DESeq2]{estimateSizeFactors}}, respectively.}
-#' \item{scran, SCnorm}{apply the deconvolution and quantile regression normalization methods developed for sparse RNA-seq data as implemented in \code{\link[scran]{computeSumFactors}} and \code{\link[SCnorm]{SCnorm}}, respectively. For \code{SCnorm}, the user can also supply \code{spikeData}.}
-#' \item{RUVg}{removes unwanted variation by utilizing negative control genes, i.e. spike-ins stored in \code{spikeData}, as implemented in \code{\link[RUVSeq]{RUVg}}.}
-#' \item{BASiCS}{removes technical variation by utilizing negative control genes, i.e. spike-ins stored in \code{spikeData}, as implemented in \code{\link[BASiCS]{DenoisedCounts}}. Furthermore, the molecule counts of spike-ins added to the cell lysate need to be supplied in \code{spikeInfo}.}
+#' \item{TMM, UQ}{employ the edgeR style normalization of weighted trimmed mean of M-values and upperquartile
+#' as implemented in \code{\link[edgeR]{calcNormFactors}}, respectively.}
+#' \item{MR, PosCounts}{employ the DESeq2 style normalization of median ratio method and a modified geometric mean method
+#' as implemented in \code{\link[DESeq2]{estimateSizeFactors}}, respectively.}
+#' \item{scran, SCnorm}{apply the deconvolution and quantile regression normalization methods developed for sparse RNA-seq data
+#' as implemented in \code{\link[scran]{computeSumFactors}} and \code{\link[SCnorm]{SCnorm}}, respectively.
+#' For \code{SCnorm}, the user can also supply \code{spikeData}.}
+#' \item{RUV}{removes unwanted variation. There are two approaches implemented:
+#' (1) utilizing negative control genes, i.e. spike-ins stored in \code{spikeData} (\code{\link[RUVSeq]{RUVg}}).
+#' (2) utilizing replicate samples, i.e. samples for which the covariates of interest are considered constant.
+#' This annotation is stored in \code{batchData} (\code{\link[RUVSeq]{RUVs}}).}
+#' \item{BASiCS}{removes technical variation by utilizing negative control genes, i.e. spike-ins stored in \code{spikeData},
+#' as implemented in \code{\link[BASiCS]{DenoisedCounts}}.
+#' Furthermore, the molecule counts of spike-ins added to the cell lysate need to be supplied in \code{spikeInfo}.}
+#' #' \item{Census}{converts relative measures of TPM/FPKM values into mRNAs per cell (RPC) without the need of spike-in standards.
+#' Census at least needs \code{Lengths} for single-end data and preferably \code{MeanFragLengths} for paired-end data.
+#' Do not use this algorithm for UMI data!}
+#' \item{depth}{Sequencing depth normalisation.}
 #' \item{none}{No normalisation is applied. This approach can be used for prenormalized expression estimates, e.g. cufflinks, RSEM or salmon.}
 #' }
 #' @examples
@@ -153,14 +187,14 @@ insilicoNBParam <- function(means, dispersion, dropout=NULL, sf=NULL, RNAseq=c("
 #'                        mu=sf.means, size=1/true.dispersions),
 #'                ncol=ncells)
 #' ## estimating negative binomial parameters
-#' estparam <- estimateParam(countData=cnts,
+#' estparam <- estimateParam(countData=cnts, batchData = NULL,
 #'                           spikeData=NULL, spikeInfo = NULL,
 #'                           Lengths=NULL, MeanFragLengths=NULL,
 #'                           Distribution='NB',
 #'                           RNAseq="singlecell",
 #'                           normalisation='scran',
 #'                           NCores=NULL,
-#'                           sigma=1.96)
+#'                           sigma=1.96, verbose=TRUE)
 #' plotParam(estparam, annot=F)
 #'
 #' ## simulating bulk RNA-seq experiment
@@ -174,71 +208,116 @@ insilicoNBParam <- function(means, dispersion, dropout=NULL, sf=NULL, RNAseq=c("
 #'                        mu=sf.means, size=1/true.dispersions),
 #'                ncol=nsamples)
 #' ## estimating negative binomial parameters
-#' estparam <- estimateParam(countData=cnts,
-#'                           Distribution='NB', RNAseq="bulk",
-#'                           normalisation='MR', sigma=1.96)
+#' estparam <- estimateParam(countData=cnts, batchData = NULL,
+#'                           spikeData=NULL, spikeInfo = NULL,
+#'                           Lengths=NULL, MeanFragLengths=NULL,
+#'                           Distribution='NB',
+#'                           RNAseq="bulk",
+#'                           normalisation='MR',
+#'                           NCores=NULL,
+#'                           sigma=1.96, verbose=TRUE)
 #' plotParam(estparam, annot=F)
+#'
+#' # download count table
+#' githubURL <- "https://github.com/bvieth/powsimRData/raw/master/data-raw/kolodziejczk_cnts.rda"
+#' download.file(url = githubURL, destfile= "kolodziejczk_cnts.rda", method = "wget")
+#' load('kolodziejczk_cnts.rda')
+#' kolodziejczk_cnts <- kolodziejczk_cnts[, grep('standard', colnames(kolodziejczk_cnts))]
+#' ## estimate NB parameters:
+#' estparams <- estimateParam(countData=cnts
+#'                           Distribution='NB',
+#'                           RNAseq="singlecell",
+#'                           normalisation='scran',
+#'                           NCores=NULL,
+#'                           sigma=1.96, verbose=TRUE)
 #' }
 #' @author Beate Vieth
 #' @rdname estimateParam
 #' @export
 estimateParam <- function(countData,
-                          spikeData=NULL,
+                          batchData = NULL,
+                          spikeData = NULL,
                           spikeInfo = NULL,
-                          Lengths=NULL,
-                          MeanFragLengths=NULL,
-                          Distribution=c('NB', 'ZINB'),
-                          RNAseq=c("bulk", "singlecell"),
-                          normalisation=c('TMM','MR','PosCounts','UQ', 'scran', 'SCnorm', 'RUVg', 'BASiCS', 'Census', 'none'),
-                          sigma=1.96,
-                          NCores=NULL) {
+                          Lengths = NULL,
+                          MeanFragLengths = NULL,
+                          Distribution = c('NB', 'ZINB'),
+                          RNAseq = c('bulk', 'singlecell'),
+                          normalisation = c('TMM', 'MR', 'PosCounts', 'UQ', 'scran',
+                                            'SCnorm', 'RUV', 'BASiCS', 'Census', 'depth', 'none'),
+                          sigma = 1.96,
+                          NCores = NULL,
+                          verbose=TRUE) {
 
   # Inform users of inappropiate choices
   if (RNAseq == 'bulk' && Distribution=='ZINB') {
-    message("Zero-inflated negative binomial is not implemented for bulk data. Setting it to negative binomial.")
+    if(verbose) {message("Zero-inflated negative binomial is not implemented for bulk data. Setting it to negative binomial.")}
     Distribution="NB"
   }
   if (RNAseq=='singlecell' && normalisation=='MR') {
-    message(paste0(normalisation, " has been developed for bulk data and it is rather likely that it will not work. \nPlease consider using a method that can handle single cell data, e.g. PosCounts, scran, SCnorm."))
+    if(verbose) {message(paste0(normalisation, " has been developed for bulk data and it is rather likely that it will not work.
+                                \nPlease consider using a method that can handle single cell data, e.g. PosCounts, scran, SCnorm."))}
   }
   if (normalisation=='Census') {
-    message(paste0(normalisation, " should only be used for non-UMI methods! \nFor more information, please consult the monocle vignette."))
+    if(verbose) {message(paste0(normalisation, " should only be used for non-UMI methods! \nFor more information, please consult the monocle vignette."))}
     if (normalisation=='Census' && is.null(Lengths)) {
-      message(paste0(normalisation, " should be used in combination with transcript lengths. \nIf the library is paired-end, please also provide the mean fragment length which can be determined by e.g. Picard."))
+      if(verbose) {message(paste0(normalisation, " should be used in combination with transcript lengths.
+                                   \nIf the library is paired-end, please also provide the mean fragment lengths which can be determined by e.g. Picard."))}
     }
-  }
-
-  if (RNAseq=='singlecell' && normalisation=='MR') {
-    message(paste0(normalisation, " has been developed for bulk data and it is rather likely that it will not work. \nPlease consider using a method that can handle single cell data, e.g. PosCounts, scran, SCnorm."))
   }
 
   # STOP if combination of options is not supported/would not work!
   if (RNAseq=='bulk' && normalisation %in% c('BASiCS', 'Census')) {
     stop(message(paste0(normalisation, " is only developed and implemented for single cell RNA-seq experiments.")))
   }
-  if (normalisation %in% c('RUVg', 'BASiCS') && is.null(spikeData)) {
+  if (normalisation %in% c('BASiCS') && is.null(spikeData)) {
     stop(message(paste0(normalisation, " needs spike-in information! \nPlease provide an additional table of spike-in read counts.")))
   }
-  if (normalisation=='none' && any(apply(countData, 1, function(x) {is.integer(x)}))) {
-    stop(message(paste0(normalisation, " should only be done with pre-normalized data, eg. RSEM output.")))
+  if (normalisation == 'BASiCS' && is.null(spikeInfo)) {
+    stop(message(paste0(normalisation, " needs spike-in information! \nPlease provide an additional table of spike-in molecule counts.")))
+  }
+  if (normalisation == 'BASiCS' && !is.null(spikeInfo) && !is.null(colnames(spikeInfo)) && !all(colnames(spikeInfo) %in% c("SpikeID", "SpikeInput"))) {
+    stop(message(paste0(normalisation, " needs spike-in information! \nPlease provide an additional table of spike-in molecule counts with correctly named columns.")))
   }
 
+  if (normalisation=='none' && all((countData - round(countData)) == 0)) {
+    stop(message(paste0("No normalisation should only be done with pre-normalized data, eg. RSEM output, but the provided input matrix contains only integer values!")))
+  }
+
+  # check the matching of names
+  checkup <- .run.checkup(
+    countData = countData,
+    batchData = batchData,
+    spikeData = spikeData,
+    spikeInfo = spikeInfo,
+    Lengths = Lengths,
+    MeanFragLengths=MeanFragLengths,
+    verbose=verbose
+  )
+
+  countData <- checkup$countData
+  batchData <- checkup$batchData
+  spikeData <- checkup$spikeData
+  spikeInfo <- checkup$spikeInfo
+  Lengths <- checkup$Lengths
+  MeanFragLengths <- checkup$MeanFragLengths
 
   # run estimation
-  res = .run.estParam(countData=countData,
-                      spikeData=spikeData,
-                      spikeInfo=spikeInfo,
-                      Lengths=Lengths,
-                      MeanFragLengths=MeanFragLengths,
-                      Distribution=Distribution,
-                      RNAseq=RNAseq,
-                      normalisation=normalisation,
-                      sigma=sigma,
-                      NCores=NCores)
+  res = .run.estParam(countData = countData,
+                      batchData = batchData,
+                      spikeData = spikeData,
+                      spikeInfo = spikeInfo,
+                      Lengths = Lengths,
+                      MeanFragLengths = MeanFragLengths,
+                      Distribution = Distribution,
+                      RNAseq = RNAseq,
+                      normalisation = normalisation,
+                      sigma = sigma,
+                      NCores = NCores,
+                      verbose=verbose)
 
   # inform users
   if (RNAseq=='bulk' && c(res$grand.dropout>0.5 || is.null(res$p0.cut) ))
-  {message('The provided bulk data has frequent dropouts.
+    if(verbose) {message('The provided bulk data has frequent dropouts.
              Consider using single cell estimation framework.')}
 
   # make output
@@ -250,4 +329,3 @@ estimateParam <- function(countData,
 
   return(res2)
 }
-

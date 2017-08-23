@@ -4,11 +4,12 @@
 \alias{simulateDE}
 \title{Simulate Differential Expression}
 \usage{
-simulateDE(n1=c(20,50,100),
-n2=c(30,60,120),
+simulateDE(n1=c(20,50,100), n2=c(30,60,120),
 sim.settings,
-ncores=NULL,
 DEmethod,
+Preclust=FALSE,
+normalisation,
+NCores=NULL,
 verbose=TRUE)
 }
 \arguments{
@@ -16,25 +17,40 @@ verbose=TRUE)
 
 \item{sim.settings}{This object specifies the simulation setup. This must be the return object from \code{\link{SimSetup}}.}
 
-\item{ncores}{integer positive number of cores for parallel processing, default is NULL, ie 1 core.}
+\item{DEmethod}{A character vector specifying the DE detection method to be used.
+Available options are: limma-trend, limma-voom, edgeR-LRT, edgeR-QL, DESeq2,
+ROTS, baySeq, NOISeq, EBSeq, DSS, MAST, scde, BPSC, scDD, monocle.}
 
-\item{DEmethod}{A character vector specifying the DE detection method to be used. Available options are: limma-trend, limma-voom, edgeR-LRT, edgeR-QL, DESeq2, ROTS, baySeq, NOISeq, EBSeq, DSS, MAST, scde, BPSC, scDD, monocle.}
+\item{Preclust}{Whether to run a  hierarchical clustering prior to normalisation. Default is \code{FALSE}. This is implemented for scran and SCnorm.
+For details, see \code{\link[scran]{quickCluster}}.}
 
-\item{verbose}{Logical value to indicate whether to show progress report of simulations. Default is TRUE.}
+\item{normalisation}{Normalisation method to use.}
+
+\item{NCores}{integer positive number of cores for parallel processing, default is \code{NULL}, ie 1 core.}
+
+\item{verbose}{Logical value to indicate whether to show progress report of simulations. Default is \code{TRUE}.}
 }
 \value{
-A list with the following fields. The dimensions for the 3D arrays are ngenes * N * nsims:
-\item{pvalue, fdr}{3D array for p-values and FDR from each simulation. Note that FDR values will be empty and the calculation will be done by \code{\link{evaluateSim}} whenever applicable.}
-\item{mu,disp,dropout}{3D array for mean, dispersion and dropout of library size factor normalized read counts}
-\item{n1,n2}{The input number of biological replicates in each group. The vectors must have the same length.}
-\item{time.taken}{The time taken for each simulation, given for read count simulation, DEA and moment estimation.}
+A list with the following fields.
+\item{pvalue, fdr}{3D array (ngenes * N * nsims) for p-values and FDR from each simulation.
+Note that FDR values will be empty and the calculation will be done by \code{\link{evaluateDE}} whenever applicable.}
+\item{mu,disp,dropout}{3D (ngenes * N * nsims) array for mean, dispersion and dropout of library size factor normalized read counts.}
+\item{elfc,rlfc}{3D array (ngenes * N * nsims) for log2 fold changes (LFC):
+elfc is for the DE tool estimated LFC; rlfc is for the LFC estimated from the normalised read counts.}
+\item{sf.values,gsf.values}{3D array (ngenes * N * nsims) for size factor estimates.
+Global estimates per sample in sf.values; Gene- and sample-wise estimates in gsf.values only for SCnorm normalisation.}
+\item{true.designs}{3D array (ngenes * N * nsims) for group assignment specifications.}
+\item{sim.settings}{The input sim.settings to which the specifications of \code{simulateDE} is added.}
+\item{time.taken}{The time taken for each simulation, given for preprocessing, normalisation, differential expression testing and moment estimation.}
 }
 \description{
 This function simulates RNA-seq count matrices considering differential expression specifications (number of samples per group, effect size, number of differential expressed genes etc.). The return object contains DE test results from all simulations as well as descriptive statistics.
 }
 \details{
-simulateDE is the main function to simulate differential expression for RNA-seq experiments. The simulation parameters are specified with  \code{\link{SimSetup}}. The user needs to specify the number of samples per group and the differential expression analysis method. \cr
-It only stores and returns the DE test results (i.e. p-values). The error matrix calculations will be conducted with \code{\link{evaluateSim}}.\cr
+simulateDE is the main function to simulate differential expression for RNA-seq experiments.
+The simulation parameters are specified with \code{\link{SimSetup}}.
+The user needs to specify the number of samples per group and the differential expression analysis method. \cr
+It only stores and returns the DE test results (i.e. p-values). The error matrix calculations will be conducted with \code{\link{evaluateDE}}.\cr
 }
 \examples{
 \dontrun{
@@ -44,21 +60,26 @@ download.file(url = githubURL, destfile= "kolodziejczk_cnts.rda", method = "wget
 load('kolodziejczk_cnts.rda')
 kolodziejczk_cnts <- kolodziejczk_cnts[, grep('standard', colnames(kolodziejczk_cnts))]
 ## estimate NB parameters:
-TwoiLIF.params = estimateNBParam(countData = kolodziejczk_cnts,
-cData = NULL, design = NULL,
-RNAseq = 'singlecell', estFramework = 'MatchMoments',
-sigma= 1.96)
+TwoiLIF.params = estimateParam(countData=cnts
+                          Distribution='NB',
+                          RNAseq="singlecell",
+                          normalisation='scran',
+                          NCores=NULL,
+                          sigma=1.96, verbose=TRUE)
 ## define DE settings:
 desettings <- DESetup(ngenes=10000,
 nsims=25, p.DE=0.2,
-LFC=function(x) sample(c(-1,1), size=x,replace=TRUE)*rgamma(x, 3, 3))
+pLFC=function(x) sample(c(-1,1), size=x,replace=TRUE)*rgamma(x, 3, 3))
 ## define simulation settings for Kolodziejczk:
 simsettings <- SimSetup(desetup=desettings, params=TwoiLIF.params, size.factors='given')
 ## run simulations:
-simres <- simulateDE(n1=c(24,48,96,192,384,800),
-n2=c(24,48,96,192,384,800),
-sim.settings=simsettings,
-ncores=10, DEmethod="MAST", verbose=TRUE)
+simres <- simulateDE(n1=c(50,100,300), n2=c(50,120,500),
+sim.settings,
+DEmethod='MAST',
+Preclust=T,
+normalisation='scran',
+NCores=10,
+verbose=TRUE)
 ## if parallel computation unavailable, consider ROTS as DEmethod
 }
 }
