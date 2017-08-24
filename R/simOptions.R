@@ -43,7 +43,7 @@ DESetup <- function(ngenes, nsims=25,
   set.seed(sim.seed)
 
   p.B = NULL
-  pLFC = NULL
+  bLFC = NULL
 
   nDE = round(ngenes*p.DE)
   if(!is.null(p.B)) { nB = round(ngenes*p.B) }
