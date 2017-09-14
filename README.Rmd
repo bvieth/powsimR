@@ -62,7 +62,13 @@ Please send bug reports and feature requests by opening a new issue on
 
 Note that the error "maximal number of DLLs reached..." might occur due to the loading of many shared objects by Bioconductor packages. Restarting the R session after installing dependencies / powsimR might be enough to handle this.
 
-Starting with R version 3.4.0, one can set the environmental variable "R_MAX_NUM_DLLS" to a higher number so that the error does not occur anymore. See `?Startup()` for more information. Add the line "R_MAX_NUM_DLLS=150" to your Renviron file located in 
+Starting with R version 3.4.0, one can set the environmental variable "R_MAX_NUM_DLLS" to a higher number so that the error does not occur anymore. See `?Startup()` for more information. Add the line "R_MAX_NUM_DLLS=150" to your Renviron file located in "R_HOME/etc/" where R_HOME is the path to your R home directory. After that restart R and the change should have taken effect.
+
+```{r, echo=T, eval=F, tidy=T}
+R.home(component = "home")
+# add R_MAX_NUM_DLLS=150 to Renviron file, restart R and check
+Sys.getenv("R_MAX_NUM_DLLS")
+```
 
 ## User Guide
 
@@ -86,7 +92,7 @@ A preprint paper describing powsimR is also on [bioRxiv](https://doi.org/10.1101
 
 ## R Session Info
 
-```{r}
+```{r, tidy=T}
 sessionInfo()
 ```
 
