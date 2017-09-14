@@ -1,15 +1,146 @@
+# EVALUATE SETUP ----------------------------------------------------------
+#' @name evaluateSim
+#' @aliases evaluateSim
+#' @title Compute the performance related metrics from simulation results
+#' @description This function takes the simulation output from \code{\link{simulateDE}}
+#' and computes several metrics that give an indication of the simulation setup performance.
+#' @usage evaluateSim(simRes)
+#' @param simRes The result from \code{\link{simulateDE}}.
+#' @return A list with the following entries:
+#' \item{Log2FoldChange}{The root mean square error and absolute mean error of
+#' log2 fold change differences between estimated LFC and simulated LFC. Furthermore, the fraction of missing estimated LFC.}
+#' \item{SizeFactors}{The median absolute deviation between the estimated and true size factors,
+#' the residual error of a robust linear model and the ratio between estimated and true size factors of the two groups.}
+#' @author Beate Vieth
+#' @seealso \code{\link{estimateParam}} for negative binomial parameters,
+#' \code{\link{SimSetup}} and
+#' \code{\link{DESetup}} for setting up simulation parameters and
+#' \code{\link{simulateDE}} for simulating differential expression.
+#' @examples
+#' \dontrun{
+#' ## not yet
+#' }
+#' @rdname evaluateSim
+#' @importFrom stats mad
+#' @importFrom mclust adjustedRandIndex
+#' @export
+evaluateSim <- function(simRes) {
+
+  # simulation parameters
+  Nreps1 = simRes$sim.settings$n1
+  Nreps2 = simRes$sim.settings$n2
+  ngenes = simRes$sim.settings$ngenes
+  sim.opts = simRes$sim.settings
+  DEids = simRes$sim.settings$DEid
+  tlfcs = simRes$sim.settings$pLFC
+  nsims = simRes$sim.settings$nsims
+
+  # estimated parameters
+  elfcs = simRes$elfc
+  tsfs = simRes$true.sf
+  esfs = simRes$est.sf
+
+  # create output objects
+  my.names = paste0(Nreps1, "vs", Nreps2)
+  # error in log2 fold changes
+  lfc.error.mat <- lapply(1:length(my.names), function(x) {
+    matrix(NA, nrow =  nsims, ncol = 15,
+           dimnames = list(c(paste0("Sim", 1:nsims)),
+                           c(paste0(rep(x=c("ALL", "DE", "EE"),each=5),"_",
+                                    c('RMSE_Value', "MAE_Value", "RMSE_NAFraction", "MAE_NAFraction", "MSE_ErrorFit")))))
+  })
+  names(lfc.error.mat) <- my.names
+
+  # error in size factors
+  sf.error.mat <- lapply(1:length(my.names), function(x) {
+    matrix(NA, nrow =  nsims, ncol = 4,
+           dimnames = list(c(paste0("Sim_", 1:nsims)),
+                           c("MAD.LFC.SF", "Error.Fit", "Ratio.1","Ratio.2")))
+  })
+  names(sf.error.mat) <- my.names
+
+  ## loop over simulation and replicates
+  for(i in 1:nsims) {
+    # DE flag
+    DEid = DEids[[i]]
+    Zg = rep(0, ngenes)
+    Zg[DEid] = 1
+    # true log fold change of all genes
+    all.tlfc = tlfcs[[i]]
+    # true log fold change of DE genes
+    de.tlfc = all.tlfc[which(Zg==1)]
+    # true log fold change of EE genes
+    ee.tlfc = all.tlfc[which(Zg==0)]
+
+    for(j in seq(along=Nreps1)) {
+
+      ## LOG2 FOLD CHANGES
+      # estimated log fold change of all genes
+      all.elfc = elfcs[, j, i]
+      # estimated log fold changes of EE genes
+      ix.ee.lfc = which(Zg==0)
+      ee.lfc = all.elfc[ix.ee.lfc]
+      # estimated log fold change of DE genes
+      ix.de.lfc = which(Zg==1)
+      de.lfc = all.elfc[ix.de.lfc]
+      # estimate mean squared error and absolute error
+      all.error <- .lfc.evaluate(truth=all.tlfc, estimated=all.elfc)
+      ee.error <- .lfc.evaluate(truth=ee.tlfc, estimated=ee.lfc)
+      de.error <- .lfc.evaluate(truth=de.tlfc, estimated=de.lfc)
+      error.est <- c(all.error, ee.error, de.error)
+      lfc.error.mat[[j]][i,] = error.est
+
+      ## SIZE FACTORS
+      # true sf over all samples, center to mean=1
+      tsf = tsfs[[j]][i, ]
+      n.tsf = tsf*length(tsf)/sum(tsf)
+
+      # estimated sf over all sample, center to mean=1
+      esf = esfs[[j]][i,]
+      n.esf = esf*length(esf)/sum(esf)
+
+      # MAD of log fold change difference between estimated and true size factors
+      lfc.nsf = log2(n.esf) - log2(n.tsf)
+      mad.nsf = stats::mad(lfc.nsf)
+
+      # error of estimation
+      error.sf <- .fiterror.sf(estimated.sf = esf, true.sf = tsf)
+
+      # ratio of estimated and true size factors per true group assignment
+      t.design = t.designs[[j]][i,]
+      e.design = e.designs[[j]][i,]
+      ratio.sf <- .ratio.sf(estimated.nsf = n.esf,
+                            true.nsf = n.tsf,
+                            group=t.design)
+      sf.res <- unlist(c(mad.nsf, error.sf, ratio.sf))
+      names(sf.res) <- NULL
+
+      sf.error.mat[[j]][i,] = sf.res
+
+    }
+  }
+
+  output <- list(Log2FoldChange=lfc.error.mat,
+                 SizeFactors=sf.error.mat,
+                 sim.settings=simRes$sim.settings)
+
+  return(output)
+
+}
+# EVALUATE DIFFERENTIAL EXPRESSION ----------------------------------------
+
 #' @name evaluateDE
 #' @aliases evaluateDE
 #' @title Compute the confusion matrix-related quantities from simulation results
 #' @description This function takes the simulation output from \code{\link{simulateDE}}
 #' and computes quantities of the confusion matrix of classification testing
-#' @usage evaluateDE(simRes, alpha.type=c("adjusted","raw"),
+#' @usage evaluateDE(simRes,
+#' alpha.type=c("adjusted","raw"),
 #' MTC=c('BH', 'BY', 'holm', 'hochberg', 'hommel', 'bonferroni', 'Storey', 'IHW'),
 #' alpha.nominal=0.1,
 #' stratify.by=c("mean", "dispersion", "dropout", "lfc"),
 #' filter.by=c("none", "mean", "dispersion", "dropout"),
-#' strata.filtered=1,
-#' target.by=c("lfc", "effectsize"), delta=0)
+#' strata.filtered=1, target.by=c("lfc", "effectsize"), delta=0)
 #' @param simRes The result from \code{\link{simulateDE}}.
 #' @param MTC Multiple testing correction method to use. Available options are
 #' 1) see \link[stats]{p.adjust.methods},
@@ -21,8 +152,8 @@
 #'  \code{"raw"} i.e. using p-values. Default is \code{"adjusted"}.
 #' @param alpha.nominal The nomial value of significance. Default is 0.1.
 #' @param stratify.by A string to represent the way to stratify genes.
-#' Available options are \code{"mean"}, \code{"dispersion"} and \code{"dropout"},
-#' for stratifying genes by average expression levels, dispersion or dropout rates.
+#' Available options are \code{"mean"}, \code{"dispersion"}, \code{"dropout"} and \code{"lfc"},
+#' for stratifying genes by average expression levels, dispersion, dropout rates or estimated log2 fold changes.
 #' @param filter.by A string to represent the way to filter genes.
 #' This is used in conjunction with strata.filtered for gene filtering.
 #' Available options are \code{"none"}, \code{"mean"}, \code{"dispersion"} and \code{"dropout"}.
@@ -41,18 +172,17 @@
 #' or effect sizes (when target.by is "effectsize") greater than this value
 #' are deemed DE in error rates calculations. If \code{delta=0} then no threshold is applied. See "Details" for more description.
 #' @return A list with the following entries:
-#' \item{TN, TP, FP, FN, TNR, TPR, FPR, FNR, FDR}
-#' {3D array representing the number of true negatives, true positives, false positives,
+#' \item{TN, TP, FP, FN, TNR, TPR, FPR, FNR, FDR}{3D array representing the number of true negatives, true positives, false positives,
 #' false negatives and their proportions/rates as well as false discovery rate
-#'  for all simulation settings. The dimension of the arrays are nstrata * N * nsims.
-#'   Here nstrata is number of specified strata.
-#'   N is number of different sample sizes settings, and nsims is number of simulations.}
-#' \item{TN.marginal, TP.marginal,FP.marginal, FN.marginal}{Matrix representing the number of true negatives, true positives, false positives,
+#' for all simulation settings. The dimension of the arrays are nstrata * N * nsims.
+#' Here nstrata is number of specified strata.
+#' N is number of different sample sizes settings, and nsims is number of simulations.}
+#' \item{TN.marginal, TP.marginal, FP.marginal, FN.marginal}{Matrix representing the number of true negatives, true positives, false positives,
 #'  false negatives for all simulation settings.
 #'  The dimension of the matrices are N * nsims.
 #'  Here N is number of different sample sizes settings, and nsims is number of simulations.}
-#' \item{TNR.marginal, TPR.marginal, FPR.marginal, FNR.marginal, FDR.marginal}
-#' {Matrix representing the marginal rates for all simulation settings. The dimension of the matrices are N * nsims.}
+#' \item{TNR.marginal, TPR.marginal, FPR.marginal, FNR.marginal, FDR.marginal}{Matrix representing the marginal rates for all simulation settings.
+#' The dimension of the matrices are N * nsims.}
 #' \item{stratagenes, stratadiffgenes}{Number of genes per stratum and number of DE genes per stratum.}
 #' \item{stratify.by}{The input stratify.by.}
 #' \item{strata}{The input strata.}
@@ -78,7 +208,7 @@
 #' by absolute values of log fold changes or effect sizes
 #' (absolute values of log fold changes divided by the square root of 1/(mean+dispersions)).
 #' Genes with these quantities over a threshold are deemed interesting,
-#' and the power calculation are based on these genes.}
+#' and the rate calculations are based on these genes.}
 #' }
 #' @author Beate Vieth
 #' @seealso \code{\link{estimateParam}} for negative binomial parameters,
@@ -121,7 +251,7 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
   sim.opts = simRes$sim.settings
   DEids = simRes$sim.settings$DEid
   lfcs = simRes$sim.settings$pLFC
-  dlfcs = lapply(1:length(lfcs), function(i) {lfcs[[i]][DEids[[i]]]})
+  tlfcs = lapply(1:length(lfcs), function(i) {lfcs[[i]]})
   nsims = simRes$sim.settings$nsims
   estmeans = simRes$sim.settings$means
   estdisps = simRes$sim.settings$dispersion
@@ -129,6 +259,7 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
   mu = simRes$mu
   disp = simRes$disp
   dropout = simRes$dropout
+  elfc = simRes$elfc
   DEmethod = simRes$sim.settings$DEmethod
   pvalue = simRes$pvalue
   fdr = simRes$fdr
@@ -146,8 +277,8 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
   tmp.quantile.drop = stats::quantile(tmp.ecdf.drop, probs=c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8))
   strata.drop = unique(c(0,unname(tmp.quantile.drop),1))
   strata.drop = unique(round(strata.drop, digits=2))
-  tmp.ecdf.lfc = stats::ecdf(unlist(dlfcs))
-  tmp.quantile.lfc = stats::quantile(tmp.ecdf.lfc, probs=c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8))
+  tmp.ecdf.lfc = stats::ecdf(unlist(tlfcs))
+  tmp.quantile.lfc = stats::quantile(tmp.ecdf.lfc, probs=c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))
   strata.lfc = unique(c(-Inf,unname(tmp.quantile.lfc),Inf))
   strata.lfc = unique(round(strata.lfc, digits=2))
 
@@ -209,8 +340,8 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
       xgr.drop = cut(X.drop1[ix.keep.drop], strata.drop)
       xgrd.drop = cut(X.drop1[DEid], strata.drop)
       # lfc
-      X.lfc1 = lfcs[[i]]
-      ix.keep.lfc = which(!X.lfc1==0)
+      X.lfc1 = elfc[,j,1]
+      ix.keep.lfc = which(!is.na(X.lfc1))
       xgr.lfc = cut(X.lfc1[ix.keep.lfc], strata.lfc)
       xgrd.lfc = cut(X.lfc1[DEid], strata.lfc)
 
@@ -395,7 +526,8 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
             x[is.na(x)] = 1
           }
           if(MTC %in% "Storey") {
-            x[!is.na(x)] = qvalue::qvalue(p = x[!is.na(x)])
+            x = rep(NA, length(pval))
+            x[!is.na(pval)] = qvalue::qvalue(p = pval[!is.na(pval)])
             x[is.na(x)] = 1
           }
           if(MTC %in% "IHW") {
@@ -465,71 +597,5 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
 
 
 
-# PROPORTIONS AND RATES ---------------------------------------------------
-
-## compute the proportions and rates of the confusion/error matrix
-## containing classification test results (marginal and per stratum)
-## TP, FP, TN, FN
-## TPR, FPR, TNR, FNR, FDR
-
-.error.matrix <- function(p, p.crit, Zg, Zg2, xgr){
-  ## p is input raw p-value or  q-value.
-  ## p.crit is cutoff for significance (nominal alpha level)
-  ## Zg is the indicator for genes with lfc added
-  ## Zg2 is the indicator for genes with lfc added and with "meaningful" effect size/ above certain delta
-  ## xgr is stratum
-
-  ##  R (the number of rejected nulll hypothesis)
-  ix.R = p <= p.crit # genes that are called differentially expressed according to p-value of test and chosen cutoff
-  R = sum(ix.R)  # total number of null hypothesis rejected
-  R.stratified = tapply(ix.R, xgr, sum) # total number of null hypothesis rejected per stratum
-  #
-  ## G (the number of null hypothesis accepted)
-  ix.G = p > p.crit # genes that are nondifferentially expressed according to p-value of test and chosen cutoff
-  G = sum(ix.G)  # total number of null hypothesis accepted
-  G.stratified = tapply(ix.G, xgr, sum) # total number of null hypothesis accepted per stratum
-
-
-  ##  TP: condition is positive, H0 is rejected
-  id.TP = Zg2==1
-  TP = tapply(p[id.TP] <= p.crit, xgr[id.TP], sum)
-  TP.mar = sum(p[id.TP] <= p.crit)
-  ##  TN: condition is negative, H0 is accepted
-  id.TN = Zg==0
-  TN = tapply(p[id.TN] > p.crit, xgr[id.TN], sum)
-  TN.mar = sum(p[id.TN] > p.crit)
-  ## FN: condition is positive, H0 is accepted
-  id.FN = Zg2==1
-  FN = tapply(p[id.FN] > p.crit, xgr[id.FN], sum)
-  FN.mar = sum(p[id.FN] > p.crit)
-  ## FP: condition is negative, H0 is rejected
-  id.FP = Zg==0
-  FP = tapply(p[id.FP] <= p.crit, xgr[id.FP], sum)
-  FP.mar = sum(p[id.FP] <= p.crit)
-
-  ## false discovery rate (FP/(TP+FP))
-  FDR = FP / R.stratified
-  FDR.marginal = FP.mar / R
-  ## type I error rate / FPR / alpha / fall-out (FP/(FP+TN))
-  FPR = as.vector(FP/table(xgr[id.FP]))
-  FPR.marginal = FP.mar / sum(id.FP)
-  ## True positive rate / sensitivity / power (TP/(TP+FN))
-  TPR = as.vector(TP/table(xgr[id.TP]))
-  TPR.marginal =  TP.mar / sum(id.TP)
-  ## True negative rate / specificity (TN/(TN+FP))
-  TNR = as.vector(TN/table(xgr[id.TN]))
-  TNR.marginal = TN.mar / sum(id.TN)
-  ## False negative rate / miss rate (FN/(FN+TP))
-  FNR = as.vector(FN/table(xgr[id.FN]))
-  FNR.marginal =  FN.mar / sum(id.FN)
-
-
-  # output
-  list(TN=TN,TN.marginal=TN.mar, TP=TP, TP.marginal=TP.mar, FP=FP, FP.marginal=FP.mar, FN=FN, FN.marginal=FN.mar,
-       TNR=TNR, TPR=TPR, FPR=FPR, FNR=FNR,FDR=FDR,
-       TNR.marginal=TNR.marginal, TPR.marginal=TPR.marginal,
-       FPR.marginal=FPR.marginal, FNR.marginal=FNR.marginal,
-       FDR.marginal=FDR.marginal)
-}
 
 

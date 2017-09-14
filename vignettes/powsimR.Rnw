@@ -21,7 +21,7 @@ BiocStyle::latex()
 
 \maketitle
 
-%\packageVersion{\Sexpr{BiocStyle::pkg_ver("powsimR")}}
+% \packageVersion{\Sexpr{BiocStyle::pkg_ver("powsimR")}}
 
 Report issues on \url{https://github.com/bvieth/powsimR/issues}
 
@@ -57,36 +57,37 @@ options(width=60)
 \section{Installation guide}
 %---------------------------------------------------------
 
-PowsimR has a number of dependencies that need to be installed before hand (see also the README file on github). I recommend to increase the maximum number of DLLs that can be loaded to at least 500. The environmental variable R\_MAX\_NUM\_DLLS can be set in R\_HOME/etc/Renviron prior to starting R (for further details see \Rfunction{Startup}).
+PowsimR has a number of dependencies that need to be installed before hand (see also the README file on github). I recommend to increase the maximum number of DLLs that can be loaded to at least 500. The environmental variable R\_MAX\_NUM\_DLLS can be set in R\_HOME/etc/Renviron prior to starting R (for further details see \Rfunction{Startup}). For that locate the Renviron file and add the following line: R\_MAX\_NUM\_DLLS=xy where xy is the number of DLLs.
+On my Ubuntu machine, the Renviron file is in /usr/lib/R/etc/ and I can set it to 500. Apparently this is not possible on MACs where the maximum that worked was 153. This is enough for powsimR, however.
 
 <<echo=T, eval=F, tidy=T>>=
-ipak <- function(pkg, repository=c('CRAN', 'Bioconductor', 'github')){
+ipak <- function(pkg, repository=c("CRAN", "Bioconductor", "github")){
   new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
   if (length(new.pkg)) {
-    if(repository=='CRAN') {
+    if(repository=="CRAN") {
       install.packages(new.pkg, dependencies = TRUE)
     }
-    if(repository=='Bioconductor') {
+    if(repository=="Bioconductor") {
       source("https://bioconductor.org/biocLite.R")
       biocLite(new.pkg, dependencies=TRUE, ask=FALSE)
     }
-    if(repository=='github') {
+    if(repository=="github") {
       devtools::install_github(pkg, build_vignettes = FALSE)
     }
   }
 }
 
 # CRAN PACKAGES
-cranpackages <- c("gamlss.dist", "methods", "stats", "moments", "doParallel", "parallel", "reshape2", "dplyr", "tidyr", "data.table", 'ggplot2', 'ggthemes', 'ggExtra', 'cowplot', 'scales', 'fitdistrplus', 'MASS', 'pscl', 'nonnest2', 'cobs', 'msir', 'drc', 'devtools', 'XML', 'splines', "gtools", 'NBPSeq')
-ipak(cranpackages, repository='CRAN')
+cranpackages <- c("methods", "stats", "matrixStats", "moments", "minpack.lm", "glmnet", "cluster", "mclust", "MASS", "doParallel", "parallel", "snow", "reshape2", "plyr", "dplyr", "tidyr", "tibble", "data.table", "ggplot2", "ggthemes", "ggExtra", "cowplot", "scales", "fitdistrplus", "MASS", "pscl", "nonnest2", "cobs", "msir", "drc", "devtools", "XML", "splines", "gtools", "NBPSeq", "permute", "DrImpute", "VGAM")
+ipak(cranpackages, repository="CRAN")
 
 # BIOCONDUCTOR
-biocpackages <- c('S4Vectors', 'AnnotationDbi', 'Biobase', 'BiocParallel', 'BiocStyle', 'scater', 'scran', 'edgeR', 'limma', 'DESeq2', 'baySeq', 'NOISeq', 'EBSeq', 'DSS', 'MAST', 'ROTS', "IHW", 'qvalue', 'scDD', 'monocle', 'RUVSeq')
-ipak(biocpackages, repository='Bioconductor')
+biocpackages <- c("S4Vectors", "AnnotationDbi", "Biobase", "BiocParallel", "BiocGenerics", "BiocStyle", "SummarizedExperiment", "scater", "scran", "edgeR", "limma", "DESeq2", "baySeq", "NOISeq", "EBSeq", "DSS", "MAST", "ROTS", "IHW", "qvalue", "scDD", "monocle", "RUVSeq", "DEDS")
+ipak(biocpackages, repository="Bioconductor")
 
 # GITHUB
-githubpackages <- c('gu-mi/NBGOF', 'hms-dbmi/scde', 'nghiavtr/BPSC', 'rhondabacher/SCnorm', 'catavallejos/BASiCS')
-ipak(githubpackages, repository = 'github')
+githubpackages <- c("hms-dbmi/scde", "nghiavtr/BPSC", "rhondabacher/SCnorm", "catavallejos/BASiCS")
+ipak(githubpackages, repository = "github")
 @
 
 After installing the dependencies, \Rpackage{powsimR} can be installed by using devtools as well.
@@ -106,28 +107,29 @@ In this vignette, we illustrate the features of \Rpackage{powsimR} by assessing 
 \section{\Rpackage{powsimR} workflow}
 %---------------------------------------------------------
 
-The basic workflow of \Rpackage{powsimR} is illustrated in figure \ref{fig:powsim_scheme}: A) The mean-dispersion relationship is estimated from RNA-seq data, which can be either single cell or bulk data. The users can provide their own count tables or one of our five example data sets. B) These distribution parameters are then used to set-up the simulations. For better comparability, the parameters for the simulation of differential expression are set separately. C) Finally, the TPR and FDR are calculated. Both can be either returned as marginal estimates per sample configuration (shown), or stratified according to the estimates of mean expression, dispersion or dropout rate.
+The basic workflow of \Rpackage{powsimR} is illustrated in figure \ref{fig:powsim_scheme}: A) The mean-dispersion relationship is estimated from RNA-seq data, which can be either single cell or bulk data. The users can provide their own count tables, download from a database (see below) or one of our example data sets (\href{https://github.com/bvieth/powsimRData}{powsimRData}). B) These distribution parameters are then used to set up the simulations. For better comparability, the parameters for the simulation of differential expression are set separately. C) Finally, the TPR and FDR are calculated. Both can be either returned as marginal estimates per sample configuration, or stratified according to the estimates of mean expression, dispersion or dropout rate.
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.95\linewidth]{powsim_schematic.pdf}
-\caption{\textbf{PowsimR schematic overview.} (A) Estimation: (B) Simulation: (C) Evaluation. Functions given in orange.}
+\includegraphics[width=0.99\linewidth]{powsimR_vignette_schematic.pdf}
+\caption{\textbf{PowsimR schematic overview.} (A) Estimation: (B) Simulation: (C) Evaluation. Functions are given in orange.}
 \label{fig:powsim_scheme}
 \end{figure}
 
 \section{Parameter Estimation}
+
+\subsection{Gene expression}
 
 The parameters of the negative binomial distribution, i.e. mean and dispersion are estimated by the function \Rfunction{estimateParam}. In addition, the dropout probability, i.e. the fraction of zero counts per gene, is calculated.
 The user can choose between two estimation frameworks:
 \begin{description}
 \item[NB] Negative binomial distribution.
 \item[ZINB] Zero-inflated negative binomial distribution.
-\item[MatchMoments] Matching moments estimation of mean and dispersion based on normalized counts.
 \end{description}
 
 In both cases matching moments estimation of mean and dispersion are based on normalized counts.
 
-The user can choose between multiple normalisation methods (see details section of \Rfunction{estimateParam}).
+The user can choose between multiple normalisation methods (see details section of \Rfunction{estimateParam}). Furthermore, a number of methods are group sensitive, e.g. batch labels, namely scran SCnorm, Census, BASiCS, RUV.
 
 The estimates, sequencing depth and normalisation factors are plotted with \Rfunction{plotParam}.
 
@@ -141,8 +143,10 @@ load('kolodziejczk_cnts.rda')
 kolodziejczk_cnts <- kolodziejczk_cnts[, grep('standard', colnames(kolodziejczk_cnts))]
 
 TwoiLIF.params <- estimateParam(countData=kolodziejczk_cnts,
-                          spikeData=NULL, spikeInfo = NULL,
-                          Lengths=NULL, MeanFragLengths=NULL,
+                          spikeData=NULL,
+                          spikeInfo = NULL,
+                          Lengths=NULL,
+                          MeanFragLengths=NULL,
                           Distribution='NB',
                           RNAseq='singlecell',
                           normalisation='scran',
@@ -156,13 +160,13 @@ To predict the dispersion given a random draw of mean expression value observed,
 For bulk RNA-seq experiments, dropouts are less probable but can still occur. To include this phenomenon we sample from the observed dropout rates for genes that have a mean expression value below 5\% dropout probability determined by a decrease constrained B-splines regresssion of dropout rate against mean expression (\Rfunction{cobs} in \CRANpkg{cobs}).
 The resulting read count matrix has similar distributional characteristics as the original Kolodziejczyk data set (figure \ref{fig:simeval}).
 For the zero-inflated negative binomial distribution, the mean-dispersion relation is similarly estimated, but based on positive read counts. Furthermore, the dropouts are also predicted based on a locally weighted polynomial regression fit between mean and dropouts. Of note, this fit is done separately for amplified and non-amplified transcripts separately and similar proportions of genes as observed are also generated in the simulations \cite{Ziegenhain2017-sf}.
-We have found that the negative binomial distribution is particularly suited for UMI-methods (e.g. SCRB-Seq, Drop-Seq, 10XGenomics) \cite{Vieth2017-su}.
+We have found that the negative binomial distribution is particularly suited for UMI-methods (e.g. SCRB-Seq, Drop-Seq, 10XGenomics) \cite{Vieth2017-lh}.
 
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.75\linewidth]{NBparams.jpeg}
-\caption{\textbf{Estimated parameters for Kolodziejczyk data set.} A) Sequencing depth per sample with median sequencing depth (grey dashed line). B) Library size normalisation factor per sample with median size factor (grey dashed line). C) Marginal Distribution of mean, dispersion and dropout. D) Local polynomial regression fit between mean and dispersion estimates with variability band per gene (yellow). Common dispersion estimate (grey dashed line). E) Fraction of dropouts versus estimated mean expression per gene.}
+\caption{\textbf{Estimated parameters for Kolodziejczyk data set.} A) Sequencing depth per sample with median sequencing depth (grey dashed line). B) Library size normalisation factor per sample with median size factor (grey dashed line). C) Marginal Distribution of log2(mean), log2(dispersion) and dropout. D) Local polynomial regression fit between log2(mean) and log2(dispersion) estimates with variability band per gene (yellow). Common dispersion estimate (grey dashed line). E) Fraction of dropouts versus estimated mean expression per gene.}
 \label{fig:NBparams}
 \end{figure}
 
@@ -172,6 +176,10 @@ We have found that the negative binomial distribution is particularly suited for
 \caption{\textbf{Comparison of estimated and simulated read counts} (A) Dispersion versus Mean. (B) Dropout versus Mean.}
 \label{fig:simeval}
 \end{figure}
+
+\subsection{Spike-ins}
+
+Some normalisation methods can use spike-ins as part of their normalisation (SCnorm, RUV, Census)
 
 %---------------------------------------------------------
 \section{Simulations}

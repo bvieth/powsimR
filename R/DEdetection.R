@@ -86,9 +86,7 @@
   #                                          countData=countData,
   #                                          DEOpts=DEOpts,
   #                                          NCores=NCores)}
-
   return(DERes)
-
 }
 
 # edgeR -------------------------------------------------------------------
@@ -271,6 +269,8 @@
 
 #' @importFrom edgeR DGEList cpm.DGEList
 #' @importFrom ROTS ROTS
+#' @importFrom limma voom
+#' @importFrom stats model.matrix
 .run.ROTS <- function(normData, countData, DEOpts) {
 
   # calculate normalisation factors
@@ -284,9 +284,10 @@
                         norm.factors = nsf,
                         group = factor(DEOpts$designs),
                         remove.zeros = FALSE)
-  # size factor normalised log2(CPM+1) values.
-  out.cpm <- edgeR::cpm.DGEList(dge, normalized.lib.sizes = T, log = F)
-  out.expr <- log2(out.cpm+1)
+  # apply voom to get log2 expression values
+  design.mat <- stats::model.matrix( ~ factor(DEOpts$designs))
+  v <- limma::voom(dge, design.mat, plot=FALSE)
+  out.expr <- v$E
 
   # run DE testing
   res <-  ROTS::ROTS(data = out.expr,
@@ -298,7 +299,7 @@
   result <- data.frame(geneIndex=rownames(res$data),
                        pval=res$pvalue,
                        fdr=rep(NA, nrow(res$data)),
-                       lfc=rep(NA, nrow(res$data)),
+                       lfc=res$logfc,
                        stringsAsFactors = F)
   return(result)
 }

@@ -12,8 +12,10 @@
 #' @usage simulateDE(n1=c(20,50,100), n2=c(30,60,120),
 #' sim.settings,
 #' DEmethod,
-#' Preclust=FALSE,
 #' normalisation,
+#' Preclust=FALSE,
+#' Preprocess = NULL,
+#' spikeIns=FALSE,
 #' NCores=NULL,
 #' verbose=TRUE)
 #' @param n1,n2 Integer vectors specifying the number of biological replicates in each group. Default values are n1=c(20,50,100) and n2=c(30,60,120).
@@ -21,9 +23,12 @@
 #' @param DEmethod A character vector specifying the DE detection method to be used.
 #' Available options are: limma-trend, limma-voom, edgeR-LRT, edgeR-QL, DESeq2,
 #' ROTS, baySeq, NOISeq, EBSeq, DSS, MAST, scde, BPSC, scDD, monocle.
+#' @param normalisation Normalisation method to use.
 #' @param Preclust Whether to run a  hierarchical clustering prior to normalisation. Default is \code{FALSE}. This is implemented for scran and SCnorm.
 #' For details, see \code{\link[scran]{quickCluster}}.
-#' @param normalisation Normalisation method to use.
+#' @param Preprocess A character vector specifying the gene filtering method to be used prior to normalisation. Default is \code{NULL}, i.e. no filtering.
+#' Availabe options are: scImpute, DrImpute, CountFilter, FreqFilter.
+#' @param spikeIns Logical value to indicate whether to simulate spike-ins. Default is \code{FALSE}.
 #' @param NCores integer positive number of cores for parallel processing, default is \code{NULL}, ie 1 core.
 #' @param verbose Logical value to indicate whether to show progress report of simulations. Default is \code{TRUE}.
 #' @return A list with the following fields.
@@ -34,11 +39,10 @@
 #' elfc is for the DE tool estimated LFC; rlfc is for the LFC estimated from the normalised read counts.}
 #' \item{sf.values,gsf.values}{3D array (ngenes * N * nsims) for size factor estimates.
 #' Global estimates per sample in sf.values; Gene- and sample-wise estimates in gsf.values only for SCnorm normalisation.}
-#' \item{true.designs}{3D array (ngenes * N * nsims) for group assignment specifications.}
 #' \item{sim.settings}{The input sim.settings to which the specifications of \code{simulateDE} is added.}
 #' \item{time.taken}{The time taken for each simulation, given for preprocessing, normalisation, differential expression testing and moment estimation.}
 #' @author Beate Vieth
-#' @seealso \code{\link{estimateParam}},  \code{\link{insilicoNBParam}} for negative binomial parameter specifications;\cr
+#' @seealso \code{\link{estimateParam}} for negative binomial parameter specifications;\cr
 #'  \code{\link{DESetup}}, \code{\link{SimSetup}} for simulation setup
 #' @examples
 #' \dontrun{
@@ -48,27 +52,10 @@
 #' load('kolodziejczk_cnts.rda')
 #' kolodziejczk_cnts <- kolodziejczk_cnts[, grep('standard', colnames(kolodziejczk_cnts))]
 #' ## estimate NB parameters:
-#' TwoiLIF.params = estimateParam(countData=cnts
-#'                           Distribution='NB',
-#'                           RNAseq="singlecell",
-#'                           normalisation='scran',
-#'                           NCores=NULL,
-#'                           sigma=1.96, verbose=TRUE)
 #' ## define DE settings:
-#' desettings <- DESetup(ngenes=10000,
-#' nsims=25, p.DE=0.2,
-#' pLFC=function(x) sample(c(-1,1), size=x,replace=TRUE)*rgamma(x, 3, 3))
 #' ## define simulation settings for Kolodziejczk:
-#' simsettings <- SimSetup(desetup=desettings, params=TwoiLIF.params, size.factors='given')
 #' ## run simulations:
-#' simres <- simulateDE(n1=c(50,100,300), n2=c(50,120,500),
-#' sim.settings,
-#' DEmethod='MAST',
-#' Preclust=T,
-#' normalisation='scran',
-#' NCores=10,
-#' verbose=TRUE)
-#' ## if parallel computation unavailable, consider ROTS as DEmethod
+#' ## if parallel computation is unavailable, consider ROTS as DEmethod
 #' }
 #' @rdname simulateDE
 #' @importFrom stats setNames
@@ -76,17 +63,12 @@
 simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
                        sim.settings,
                        DEmethod,
-                       Preclust=FALSE,
                        normalisation,
+                       Preclust=FALSE,
+                       Preprocess = NULL,
+                       spikeIns=FALSE,
                        NCores=NULL,
                        verbose=TRUE) {
-
-  Preprocess = NULL
-  GeneSelect=NULL
-  DimReduce=NULL
-  ClustMethod=NULL
-  spikeIns=FALSE
-
   if (!length(n1) == length(n2)) { stop("n1 and n2 must have the same length!") }
   if(isTRUE(spikeIns) && is.null(sim.settings$spike)) {
     stop(message(paste0("For the simulation of  spike-ins, fitting information is needed but there is no 'spike' object in 'sim.settings'.  Please consult the function estimateSpike for spike fitting and SimSetup for creating simulation setup object!")))
@@ -121,18 +103,24 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
   sim.settings$NCores = NCores
   sim.settings$Preclust = Preclust
   sim.settings$Preprocess = Preprocess
-  sim.settings$DimReduce = DimReduce
-  sim.settings$GeneSelect = GeneSelect
-  sim.settings$ClustMethod = ClustMethod
   sim.settings$clustNumber = ifelse(sim.settings$design=="2grp", 2, NULL)
-  sim.settings$PreclustNumber = ifelse(isTRUE(Preclust), min.n, NULL)
+  if(isTRUE(Preclust)) {PreclustNumber <- min.n}
+  if(!isTRUE(Preclust)) {PreclustNumber <- NULL}
+  sim.settings$PreclustNumber = PreclustNumber
+
+  if(isTRUE(sim.settings$geneset) && isTRUE(length(sim.settings$means) >= sim.settings$ngenes)) {
+    sim.settings$geneset=FALSE
+    if (verbose) { message(paste0("The mean vector is longer than the number of genes to be simulated and filling in with low magnitude Poisson has been specified. Changing it to sampling with replacement.")) }
+  }
+
+  if (verbose) { message(paste0("Preparing output arrays.")) }
 
   my.names = paste0(n1,"vs",n2)
 
   #set up output arrays
   pvalues = fdrs = elfcs = rlfcs = mus = disps = dropouts = array(NA,dim=c(sim.settings$ngenes,length(n1), sim.settings$nsims))
-  time.taken = array(NA,dim = c(5,length(n1), sim.settings$nsims),
-                     dimnames = list(c('Preprocess', "Normalisation", "Clustering", "DE", "Moments"),
+  time.taken = array(NA,dim = c(4,length(n1), sim.settings$nsims),
+                     dimnames = list(c('Preprocess', "Normalisation", "DE", "Moments"),
                                      NULL, NULL))
   true.sf = stats::setNames(replicate(length(n1),NULL),my.names)
   est.sf = stats::setNames(replicate(length(n1),NULL),my.names)
@@ -152,19 +140,6 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
   if(!sim.settings$normalisation=="SCnorm") {
     est.gsf = NULL
   }
-  # est.gsf = NULL
-
-  true.designs = stats::setNames(replicate(length(n1),NULL),my.names)
-  true.designs <- lapply(1:length(true.designs), function(x) {
-    true.designs[[x]] = matrix(NA, nrow = sim.settings$nsims, ncol = n1[x] + n2[x])
-  })
-
-  if(!is.null(sim.settings$ClustMethod)) {
-    def.designs = stats::setNames(replicate(length(n1),NULL),my.names)
-    def.designs <- lapply(1:length(def.designs), function(x) {
-      def.designs[[x]] = matrix(NA, nrow = sim.settings$nsims, ncol = n1[x] + n2[x])
-    })
-  }
 
   ## start simulation
   for (i in 1:sim.settings$nsims) {
@@ -179,7 +154,7 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
     ## generate gene read counts
     if (verbose) {message(paste0("Generating RNA seq read counts")) }
     gene.data = .simRNAseq.2grp(simOptions = tmp.simOpts,
-                                n1 = max.n, n2 = max.n)
+                                n1 = max.n, n2 = max.n, verbose=verbose)
 
     ## generate spike-in read counts
     if(isTRUE(spikeIns)) {
@@ -194,22 +169,21 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
     ## generate mean fragment lengths for samples
     if(!is.null(tmp.simOpts$MeanFragLengths)) {
       if (verbose) { message(paste0("Sampling from observed mean fragment lengths")) }
-      meanfrag.data = sample(tmp.simOpts$MeanFragLengths, max.n+max.n, replace = TRUE)
-      names(meanfrag.data) = colnames(gene.data$counts)
+      MeanFrag.data = sample(tmp.simOpts$MeanFragLengths, max.n+max.n, replace = TRUE)
+      names(MeanFrag.data) = colnames(gene.data$counts)
     }
     if(is.null(tmp.simOpts$MeanFragLengths)) {
-      meanfrag.data = NULL
+      MeanFrag.data = NULL
     }
 
     ## match sampled gene names with given gene lengths
     if(!is.null(tmp.simOpts$Lengths)) {
-      if (verbose) { message(paste0("Associating gene lengths with sampled gene expression")) }
       gene.id = sub('_([^_]*)$', '', rownames(gene.data$counts))
-      length.data = tmp.simOpts$Lengths
-      length.data = length.data[match(gene.id,names(length.data))]
+      Length.data = tmp.simOpts$Lengths
+      Length.data = Length.data[match(gene.id,names(Length.data))]
     }
     if(is.null(tmp.simOpts$Lengths)) {
-      length.data = NULL
+      Length.data = NULL
     }
 
 
@@ -217,6 +191,7 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
     for (j in seq(along=n1)) {
       Nrep1 = n1[j]
       Nrep2 = n2[j]
+      if (verbose) { message(paste0(Nrep1, " vs. ", Nrep2)) }
 
       tmp.simOpts$PreclustNumber = min(Nrep1, Nrep2)
 
@@ -231,9 +206,16 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
       ## filter out zero expression genes
       ix.valid = rowSums(sim.cnts) > 0
       count.data = sim.cnts[ix.valid,, drop = FALSE]
-      ## filter out gene lengths belonging to zero expression
-      if(!is.null(length.data)) {
-       length.data = length.data[ix.valid]
+
+      ## match sampled gene names with given gene lengths
+      if(!is.null(Length.data)) {
+        if (verbose) { message(paste0("Associating gene lengths with sampled gene expression")) }
+        gene.id = sub('_([^_]*)$', '', rownames(count.data))
+        length.data = Length.data
+        length.data = length.data[match(gene.id,names(length.data))]
+      }
+      if(is.null(Length.data)) {
+        length.data = NULL
       }
 
       ## take a subsample of simulated spike-ins
@@ -248,9 +230,15 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
                                          rownames(spike.info)), , drop = FALSE]
         }
       }
+      if(is.null(spike.data)) {
+        count.spike=NULL
+      }
       ## take a subsample of mean fragment lengths
-      if(!is.null(meanfrag.data)) {
-        meanfrag.data = meanfrag.data[idx]
+      if(!is.null(MeanFrag.data)) {
+        meanfrag.data = MeanFrag.data[idx]
+      }
+      if(is.null(MeanFrag.data)) {
+        meanfrag.data = NULL
       }
 
       ## perform filtering / imputation (OPTIONAL)
@@ -260,13 +248,20 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
         filter.data <- .preprocess.calc(Preprocess=tmp.simOpts$Preprocess,
                                         countData=count.data,
                                         NCores=tmp.simOpts$NCores)
-        ixx.valid <- rownames(sim.cnts) %in% rownames(filter.data)
-        ix.valid <- ixx.valid
-        count.data <- filter.data
-        if(!is.null(length.data)) {
-          gene.id = sub('_([^_]*)$', '', rownames(count.data))
-          length.data = length.data[match(gene.id,names(length.data))]
+        # ixx.valid <- rownames(sim.cnts) %in% rownames(filter.data)
+        # ix.valid <- ixx.valid
+        fornorm.count.data <- filter.data
+        if(!is.null(Length.data)) {
+          gene.id = sub('_([^_]*)$', '', rownames(fornorm.count.data))
+          fornorm.length.data = Length.data
+          fornorm.length.data = fornorm.length.data[match(gene.id,names(fornorm.length.data))]
         }
+        if(is.null(Length.data)) {
+          length.data = NULL
+        }
+      }
+      if(is.null(Preprocess)) {
+        fornorm.count.data <- count.data
       }
       end.time.preprocess <- Sys.time()
 
@@ -274,43 +269,22 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
       if (verbose) { message(paste0("Normalizing read counts")) }
       start.time.norm <- Sys.time()
       norm.data <- .norm.calc(normalisation=tmp.simOpts$normalisation,
-                             countData=count.data,
+                             countData=fornorm.count.data,
                              spikeData=count.spike,
                              spikeInfo=spike.info,
                              batchData=NULL,
                              Lengths=length.data,
                              MeanFragLengths=meanfrag.data,
                              PreclustNumber=tmp.simOpts$PreclustNumber,
-                             NCores=tmp.simOpts$NCores)
+                             NCores=tmp.simOpts$NCores,
+                             verbose=verbose)
       end.time.norm <- Sys.time()
 
-      def.design <- true.design
-
-      ## perform group assignment (OPTIONAL)
-      if(!is.null(DimReduce) && !is.null(ClustMethod)) {
-        if (verbose) { message(paste0("Applying dimension reduction and clustering")) }
-        start.time.clust <- Sys.time()
-        classify.data <- .classify.calc(GeneSelect=tmp.simOpts$GeneSelect,
-                                    DimReduce=tmp.simOpts$DimReduce,
-                                    ClustMethod=tmp.simOpts$ClustMethod,
-                                    clustNumber=tmp.simOpts$clustNumber,
-                                    normData=norm.data,
-                                    Lengths=length.data,
-                                    MeanFragLengths=meanfrag.data,
-                                    countData=count.data,
-                                    spikeData=count.spike,
-                                    spikeInfo=spike.info,
-                                    spikeIns=spikeIns,
-                                    verbose=verbose)
-        def.design <- classify.data
-        end.time.clust <- Sys.time()
-      }
-
       ## create an DE options object to pass into DE detection
-      DEOpts <- list(designs=def.design, p.DE=tmp.simOpts$p.DE)
+      DEOpts <- list(designs=true.design, p.DE=tmp.simOpts$p.DE)
 
       ## Run DE detection
-      if (verbose) { message(paste0("Running DE tool")) }
+      if (verbose) { message(paste0("Running DE tool \n")) }
       start.time.DE <- Sys.time()
       res.de = .de.calc(DEmethod=tmp.simOpts$DEmethod,
                         normData=norm.data,
@@ -327,7 +301,7 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
       start.time.NB <- Sys.time()
       res.params <- .run.params(countData=count.data,
                                 normData=norm.data,
-                                group=DEOpts$def.design)
+                                group=DEOpts$designs)
       end.time.NB <- Sys.time()
 
       # generate empty vectors
@@ -352,22 +326,14 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
       est.sf[[j]][i,] = norm.data$size.factors
 
       if(attr(norm.data, 'normFramework') == 'SCnorm') {
-        est.gsf[[j]][i, ix.valid, ] = norm.data$scale.factors
+        allgenes <- rownames(sim.cnts)
+        testedgenes <- rownames(norm.data$scale.factors)
+        ixx.valid <- allgenes %in% testedgenes
+        est.gsf[[j]][i, ixx.valid, ] = norm.data$scale.factors
       }
 
-      true.designs[[j]][i,] = true.design
       # time taken for each step
       # copy designs into list of matrices
-      if(!is.null(ClustMethod)) {
-        time.taken.clust <- difftime(end.time.clust,
-                                     start.time.clust,
-                                     units="mins")
-        def.designs[[j]][i,] = def.design
-      }
-      if (is.null(ClustMethod)) {
-        time.taken.clust = NA
-        def.designs = NULL
-      }
       if(!is.null(Preprocess)) {
         time.taken.preprocess <-  difftime(end.time.preprocess,
                                            start.time.preprocess,
@@ -388,7 +354,6 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
                                 units="mins")
       timing <- rbind(time.taken.preprocess,
                       time.taken.norm,
-                      time.taken.clust,
                       time.taken.DE,
                       time.taken.NB)
 
@@ -410,8 +375,6 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
        est.sf = est.sf,
        est.gsf = est.gsf,
        time.taken = time.taken,
-       true.designs = true.designs,
-       def.designs = def.designs,
        sim.settings = sim.settings)
 }
 

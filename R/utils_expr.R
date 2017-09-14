@@ -69,6 +69,10 @@
 
 # RELATIVE MEASURES USING SEQ DEPTH AS DENOMINATOR ------------------------
 
+# following three functions taken and adapted from
+# https://gist.github.com/slowkow/c6ab0348747f86e2748b
+
+
 .calculateTPM <- function(countData, Lengths) {
   rate <- countData / Lengths
   TPM <- rate / sum(rate) * 1e6

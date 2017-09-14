@@ -7,22 +7,22 @@
 printEvalRes(evalRes)
 }
 \arguments{
-\item{evalRes}{The result object from \code{\link{evaluateSim}}.}
+\item{evalRes}{The result object from \code{\link{evaluateDE}}.}
 }
 \value{
 A matrix of results per sample size considered (rows). Columns include sample size, specified nomial type I control value (for FDR or p-values), actual error rate, marginal TPR, averaged number of true and false discoveries, and false discovery costs.
 }
 \description{
-This function takes as input a result object from \code{\link{evaluateSim}} and prints out a table to summarize important error-rates-related quantities. The results are marginalized, meaning that they are averaged quantities over all strata and simulations. This provides a quick view of the marginal results per sample size.
+This function takes as input a result object from \code{\link{evaluateDE}} and prints out a table to summarize important error-rates-related quantities. The results are marginalized, meaning that they are averaged quantities over all strata and simulations. This provides a quick view of the marginal results per sample size.
 }
 \examples{
 \dontrun{
-## for example evaluation result see \\code{\\link{evaluateSim}}
+## for example evaluation result see \\code{\\link{evaluateDE}}
 printEvalRes(evalRes=evalres)
 }
 }
 \seealso{
-\code{\link{simulateDE}}, \code{\link{evaluateSim}}
+\code{\link{simulateDE}}, \code{\link{evaluateDE}}
 }
 \author{
 Beate Vieth

@@ -1,102 +1,10 @@
 
-# insilicoNBParam ---------------------------------------------------------
-
-#' @name insilicoNBParam
-#' @aliases insilicoNBParam
-#' @title In Silico Simulation Parameters
-#' @description With this function, the user can define the parameters of the negative binomial distribution needed for the simulations. The mean, dispersion and dropout need to be specified for bulk RNAseq experiments. For single cell RNAseq experiments, the mean and dispersion should be chosen so that a high number of dropouts are generated (see details).
-#' @usage insilicoNBParam(means, dispersion,
-#' dropout=NULL, sf=NULL, RNAseq=c("bulk", "singlecell"))
-#' @param means mean parameter of the NB read count distribution defined by a function sampling from a random distribution, e.g. function(x) rgamma(n=x, shape=2, rate=2).
-#' @param dispersion dispersion parameter of the NB read count distribution. This can be:
-#' (1) a constant, e.g. 0.2
-#' (2) a function relating to the mean expression. The parametric fit employed in DESeq2 is recommended to get an estimate, e.g. function(x) 3 + 150/x.
-#' @param dropout The probability of droput per gene. This can be:
-#' (1) a constant
-#' (2) a function sampling from a random distribution, e.g. function(x) runif(x, min=0, max=0.25).
-#' The default is \code{NULL}, i.e. no dropout. Note that the dropout is not considered for single cell simulations. This should be inherently given by low mean expression coupled with high dispersion.
-#' @param sf The size factor:
-#' (1) a vector
-#' (2) a function sampling from a random distribution, e.g. function(x) rnorm(x, mean=1, sd=0.2).
-#' The default is \code{NULL}, i.e. equal size factor of 1.
-#' @param RNAseq is a character value: "bulk" or "singlecell".
-#' @return List with the following vectors:
-#' \item{means}{Mean log2 read counts per gene.}
-#' \item{dispersion}{Log2 dispersion per gene.}
-#' \item{p0}{Probability that the count will be zero per gene.}
-#' \item{sf}{Size factor per sample.}
-#' \item{estFramework}{"in silico" by default.}
-#' @examples
-#' \dontrun{
-#' ## Bulk RNA-seq experiment in silico parameters:
-#' insilico.bulk <- insilicoNBParam(means=function(x) 2^runif(x, 9, 12),
-#' dispersion=0.2,
-#' dropout=function(x) runif(x, min = 0, max = 0.25),
-#' sf=function(x) truncnorm::rtruncnorm(x, a = 0.6, b = 1.4, mean=1, sd=0.2),
-#' RNAseq='bulk')
-#' ## Single cell RNA-seq experiment in silico parameters:
-#' insilico.singlecell <- insilicoNBParam(means=function(x) rgamma(x, 4, 2),
-#' dispersion=function(x) 2 + 150/x,
-#' dropout=NULL,
-#' sf=function(x) 2^rnorm(n=x, mean=0, sd=0.5),
-#' RNAseq='singlecell')
-#' }
-#' @author Beate
-#' @rdname insilicoNBParam
-#' @export
-insilicoNBParam <- function(means, dispersion, dropout=NULL, sf=NULL, RNAseq=c("bulk", "singlecell")) {
-  if (is.function(means)) {
-    means <- means
-  }
-  if (!is.function(means)) {stop("Please provide a function for the mean parameter!")}
-
-  if (is.function(dispersion)) {
-    dispersion <- dispersion
-  }
-  if (length(dispersion) == 1) {
-    dispersion <- dispersion
-  }
-  # if (!length(dispersion) == 1 || !is.function(dispersion)) {message("Please provide either a function or constant value for dispersion parameter!")}
-
-  if(RNAseq=='bulk') {
-    if (is.function(dropout)) {
-      dropout <- dropout
-    }
-    if (is.null(dropout)) {
-      dropout <- NULL
-    }
-    # if (!is.function(dropout) || !is.function(dispersion)) {message("Please provide a function for the dropout parameter or leave it as default, i.e. NULL.")}
-  }
-
-  if(RNAseq=='singlecell') {
-    dropout <- NULL
-    message("The dropout is set to NULL for single cell experiments. For more information, please consult the details section of insilicoNBParam function.")
-  }
-
-  if (is.function(sf)) {
-    sf <- sf
-  }
-  if (is.null(sf)) {
-    sf <- NULL
-  }
-  if (is.vector(sf)) {
-    sf <- sf
-  }
-
-  res <- list(means = means, dispersion = dispersion, p0 = dropout, sf = sf, RNAseq = RNAseq)
-  attr(res, 'param.type') <- "insilico"
-  attr(res, 'Distribution') <- "NB"
-
-  return(res)
-}
-
 # estimateParam ---------------------------------------------------------
 
 #' @name estimateParam
 #' @aliases estimateParam
 #' @title Estimate simulation parameters
-#' @description This function estimates and returns parameters needed for power
-#' simulations assuming a (zero-inflated) negative binomial read count distribution.
+#' @description This function estimates and returns parameters needed for power simulations assuming a negative binomial read count distribution.
 #' @usage estimateParam(countData,
 #' batchData = NULL,
 #' spikeData = NULL,
@@ -168,7 +76,7 @@ insilicoNBParam <- function(means, dispersion, dropout=NULL, sf=NULL, RNAseq=c("
 #' \item{BASiCS}{removes technical variation by utilizing negative control genes, i.e. spike-ins stored in \code{spikeData},
 #' as implemented in \code{\link[BASiCS]{DenoisedCounts}}.
 #' Furthermore, the molecule counts of spike-ins added to the cell lysate need to be supplied in \code{spikeInfo}.}
-#' #' \item{Census}{converts relative measures of TPM/FPKM values into mRNAs per cell (RPC) without the need of spike-in standards.
+#' \item{Census}{converts relative measures of TPM/FPKM values into mRNAs per cell (RPC) without the need of spike-in standards.
 #' Census at least needs \code{Lengths} for single-end data and preferably \code{MeanFragLengths} for paired-end data.
 #' Do not use this algorithm for UMI data!}
 #' \item{depth}{Sequencing depth normalisation.}
@@ -187,14 +95,14 @@ insilicoNBParam <- function(means, dispersion, dropout=NULL, sf=NULL, RNAseq=c("
 #'                        mu=sf.means, size=1/true.dispersions),
 #'                ncol=ncells)
 #' ## estimating negative binomial parameters
-#' estparam <- estimateParam(countData=cnts, batchData = NULL,
+#' estparam <- estimateParam(countData=cnts,
 #'                           spikeData=NULL, spikeInfo = NULL,
 #'                           Lengths=NULL, MeanFragLengths=NULL,
 #'                           Distribution='NB',
 #'                           RNAseq="singlecell",
 #'                           normalisation='scran',
 #'                           NCores=NULL,
-#'                           sigma=1.96, verbose=TRUE)
+#'                           sigma=1.96)
 #' plotParam(estparam, annot=F)
 #'
 #' ## simulating bulk RNA-seq experiment
@@ -208,28 +116,10 @@ insilicoNBParam <- function(means, dispersion, dropout=NULL, sf=NULL, RNAseq=c("
 #'                        mu=sf.means, size=1/true.dispersions),
 #'                ncol=nsamples)
 #' ## estimating negative binomial parameters
-#' estparam <- estimateParam(countData=cnts, batchData = NULL,
-#'                           spikeData=NULL, spikeInfo = NULL,
-#'                           Lengths=NULL, MeanFragLengths=NULL,
-#'                           Distribution='NB',
-#'                           RNAseq="bulk",
-#'                           normalisation='MR',
-#'                           NCores=NULL,
-#'                           sigma=1.96, verbose=TRUE)
+#' estparam <- estimateParam(countData=cnts,
+#'                           Distribution='NB', RNAseq="bulk",
+#'                           normalisation='MR', sigma=1.96)
 #' plotParam(estparam, annot=F)
-#'
-#' # download count table
-#' githubURL <- "https://github.com/bvieth/powsimRData/raw/master/data-raw/kolodziejczk_cnts.rda"
-#' download.file(url = githubURL, destfile= "kolodziejczk_cnts.rda", method = "wget")
-#' load('kolodziejczk_cnts.rda')
-#' kolodziejczk_cnts <- kolodziejczk_cnts[, grep('standard', colnames(kolodziejczk_cnts))]
-#' ## estimate NB parameters:
-#' estparams <- estimateParam(countData=cnts
-#'                           Distribution='NB',
-#'                           RNAseq="singlecell",
-#'                           normalisation='scran',
-#'                           NCores=NULL,
-#'                           sigma=1.96, verbose=TRUE)
 #' }
 #' @author Beate Vieth
 #' @rdname estimateParam
@@ -328,4 +218,192 @@ estimateParam <- function(countData,
   attr(res2, 'Distribution') <- Distribution
 
   return(res2)
+}
+
+
+# estimateSpike -----------------------------------------------------------
+
+#' @name estimateSpike
+#' @aliases estimateSpike
+#' @title Estimate simulation parameters for spike-ins
+#' @description This function estimates and returns parameters needed for spike-in read count simulations using supplementary code from Kim et al. 2016 (DOI: 10.1038/ncomms9687).
+#' @usage estimateSpike(spikeData,
+#' spikeInfo,
+#' MeanFragLength = NULL,
+#' batchData = NULL,
+#' normalisation=c('depth','none'))
+#' @param spikeData  is a count \code{matrix}. Rows correspond to spike-ins, columns to samples.
+#' Rownames should contain the spike-in names, column names the sample names.
+#' @param spikeInfo is a molecule count \code{matrix} of spike-ins. Rows correspond to spike-ins.
+#' The order of rows should be the same as the rows in \code{spikeData}.
+#' The rownames should be the same as the rownames of spikeData.
+#' The first column should contain the molecule counts of spike-ins and be named 'SpikeInput'.
+#' The second column can contain the sequence lengths of spike-ins in bases and be named 'Lengths'.
+#' @param MeanFragLength is a numeric vector of the mean fragment length.
+#' @param batchData is a \code{data.frame} for batch annotation. Rows correspond to samples.
+#' The order of rows should be the same as the columns in \code{spikeData}.
+#' The rownames should be the same as the column names of spikeData.
+#' The first column should contain the batch annotation, e.g. 'a' for batch 1, 'b' for batch 2.
+#' @param normalisation is a character value: 'depth' or 'none'. For more information, please consult the details section.
+#' @return List object with the following entries:
+#' \item{normCounts}{The normalised spike-in read counts.}
+#' \item{sf}{The estimated library size factors.}
+#' \item{EVGammaThetaEstimates}{Estimation of the four parameters capturing technical variability, namely E[\eqn{\gamma}], Var[\eqn{\gamma}], E[\eqn{\theta}] and Var[\eqn{\theta}]. For more details, please consult supplementary information of Kim et al. 2016 (DOI: 10.1038/ncomms9687). These estimates are needed for simulating spike-in read counts.}
+#' \item{Input}{The input spike-in expression \code{matrix}, molecule counts \code{data.frame} and batch annotation \code{data.frame}, filtered so that only spike-ins with nonzero expression and samples with at least 100 reads are retained.}
+#' \item{Settings}{Reporting the chosen normalisation framework.}
+#' @examples
+#' \dontrun{
+#' ## not yet
+#' }
+#' @details
+#' Normalisation methods
+#' \describe{
+#' \item{'depth'}{applies the depth normalization method as implemented in \code{\link[scran]{computeSpikeFactors}}.}
+#' \item{'none'}{No normalisation is applied. This approach can be used for prenormalized expression estimates, e.g. TPM/FPKM/RPKM estimated by cufflinks, RSEM, salmon etc.}
+#' }
+#' @author Beate Vieth
+#' @rdname estimateSpike
+#' @importFrom stats setNames
+#' @importFrom matrixStats rowSds
+#' @export
+estimateSpike <- function(spikeData,
+                          spikeInfo,
+                          MeanFragLength = NULL,
+                          batchData = NULL,
+                          normalisation=c('depth','none')) {
+  # check provided input
+  if(!is.null(batchData)) {
+    if(!nrow(batchData) == ncol(spikeData)) {
+      stop(message(paste0("batchData and spikeData is not the same length!")))
+    }
+    if(is.null(rownames(batchData))) {
+      stop(message(paste0("batchData has no sample annotation as row names!")))
+    }
+    if(is.null(colnames(spikeData))) {
+      stop(message(paste0("spikeData has no sample annotation as column names!")))
+    }
+  }
+  if(is.null(rownames(spikeData)) || is.null(rownames(spikeInfo))) {
+    stop(message(paste0("The input data frames of spikeInfo and spikeData need row names!")))
+  }
+  if(is.null(colnames(spikeInfo)) || !any(colnames(spikeInfo) %in% "SpikeInput")) {
+    stop(message(paste0("The input data frame of spikeInfo has no column labelled SpikeInput.")))
+  }
+  if (!normalisation %in% c('depth', 'none')) {
+    stop(message(paste0("For spike-in count data normalisation, only depth normalization or providing prenormalized data is implemented.")))
+  }
+  if (normalisation=='none' && all((spikeData - round(spikeData)) == 0)) {
+    stop(message(paste0("Skipping the normalisation should only be done with pre-normalized data, eg. RSEM output, but the provided input matrix contains only integer values!")))
+  }
+
+  if(!is.null(rownames(spikeData)) && !is.null(rownames(spikeInfo))) {
+    # kick out undetected spike-ins
+    spikeData.red <- spikeData[rowSums(spikeData)>0, colSums(spikeData)>100]
+    # sort them if needed
+    spikeInfo.red <- spikeInfo[rownames(spikeInfo) %in% rownames(spikeData.red), , drop = FALSE]
+    spikeInfo.red <- spikeInfo.red[match(rownames(spikeData.red), rownames(spikeInfo.red)), , drop = FALSE]
+    # spikeInfo.red <- spikeInfo.red[,"SpikeInput", drop = FALSE]
+    message(paste0(nrow(spikeInfo.red), " spike-ins have been detected."))
+    if(nrow(spikeInfo.red)<10) {
+      stop(message(paste0("Not enough spike-ins detected to allow reliable variance estimation.
+                          Please proceed without spike-in estimation.
+                          There is still the option to generate insilico spike-ins.")))
+    }
+
+    if(!is.null(batchData) && !is.null(rownames(batchData))) {
+      # define batches
+      batchData.red <- batchData[rownames(batchData) %in% colnames(spikeData.red), , drop = FALSE]
+      batch <- stats::setNames(as.character(row.names(batchData.red)), batchData.red[,1])
+      # calculate normalized spike-ins per batch
+      normspikeData <- sapply(unique(names(batch)), function(b){
+        tmpData <- spikeData.red[,grepl(pattern = b, names(batch))]
+        normData <- .norm.calc(normalisation = normalisation,
+                               countData = tmpData,
+                               batchData = NULL,
+                               spikeData = NULL,
+                               spikeInfo = NULL,
+                               Lengths = NULL,
+                               MeanFragLengths = NULL,
+                               NCores=NULL,
+                               verbose=FALSE)
+        normData
+      }, simplify=FALSE)
+      # estimate gamma theta per batch
+      gammaThetaEstimate <- sapply(unique(names(batch)), function(b){
+        tmpData <- normspikeData[[b]]$NormCounts
+        tmpSF <- normspikeData[[b]]$size.factors
+        if(!is.null(spikeInfo.red$Lengths) && !is.null(MeanFragLength)) {
+          tmpSFmat <- .repmat(t(as.matrix(tmpSF)), nrow(spikeInfo.red), 1) *
+            .repmat(as.matrix( (spikeInfo.red$Lengths - MeanFragLength + 1) / 10^3), 1, ncol(tmpData))
+        }
+        if(!is.null(spikeInfo.red$Lengths) && is.null(MeanFragLength)) {
+          tmpSFmat <- .repmat(t(as.matrix(tmpSF)), nrow(spikeInfo.red), 1) *
+            .repmat(as.matrix( spikeInfo.red$Lengths / 10^3), 1, ncol(tmpData))
+        }
+        if(is.null(spikeInfo.red$Lengths) && is.null(spikeInfo.red$MeanFragLength)) {
+          tmpSFmat <- .repmat(t(as.matrix(tmpSF)), nrow(spikeInfo.red), 1)
+        }
+        est <- .estimateGammaTheta(nCountSpikes = tmpData,
+                                  numberSpikes = spikeInfo.red[,"SpikeInput", drop = FALSE],
+                                  sizeFactorMatrix = tmpSFmat)
+        est
+      }, simplify=FALSE)
+      # correct for batch effect by dividing norm counts with gamma theta
+      normCountsL <- sapply(unique(names(batch)), function(b){
+        tmpData <- normspikeData[[b]]$NormCounts
+        tmpgammaTheta <- gammaThetaEstimate[[b]]$gammaTheta[[1]]
+        tmpData / tmpgammaTheta
+      }, simplify=FALSE)
+
+      # return normalized, batch-corrected counts and size factors for spike-ins
+      normCounts <- do.call('cbind', normCountsL)
+      sizeFactor <- unlist(lapply(normspikeData,function(x) x$size.factors))
+    }
+    if(is.null(batchData)) {
+      # calculate normalized spike-ins
+      normspikeData <- .norm.calc(normalisation=normalisation,
+                                  countData=spikeData.red,
+                                  batchData = NULL,
+                                  spikeData=NULL,
+                                  spikeInfo=NULL,
+                                  Lengths=NULL,
+                                  MeanFragLengths=NULL,
+                                  NCores=NULL)
+      # return normalized, batch-corrected counts and size factors for spike-ins
+      normCounts <- normspikeData$NormCounts
+      sizeFactor <- normspikeData$size.factors
+    }
+
+    # technical noise fit
+    if(!is.null(spikeInfo.red$Lengths) && !is.null(MeanFragLength)) {
+      sizeFactorMatrix <- .repmat(t(as.matrix(sizeFactor)), nrow(spikeInfo.red), 1) *
+        .repmat(as.matrix( (spikeInfo.red$Lengths - MeanFragLength + 1) / 10^3), 1, ncol(normCounts))
+    }
+    if(!is.null(spikeInfo.red$Lengths) && is.null(MeanFragLength)) {
+      sizeFactorMatrix <- .repmat(t(as.matrix(sizeFactor)), nrow(spikeInfo.red), 1) *
+        .repmat(as.matrix( spikeInfo.red$Lengths / 10^3), 1, ncol(normCounts))
+    }
+    if(is.null(spikeInfo.red$Lengths) && is.null(MeanFragLength)) {
+      sizeFactorMatrix <- .repmat(t(as.matrix(sizeFactor)), nrow(spikeInfo.red), 1)
+    }
+    EVGammaThetaEstimate <- .estimateEVGammaTheta(nCountSpikes = normCounts,
+                                                 numberSpikes = spikeInfo.red[,"SpikeInput", drop = FALSE],
+                                                 sizeFactorMatrix = sizeFactorMatrix)
+  }
+
+  normParams <- data.frame(Log2Means=rowMeans(log2(as.matrix(normCounts)+1)),
+                           Log2Sd=matrixStats::rowSds(log2(as.matrix(normCounts)+1)),
+                           row.names = row.names(normCounts))
+
+  # return object
+  res <- list("normCounts" = normCounts,
+              "normParams" = normParams,
+              "size.factors" = sizeFactor,
+              "EVGammaThetaEstimates" = EVGammaThetaEstimate,
+              "Input" = list("spikeData"=spikeData,
+                             "spikeInfo"=spikeInfo,
+                             "batchData"=batchData,
+                             "MeanFragLength"=MeanFragLength),
+              "Settings"=list("normFramework"=normalisation))
+  return(res)
 }

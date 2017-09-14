@@ -3,25 +3,30 @@
 #' @importFrom DEDS comp.FC
 .run.params <- function(countData, normData, group) {
 
+  # normalize count data
+  sf <- normData$size.factors
+  norm.counts <- t(t(countData)/sf)
+
   # calculate mean, dispersion and dropout
-  means = rowMeans(normData$NormCounts)
-  nsamples = ncol(normData$NormCounts)
-  s2 = rowSums((normData$NormCounts - means)^2)/(nsamples - 1)
+  means = rowMeans(norm.counts)
+  nsamples = ncol(norm.counts)
+  s2 = rowSums((norm.counts - means)^2)/(nsamples - 1)
   size = means^2/(s2 - means + 1e-04)
   size = ifelse(size > 0, size, NA)
   dispersion = 1/size
   counts0 = countData == 0
   nn0 = rowSums(!counts0)
-  p0 = (nsamples - nn0)/nsamples
-  cnts = normData$NormCounts
+  dropout = (nsamples - nn0)/nsamples
+
+  #calculate log2 fold changes
   fc.foo = DEDS::comp.FC(L=group, is.log = F, FUN = mean)
-  fc = fc.foo(cnts)
+  fc = fc.foo(norm.counts)
   lfc = log2(fc)
 
-  res = data.frame(geneIndex=rownames(normData$NormCounts),
+  res = data.frame(geneIndex=rownames(countData),
                     means=means,
                     dispersion=dispersion,
-                    dropout=p0,
+                    dropout=dropout,
                     lfcs=lfc,
                     stringsAsFactors = F)
   return(res)
@@ -120,7 +125,7 @@
                           normalisation,
                           NCores,
                           sigma,
-                          verbose=verbose) {
+                          verbose) {
   # kick out empty samples and keep only expressed genes
   totalS <- ncol(countData)
   totalG <- nrow(countData)
@@ -171,7 +176,8 @@
                          Lengths=Lengths,
                          MeanFragLengths=MeanFragLengths,
                          PreclustNumber=NULL,
-                         NCores=NCores)
+                         NCores=NCores,
+                         verbose=verbose)
 
   # parameters: mean, dispersion, dropout
   # fitting: mean vs dispersion, mean vs dropout

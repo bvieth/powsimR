@@ -7,8 +7,10 @@
 simulateDE(n1=c(20,50,100), n2=c(30,60,120),
 sim.settings,
 DEmethod,
-Preclust=FALSE,
 normalisation,
+Preclust=FALSE,
+Preprocess = NULL,
+spikeIns=FALSE,
 NCores=NULL,
 verbose=TRUE)
 }
@@ -21,10 +23,15 @@ verbose=TRUE)
 Available options are: limma-trend, limma-voom, edgeR-LRT, edgeR-QL, DESeq2,
 ROTS, baySeq, NOISeq, EBSeq, DSS, MAST, scde, BPSC, scDD, monocle.}
 
+\item{normalisation}{Normalisation method to use.}
+
 \item{Preclust}{Whether to run a  hierarchical clustering prior to normalisation. Default is \code{FALSE}. This is implemented for scran and SCnorm.
 For details, see \code{\link[scran]{quickCluster}}.}
 
-\item{normalisation}{Normalisation method to use.}
+\item{Preprocess}{A character vector specifying the gene filtering method to be used prior to normalisation. Default is \code{NULL}, i.e. no filtering.
+Availabe options are: scImpute, DrImpute, CountFilter, FreqFilter.}
+
+\item{spikeIns}{Logical value to indicate whether to simulate spike-ins. Default is \code{FALSE}.}
 
 \item{NCores}{integer positive number of cores for parallel processing, default is \code{NULL}, ie 1 core.}
 
@@ -39,7 +46,6 @@ Note that FDR values will be empty and the calculation will be done by \code{\li
 elfc is for the DE tool estimated LFC; rlfc is for the LFC estimated from the normalised read counts.}
 \item{sf.values,gsf.values}{3D array (ngenes * N * nsims) for size factor estimates.
 Global estimates per sample in sf.values; Gene- and sample-wise estimates in gsf.values only for SCnorm normalisation.}
-\item{true.designs}{3D array (ngenes * N * nsims) for group assignment specifications.}
 \item{sim.settings}{The input sim.settings to which the specifications of \code{simulateDE} is added.}
 \item{time.taken}{The time taken for each simulation, given for preprocessing, normalisation, differential expression testing and moment estimation.}
 }
@@ -60,31 +66,14 @@ download.file(url = githubURL, destfile= "kolodziejczk_cnts.rda", method = "wget
 load('kolodziejczk_cnts.rda')
 kolodziejczk_cnts <- kolodziejczk_cnts[, grep('standard', colnames(kolodziejczk_cnts))]
 ## estimate NB parameters:
-TwoiLIF.params = estimateParam(countData=cnts
-                          Distribution='NB',
-                          RNAseq="singlecell",
-                          normalisation='scran',
-                          NCores=NULL,
-                          sigma=1.96, verbose=TRUE)
 ## define DE settings:
-desettings <- DESetup(ngenes=10000,
-nsims=25, p.DE=0.2,
-pLFC=function(x) sample(c(-1,1), size=x,replace=TRUE)*rgamma(x, 3, 3))
 ## define simulation settings for Kolodziejczk:
-simsettings <- SimSetup(desetup=desettings, params=TwoiLIF.params, size.factors='given')
 ## run simulations:
-simres <- simulateDE(n1=c(50,100,300), n2=c(50,120,500),
-sim.settings,
-DEmethod='MAST',
-Preclust=T,
-normalisation='scran',
-NCores=10,
-verbose=TRUE)
-## if parallel computation unavailable, consider ROTS as DEmethod
+## if parallel computation is unavailable, consider ROTS as DEmethod
 }
 }
 \seealso{
-\code{\link{estimateParam}},  \code{\link{insilicoNBParam}} for negative binomial parameter specifications;\cr
+\code{\link{estimateParam}} for negative binomial parameter specifications;\cr
  \code{\link{DESetup}}, \code{\link{SimSetup}} for simulation setup
 }
 \author{

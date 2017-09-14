@@ -75,8 +75,7 @@ List object with the following entries
 \item{sigma}{The width of the variability band.}
 }
 \description{
-This function estimates and returns parameters needed for power
-simulations assuming a (zero-inflated) negative binomial read count distribution.
+This function estimates and returns parameters needed for power simulations assuming a negative binomial read count distribution.
 }
 \details{
 Normalisation methods
@@ -95,7 +94,7 @@ This annotation is stored in \code{batchData} (\code{\link[RUVSeq]{RUVs}}).}
 \item{BASiCS}{removes technical variation by utilizing negative control genes, i.e. spike-ins stored in \code{spikeData},
 as implemented in \code{\link[BASiCS]{DenoisedCounts}}.
 Furthermore, the molecule counts of spike-ins added to the cell lysate need to be supplied in \code{spikeInfo}.}
-#' \item{Census}{converts relative measures of TPM/FPKM values into mRNAs per cell (RPC) without the need of spike-in standards.
+\item{Census}{converts relative measures of TPM/FPKM values into mRNAs per cell (RPC) without the need of spike-in standards.
 Census at least needs \code{Lengths} for single-end data and preferably \code{MeanFragLengths} for paired-end data.
 Do not use this algorithm for UMI data!}
 \item{depth}{Sequencing depth normalisation.}
@@ -115,14 +114,14 @@ cnts <- matrix(rnbinom(ngenes*ncells,
                        mu=sf.means, size=1/true.dispersions),
                ncol=ncells)
 ## estimating negative binomial parameters
-estparam <- estimateParam(countData=cnts, batchData = NULL,
+estparam <- estimateParam(countData=cnts,
                           spikeData=NULL, spikeInfo = NULL,
                           Lengths=NULL, MeanFragLengths=NULL,
                           Distribution='NB',
                           RNAseq="singlecell",
                           normalisation='scran',
                           NCores=NULL,
-                          sigma=1.96, verbose=TRUE)
+                          sigma=1.96)
 plotParam(estparam, annot=F)
 
 ## simulating bulk RNA-seq experiment
@@ -136,28 +135,10 @@ cnts <- matrix(rnbinom(ngenes*nsamples,
                        mu=sf.means, size=1/true.dispersions),
                ncol=nsamples)
 ## estimating negative binomial parameters
-estparam <- estimateParam(countData=cnts, batchData = NULL,
-                          spikeData=NULL, spikeInfo = NULL,
-                          Lengths=NULL, MeanFragLengths=NULL,
-                          Distribution='NB',
-                          RNAseq="bulk",
-                          normalisation='MR',
-                          NCores=NULL,
-                          sigma=1.96, verbose=TRUE)
+estparam <- estimateParam(countData=cnts,
+                          Distribution='NB', RNAseq="bulk",
+                          normalisation='MR', sigma=1.96)
 plotParam(estparam, annot=F)
-
-# download count table
-githubURL <- "https://github.com/bvieth/powsimRData/raw/master/data-raw/kolodziejczk_cnts.rda"
-download.file(url = githubURL, destfile= "kolodziejczk_cnts.rda", method = "wget")
-load('kolodziejczk_cnts.rda')
-kolodziejczk_cnts <- kolodziejczk_cnts[, grep('standard', colnames(kolodziejczk_cnts))]
-## estimate NB parameters:
-estparams <- estimateParam(countData=cnts
-                          Distribution='NB',
-                          RNAseq="singlecell",
-                          normalisation='scran',
-                          NCores=NULL,
-                          sigma=1.96, verbose=TRUE)
 }
 }
 \author{

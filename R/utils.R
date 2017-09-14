@@ -41,17 +41,6 @@
              stringsAsFactors = F)
 }
 
-# ## Calculate goodness of fit chisquare test from fitdistrplus ------------
-
-#' @importFrom fitdistrplus gofstat
-.fitdistrplusGOF <- function(fitdistobj) {
-  gof <- fitdistrplus::gofstat(f = fitdistobj, discrete = T)
-  data.frame(gof.stats=gof$chisq,
-             gof.df = gof$chisqdf,
-             gof.pval = gof$chisqpvalue,
-             stringsAsFactors = F)
-}
-
 # convertToedgeR ----------------------------------------------------------
 
 #' @importFrom edgeR DGEList

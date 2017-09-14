@@ -9,7 +9,8 @@
                        Lengths,
                        MeanFragLengths,
                        PreclustNumber,
-                       NCores) {
+                       NCores,
+                       verbose) {
   if(normalisation=='TMM') {NormData <- .TMM.calc(countData = countData)}
   if(normalisation=='UQ') {NormData <- .UQ.calc(countData = countData)}
   if(normalisation=='MR') {NormData <- .MR.calc(countData = countData)}
@@ -33,7 +34,8 @@
                                                         MeanFragLengths=MeanFragLengths,
                                                         spikeData=spikeData,
                                                         spikeInfo = spikeInfo,
-                                                        NCores=NCores)}
+                                                        NCores=NCores,
+                                                        verbose=verbose)}
   if(normalisation=='RUV') {NormData <- .RUV.calc(countData = countData,
                                                   spikeData = spikeData,
                                                   batchData = batchData)}
@@ -192,7 +194,6 @@
                                    sizes=sizes,
                                    cluster=clusters,
                                    positive=FALSE, sf.out=TRUE)
-    sf <- scran::computeSumFactors(sce, positive=FALSE, sf.out=TRUE)
   }
   if(ncol(countData)>5000) {
     clusters <- scran::quickCluster(sce, method="igraph", min.size=floor(PreclustNumber/2))
@@ -201,7 +202,6 @@
                                    sizes=sizes,
                                    cluster=clusters,
                                    positive=FALSE, sf.out=TRUE)
-    sf <- scran::computeSumFactors(sce, positive=FALSE, sf.out=TRUE)
   }
   names(sf) <- colnames(countData)
   norm.counts <- t(t(countData)/sf)
@@ -217,6 +217,7 @@
 #' @importFrom SCnorm SCnorm
 #' @importFrom parallel detectCores
 #' @importFrom stats median
+#' @importFrom utils capture.output
 .SCnorm.calc <- function(countData, spikeData, batchData, NCores) {
 
   spike = ifelse(is.null(spikeData), FALSE, TRUE)
@@ -236,28 +237,30 @@
 
   ncores = ifelse(is.null(NCores), 1, NCores)
 
-  invisible(capture.output(
+  invisible(utils::capture.output(
     scnorm.out <- suppressMessages(SCnorm::SCnorm(Data = cnts,
                                                   Conditions = cond,
-                                                  OutputName = NULL,
-                                                  SavePDF = FALSE,
-                                                  PropToUse = .25,
-                                                  Tau = .5,
+                                                  PrintProgressPlots = FALSE,
                                                   reportSF = TRUE,
                                                   FilterCellNum = 10,
+                                                  FilterExpression = 0,
+                                                  Thresh = 0.1,
                                                   K = NULL,
                                                   NCores = ncores,
-                                                  FilterExpression = 0,
-                                                  Thresh = .1,
-                                                  ditherCounts = FALSE,
+                                                  ditherCounts = TRUE,
+                                                  PropToUse = 0.15,
+                                                  Tau = 0.5,
                                                   withinSample = NULL,
                                                   useSpikes = spike,
-                                                  useZerosToScale=FALSE))
+                                                  useZerosToScale = FALSE))
   ))
 
   sf <- apply(scnorm.out@metadata$ScaleFactors, 2, stats::median)
   names(sf) <- colnames(cnts)
   gsf <- scnorm.out@metadata$ScaleFactors
+  rownames(gsf) <- rownames(cnts)
+  colnames(gsf) <- colnames(cnts)
+  gsf <- gsf[!grepl(pattern="ERCC", rownames(gsf)),]
   res <- list(NormCounts=scnorm.out@metadata$NormalizedData,
               RoundNormCounts=round(scnorm.out@metadata$NormalizedData),
               size.factors=sf,
@@ -294,28 +297,30 @@
 
   ncores = ifelse(is.null(NCores), 1, NCores)
 
-  invisible(capture.output(
+  invisible(utils::capture.output(
     scnorm.out <- suppressMessages(SCnorm::SCnorm(Data = cnts,
                                                   Conditions = cond,
-                                                  OutputName = NULL,
-                                                  SavePDF = FALSE,
-                                                  PropToUse = .25,
-                                                  Tau = .5,
+                                                  PrintProgressPlots = FALSE,
                                                   reportSF = TRUE,
                                                   FilterCellNum = 10,
+                                                  FilterExpression = 0,
+                                                  Thresh = 0.1,
                                                   K = NULL,
                                                   NCores = ncores,
-                                                  FilterExpression = 0,
-                                                  Thresh = .1,
-                                                  ditherCounts = FALSE,
+                                                  ditherCounts = TRUE,
+                                                  PropToUse = 0.20,
+                                                  Tau = 0.5,
                                                   withinSample = NULL,
                                                   useSpikes = spike,
-                                                  useZerosToScale=FALSE))
+                                                  useZerosToScale = FALSE))
   ))
 
   sf <- apply(scnorm.out@metadata$ScaleFactors, 2, stats::median)
   names(sf) <- colnames(cnts)
   gsf <- scnorm.out@metadata$ScaleFactors
+  rownames(gsf) <- rownames(cnts)
+  colnames(gsf) <- colnames(cnts)
+  gsf <- gsf[!grepl(pattern="ERCC", rownames(gsf)),]
   res <- list(NormCounts=scnorm.out@metadata$NormalizedData,
               RoundNormCounts=round(scnorm.out@metadata$NormalizedData),
               size.factors=sf,
@@ -331,7 +336,14 @@
 #' @importFrom Biobase exprs
 #' @importFrom VGAM tobit negbinomial.size
 #' @importFrom parallel detectCores
-.Census.calc <- function(countData, batchData, spikeData, spikeInfo, Lengths, MeanFragLengths, NCores) {
+.Census.calc <- function(countData,
+                         batchData,
+                         spikeData,
+                         spikeInfo,
+                         Lengths,
+                         MeanFragLengths,
+                         NCores,
+                         verbose) {
 
   ncores = ifelse(is.null(NCores), 1, NCores)
 
@@ -374,28 +386,226 @@
                                  lowerDetectionLimit=0.1,
                                  expressionFamily=VGAM::tobit(Lower=0.1))
   # estimate RNA counts
-  rpc_matrix <- monocle::relative2abs(relative_cds = cds,
-                                      modelFormulaStr = ModelFormula,
-                                      method = "num_genes",
-                                      cores = ncores)
-  #create cell data set wih RPC
-  eds <- monocle::newCellDataSet(cellData = as.matrix(rpc_matrix),
-                                 phenoData = pd,
-                                 featureData = fd,
-                                 lowerDetectionLimit=0.5,
-                                 expressionFamily=VGAM::negbinomial.size())
-  # apply normalisation
-  sf <- monocle:::estimateSizeFactorsForMatrix(counts=Biobase::exprs(eds))
-  names(sf) <- colnames(Biobase::exprs(eds))
+  est_t <- .estimate_t(relative_expr_matrix=Biobase::exprs(cds),
+                       relative_expr_thresh=0)
 
-  norm.counts <- t(t(countData)/sf)
+  if(is.null(spikeData) && is.null(spikeInfo)) {
+    if(verbose) {message(paste0("Running monocle relative2abs."))}
+    rpc_matrix <- monocle::relative2abs(relative_cds = cds,
+                                        t_estimate = est_t,
+                                        modelFormulaStr = ModelFormula,
+                                        method = "num_genes",
+                                        cores = ncores,
+                                        verbose = verbose)
 
+    #create cell data set wih RPC
+    eds <- monocle::newCellDataSet(cellData = as.matrix(rpc_matrix),
+                                   phenoData = pd,
+                                   featureData = fd,
+                                   lowerDetectionLimit=0.5,
+                                   expressionFamily=VGAM::negbinomial.size())
+    # apply normalisation
+    sf <- .estimateSizeFactorsForDenseMatrix(counts=Biobase::exprs(eds),
+                                             locfunc=median,
+                                             round_exprs = T,
+                                             method = "mean-geometric-mean-total")
+    names(sf) <- colnames(Biobase::exprs(eds))
+
+    norm.counts <- t(t(countData)/sf)
+  }
+
+  if(!is.null(spikeData) && !is.null(spikeInfo)) {
+    if(verbose) {message(paste0("Running own relative2abs."))}
+    # relative expression of spike-ins
+    if(!is.null(spikeInfo$Lengths)) {
+      ed.spike <- .calculateTPM(countData = spikeData,
+                                Lengths=spikeInfo$Lengths)
+    }
+    if(is.null(spikeInfo$Lengths)) {
+      ed.spike <- .calculateCPM(countData = spikeData)
+    }
+
+    rel.results <- .relative2abs(relative_cds = cds,
+                                relative_spike = ed.spike,
+                                spikeInfo = spikeInfo,
+                                verbose = verbose,
+                                cores = ncores)
+    rpc_matrix <- rel.results$norm_cds
+
+    #create cell data set wih RPC
+    eds <- monocle::newCellDataSet(cellData = as.matrix(rpc_matrix),
+                                   phenoData = pd,
+                                   featureData = fd,
+                                   lowerDetectionLimit=0.5,
+                                   expressionFamily=VGAM::negbinomial.size())
+
+    # apply normalisation
+    sf <- .estimateSizeFactorsForDenseMatrix(counts=Biobase::exprs(eds),
+                                             locfunc=median,
+                                             round_exprs = T,
+                                             method = "mean-geometric-mean-total")
+    #  It can be either "mean-geometric-mean-total" (default), "weighted-median", "median-geometric-mean", "median", "mode", "geometric-mean-total".
+    names(sf) <- colnames(Biobase::exprs(eds))
+
+    norm.counts <- t(t(countData)/sf)
+  }
+
+  # print(summary(sf))
+  # print(table(sf == 1))
+
+  # return object
   res <- list(NormCounts=norm.counts,
               RoundNormCounts=round(norm.counts),
               size.factors=sf,
               RPC=as.matrix(rpc_matrix))
   attr(res, 'normFramework') <- "Census"
   return(res)
+}
+
+# census estimatesizefactors function
+.estimateSizeFactorsForDenseMatrix <- function(counts,
+                                               locfunc,
+                                               round_exprs,
+                                               method){
+
+  CM <- counts
+  if (round_exprs)
+    CM <- round(CM)
+  if (method == "weighted-median"){
+    log_medians <- apply(CM, 1, function(cell_expr) {
+      log(locfunc(cell_expr))
+    })
+
+    weights <- apply(CM, 1, function(cell_expr) {
+      num_pos <- sum(cell_expr > 0)
+      num_pos / length(cell_expr)
+    })
+
+    sfs <- apply( CM, 2, function(cnts) {
+      norm_cnts <-  weights * (log(cnts) -  log_medians)
+      norm_cnts <- norm_cnts[is.nan(norm_cnts) == FALSE]
+      norm_cnts <- norm_cnts[is.finite(norm_cnts)]
+      exp( mean(norm_cnts) )
+    })
+  }else if (method == "median-geometric-mean"){
+    log_geo_means <- rowMeans(log(CM))
+
+    sfs <- apply( CM, 2, function(cnts) {
+      norm_cnts <- log(cnts) -  log_geo_means
+      norm_cnts <- norm_cnts[is.nan(norm_cnts) == FALSE]
+      norm_cnts <- norm_cnts[is.finite(norm_cnts)]
+      exp( locfunc( norm_cnts ))
+    })
+  }else if(method == "median"){
+    row_median <- apply(CM, 1, median)
+    sfs <- apply(t(t(CM) - row_median), 2, median)
+  }else if(method == 'mode'){
+    sfs <- .estimate_t(CM)
+  }else if(method == 'geometric-mean-total') {
+    cell_total <- apply(CM, 2, sum)
+    sfs <- log(cell_total) / mean(log(cell_total))
+  }else if(method == 'mean-geometric-mean-total') {
+    cell_total <- apply(CM, 2, sum)
+    sfs <- cell_total / exp(mean(log(cell_total)))
+  }
+
+  sfs[is.na(sfs)] <- 1
+  return(sfs)
+}
+
+# census estimate_t function
+.estimate_t <- function(relative_expr_matrix, relative_expr_thresh) {
+  #apply each column
+  unlist(apply(relative_expr_matrix, 2, function(relative_expr)
+    10^mean(.dmode(log10(relative_expr[relative_expr > relative_expr_thresh])))))
+}
+
+# census mode function
+#' @importFrom stats density
+.dmode <- function(x, breaks="Sturges") {
+  if (length(x) < 2) return (0);
+  den <- stats::density(x, kernel=c("gaussian"), na.rm = T)
+  ( den$x[den$y==max(den$y)] )
+}
+
+#' @importFrom Biobase exprs
+#' @importFrom MASS rlm
+#' @importFrom stats predict
+#' @importFrom parallel mcmapply
+.relative2abs <- function(relative_cds,
+                          relative_spike, # relative exprs matrix of spike-ins
+                          spikeInfo, # spike input
+                          verbose,
+                          cores) {
+  FPKM <- NULL
+  # relative expression matrix of genes
+  relative_expr_matrix <- Biobase::exprs(relative_cds)
+
+  # relative expression of spike-ins
+  ERCC_controls <- relative_spike
+
+  # spike input information
+  ERCC_annotation <- spikeInfo
+  valid_ids <- which(ERCC_annotation[, "SpikeInput"] >= 0)
+
+  # robust linear regression
+  if (verbose) {message("Performing robust linear regression for each cell based
+                        on the spike-in data")}
+  molModels <- apply(ERCC_controls, 2, function(cell_exprs, input.ERCC.annotation, valid_ids) {
+    spike_df <- input.ERCC.annotation
+    spike_df <- cbind(spike_df, cell_exprs[row.names(spike_df)])
+    colnames(spike_df)[length(colnames(spike_df))] <- "FPKM"
+    spike_df$numMolecules <- spike_df$SpikeInput
+    spike_df$rounded_numMolecules <- round(spike_df$numMolecules)
+    if (is.null(valid_ids))
+      spike_df <- subset(spike_df, FPKM >= 1e-10)
+    else {
+      spike_df <- spike_df[valid_ids, ]
+      spike_df <- subset(spike_df, FPKM >= 1e-10)
+    }
+    spike_df$log_fpkm <- log10(spike_df$FPKM)
+    spike_df$log_numMolecules <- log10(spike_df$numMolecules)
+    molModel <- tryCatch({
+      molModel <- MASS::rlm(log_numMolecules ~ log_fpkm,
+                            data = spike_df)
+      molModel
+    }, error = function(e) {
+      print(e)
+      NULL
+    })
+    molModel
+  }, ERCC_annotation, valid_ids)
+
+  if (verbose) {message("Apply the fitted robust linear regression model
+                        to recover the absolute copy number for all transcripts in each cell")}
+  norm_fpkms <- parallel::mcmapply(function(cell_exprs, molModel) {
+    tryCatch({
+      norm_df <- data.frame(log_fpkm = log10(cell_exprs))
+      res <- 10^stats::predict(molModel, type = "response",
+                        newdata = norm_df)
+    }, error = function(e) {
+      rep(NA, length(cell_exprs))
+    })
+  }, split(as.matrix(relative_expr_matrix), rep(1:ncol(relative_expr_matrix),
+                                                each = nrow(relative_expr_matrix))), molModels, mc.cores = cores)
+  k_b_solution <- data.frame(b = unlist(lapply(molModels,
+                                               FUN = function(x) {
+                                                 intercept = x$coefficients[1]
+                                               })), k = unlist(lapply(molModels, FUN = function(x) {
+                                                 slope = x$coefficients[2]
+                                               })))
+  kb_model <- MASS::rlm(b ~ k, data = k_b_solution)
+  kb_slope <- kb_model$coefficients[2]
+  kb_intercept <- kb_model$coefficients[1]
+
+  rownames(norm_fpkms) <- rownames(relative_expr_matrix)
+  colnames(norm_fpkms) <- colnames(relative_expr_matrix)
+
+  # return object
+  return(list(norm_cds = norm_fpkms,
+              kb_slope = kb_slope,
+              kb_intercept = kb_intercept,
+              k_b_solution = k_b_solution))
 }
 
 # RUV spike-in normalisation ---------------------------------------------
@@ -531,7 +741,7 @@
                                  MinAvCountsPerCellsWithExpression = 2))
   SpikeInfoFilter = spikeInfo[rownames(spikeInfo) %in% names(Filter$IncludeGenes)[Filter$IncludeGenes == TRUE],]
 
-  invisible(capture.output(
+  invisible(utils::capture.output(
     FilterData <- BASiCS::newBASiCS_Data(Counts = Filter$Counts,
                                  Tech = Filter$Tech,
                                  SpikeInfo = SpikeInfoFilter,
@@ -539,7 +749,7 @@
   ))
 
   # fit MCMC
-  invisible(capture.output(
+  invisible(utils::capture.output(
     MCMC_Output <- suppressMessages(BASiCS::BASiCS_MCMC(FilterData,
                                                         N = 10000,
                                                         Thin = 10,

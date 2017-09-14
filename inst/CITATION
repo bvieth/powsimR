@@ -1,0 +1,17 @@
+year <- sub("-.*", "", meta$Date)
+note <- sprintf("R package version %s", meta$Version)
+
+bibentry(bibtype = "Article",
+         title = "powsimR: Power analysis for bulk and single cell RNA-seq experiments",
+         author = c(person("Beate", "Vieth"),
+                    person("Christoph", "Ziegenhain"),
+                    person("Swati", "Parekh"),
+                    person("Wolfgang", "Enard"),
+                    person("Ines", "Hellmann")),
+         doi = "10.1093/bioinformatics/btx435",
+         journal = "Bioinformatics",
+         year = "2017",
+         note = note,
+         url = "https://github.com/bvieth/powsimR")
+
+textVersion = paste0("Vieth, Beate, Christoph Ziegenhain, Swati Parekh, Wolfgang Enard, and Ines Hellmann. 2017. powsimR: Power Analysis for Bulk and Single Cell RNA-Seq Experiments. Bioinformatics, July. doi:10.1093/bioinformatics/btx435.")
