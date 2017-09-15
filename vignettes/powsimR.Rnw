@@ -179,7 +179,8 @@ We have found that the negative binomial distribution is particularly suited for
 
 \subsection{Spike-ins}
 
-Some normalisation methods can use spike-ins as part of their normalisation (SCnorm, RUV, Census)
+Some normalisation methods can use spike-ins as part of their normalisation (SCnorm, RUV, Census). To use spike-in information in the simulations, their distributional characteristics need to be estimated. We follow the estimation and simulation framework presented in \cite{Kim2015-zo} where the variance is decomposed into shot noise and mRNA loss due to capture and sequencing efficiency. In short, the parameters for a Beta-distribution describes the RNA molecule capture efficiency and the parameters of a Gamma distribution to describe the sequencing efficiency, which we can then use to simulate in silico spike-ins given the mean expression value. We assume that biological variance does not contribute to spike-in expression.
+If spike-ins
 
 %---------------------------------------------------------
 \section{Simulations}
