@@ -5,6 +5,7 @@
 .Ruserdata
 R/_description.R
 .Rbuildignore
+README.Rmd
 
 # Example code in package build process
 *-Ex.R

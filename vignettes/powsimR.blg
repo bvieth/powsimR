@@ -1,0 +1,50 @@
+This is BibTeX, Version 0.99d (TeX Live 2013/Debian)
+Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
+The top-level auxiliary file: powsimR.aux
+The style file: /usr/local/lib/R/site-library/BiocStyle/resources/tex/unsrturl.bst
+Reallocated glb_str_ptr (elt_size=4) to 20 items from 10.
+Reallocated global_strs (elt_size=20001) to 20 items from 10.
+Reallocated glb_str_end (elt_size=4) to 20 items from 10.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Database file #1: Bioc.bib
+You've used 11 entries,
+            2522 wiz_defined-function locations,
+            659 strings with 7531 characters,
+and the built_in function-call counts, 4242 in all, are:
+= -- 385
+> -- 220
+< -- 0
++ -- 70
+- -- 59
+* -- 317
+:= -- 625
+add.period$ -- 43
+call.type$ -- 11
+change.case$ -- 11
+chr.to.int$ -- 0
+cite$ -- 11
+duplicate$ -- 98
+empty$ -- 402
+format.name$ -- 59
+if$ -- 1105
+int.to.chr$ -- 0
+int.to.str$ -- 11
+missing$ -- 12
+newline$ -- 68
+num.names$ -- 11
+pop$ -- 54
+preamble$ -- 1
+purify$ -- 0
+quote$ -- 0
+skip$ -- 301
+stack$ -- 0
+substring$ -- 160
+swap$ -- 31
+text.length$ -- 0
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 0
+warning$ -- 0
+while$ -- 23
+width$ -- 13
+write$ -- 141

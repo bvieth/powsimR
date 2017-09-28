@@ -54,7 +54,7 @@ options(width=60)
 \newpage
 
 %---------------------------------------------------------
-\section{Installation guide}
+\section{Installation Guide}
 %---------------------------------------------------------
 
 PowsimR has a number of dependencies that need to be installed before hand (see also the README file on github). I recommend to increase the maximum number of DLLs that can be loaded to at least 500. The environmental variable R\_MAX\_NUM\_DLLS can be set in R\_HOME/etc/Renviron prior to starting R (for further details see \Rfunction{Startup}). For that locate the Renviron file and add the following line: R\_MAX\_NUM\_DLLS=xy where xy is the number of DLLs.
@@ -104,7 +104,7 @@ devtools::install_github('bvieth/powsimR', build_vignettes = TRUE)
 In this vignette, we illustrate the features of \Rpackage{powsimR} by assessing the power to detect differential expression between two groups of embryonic stem cells cultured in standard 2i medium (\href{http://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-2600/}{E-MTAB-2600}) \cite{Kolodziejczyk2015-vn}.
 
 %---------------------------------------------------------
-\section{\Rpackage{powsimR} workflow}
+\section{\Rpackage{powsimR} Workflow}
 %---------------------------------------------------------
 
 The basic workflow of \Rpackage{powsimR} is illustrated in figure \ref{fig:powsim_scheme}: A) The mean-dispersion relationship is estimated from RNA-seq data, which can be either single cell or bulk data. The users can provide their own count tables, download from a database (see below) or one of our example data sets (\href{https://github.com/bvieth/powsimRData}{powsimRData}). B) These distribution parameters are then used to set up the simulations. For better comparability, the parameters for the simulation of differential expression are set separately. C) Finally, the TPR and FDR are calculated. Both can be either returned as marginal estimates per sample configuration, or stratified according to the estimates of mean expression, dispersion or dropout rate.
@@ -118,9 +118,9 @@ The basic workflow of \Rpackage{powsimR} is illustrated in figure \ref{fig:powsi
 
 \section{Parameter Estimation}
 
-\subsection{Gene expression}
+\subsection{Gene Expression}
 
-The parameters of the negative binomial distribution, i.e. mean and dispersion are estimated by the function \Rfunction{estimateParam}. In addition, the dropout probability, i.e. the fraction of zero counts per gene, is calculated.
+The parameters of the (zero-inflated) negative binomial distribution, i.e. mean and dispersion are estimated by the function \Rfunction{estimateParam}. In addition, the dropout probability, i.e. the fraction of zero counts per gene, is calculated.
 The user can choose between two estimation frameworks:
 \begin{description}
 \item[NB] Negative binomial distribution.
@@ -143,15 +143,16 @@ load('kolodziejczk_cnts.rda')
 kolodziejczk_cnts <- kolodziejczk_cnts[, grep('standard', colnames(kolodziejczk_cnts))]
 
 TwoiLIF.params <- estimateParam(countData=kolodziejczk_cnts,
-                          spikeData=NULL,
-                          spikeInfo = NULL,
-                          Lengths=NULL,
-                          MeanFragLengths=NULL,
-                          Distribution='NB',
-                          RNAseq='singlecell',
-                          normalisation='scran',
-                          NCores=NULL,
-                          sigma=1.96)
+                                    batchData = NULL,
+                                    spikeData = NULL,
+                                    spikeInfo = NULL,
+                                    Lengths = NULL,
+                                    MeanFragLengths = NULL,
+                                    Distribution = 'ZINB',
+                                    RNAseq = 'singlecell',
+                                    normalisation = 'scran',
+                                    sigma = 1.96,
+                                    NCores = NULL)
 plotParam(TwoiLIF.params)
 @
 
@@ -179,8 +180,40 @@ We have found that the negative binomial distribution is particularly suited for
 
 \subsection{Spike-ins}
 
-Some normalisation methods can use spike-ins as part of their normalisation (SCnorm, RUV, Census). To use spike-in information in the simulations, their distributional characteristics need to be estimated. We follow the estimation and simulation framework presented in \cite{Kim2015-zo} where the variance is decomposed into shot noise and mRNA loss due to capture and sequencing efficiency. In short, the parameters for a Beta-distribution describes the RNA molecule capture efficiency and the parameters of a Gamma distribution to describe the sequencing efficiency, which we can then use to simulate in silico spike-ins given the mean expression value. We assume that biological variance does not contribute to spike-in expression.
-If spike-ins
+Some normalisation methods can use spike-ins as part of their normalisation (SCnorm, RUV, Census). To use spike-in information in the simulations, their distributional characteristics need to be estimated. We follow the estimation and simulation framework presented in \cite{Kim2015-zo} where the variance is decomposed into shot noise and mRNA loss due to capture and sequencing efficiency. In short, the parameters for a Beta-distribution describes the RNA molecule capture efficiency and the parameters of a Gamma distribution describes the sequencing efficiency, which we can then use to simulate in silico spike-ins given a mean expression value. We assume that biological variance does not contribute to spike-in expression.
+The user needs to define the spike-in expression table and the spike-in information table (IDs, molecules, lengths per spike-in) in the function \Rfunction{estimateSpike}.
+The following formula will help you to calculate the number of molecules of spike-ins:
+
+  \begin{displaymath}
+    Y_j = c_j * V * 10^{-3} * {2}{x^2} * 10^{-18} * {Avogadro}, \quad j=1,\dots,92
+  \end{displaymath}
+
+The number of molecules Y_j for each ERCC spike-in species is equal to the molar concentration c_j (attomoles per microliter), the dilution factor D, the volume V in nanolit
+
+
+<<echo=TRUE,eval=FALSE>>=
+# download count table of spike-ins
+githubURL <- "https://github.com/bvieth/powsimRData/raw/master/data-raw/kolodziejczk_cnts.rda"
+download.file(url = githubURL, destfile= "kolodziejczk_cnts.rda", method = "wget")
+load('kolodziejczk_cnts.rda')
+# download spike-in information table
+
+
+@
+
+If spike-ins were not added to the original experiment there is the possibility to simulate them in silico. For that, we implemented the framework presented in \cite{Qiu2017-qa}.
+
+The estimated parameters can be plotted with \Rfunction{plotSpike}.
+
+<<echo=TRUE,eval=FALSE>>=
+# download count table of spike-ins
+githubURL <- "https://github.com/bvieth/powsimRData/raw/master/data-raw/kolodziejczk_cnts.rda"
+download.file(url = githubURL, destfile= "kolodziejczk_cnts.rda", method = "wget")
+load('kolodziejczk_cnts.rda')
+# download spike-in information table
+
+
+@
 
 %---------------------------------------------------------
 \section{Simulations}
