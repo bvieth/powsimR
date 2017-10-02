@@ -182,13 +182,13 @@ We have found that the negative binomial distribution is particularly suited for
 
 Some normalisation methods can use spike-ins as part of their normalisation (SCnorm, RUV, Census). To use spike-in information in the simulations, their distributional characteristics need to be estimated. We follow the estimation and simulation framework presented in \cite{Kim2015-zo} where the variance is decomposed into shot noise and mRNA loss due to capture and sequencing efficiency. In short, the parameters for a Beta-distribution describes the RNA molecule capture efficiency and the parameters of a Gamma distribution describes the sequencing efficiency, which we can then use to simulate in silico spike-ins given a mean expression value. We assume that biological variance does not contribute to spike-in expression.
 The user needs to define the spike-in expression table and the spike-in information table (IDs, molecules, lengths per spike-in) in the function \Rfunction{estimateSpike}.
-The following formula will help you to calculate the number of molecules of spike-ins:
+The following formula is implemented in \Rfunction{calculateSpike} for calculating the number of molecules of spike-ins:
 
   \begin{displaymath}
-    Y_j = c_j * V * 10^{-3} * {2}{x^2} * 10^{-18} * {Avogadro}, \quad j=1,\dots,92
+    Y_{j} = c_{j} * V * 10^{-3} * D^{-1} * 10^{-18} * {Avogadro}, \quad j=1,\dots,92
   \end{displaymath}
 
-The number of molecules Y_j for each ERCC spike-in species is equal to the molar concentration c_j (attomoles per microliter), the dilution factor D, the volume V in nanolit
+The number of molecules $Y_{j}$ for each ERCC spike-in species is the product of the molar concentration $c_{j}$ (attomoles per microlitre), the dilution factor $1/D$, the volume $V$ (nanolitre), Avogadros' constant ($6.02214129*10^{23}$) and conversion factors between unit scales.
 
 
 <<echo=TRUE,eval=FALSE>>=
