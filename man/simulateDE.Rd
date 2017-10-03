@@ -23,12 +23,14 @@ verbose=TRUE)
 Available options are: limma-trend, limma-voom, edgeR-LRT, edgeR-QL, DESeq2,
 ROTS, baySeq, NOISeq, EBSeq, DSS, MAST, scde, BPSC, scDD, monocle.}
 
-\item{normalisation}{Normalisation method to use.}
+\item{normalisation}{Normalisation method to use.
+Available options are:}
 
 \item{Preclust}{Whether to run a  hierarchical clustering prior to normalisation. Default is \code{FALSE}. This is implemented for scran and SCnorm.
 For details, see \code{\link[scran]{quickCluster}}.}
 
-\item{Preprocess}{A character vector specifying the gene filtering method to be used prior to normalisation. Default is \code{NULL}, i.e. no filtering.
+\item{Preprocess}{A character vector specifying the gene filtering method to be used
+prior to normalisation. Default is \code{NULL}, i.e. no filtering.
 Availabe options are: scImpute, DrImpute, CountFilter, FreqFilter.}
 
 \item{spikeIns}{Logical value to indicate whether to simulate spike-ins. Default is \code{FALSE}.}
@@ -47,16 +49,16 @@ elfc is for the DE tool estimated LFC; rlfc is for the LFC estimated from the no
 \item{sf.values,gsf.values}{3D array (ngenes * N * nsims) for size factor estimates.
 Global estimates per sample in sf.values; Gene- and sample-wise estimates in gsf.values only for SCnorm normalisation.}
 \item{sim.settings}{The input sim.settings to which the specifications of \code{simulateDE} is added.}
-\item{time.taken}{The time taken for each simulation, given for preprocessing, normalisation, differential expression testing and moment estimation.}
+\item{time.taken}{The time taken for each simulation, given for preprocessing, normalisation, clustering, differential expression testing and moment estimation.}
 }
 \description{
-This function simulates RNA-seq count matrices considering differential expression specifications (number of samples per group, effect size, number of differential expressed genes etc.). The return object contains DE test results from all simulations as well as descriptive statistics.
-}
-\details{
 simulateDE is the main function to simulate differential expression for RNA-seq experiments.
 The simulation parameters are specified with \code{\link{SimSetup}}.
-The user needs to specify the number of samples per group and the differential expression analysis method. \cr
-It only stores and returns the DE test results (i.e. p-values). The error matrix calculations will be conducted with \code{\link{evaluateDE}}.\cr
+The user needs to specify furthermore
+the number of samples per group, preprocessing, normalisation and differential testing method.
+There is also the option to consider spike-ins. \cr
+The return object contains DE test results from all simulations as well as descriptive statistics.
+The error matrix calculations will be conducted with \code{\link{evaluateDE}}.\cr
 }
 \examples{
 \dontrun{
@@ -66,14 +68,19 @@ download.file(url = githubURL, destfile= "kolodziejczk_cnts.rda", method = "wget
 load('kolodziejczk_cnts.rda')
 kolodziejczk_cnts <- kolodziejczk_cnts[, grep('standard', colnames(kolodziejczk_cnts))]
 ## estimate NB parameters:
+TwoiLIF.params =
 ## define DE settings:
+desettings <- DESetup(ngenes=10000,
+nsims=25, p.DE=0.2,
+LFC=function(x) sample(c(-1,1), size=x,replace=TRUE)*rgamma(x, 3, 3))
 ## define simulation settings for Kolodziejczk:
+simsettings <- SimSetup(desetup=desettings, params=TwoiLIF.params, size.factors='given')
 ## run simulations:
-## if parallel computation is unavailable, consider ROTS as DEmethod
+## if parallel computation unavailable, consider ROTS as DEmethod
 }
 }
 \seealso{
-\code{\link{estimateParam}} for negative binomial parameter specifications;\cr
+\code{\link{estimateParam}},  \code{\link{insilicoNBParam}} for negative binomial parameter specifications;\cr
  \code{\link{DESetup}}, \code{\link{SimSetup}} for simulation setup
 }
 \author{

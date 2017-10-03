@@ -1,4 +1,95 @@
 
+# insilicoNBParam ---------------------------------------------------------
+
+#' @name insilicoNBParam
+#' @aliases insilicoNBParam
+#' @title In Silico Simulation Parameters
+#' @description With this function, the user can define the parameters of the negative binomial distribution needed for the simulations. The mean, dispersion and dropout need to be specified for bulk RNAseq experiments. For single cell RNAseq experiments, the mean and dispersion should be chosen so that a high number of dropouts are generated (see details).
+#' @usage insilicoNBParam(means, dispersion,
+#' dropout=NULL, sf=NULL, RNAseq=c("bulk", "singlecell"))
+#' @param means mean parameter of the NB read count distribution defined by a function sampling from a random distribution, e.g. function(x) rgamma(n=x, shape=2, rate=2).
+#' @param dispersion dispersion parameter of the NB read count distribution. This can be:
+#' (1) a constant, e.g. 0.2
+#' (2) a function relating to the mean expression. The parametric fit employed in DESeq2 is recommended to get an estimate, e.g. function(x) 3 + 150/x.
+#' @param dropout The probability of droput per gene. This can be:
+#' (1) a constant
+#' (2) a function sampling from a random distribution, e.g. function(x) runif(x, min=0, max=0.25).
+#' The default is \code{NULL}, i.e. no dropout. Note that the dropout is not considered for single cell simulations. This should be inherently given by low mean expression coupled with high dispersion.
+#' @param sf The size factor:
+#' (1) a vector
+#' (2) a function sampling from a random distribution, e.g. function(x) rnorm(x, mean=1, sd=0.2).
+#' The default is \code{NULL}, i.e. equal size factor of 1.
+#' @param RNAseq is a character value: "bulk" or "singlecell".
+#' @return List with the following vectors:
+#' \item{means}{Mean log2 read counts per gene.}
+#' \item{dispersion}{Log2 dispersion per gene.}
+#' \item{p0}{Probability that the count will be zero per gene.}
+#' \item{sf}{Size factor per sample.}
+#' \item{estFramework}{"in silico" by default.}
+#' @examples
+#' \dontrun{
+#' ## Bulk RNA-seq experiment in silico parameters:
+#' insilico.bulk <- insilicoNBParam(means=function(x) 2^runif(x, 9, 12),
+#' dispersion=0.2,
+#' dropout=function(x) runif(x, min = 0, max = 0.25),
+#' sf=function(x) truncnorm::rtruncnorm(x, a = 0.6, b = 1.4, mean=1, sd=0.2),
+#' RNAseq='bulk')
+#' ## Single cell RNA-seq experiment in silico parameters:
+#' insilico.singlecell <- insilicoNBParam(means=function(x) rgamma(x, 4, 2),
+#' dispersion=function(x) 2 + 150/x,
+#' dropout=NULL,
+#' sf=function(x) 2^rnorm(n=x, mean=0, sd=0.5),
+#' RNAseq='singlecell')
+#' }
+#' @author Beate
+#' @rdname insilicoNBParam
+#' @export
+insilicoNBParam <- function(means, dispersion, dropout=NULL, sf=NULL, RNAseq=c("bulk", "singlecell")) {
+  if (is.function(means)) {
+    means <- means
+  }
+  if (!is.function(means)) {stop("Please provide a function for the mean parameter!")}
+
+  if (is.function(dispersion)) {
+    dispersion <- dispersion
+  }
+  if (length(dispersion) == 1) {
+    dispersion <- dispersion
+  }
+  # if (!length(dispersion) == 1 || !is.function(dispersion)) {message("Please provide either a function or constant value for dispersion parameter!")}
+
+  if(RNAseq=='bulk') {
+    if (is.function(dropout)) {
+      dropout <- dropout
+    }
+    if (is.null(dropout)) {
+      dropout <- NULL
+    }
+    # if (!is.function(dropout) || !is.function(dispersion)) {message("Please provide a function for the dropout parameter or leave it as default, i.e. NULL.")}
+  }
+
+  if(RNAseq=='singlecell') {
+    dropout <- NULL
+    message("The dropout is set to NULL for single cell experiments. For more information, please consult the details section of insilicoNBParam function.")
+  }
+
+  if (is.function(sf)) {
+    sf <- sf
+  }
+  if (is.null(sf)) {
+    sf <- NULL
+  }
+  if (is.vector(sf)) {
+    sf <- sf
+  }
+
+  res <- list(means = means, dispersion = dispersion, p0 = dropout, sf = sf, RNAseq = RNAseq)
+  attr(res, 'param.type') <- "insilico"
+  attr(res, 'Distribution') <- "NB"
+
+  return(res)
+}
+
 # estimateParam ---------------------------------------------------------
 
 #' @name estimateParam
@@ -13,7 +104,7 @@
 #' MeanFragLengths = NULL,
 #' Distribution = c('NB', 'ZINB'),
 #' RNAseq = c('bulk', 'singlecell'),
-#' normalisation = c('TMM', 'MR', 'PosCounts', 'UQ', 'scran',
+#' normalisation = c('TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm',
 #'                   'SCnorm', 'RUV', 'BASiCS', 'Census', 'depth', 'none'),
 #' sigma = 1.96,
 #' NCores = NULL,
@@ -69,6 +160,9 @@
 #' \item{scran, SCnorm}{apply the deconvolution and quantile regression normalization methods developed for sparse RNA-seq data
 #' as implemented in \code{\link[scran]{computeSumFactors}} and \code{\link[SCnorm]{SCnorm}}, respectively.
 #' For \code{SCnorm}, the user can also supply \code{spikeData}.}
+#' \item{Linnorm}{apply the normalization method for sparse RNA-seq data
+#' as implemented in \code{\link[Linnorm]{Linnorm.Norm}}.
+#' For \code{Linnorm}, the user can also supply \code{spikeData}.}
 #' \item{RUV}{removes unwanted variation. There are two approaches implemented:
 #' (1) utilizing negative control genes, i.e. spike-ins stored in \code{spikeData} (\code{\link[RUVSeq]{RUVg}}).
 #' (2) utilizing replicate samples, i.e. samples for which the covariates of interest are considered constant.
@@ -132,7 +226,7 @@ estimateParam <- function(countData,
                           MeanFragLengths = NULL,
                           Distribution = c('NB', 'ZINB'),
                           RNAseq = c('bulk', 'singlecell'),
-                          normalisation = c('TMM', 'MR', 'PosCounts', 'UQ', 'scran',
+                          normalisation = c('TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm',
                                             'SCnorm', 'RUV', 'BASiCS', 'Census', 'depth', 'none'),
                           sigma = 1.96,
                           NCores = NULL,
@@ -181,6 +275,7 @@ estimateParam <- function(countData,
     spikeInfo = spikeInfo,
     Lengths = Lengths,
     MeanFragLengths=MeanFragLengths,
+    RNAseq = RNAseq,
     verbose=verbose
   )
 

@@ -4,11 +4,13 @@
 #' @name simulateDE
 #' @aliases simulateDE
 #' @title Simulate Differential Expression
-#' @description This function simulates RNA-seq count matrices considering differential expression specifications (number of samples per group, effect size, number of differential expressed genes etc.). The return object contains DE test results from all simulations as well as descriptive statistics.
-#' @details simulateDE is the main function to simulate differential expression for RNA-seq experiments.
+#' @description simulateDE is the main function to simulate differential expression for RNA-seq experiments.
 #' The simulation parameters are specified with \code{\link{SimSetup}}.
-#' The user needs to specify the number of samples per group and the differential expression analysis method. \cr
-#' It only stores and returns the DE test results (i.e. p-values). The error matrix calculations will be conducted with \code{\link{evaluateDE}}.\cr
+#' The user needs to specify furthermore
+#' the number of samples per group, preprocessing, normalisation and differential testing method.
+#' There is also the option to consider spike-ins. \cr
+#' The return object contains DE test results from all simulations as well as descriptive statistics.
+#' The error matrix calculations will be conducted with \code{\link{evaluateDE}}.\cr
 #' @usage simulateDE(n1=c(20,50,100), n2=c(30,60,120),
 #' sim.settings,
 #' DEmethod,
@@ -24,9 +26,11 @@
 #' Available options are: limma-trend, limma-voom, edgeR-LRT, edgeR-QL, DESeq2,
 #' ROTS, baySeq, NOISeq, EBSeq, DSS, MAST, scde, BPSC, scDD, monocle.
 #' @param normalisation Normalisation method to use.
+#' Available options are:
 #' @param Preclust Whether to run a  hierarchical clustering prior to normalisation. Default is \code{FALSE}. This is implemented for scran and SCnorm.
 #' For details, see \code{\link[scran]{quickCluster}}.
-#' @param Preprocess A character vector specifying the gene filtering method to be used prior to normalisation. Default is \code{NULL}, i.e. no filtering.
+#' @param Preprocess A character vector specifying the gene filtering method to be used
+#' prior to normalisation. Default is \code{NULL}, i.e. no filtering.
 #' Availabe options are: scImpute, DrImpute, CountFilter, FreqFilter.
 #' @param spikeIns Logical value to indicate whether to simulate spike-ins. Default is \code{FALSE}.
 #' @param NCores integer positive number of cores for parallel processing, default is \code{NULL}, ie 1 core.
@@ -40,10 +44,56 @@
 #' \item{sf.values,gsf.values}{3D array (ngenes * N * nsims) for size factor estimates.
 #' Global estimates per sample in sf.values; Gene- and sample-wise estimates in gsf.values only for SCnorm normalisation.}
 #' \item{sim.settings}{The input sim.settings to which the specifications of \code{simulateDE} is added.}
-#' \item{time.taken}{The time taken for each simulation, given for preprocessing, normalisation, differential expression testing and moment estimation.}
-#' @author Beate Vieth
-#' @seealso \code{\link{estimateParam}} for negative binomial parameter specifications;\cr
+#' \item{time.taken}{The time taken for each simulation, given for preprocessing, normalisation, clustering, differential expression testing and moment estimation.}
+#' @seealso \code{\link{estimateParam}},  \code{\link{insilicoNBParam}} for negative binomial parameter specifications;\cr
 #'  \code{\link{DESetup}}, \code{\link{SimSetup}} for simulation setup
+#' @details
+#' Preprocessing procedure prior to normalisation:
+#' \describe{
+#' \item{scImpute}{employs scImpute method of imputing dropouts as implemented in \code{\link[scImpute]{scImpute}}.}
+#' \item{DrImpute}{employs DrImpute method of imputing dropouts as implemented in \code{\link[DrImpute]{DrImpute}}.}
+#' \item{CountFilter}{removes genes that have a mean expression below 0.2.}
+#' \item{FreqFilter}{removes genes that have more than 80% dropouts.}
+#' }
+#' Normalisation applied to read count matrix:
+#' \describe{
+#' \item{TMM, UQ}{employ the edgeR style normalization of weighted trimmed mean of M-values and upperquartile
+#' as implemented in \code{\link[edgeR]{calcNormFactors}}, respectively.}
+#' \item{MR, PosCounts}{employ the DESeq2 style normalization of median ratio method and a modified geometric mean method
+#' as implemented in \code{\link[DESeq2]{estimateSizeFactors}}, respectively.}
+#' \item{scran, SCnorm}{apply the deconvolution and quantile regression normalization methods developed for sparse RNA-seq data
+#' as implemented in \code{\link[scran]{computeSumFactors}} and \code{\link[SCnorm]{SCnorm}}, respectively.
+#' For \code{SCnorm}, the user can also supply \code{spikeData}.}
+#' \item{Linnorm}{apply the normalization method for sparse RNA-seq data
+#' as implemented in \code{\link[Linnorm]{Linnorm.Norm}}.
+#' For \code{Linnorm}, the user can also supply \code{spikeData}.}
+#' \item{RUV}{removes unwanted variation. There are two approaches implemented:
+#' (1) utilizing negative control genes, i.e. spike-ins stored in \code{spikeData} (\code{\link[RUVSeq]{RUVg}}).
+#' (2) utilizing replicate samples, i.e. samples for which the covariates of interest are considered constant.
+#' This annotation is stored in \code{batchData} (\code{\link[RUVSeq]{RUVs}}).}
+#' \item{BASiCS}{removes technical variation by utilizing negative control genes, i.e. spike-ins stored in \code{spikeData},
+#' as implemented in \code{\link[BASiCS]{DenoisedCounts}}.
+#' Furthermore, the molecule counts of spike-ins added to the cell lysate need to be supplied in \code{spikeInfo}.}
+#' \item{Census}{converts relative measures of TPM/FPKM values into mRNAs per cell (RPC) without the need of spike-in standards.
+#' Census at least needs \code{Lengths} for single-end data and preferably \code{MeanFragLengths} for paired-end data.
+#' Do not use this algorithm for UMI data!}
+#' }
+#' Differential testing
+#' \describe{
+#' \item{limma-trend, limma-voom}{apply differential testing as implemented in \code{\link[limma]{lmFit}}
+#' followed by \code{\link[limma]{eBayes}} on counts transformed by \code{\link[limma]{voom}} or by applying mean-variance trend on log2 CPM values in \code{\link[limma]{eBayes}}.}
+#' \item{edgeR-LRT, edgeR-QL}{apply differential testing as implemented in \code{\link[edgeR]{glmFit}}, \code{\link[edgeR]{glmLRT}} and\code{\link[edgeR]{glmQLFit}}, \code{\link[edgeR]{glmQLFTest}}, respectively.}
+#' \item{DESeq2}{applies differential testing as implemented in \code{\link[DESeq2]{DESeq}}.}
+#' \item{ROTS}{applies differential testing as implemented in \code{\link[ROTS]{ROTS}} with 100 permutations on transformed counts (\code{\link[limma]{voom}}).}
+#' \item{baySeq}{applies differential testing as implemented in \code{\link[baySeq]{getLikelihoods}} based on negative binomial prior estimates (\code{\link[baySeq]{getPriors.NB}}).}
+#' \item{NOISeq}{applies differential testing as implemented in \code{\link[NOISeq]{noiseqbio}} based on CPM values.}
+#' \item{EBSeq}{applies differential testing as implemented in \code{\link[EBSeq]{EBTest}}.}
+#' \item{DSS}{applies differential testing as implemented in \code{\link[DSS]{waldTest}}.}
+#' \item{MAST}{applies differential testing as implemented in \code{\link[MAST]{zlm}} for zero-inflated model fitting followed by \code{\link[MAST]{lrTest}} on log2 CPM values.}
+#' \item{scde}{applies differential testing as implemented in \code{\link[scde]{scde.expression.difference}}.}
+#' \item{BPSC}{applies differential testing as implemented in \code{\link[BPSC]{BPglm}} on CPM values.}
+#' \item{scDD}{applies differential testing as implemented in \code{\link[scDD]{scDD}} on CPM values.}
+#' }
 #' @examples
 #' \dontrun{
 #' # download count table
@@ -52,11 +102,17 @@
 #' load('kolodziejczk_cnts.rda')
 #' kolodziejczk_cnts <- kolodziejczk_cnts[, grep('standard', colnames(kolodziejczk_cnts))]
 #' ## estimate NB parameters:
+#' TwoiLIF.params =
 #' ## define DE settings:
+#' desettings <- DESetup(ngenes=10000,
+#' nsims=25, p.DE=0.2,
+#' LFC=function(x) sample(c(-1,1), size=x,replace=TRUE)*rgamma(x, 3, 3))
 #' ## define simulation settings for Kolodziejczk:
+#' simsettings <- SimSetup(desetup=desettings, params=TwoiLIF.params, size.factors='given')
 #' ## run simulations:
-#' ## if parallel computation is unavailable, consider ROTS as DEmethod
+#' ## if parallel computation unavailable, consider ROTS as DEmethod
 #' }
+#' @author Beate Vieth
 #' @rdname simulateDE
 #' @importFrom stats setNames
 #' @export
@@ -103,15 +159,9 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
   sim.settings$NCores = NCores
   sim.settings$Preclust = Preclust
   sim.settings$Preprocess = Preprocess
-  sim.settings$clustNumber = ifelse(sim.settings$design=="2grp", 2, NULL)
   if(isTRUE(Preclust)) {PreclustNumber <- min.n}
   if(!isTRUE(Preclust)) {PreclustNumber <- NULL}
   sim.settings$PreclustNumber = PreclustNumber
-
-  if(isTRUE(sim.settings$geneset) && isTRUE(length(sim.settings$means) >= sim.settings$ngenes)) {
-    sim.settings$geneset=FALSE
-    if (verbose) { message(paste0("The mean vector is longer than the number of genes to be simulated and filling in with low magnitude Poisson has been specified. Changing it to sampling with replacement.")) }
-  }
 
   if (verbose) { message(paste0("Preparing output arrays.")) }
 
@@ -140,6 +190,11 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
   if(!sim.settings$normalisation=="SCnorm") {
     est.gsf = NULL
   }
+
+  true.designs = stats::setNames(replicate(length(n1),NULL),my.names)
+  true.designs <- lapply(1:length(true.designs), function(x) {
+    true.designs[[x]] = matrix(NA, nrow = sim.settings$nsims, ncol = n1[x] + n2[x])
+  })
 
   ## start simulation
   for (i in 1:sim.settings$nsims) {
@@ -231,7 +286,7 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
         }
       }
       if(is.null(spike.data)) {
-        count.spike=NULL
+        count.spike = NULL
       }
       ## take a subsample of mean fragment lengths
       if(!is.null(MeanFrag.data)) {
@@ -280,11 +335,13 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
                              verbose=verbose)
       end.time.norm <- Sys.time()
 
+      def.design <- true.design
+
       ## create an DE options object to pass into DE detection
-      DEOpts <- list(designs=true.design, p.DE=tmp.simOpts$p.DE)
+      DEOpts <- list(designs=def.design, p.DE=tmp.simOpts$p.DE)
 
       ## Run DE detection
-      if (verbose) { message(paste0("Running DE tool \n")) }
+      if (verbose) { message(paste0("Running DE tool")) }
       start.time.DE <- Sys.time()
       res.de = .de.calc(DEmethod=tmp.simOpts$DEmethod,
                         normData=norm.data,
@@ -332,8 +389,9 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
         est.gsf[[j]][i, ixx.valid, ] = norm.data$scale.factors
       }
 
+      true.designs[[j]][i,] = true.design
+
       # time taken for each step
-      # copy designs into list of matrices
       if(!is.null(Preprocess)) {
         time.taken.preprocess <-  difftime(end.time.preprocess,
                                            start.time.preprocess,
@@ -364,17 +422,20 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
   }
 
   ## return
-  list(pvalue = pvalues,
-       fdr = fdrs,
-       elfc = elfcs,
-       rlfc = rlfcs,
-       mu = mus,
-       disp = disps,
-       dropout = dropouts,
-       true.sf = true.sf,
-       est.sf = est.sf,
-       est.gsf = est.gsf,
-       time.taken = time.taken,
-       sim.settings = sim.settings)
-}
+  res.out <- list(pvalue = pvalues,
+                  fdr = fdrs,
+                  elfc = elfcs,
+                  rlfc = rlfcs,
+                  mu = mus,
+                  disp = disps,
+                  dropout = dropouts,
+                  true.sf = true.sf,
+                  est.sf = est.sf,
+                  est.gsf = est.gsf,
+                  true.designs=true.designs,
+                  time.taken = time.taken,
+                  sim.settings = sim.settings)
 
+  attr(res.out, 'Simulation') <- "DE"
+  return(res.out)
+}

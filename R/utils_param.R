@@ -34,7 +34,15 @@
 
 # checkup -----------------------------------------------------------------
 
-.run.checkup <- function(countData, batchData, spikeData, spikeInfo, Lengths, MeanFragLengths, verbose) {
+#' @importFrom scater newSCESet calculateQCMetrics isOutlier calcAverage
+.run.checkup <- function(countData,
+                         batchData,
+                         spikeData,
+                         spikeInfo,
+                         Lengths,
+                         MeanFragLengths,
+                         RNAseq,
+                         verbose) {
 
   if (!is.null(batchData) && is.null(rownames(batchData)) && is.null(colnames(countData)) ) {
     rownames(batchData) <- paste0("S", 1:nrow(batchData))
@@ -99,6 +107,56 @@
     if (is.null(colnames(countData))) {
       colnames(countData) <- paste0("S", 1:ncol(countData))
       message(paste0("No sample names were provided for counts so that pseudo sample names are assigned."))
+    }
+  }
+
+  if(RNAseq == 'singlecell') {
+    # create SCEset
+    if(is.null(batchData)) {
+      sce <- scater::newSCESet(countData = countData,
+                               lowerDetectionLimit = 0,
+                               logExprsOffset = 1)
+    }
+    if(!is.null(batchData)) {
+      pd <- new("AnnotatedDataFrame", data = batchData)
+      sce <- scater::newSCESet(countData = countData,
+                               phenoData = pd,
+                               lowerDetectionLimit = 0,
+                               logExprsOffset = 1)
+    }
+    # apply quality filters
+    sce <- scater::calculateQCMetrics(sce, nmads = 3)
+    # define outlier cells
+    libsize.drop <- scater::isOutlier(sce$total_counts, nmads=3, type="lower", log=TRUE)
+    feature.drop <- scater::isOutlier(sce$total_features, nmads=3, type="lower", log=TRUE)
+    # kick out owly expressed genes
+    ave.counts <- scater::calcAverage(sce)
+    keep <- ave.counts >= 0.2
+    # kick out features / cells that do not pass thresholds
+    sce <- sce[keep,!(libsize.drop | feature.drop)]
+
+    # adapt the auxillary objects
+    countData <- sce@assayData$counts
+
+    # batch
+    if(!is.null(batchData)) {
+      batchData <- batchData[rownames(batchData) %in% colnames(countData), , drop = FALSE]
+      batchData <- batchData[match(rownames(batchData), colnames(countData)), , drop = FALSE ]
+    }
+    # Lengths
+    if(!is.null(Lengths)) {
+      gene.id <- rownames(countData)
+      Lengths <- Lengths[match(gene.id,names(Lengths))]
+    }
+    # Mean fragment lengths
+    if(!is.null(MeanFragLengths)) {
+      cell.id <- colnames(countData)
+      MeanFragLengths <- MeanFragLengths[match(cell.id,names(MeanFragLengths))]
+    }
+    # spike-in counts
+    if(!is.null(spikeData)) {
+      cell.id <- colnames(countData)
+      spikeData <- spikeData[,match(cell.id, colnames(spikeData))]
     }
   }
 

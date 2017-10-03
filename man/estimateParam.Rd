@@ -12,7 +12,7 @@ Lengths = NULL,
 MeanFragLengths = NULL,
 Distribution = c('NB', 'ZINB'),
 RNAseq = c('bulk', 'singlecell'),
-normalisation = c('TMM', 'MR', 'PosCounts', 'UQ', 'scran',
+normalisation = c('TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm',
                   'SCnorm', 'RUV', 'BASiCS', 'Census', 'depth', 'none'),
 sigma = 1.96,
 NCores = NULL,
@@ -87,6 +87,9 @@ as implemented in \code{\link[DESeq2]{estimateSizeFactors}}, respectively.}
 \item{scran, SCnorm}{apply the deconvolution and quantile regression normalization methods developed for sparse RNA-seq data
 as implemented in \code{\link[scran]{computeSumFactors}} and \code{\link[SCnorm]{SCnorm}}, respectively.
 For \code{SCnorm}, the user can also supply \code{spikeData}.}
+\item{Linnorm}{apply the normalization method for sparse RNA-seq data
+as implemented in \code{\link[Linnorm]{Linnorm.Norm}}.
+For \code{Linnorm}, the user can also supply \code{spikeData}.}
 \item{RUV}{removes unwanted variation. There are two approaches implemented:
 (1) utilizing negative control genes, i.e. spike-ins stored in \code{spikeData} (\code{\link[RUVSeq]{RUVg}}).
 (2) utilizing replicate samples, i.e. samples for which the covariates of interest are considered constant.

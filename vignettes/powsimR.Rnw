@@ -29,7 +29,7 @@ Report issues on \url{https://github.com/bvieth/powsimR/issues}
 
 \tableofcontents
 
-<<setup, include=FALSE, cache=FALSE>>=
+<<setup, eval=TRUE, include=FALSE, cache=FALSE>>=
 
 knitr::opts_chunk$set(xtable.comment = FALSE,
                       echo=F,
@@ -60,40 +60,50 @@ options(width=60)
 PowsimR has a number of dependencies that need to be installed before hand (see also the README file on github). I recommend to increase the maximum number of DLLs that can be loaded to at least 500. The environmental variable R\_MAX\_NUM\_DLLS can be set in R\_HOME/etc/Renviron prior to starting R (for further details see \Rfunction{Startup}). For that locate the Renviron file and add the following line: R\_MAX\_NUM\_DLLS=xy where xy is the number of DLLs.
 On my Ubuntu machine, the Renviron file is in /usr/lib/R/etc/ and I can set it to 500. Apparently this is not possible on MACs where the maximum that worked was 153. This is enough for powsimR, however.
 
-<<echo=T, eval=F, tidy=T>>=
-ipak <- function(pkg, repository=c("CRAN", "Bioconductor", "github")){
+<<echo=T, eval=F>>=
+ipak <- function(pkg, repository=c('CRAN', 'Bioconductor', 'github')){
   new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
   if (length(new.pkg)) {
-    if(repository=="CRAN") {
+    if(repository=='CRAN') {
       install.packages(new.pkg, dependencies = TRUE)
     }
-    if(repository=="Bioconductor") {
+    if(repository=='Bioconductor') {
       source("https://bioconductor.org/biocLite.R")
       biocLite(new.pkg, dependencies=TRUE, ask=FALSE)
     }
-    if(repository=="github") {
-      devtools::install_github(pkg, build_vignettes = FALSE)
+    if(repository=='github') {
+      devtools::install_github(pkg, build_vignettes = FALSE, dependencies=TRUE)
     }
   }
 }
 
 # CRAN PACKAGES
-cranpackages <- c("methods", "stats", "matrixStats", "moments", "minpack.lm", "glmnet", "cluster", "mclust", "MASS", "doParallel", "parallel", "snow", "reshape2", "plyr", "dplyr", "tidyr", "tibble", "data.table", "ggplot2", "ggthemes", "ggExtra", "cowplot", "scales", "fitdistrplus", "MASS", "pscl", "nonnest2", "cobs", "msir", "drc", "devtools", "XML", "splines", "gtools", "NBPSeq", "permute", "DrImpute", "VGAM")
-ipak(cranpackages, repository="CRAN")
+cranpackages <- c("methods", "stats", "matrixStats", "Rtsne", "moments",
+                  "minpack.lm", "glmnet", "cluster", "mclust", "MASS",
+                  "gtools", "doParallel", "parallel", "snow", "reshape2",
+                  "plyr", "dplyr", "tidyr", "tibble", "data.table", "ggplot2",
+                  "ggthemes", "ggExtra", "cowplot", "scales", "cobs" "msir",
+                  "drc", "drImpute", "VGAM", "NBPSeq")
+ipak(cranpackages, repository='CRAN')
 
 # BIOCONDUCTOR
-biocpackages <- c("S4Vectors", "AnnotationDbi", "Biobase", "BiocParallel", "BiocGenerics", "BiocStyle", "SummarizedExperiment", "scater", "scran", "edgeR", "limma", "DESeq2", "baySeq", "NOISeq", "EBSeq", "DSS", "MAST", "ROTS", "IHW", "qvalue", "scDD", "monocle", "RUVSeq", "DEDS")
-ipak(biocpackages, repository="Bioconductor")
+biocpackages <- c("S4Vectors", "DEDS", "AnnotationDbi", "Biobase",
+                  "BiocGenerics", "SummarizedExperiment", "BiocParallel",
+                  "RUVSeq", "scran", "scater", "Linnorm", "edgeR", "limma",
+                  "DESeq2", "baySeq", "NOISeq", "EBSeq", "DSS", "MAST", "scde",
+                  "scDD", "ROTS", "monocle", "IHW", "qvalue")
+ipak(biocpackages, repository='Bioconductor')
 
 # GITHUB
-githubpackages <- c("hms-dbmi/scde", "nghiavtr/BPSC", "rhondabacher/SCnorm", "catavallejos/BASiCS")
-ipak(githubpackages, repository = "github")
+githubpackages <- c('nghiavtr/BPSC', 'rhondabacher/SCnorm',
+                    'catavallejos/BASiCS')
+ipak(githubpackages, repository = 'github')
 @
 
 After installing the dependencies, \Rpackage{powsimR} can be installed by using devtools as well.
 
 <<echo=T, eval=F, tidy=T>>=
-devtools::install_github('bvieth/powsimR', build_vignettes = TRUE)
+devtools::install_github('bvieth/powsimR', build_vignettes = TRUE, dependencies = FALSE)
 @
 
 
@@ -141,7 +151,7 @@ githubURL <- "https://github.com/bvieth/powsimRData/raw/master/data-raw/kolodzie
 download.file(url = githubURL, destfile= "kolodziejczk_cnts.rda", method = "wget")
 load('kolodziejczk_cnts.rda')
 kolodziejczk_cnts <- kolodziejczk_cnts[, grep('standard', colnames(kolodziejczk_cnts))]
-
+colnames(kolodziejczk_cnts) <- paste0(colnames(kolodziejczk_cnts), "_", 1:ncol(kolodziejczk_cnts))
 TwoiLIF.params <- estimateParam(countData=kolodziejczk_cnts,
                                     batchData = NULL,
                                     spikeData = NULL,
@@ -162,7 +172,6 @@ For bulk RNA-seq experiments, dropouts are less probable but can still occur. To
 The resulting read count matrix has similar distributional characteristics as the original Kolodziejczyk data set (figure \ref{fig:simeval}).
 For the zero-inflated negative binomial distribution, the mean-dispersion relation is similarly estimated, but based on positive read counts. Furthermore, the dropouts are also predicted based on a locally weighted polynomial regression fit between mean and dropouts. Of note, this fit is done separately for amplified and non-amplified transcripts separately and similar proportions of genes as observed are also generated in the simulations \cite{Ziegenhain2017-sf}.
 We have found that the negative binomial distribution is particularly suited for UMI-methods (e.g. SCRB-Seq, Drop-Seq, 10XGenomics) \cite{Vieth2017-lh}.
-
 
 \begin{figure}[h]
 \centering
@@ -190,30 +199,9 @@ The following formula is implemented in \Rfunction{calculateSpike} for calculati
 
 The number of molecules $Y_{j}$ for each ERCC spike-in species is the product of the molar concentration $c_{j}$ (attomoles per microlitre), the dilution factor $1/D$, the volume $V$ (nanolitre), Avogadros' constant ($6.02214129*10^{23}$) and conversion factors between unit scales.
 
+%If spike-ins were not added to the original experiment there is the possibility to simulate them in silico. For that, we implemented the framework presented in \cite{Qiu2017-qa}.
 
-<<echo=TRUE,eval=FALSE>>=
-# download count table of spike-ins
-githubURL <- "https://github.com/bvieth/powsimRData/raw/master/data-raw/kolodziejczk_cnts.rda"
-download.file(url = githubURL, destfile= "kolodziejczk_cnts.rda", method = "wget")
-load('kolodziejczk_cnts.rda')
-# download spike-in information table
-
-
-@
-
-If spike-ins were not added to the original experiment there is the possibility to simulate them in silico. For that, we implemented the framework presented in \cite{Qiu2017-qa}.
-
-The estimated parameters can be plotted with \Rfunction{plotSpike}.
-
-<<echo=TRUE,eval=FALSE>>=
-# download count table of spike-ins
-githubURL <- "https://github.com/bvieth/powsimRData/raw/master/data-raw/kolodziejczk_cnts.rda"
-download.file(url = githubURL, destfile= "kolodziejczk_cnts.rda", method = "wget")
-load('kolodziejczk_cnts.rda')
-# download spike-in information table
-
-
-@
+%The estimated parameters can be plotted with \Rfunction{plotSpike}.
 
 %---------------------------------------------------------
 \section{Simulations}
@@ -226,8 +214,14 @@ The following command sets up simulations with 10,000 genes, 20\% genes being DE
 <<echo=TRUE,eval=FALSE>>=
 
 lfc.gamma = function(x) sample(c(-1,1), size=x,replace=T)*rgamma(x, 3, 3)
-de.opts = DESetup(ngenes=10000, nsims=25, p.DE=0.2, LFC=lfc.gamma)
-sim.opts = SimSetup(desetup = de.opts, params = TwoiLIF.params, size.factors='given', normalisation='scran')
+de.opts = DESetup(ngenes=10000, nsims=25,
+                  p.DE=0.2, pLFC=lfc.gamma,
+                  p.B = NULL, bLFC = NULL,
+                  sim.seed = 58673)
+sim.opts = SimSetup(desetup = de.opts,
+                    params = TwoiLIF.params,
+                    size.factors='given',
+                    downsample=FALSE, geneset = FALSE)
 @
 
 With the setup defined, the differential expression simulation is run with \Rfunction{simulateDE}. For this, the user needs to set the following options:
@@ -235,18 +229,24 @@ With the setup defined, the differential expression simulation is run with \Rfun
 \begin{description}
   \item[Replicates] The number of sample replicates per group (n1 and n2). These can be unbalanced.
   \item[DEmethod] The differential testing method. The user can choose between 12 methods in total.  8 developed for bulk, 4 developed for single cells (see the detail section of \Rfunction{simulateDE}).
-  \item[ncores] A number of DE methods are able to run in parallel to speed up differential testing.
+  \item[normalisation] The normalisation method. The user can choose between 11 methods in total.  6 developed for bulk, 5 developed for single cells (see the detail section of \Rfunction{estimateParam}).
 \end{description}
 
 <<echo=TRUE,eval=FALSE>>=
 simDE = simulateDE(n1 = c(24,48,96,192,384,800),
                    n2 = c(24,48,96,192,384,800),
                    sim.settings = sim.opts,
-                   ncores = 10,
-                   DEmethod = 'MAST',
-                   verbose = T)
+                   DEmethod = "MAST",
+                   normalisation = "scran",
+                   Preclust=FALSE,
+                   Preprocess = NULL,
+                   spikeIns=FALSE,
+                   NCores=10,
+                   verbose=TRUE)
 
 @
+
+There also additional options: Whether to apply a preprocessing step prior to normalisation; whether spike-in information should be used (if available).
 
 \begin{figure}[h]
 \centering
@@ -255,39 +255,44 @@ simDE = simulateDE(n1 = c(24,48,96,192,384,800),
 \label{fig:lfcs}
 \end{figure}
 
+% \subsection{Read count matrices}
+%
+% Some users might be interested in outputting only simulated read counts by calling \Rfunction{simulateCounts}.
+%
+
 \section{Evaluation}
 
-The results of differential expression simulation are evaluated with \Rfunction{evaluateSim}. We have separated the evaluation from DE detection to allow the user to evaluate power in a comprehensive way as advocated by \cite{Wu2015-uj}.
-In this function, the proporations and error rates are estimated. The rates can be stratified by mean, dispersion or dropout. Furthermore, the user can choose between different multiple testing correction methods (see \Rfunction{p.adjust.methods}, \Rfunction{ihw} in \Biocpkg{IHW} and \Rfunction{qvalue} in \Biocpkg{qvalue}). Also, the genes can be filtered by mean, dispersion or dropout. To define biologically interesting genes, a cutoff for the log2 fold change with delta can be set.
+The results of differential expression simulation are evaluated with \Rfunction{evaluateDE}. We have separated the evaluation from DE detection to allow the user to evaluate power in a comprehensive way as advocated by \cite{Wu2015-uj}.
+In this function, the proporations and error rates are estimated. The rates can be stratified by mean, dispersion dropout or log fold change. Furthermore, the user can choose between different multiple testing correction methods (see \Rfunction{p.adjust.methods}, \Rfunction{ihw} in \Biocpkg{IHW} and \Rfunction{qvalue} in \Biocpkg{qvalue}). Also, the genes can be filtered by mean, dispersion or dropout. To define biologically interesting genes, a cutoff for the log2 fold change with delta can be set.
 
 With the following command we evaluate the marginal TPR and FDR conditional on the mean expression for the simulation based on Kolodziejczyk data.
 
 <<echo=TRUE,eval=FALSE>>=
-evalDE = evaluateSim(simRes = simDE,
+evalDE = evaluateDE(simRes = simDE,
                      alpha.type = 'adjusted',
                      MTC = 'BH',
                      alpha.nominal = 0.1,
                      stratify.by = 'mean',
                      filter.by = 'none',
-                     strata.filtered = 0,
+                     strata.filtered = 1,
                      target.by = 'lfc',
                      delta = 0)
 @
 
-The results of the evaluation can be plotted with \Rfunction{plotEvalRes}.
+The results of the evaluation can be plotted with \Rfunction{plotEvalDE}.
 \begin{description}
-  \item[rate] Marginal or Conditional Error Rates calculations. The conditional error rates are determined and calculated with \Rfunction{evaluateSim}. The number of genes per stratum are also summarised.
+  \item[rate] Marginal or Conditional Error Rates calculations. The conditional error rates are determined and calculated with \Rfunction{evaluateDE}. The number of genes per stratum are also summarised.
   \item[quick] If this is set to \R{TRUE} then only the TPR and FDR will be plotted.
 \end{description}
 
 With the following commands, the quick marginal and conditional power assessment for the Kolodziejczyk data is plotted.
 
 <<echo=TRUE,eval=FALSE>>=
-plotEvalRes(evalRes = evalDE,
+plotEvalDE(evalRes = evalDE,
             rate='marginal',
             quick=TRUE, annot=TRUE)
 
-plotEvalRes(evalRes = evalDE,
+plotEvalDE(evalRes = evalDE,
             rate='stratified',
             quick=TRUE, annot=TRUE)
 @

@@ -15,6 +15,8 @@
   if(normalisation=='UQ') {NormData <- .UQ.calc(countData = countData)}
   if(normalisation=='MR') {NormData <- .MR.calc(countData = countData)}
   if(normalisation=='PosCounts') {NormData <- .PosCounts.calc(countData = countData)}
+  if(normalisation=='Linnorm') {NormData <- .linnorm.calc(countData = countData,
+                                                          spikeData = spikeData)}
   if(normalisation=='scran') {NormData <- .scran.calc(countData = countData)}
   if(normalisation=='scran' && !is.null(PreclustNumber)) {NormData <- suppressWarnings(
     .scranclust.calc(countData = countData,
@@ -48,7 +50,7 @@
   return(NormData)
 }
 
-# TMM calculations --------------------------------------------------------
+# TMM --------------------------------------------------------
 
 #' @importFrom edgeR calcNormFactors
 .TMM.calc <- function(countData) {
@@ -65,7 +67,7 @@
 }
 
 
-# UQ calculations ---------------------------------------------------------
+# UQ ---------------------------------------------------------
 
 #' @importFrom edgeR calcNormFactors
 .UQ.calc <- function(countData) {
@@ -82,7 +84,7 @@
   return(res)
 }
 
-# MR calculations ---------------------------------------------------------
+# MR ---------------------------------------------------------
 
 #' @importFrom DESeq2 DESeqDataSetFromMatrix estimateSizeFactors counts
 .MR.calc <- function(countData) {
@@ -100,7 +102,7 @@
   return(res)
 }
 
-# poscounts normalization -------------------------------------------------
+# poscounts -------------------------------------------------
 
 #' @importFrom DESeq2 DESeqDataSetFromMatrix estimateSizeFactors
 .PosCounts.calc <- function(countData) {
@@ -120,9 +122,49 @@
   return(res)
 }
 
-# scran calculations ------------------------------------------------------
 
-### TO DO: add clustering functionality, should help for norm calc of distinct cells!
+# Linnorm -----------------------------------------------------------------
+
+#' @importFrom Linnorm Linnorm.Norm
+.linnorm.calc <- function(countData, spikeData) {
+
+  spike = ifelse(is.null(spikeData), FALSE, TRUE)
+  if(spike==TRUE) {
+    rownames(spikeData) = paste('ERCC', 1:nrow(spikeData), sep="-")
+    cnts = rbind(countData, spikeData)
+    spikeID = rownames(spikeData)
+  }
+  if(spike==FALSE) {
+    cnts = countData
+    spikeID = NULL
+  }
+
+  linnorm.out <- Linnorm::Linnorm.Norm(datamatrix=cnts, # matrix/data.frame of raw counts
+                                       RowSamples = FALSE, # if I would switch gene and samples position in input
+                                       spikein = spikeID, # names of the spike-ins
+                                       spikein_log2FC = NULL,  # LFC of spike-ins, assume mix 1, so no
+                                       showinfo = FALSE, # verbosity
+                                       output = "Raw", # type of output: raw, ie  total count output will  be equal to median of input counts
+                                       minNonZeroPortion = 0.75, # minimum porportion of nonzero values per gene
+                                       BE_F_p = 0.3173, # p-value cutoff for standard deviation and skewness testing of batch effect normalisation
+                                       BE_F_LC_Genes = "Auto", # porportion of lowly expressed genes to filter before batch effect normalisation
+                                       BE_F_HC_Genes = 0.01, # proportion of highly expressed genes to filter before batch effect normalisation
+                                       BE_strength = 0.5, # strength of batch effect normalisation
+                                       max_F_LC = 0.75) # maximum threshold for filtering of low and high expression
+
+  norm.counts <- linnorm.out[!grepl(pattern="ERCC", rownames(linnorm.out)),]
+  gsf <-  t(t(countData)/t(norm.counts))
+  sf <- apply(gsf, 2, stats::median, na.rm=T)
+  sf <- sf - mean(sf) + 1
+  names(sf) <- colnames(countData)
+  res <- list(NormCounts=norm.counts,
+              RoundNormCounts=round(norm.counts),
+              size.factors=sf)
+  attr(res, 'normFramework') <- "Linnorm"
+  return(res)
+}
+
+# scran ------------------------------------------------------
 
 #' @importFrom scran computeSumFactors
 #' @importFrom scater newSCESet
@@ -212,7 +254,7 @@
   return(res)
 }
 
-# SCnorm calculations -----------------------------------------------------
+# SCnorm -----------------------------------------------------
 
 #' @importFrom SCnorm SCnorm
 #' @importFrom parallel detectCores
@@ -330,7 +372,7 @@
 }
 
 
-# Census normalisation ----------------------------------------------------
+# Census ----------------------------------------------------
 
 #' @importFrom monocle newCellDataSet relative2abs
 #' @importFrom Biobase exprs
@@ -608,7 +650,9 @@
               k_b_solution = k_b_solution))
 }
 
-# RUV spike-in normalisation ---------------------------------------------
+
+
+# RUV ---------------------------------------------
 
 #' @importFrom RUVSeq RUVg
 #' @importFrom tibble rownames_to_column
@@ -697,11 +741,12 @@
 
   # return object
   # normalized counts
-  normCounts <- RUV.out$normalizedCounts
+  normCounts <- RUV.out$normalizedCounts[!grepl(pattern = "ERCC",
+                                                rownames(RUV.out$normalizedCounts)),]
   normCounts[normCounts<0] <- 0
-  # RUV does not return size factors, so make them constant
-  sf <- rep(1, ncol(countData))
-  # sf <- apply(countData/normCounts, 2, function(x) {median(x, na.rm = T)})
+  # RUV proxy size factors
+  gsf <-  t(t(countData)/t(normCounts))
+  sf <- apply(gsf, 2, stats::median, na.rm=T)
   names(sf) <- colnames(countData)
   res <- list(NormCounts = normCounts,
               RoundNormCounts = round(normCounts),
@@ -711,9 +756,7 @@
   return(res)
 }
 
-
-
-# BASiCS spike-in normalisation -------------------------------------------
+# BASiCS -------------------------------------------
 
 #' @importFrom BASiCS newBASiCS_Data BASiCS_Filter BASiCS_MCMC BASiCS_DenoisedCounts
 .BASiCS.calc <- function(countData, spikeData, spikeInfo, batchData) {
@@ -779,7 +822,7 @@
 }
 
 
-# Depth normalisation (spike-ins) -----------------------------------------
+# Depth normalisation -----------------------------------------
 
 .depth.calc <- function(countData) {
   sf <- colSums(countData) / mean(colSums(countData))

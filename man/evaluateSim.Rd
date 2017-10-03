@@ -7,7 +7,7 @@
 evaluateSim(simRes)
 }
 \arguments{
-\item{simRes}{The result from \code{\link{simulateDE}}.}
+\item{simRes}{The result from \code{\link{simulateDE}} or \code{\link{simulateFlow}}.}
 }
 \value{
 A list with the following entries:
@@ -15,6 +15,7 @@ A list with the following entries:
 log2 fold change differences between estimated LFC and simulated LFC. Furthermore, the fraction of missing estimated LFC.}
 \item{SizeFactors}{The median absolute deviation between the estimated and true size factors,
 the residual error of a robust linear model and the ratio between estimated and true size factors of the two groups.}
+\item{Clustering}{The adjusted rand index between the true group assignment and derived group assignment by clustering (only for \code{\link{simulateFlow}}).}
 }
 \description{
 This function takes the simulation output from \code{\link{simulateDE}}
@@ -29,7 +30,7 @@ and computes several metrics that give an indication of the simulation setup per
 \code{\link{estimateParam}} for negative binomial parameters,
 \code{\link{SimSetup}} and
 \code{\link{DESetup}} for setting up simulation parameters and
-\code{\link{simulateDE}} for simulating differential expression.
+\code{\link{simulateDE}} and \code{\link{simulateFlow}} for simulating differential expression.
 }
 \author{
 Beate Vieth

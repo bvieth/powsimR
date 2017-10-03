@@ -177,7 +177,7 @@
   design.mat <- stats::model.matrix( ~ DEOpts$designs)
   v <- limma::voom(dge, design.mat, plot=FALSE)
   fit <- limma::lmFit(object = v, design = design.mat)
-  fit <- limma::eBayes(fit, proportion=p.DE, robust=T)
+  fit <- limma::eBayes(fit, proportion=p.DE, robust=TRUE)
   resT <- limma::topTable(fit=fit, coef=2, number=Inf, adjust.method = "BH", sort.by = "none")
 
   # construct results
@@ -292,7 +292,7 @@
   # run DE testing
   res <-  ROTS::ROTS(data = out.expr,
                      groups = factor(DEOpts$designs),
-                     B = 50,
+                     B = 100,
                      K = floor(nrow(out.expr)/2) , progress=F)
 
   # construct results
@@ -855,6 +855,10 @@
 # BASiCS ------------------------------------------------------------------
 
 #TODO: Implement testing for BASiCS normalized data
+
+# monocle -----------------------------------------------------------------
+
+#TODO: Implement testing of monocle
 
 
 # D3E ---------------------------------------------------------------------

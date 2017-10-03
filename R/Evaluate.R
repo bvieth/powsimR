@@ -1,3 +1,4 @@
+
 # EVALUATE SETUP ----------------------------------------------------------
 #' @name evaluateSim
 #' @aliases evaluateSim
@@ -5,17 +6,18 @@
 #' @description This function takes the simulation output from \code{\link{simulateDE}}
 #' and computes several metrics that give an indication of the simulation setup performance.
 #' @usage evaluateSim(simRes)
-#' @param simRes The result from \code{\link{simulateDE}}.
+#' @param simRes The result from \code{\link{simulateDE}} or \code{\link{simulateFlow}}.
 #' @return A list with the following entries:
 #' \item{Log2FoldChange}{The root mean square error and absolute mean error of
 #' log2 fold change differences between estimated LFC and simulated LFC. Furthermore, the fraction of missing estimated LFC.}
 #' \item{SizeFactors}{The median absolute deviation between the estimated and true size factors,
 #' the residual error of a robust linear model and the ratio between estimated and true size factors of the two groups.}
+#' \item{Clustering}{The adjusted rand index between the true group assignment and derived group assignment by clustering (only for \code{\link{simulateFlow}}).}
 #' @author Beate Vieth
 #' @seealso \code{\link{estimateParam}} for negative binomial parameters,
 #' \code{\link{SimSetup}} and
 #' \code{\link{DESetup}} for setting up simulation parameters and
-#' \code{\link{simulateDE}} for simulating differential expression.
+#' \code{\link{simulateDE}} and \code{\link{simulateFlow}} for simulating differential expression.
 #' @examples
 #' \dontrun{
 #' ## not yet
@@ -26,107 +28,227 @@
 #' @export
 evaluateSim <- function(simRes) {
 
-  # simulation parameters
-  Nreps1 = simRes$sim.settings$n1
-  Nreps2 = simRes$sim.settings$n2
-  ngenes = simRes$sim.settings$ngenes
-  sim.opts = simRes$sim.settings
-  DEids = simRes$sim.settings$DEid
-  tlfcs = simRes$sim.settings$pLFC
-  nsims = simRes$sim.settings$nsims
+  if (attr(simRes, 'Simulation') == 'Flow') {
 
-  # estimated parameters
-  elfcs = simRes$elfc
-  tsfs = simRes$true.sf
-  esfs = simRes$est.sf
+    # simulation parameters
+    Nreps1 = simRes$sim.settings$n1
+    Nreps2 = simRes$sim.settings$n2
+    ngenes = simRes$sim.settings$ngenes
+    sim.opts = simRes$sim.settings
+    DEids = simRes$sim.settings$DEid
+    tlfcs = simRes$sim.settings$pLFC
+    nsims = simRes$sim.settings$nsims
 
-  # create output objects
-  my.names = paste0(Nreps1, "vs", Nreps2)
-  # error in log2 fold changes
-  lfc.error.mat <- lapply(1:length(my.names), function(x) {
-    matrix(NA, nrow =  nsims, ncol = 15,
-           dimnames = list(c(paste0("Sim", 1:nsims)),
-                           c(paste0(rep(x=c("ALL", "DE", "EE"),each=5),"_",
-                                    c('RMSE_Value', "MAE_Value", "RMSE_NAFraction", "MAE_NAFraction", "MSE_ErrorFit")))))
-  })
-  names(lfc.error.mat) <- my.names
+    # estimated parameters
+    elfcs = simRes$elfc
+    tsfs = simRes$true.sf
+    esfs = simRes$est.sf
 
-  # error in size factors
-  sf.error.mat <- lapply(1:length(my.names), function(x) {
-    matrix(NA, nrow =  nsims, ncol = 4,
-           dimnames = list(c(paste0("Sim_", 1:nsims)),
-                           c("MAD.LFC.SF", "Error.Fit", "Ratio.1","Ratio.2")))
-  })
-  names(sf.error.mat) <- my.names
+    t.designs = simRes$true.designs
+    e.designs = simRes$def.designs
 
-  ## loop over simulation and replicates
-  for(i in 1:nsims) {
-    # DE flag
-    DEid = DEids[[i]]
-    Zg = rep(0, ngenes)
-    Zg[DEid] = 1
-    # true log fold change of all genes
-    all.tlfc = tlfcs[[i]]
-    # true log fold change of DE genes
-    de.tlfc = all.tlfc[which(Zg==1)]
-    # true log fold change of EE genes
-    ee.tlfc = all.tlfc[which(Zg==0)]
+    # create output objects
+    my.names = paste0(Nreps1, "vs", Nreps2)
+    # error in log2 fold changes
+    lfc.error.mat <- lapply(1:length(my.names), function(x) {
+      matrix(NA, nrow =  nsims, ncol = 15,
+             dimnames = list(c(paste0("Sim", 1:nsims)),
+                             c(paste0(rep(x=c("ALL", "DE", "EE"),each=5),"_",
+                                      c('RMSE_Value', "MAE_Value", "RMSE_NAFraction", "MAE_NAFraction", "MSE_ErrorFit")))))
+    })
+    names(lfc.error.mat) <- my.names
 
-    for(j in seq(along=Nreps1)) {
+    # error in size factors
+    sf.error.mat <- lapply(1:length(my.names), function(x) {
+      matrix(NA, nrow =  nsims, ncol = 4,
+             dimnames = list(c(paste0("Sim_", 1:nsims)),
+                             c("MAD.LFC.SF", "Error.Fit", "Ratio.1","Ratio.2")))
+    })
+    names(sf.error.mat) <- my.names
 
-      ## LOG2 FOLD CHANGES
-      # estimated log fold change of all genes
-      all.elfc = elfcs[, j, i]
-      # estimated log fold changes of EE genes
-      ix.ee.lfc = which(Zg==0)
-      ee.lfc = all.elfc[ix.ee.lfc]
-      # estimated log fold change of DE genes
-      ix.de.lfc = which(Zg==1)
-      de.lfc = all.elfc[ix.de.lfc]
-      # estimate mean squared error and absolute error
-      all.error <- .lfc.evaluate(truth=all.tlfc, estimated=all.elfc)
-      ee.error <- .lfc.evaluate(truth=ee.tlfc, estimated=ee.lfc)
-      de.error <- .lfc.evaluate(truth=de.tlfc, estimated=de.lfc)
-      error.est <- c(all.error, ee.error, de.error)
-      lfc.error.mat[[j]][i,] = error.est
+    # error in clustering
+    clust.error.mat <- lapply(1:length(my.names), function(x) {
+      matrix(NA, nrow =  nsims, ncol = 1,
+             dimnames = list(c(paste0("Sim_", 1:nsims)),
+                             c("RandIndex")))
+    })
+    names(clust.error.mat) <- my.names
 
-      ## SIZE FACTORS
-      # true sf over all samples, center to mean=1
-      tsf = tsfs[[j]][i, ]
-      n.tsf = tsf*length(tsf)/sum(tsf)
+    ## loop over simulation and replicates
+    for(i in 1:nsims) {
+      # DE flag
+      DEid = DEids[[i]]
+      Zg = rep(0, ngenes)
+      Zg[DEid] = 1
+      # true log fold change of all genes
+      all.tlfc = tlfcs[[i]]
+      # true log fold change of DE genes
+      de.tlfc = all.tlfc[which(Zg==1)]
+      # true log fold change of EE genes
+      ee.tlfc = all.tlfc[which(Zg==0)]
 
-      # estimated sf over all sample, center to mean=1
-      esf = esfs[[j]][i,]
-      n.esf = esf*length(esf)/sum(esf)
+      for(j in seq(along=Nreps1)) {
 
-      # MAD of log fold change difference between estimated and true size factors
-      lfc.nsf = log2(n.esf) - log2(n.tsf)
-      mad.nsf = stats::mad(lfc.nsf)
+        ## LOG2 FOLD CHANGES
+        # estimated log fold change of all genes
+        all.elfc = elfcs[, j, i]
+        # estimated log fold changes of EE genes
+        ix.ee.lfc = which(Zg==0)
+        ee.lfc = all.elfc[ix.ee.lfc]
+        # estimated log fold change of DE genes
+        ix.de.lfc = which(Zg==1)
+        de.lfc = all.elfc[ix.de.lfc]
+        # estimate mean squared error and absolute error
+        all.error <- .lfc.evaluate(truth=all.tlfc, estimated=all.elfc)
+        ee.error <- .lfc.evaluate(truth=ee.tlfc, estimated=ee.lfc)
+        de.error <- .lfc.evaluate(truth=de.tlfc, estimated=de.lfc)
+        error.est <- c(all.error, ee.error, de.error)
+        lfc.error.mat[[j]][i,] = error.est
 
-      # error of estimation
-      error.sf <- .fiterror.sf(estimated.sf = esf, true.sf = tsf)
+        ## SIZE FACTORS
+        # true sf over all samples, center to mean=1
+        tsf = tsfs[[j]][i, ]
+        n.tsf = tsf*length(tsf)/sum(tsf)
 
-      # ratio of estimated and true size factors per true group assignment
-      t.design = t.designs[[j]][i,]
-      e.design = e.designs[[j]][i,]
-      ratio.sf <- .ratio.sf(estimated.nsf = n.esf,
-                            true.nsf = n.tsf,
-                            group=t.design)
-      sf.res <- unlist(c(mad.nsf, error.sf, ratio.sf))
-      names(sf.res) <- NULL
+        # estimated sf over all sample, center to mean=1
+        esf = esfs[[j]][i,]
+        n.esf = esf*length(esf)/sum(esf)
 
-      sf.error.mat[[j]][i,] = sf.res
+        # MAD of log fold change difference between estimated and true size factors
+        lfc.nsf = log2(n.esf) - log2(n.tsf)
+        mad.nsf = stats::mad(lfc.nsf)
 
+        # error of estimation
+        error.sf <- .fiterror.sf(estimated.sf = esf, true.sf = tsf)
+
+        # ratio of estimated and true size factors per true group assignment
+        t.design = t.designs[[j]][i,]
+        e.design = e.designs[[j]][i,]
+        ratio.sf <- .ratio.sf(estimated.nsf = n.esf,
+                              true.nsf = n.tsf,
+                              group=t.design)
+        sf.res <- unlist(c(mad.nsf, error.sf, ratio.sf))
+        names(sf.res) <- NULL
+
+        sf.error.mat[[j]][i,] = sf.res
+
+        ## CLUSTERING
+        randindex <- mclust::adjustedRandIndex(t.design, e.design)
+        clust.error.mat[[j]][i,] = randindex
+
+      }
     }
+
+    output <- list(Log2FoldChange=lfc.error.mat,
+                   SizeFactors=sf.error.mat,
+                   Clustering=clust.error.mat,
+                   sim.settings=simRes$sim.settings)
   }
 
-  output <- list(Log2FoldChange=lfc.error.mat,
-                 SizeFactors=sf.error.mat,
-                 sim.settings=simRes$sim.settings)
+  if (attr(simRes, 'Simulation') == 'DE') {
+    # simulation parameters
+    Nreps1 = simRes$sim.settings$n1
+    Nreps2 = simRes$sim.settings$n2
+    ngenes = simRes$sim.settings$ngenes
+    sim.opts = simRes$sim.settings
+    DEids = simRes$sim.settings$DEid
+    tlfcs = simRes$sim.settings$pLFC
+    nsims = simRes$sim.settings$nsims
+
+    # estimated parameters
+    elfcs = simRes$elfc
+    tsfs = simRes$true.sf
+    esfs = simRes$est.sf
+
+    t.designs = simRes$true.designs
+
+    # create output objects
+    my.names = paste0(Nreps1, "vs", Nreps2)
+    # error in log2 fold changes
+    lfc.error.mat <- lapply(1:length(my.names), function(x) {
+      matrix(NA, nrow =  nsims, ncol = 15,
+             dimnames = list(c(paste0("Sim", 1:nsims)),
+                             c(paste0(rep(x=c("ALL", "DE", "EE"),each=5),"_",
+                                      c('RMSE_Value', "MAE_Value", "RMSE_NAFraction", "MAE_NAFraction", "MSE_ErrorFit")))))
+    })
+    names(lfc.error.mat) <- my.names
+
+    # error in size factors
+    sf.error.mat <- lapply(1:length(my.names), function(x) {
+      matrix(NA, nrow =  nsims, ncol = 4,
+             dimnames = list(c(paste0("Sim_", 1:nsims)),
+                             c("MAD.LFC.SF", "Error.Fit", "Ratio.1","Ratio.2")))
+    })
+    names(sf.error.mat) <- my.names
+
+    ## loop over simulation and replicates
+    for(i in 1:nsims) {
+      # DE flag
+      DEid = DEids[[i]]
+      Zg = rep(0, ngenes)
+      Zg[DEid] = 1
+      # true log fold change of all genes
+      all.tlfc = tlfcs[[i]]
+      # true log fold change of DE genes
+      de.tlfc = all.tlfc[which(Zg==1)]
+      # true log fold change of EE genes
+      ee.tlfc = all.tlfc[which(Zg==0)]
+
+      for(j in seq(along=Nreps1)) {
+
+        ## LOG2 FOLD CHANGES
+        # estimated log fold change of all genes
+        all.elfc = elfcs[, j, i]
+        # estimated log fold changes of EE genes
+        ix.ee.lfc = which(Zg==0)
+        ee.lfc = all.elfc[ix.ee.lfc]
+        # estimated log fold change of DE genes
+        ix.de.lfc = which(Zg==1)
+        de.lfc = all.elfc[ix.de.lfc]
+        # estimate mean squared error and absolute error
+        all.error <- .lfc.evaluate(truth=all.tlfc, estimated=all.elfc)
+        ee.error <- .lfc.evaluate(truth=ee.tlfc, estimated=ee.lfc)
+        de.error <- .lfc.evaluate(truth=de.tlfc, estimated=de.lfc)
+        error.est <- c(all.error, ee.error, de.error)
+        lfc.error.mat[[j]][i,] = error.est
+
+        ## SIZE FACTORS
+        # true sf over all samples, center to mean=1
+        tsf = tsfs[[j]][i, ]
+        n.tsf = tsf*length(tsf)/sum(tsf)
+
+        # estimated sf over all sample, center to mean=1
+        esf = esfs[[j]][i,]
+        n.esf = esf*length(esf)/sum(esf)
+
+        # MAD of log fold change difference between estimated and true size factors
+        lfc.nsf = log2(n.esf) - log2(n.tsf)
+        mad.nsf = stats::mad(lfc.nsf)
+
+        # error of estimation
+        error.sf <- .fiterror.sf(estimated.sf = esf, true.sf = tsf)
+
+        # ratio of estimated and true size factors per true group assignment
+        t.design = t.designs[[j]][i,]
+        ratio.sf <- .ratio.sf(estimated.nsf = n.esf,
+                              true.nsf = n.tsf,
+                              group=t.design)
+        sf.res <- unlist(c(mad.nsf, error.sf, ratio.sf))
+        names(sf.res) <- NULL
+
+        sf.error.mat[[j]][i,] = sf.res
+      }
+    }
+
+    output <- list(Log2FoldChange=lfc.error.mat,
+                   SizeFactors=sf.error.mat,
+                   sim.settings=simRes$sim.settings)
+  }
+
 
   return(output)
-
 }
+
 # EVALUATE DIFFERENTIAL EXPRESSION ----------------------------------------
 
 #' @name evaluateDE

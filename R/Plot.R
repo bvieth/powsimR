@@ -10,11 +10,11 @@
 #' @return A ggplot object.
 #' @examples
 #' \dontrun{
-#' ## not yet
+#' ## for example see \code{\link{insilicoNBParam}}
 #' }
 #' @details Precalculated negative binomial parameters for simulations are available via \url{}.
 #' @author Beate Vieth
-#' @importFrom ggplot2 ggplot geom_bar geom_line theme geom_hline xlab ylab coord_flip scale_y_continuous geom_point scale_fill_gradientn stat_density2d labs theme_minimal theme_classic
+#' @importFrom ggplot2 ggplot geom_bar geom_line theme geom_hline xlab ylab coord_flip scale_y_continuous geom_point scale_fill_gradientn stat_density2d labs theme_minimal theme_classic element_text
 #' @importFrom reshape2 melt
 #' @importFrom cowplot plot_grid add_sub ggdraw
 #' @importFrom ggExtra ggMarginal
@@ -32,7 +32,8 @@ plotParam <- function(estParam.out, annot=TRUE) {
       ggplot2::theme_minimal() +
       ggplot2::geom_bar(stat="identity",width=.5) +
       ggplot2::geom_hline(yintercept = median(lib.size.dat$Seqdepth), linetype = 2, colour="grey40") +
-      ggplot2::theme(axis.text=element_text(size=6), axis.title=element_text(size=8, face="bold")) +
+      ggplot2::theme(axis.text=ggplot2::element_text(size=6),
+                     axis.title=ggplot2::element_text(size=8, face="bold")) +
       ggplot2::xlab(NULL) +
       ggplot2::ylab("Sequencing depth") +
       ggplot2::scale_y_continuous(labels=.plain) +
@@ -44,7 +45,8 @@ plotParam <- function(estParam.out, annot=TRUE) {
       ggplot2::theme_minimal() +
       ggplot2::geom_bar(stat="identity",width=.5) +
       ggplot2::geom_hline(yintercept = median(sf.dat$SizeFactor), linetype = 2, colour="grey40") +
-      ggplot2::theme(axis.text=element_text(size=6), axis.title=element_text(size=8, face="bold")) +
+      ggplot2::theme(axis.text=ggplot2::element_text(size=6),
+                     axis.title=ggplot2::element_text(size=8, face="bold")) +
       ggplot2::xlab(NULL) +
       ggplot2::ylab("Library Size Factor") +
       ggplot2::scale_y_continuous(labels=.plain) +
@@ -57,7 +59,9 @@ plotParam <- function(estParam.out, annot=TRUE) {
     margs.plot <- ggplot2::ggplot(margs.dat, aes(value)) +
       ggplot2::theme_minimal() +
       ggplot2::geom_density() +
-      ggplot2::theme(axis.text=element_text(size=6), axis.title=element_text(size=8, face="bold"), strip.text = element_text(size=8, face="bold")) +
+      ggplot2::theme(axis.text=ggplot2::element_text(size=6),
+                     axis.title=ggplot2::element_text(size=8, face="bold"),
+                     strip.text = ggplot2::element_text(size=8, face="bold")) +
       ggplot2::xlab(NULL) +
       ggplot2::ylab("Density") +
       ggplot2::facet_wrap(~variable, scales = 'free')
@@ -71,11 +75,16 @@ plotParam <- function(estParam.out, annot=TRUE) {
       ggplot2::stat_density2d(geom="tile", aes(fill=..density..^0.25, alpha=ifelse(..density..^0.15<0.4,0,1)), contour=FALSE) +
       ggplot2::scale_fill_gradientn(colours = colorRampPalette(c("white", blues9))(256)) +
       ggplot2::geom_hline(yintercept = log2(estParam.out$common.dispersion), linetype = 2, colour="grey40") +
-      ggplot2::geom_line(aes(x=estParam.out$meandispfit$x, y=estParam.out$meandispfit$y), linetype=1, size=1.5, colour="orange") +
-      ggplot2::geom_line(aes(x=estParam.out$meandispfit$x, y=estParam.out$meandispfit$upper), linetype=2, size=1, colour="orange") +
-      ggplot2::geom_line(aes(x=estParam.out$meandispfit$x, y=estParam.out$meandispfit$lower), linetype=2, size=1, colour="orange") +
-      ggplot2::labs(y=expression(bold(paste(Log[2], " Dispersion", sep=""))), x=expression(bold(paste(Log[2], " (Mean)")))) +
-      ggplot2::theme(legend.position='none', axis.text=element_text(size=6), axis.title=element_text(size=8, face="bold"))
+      ggplot2::geom_line(aes(x=estParam.out$meandispfit$x, y=estParam.out$meandispfit$y),
+                         linetype=1, size=1.5, colour="orange") +
+      ggplot2::geom_line(aes(x=estParam.out$meandispfit$x, y=estParam.out$meandispfit$upper),
+                         linetype=2, size=1, colour="orange") +
+      ggplot2::geom_line(aes(x=estParam.out$meandispfit$x, y=estParam.out$meandispfit$lower),
+                         linetype=2, size=1, colour="orange") +
+      ggplot2::labs(y=expression(bold(paste(Log[2], " Dispersion", sep=""))),
+                    x=expression(bold(paste(Log[2], " (Mean)")))) +
+      ggplot2::theme(legend.position='none', axis.text=ggplot2::element_text(size=6),
+                     axis.title=ggplot2::element_text(size=8, face="bold"))
     # mean vs p0 plot
     meanvsp0.dat <- data.frame(Means=log2(estParam.out$means+1),
                                Dropout=estParam.out$p0)
@@ -83,13 +92,17 @@ plotParam <- function(estParam.out, annot=TRUE) {
       ggplot2::theme_classic() +
       ggplot2::stat_density2d(geom="tile", aes(fill=..density..^0.25, alpha=1), contour=FALSE) +
       ggplot2::geom_point(size=0.5) +
-      ggplot2::stat_density2d(geom="tile", aes(fill=..density..^0.25, alpha=ifelse(..density..^0.15<0.4,0,1)), contour=FALSE) +
+      ggplot2::stat_density2d(geom="tile", aes(fill=..density..^0.25,
+                                               alpha=ifelse(..density..^0.15<0.4,0,1)), contour=FALSE) +
       ggplot2::scale_fill_gradientn(colours = colorRampPalette(c("white", blues9))(256))+
       ylim(c(0,1)) +
       ggplot2::labs(y="Dropout Fraction", x=expression(bold(paste(Log[2], " (Mean)")))) +
-      ggplot2::theme(legend.position='none', axis.text=element_text(size=6), axis.title=element_text(size=8, face="bold"))
+      ggplot2::theme(legend.position='none', axis.text=ggplot2::element_text(size=6),
+                     axis.title=ggplot2::element_text(size=8, face="bold"))
     if(estParam.out$RNAseq=="bulk" && !is.null(estParam.out$p0.cut)) {
-      meanvsp0.plot <- meanvsp0.plot + ggplot2::annotate("rect", xmin=0, ymax=1, ymin=0, xmax=estParam.out$p0.cut+1, fill="red", alpha=0.2)
+      meanvsp0.plot <- meanvsp0.plot + ggplot2::annotate("rect", xmin=0, ymax=1,
+                                                         ymin=0, xmax=estParam.out$p0.cut+1,
+                                                         fill="red", alpha=0.2)
     }
 
     top_row <- suppressWarnings(cowplot::plot_grid(libsize.plot,sf.plot,
@@ -123,7 +136,8 @@ plotParam <- function(estParam.out, annot=TRUE) {
       ggplot2::theme_minimal() +
       ggplot2::geom_density() +
       ggplot2::geom_vline(xintercept = median(lib.size.dat$Seqdepth), linetype = 2, colour="grey40") +
-      ggplot2::theme(axis.text=element_text(size=6), axis.title=element_text(size=8, face="bold")) +
+      ggplot2::theme(axis.text=ggplot2::element_text(size=6),
+                     axis.title=ggplot2::element_text(size=8, face="bold")) +
       ggplot2::xlab("Sequencing Depth") +
       ggplot2::ylab("Density") +
       ggplot2::scale_x_continuous(labels=.plain)
@@ -133,7 +147,8 @@ plotParam <- function(estParam.out, annot=TRUE) {
       ggplot2::theme_minimal() +
       ggplot2::geom_density() +
       ggplot2::geom_vline(xintercept = median(sf.dat$SizeFactor), linetype = 2, colour="grey40") +
-      ggplot2::theme(axis.text=element_text(size=6), axis.title=element_text(size=8, face="bold")) +
+      ggplot2::theme(axis.text=ggplot2::element_text(size=6),
+                     axis.title=ggplot2::element_text(size=8, face="bold")) +
       ggplot2::xlab("Library Size Factor") +
       ggplot2::ylab("Density") +
       ggplot2::scale_x_continuous(labels=.plain)
@@ -145,7 +160,9 @@ plotParam <- function(estParam.out, annot=TRUE) {
     margs.plot <- ggplot2::ggplot(margs.dat, aes(value)) +
       ggplot2::theme_minimal() +
       ggplot2::geom_density() +
-      ggplot2::theme(axis.text=element_text(size=6), axis.title=element_text(size=8, face="bold"), strip.text = element_text(size=8, face="bold")) +
+      ggplot2::theme(axis.text=ggplot2::element_text(size=6),
+                     axis.title=ggplot2::element_text(size=8, face="bold"),
+                     strip.text = ggplot2::element_text(size=8, face="bold")) +
       ggplot2::xlab(NULL) +
       ggplot2::ylab("Density") +
       ggplot2::facet_wrap(~variable, scales = 'free')
@@ -156,24 +173,34 @@ plotParam <- function(estParam.out, annot=TRUE) {
       ggplot2::theme_classic() +
       ggplot2::stat_density2d(geom="tile", aes(fill=..density..^0.25, alpha=1), contour=FALSE) +
       ggplot2::geom_point(size=0.5) +
-      ggplot2::stat_density2d(geom="tile", aes(fill=..density..^0.25, alpha=ifelse(..density..^0.15<0.4,0,1)), contour=FALSE) +
+      ggplot2::stat_density2d(geom="tile", aes(fill=..density..^0.25,
+                                               alpha=ifelse(..density..^0.15<0.4,0,1)), contour=FALSE) +
       ggplot2::scale_fill_gradientn(colours = colorRampPalette(c("white", blues9))(256)) +
-      ggplot2::geom_hline(yintercept = log2(estParam.out$common.dispersion), linetype = 2, colour="grey40") +
-      ggplot2::geom_line(aes(x=estParam.out$meandispfit$x, y=estParam.out$meandispfit$y), linetype=1, size=1.5, colour="orange") +
-      ggplot2::geom_line(aes(x=estParam.out$meandispfit$x, y=estParam.out$meandispfit$upper), linetype=2, size=1, colour="orange") +
-      ggplot2::geom_line(aes(x=estParam.out$meandispfit$x, y=estParam.out$meandispfit$lower), linetype=2, size=1, colour="orange") +
-      ggplot2::labs(y=expression(bold(paste(Log[2], " Dispersion", sep=""))), x=expression(bold(paste(Log[2], " (Mean)")))) +
-      ggplot2::theme(legend.position='none', axis.text=element_text(size=6), axis.title=element_text(size=8, face="bold"))
+      ggplot2::geom_hline(yintercept = log2(estParam.out$common.dispersion),
+                          linetype = 2, colour="grey40") +
+      ggplot2::geom_line(aes(x=estParam.out$meandispfit$x, y=estParam.out$meandispfit$y),
+                         linetype=1, size=1.5, colour="orange") +
+      ggplot2::geom_line(aes(x=estParam.out$meandispfit$x, y=estParam.out$meandispfit$upper),
+                         linetype=2, size=1, colour="orange") +
+      ggplot2::geom_line(aes(x=estParam.out$meandispfit$x, y=estParam.out$meandispfit$lower),
+                         linetype=2, size=1, colour="orange") +
+      ggplot2::labs(y=expression(bold(paste(Log[2], " Dispersion", sep=""))),
+                    x=expression(bold(paste(Log[2], " (Mean)")))) +
+      ggplot2::theme(legend.position='none', axis.text=ggplot2::element_text(size=6),
+                     axis.title=ggplot2::element_text(size=8, face="bold"))
     # mean vs p0 plot
     meanvsp0.dat <- data.frame(Means=log2(estParam.out$means+1),
                                 Dropout=estParam.out$p0)
     meanvsp0.plot <- ggplot2::ggplot(data=meanvsp0.dat, aes(x=Means, y=Dropout)) +
       ggplot2::theme_classic() +
-      ggplot2::stat_density2d(geom="tile", aes(fill=..density..^0.25, alpha=1), contour=FALSE) + ggplot2::geom_point(size=0.5) +
+      ggplot2::stat_density2d(geom="tile", aes(fill=..density..^0.25, alpha=1), contour=FALSE) +
+      ggplot2::geom_point(size=0.5) +
       ggplot2::stat_density2d(geom="tile", aes(fill=..density..^0.25, alpha=ifelse(..density..^0.15<0.4,0,1)), contour=FALSE) +
       ggplot2::scale_fill_gradientn(colours = colorRampPalette(c("white", blues9))(256))+ ylim(c(0,1)) +
       ggplot2::labs(y="Dropout Fraction", x=expression(bold(paste(Log[2], " (Mean)")))) +
-      ggplot2::theme(legend.position='none', axis.text=element_text(size=6), axis.title=element_text(size=8, face="bold"))
+      ggplot2::theme(legend.position='none',
+                     axis.text=ggplot2::element_text(size=6),
+                     axis.title=ggplot2::element_text(size=8, face="bold"))
 
     top_row <- suppressWarnings(cowplot::plot_grid(libsize.plot,
                                                    sf.plot,
@@ -207,11 +234,11 @@ plotParam <- function(estParam.out, annot=TRUE) {
 
 
 # plotEvalRes -------------------------------------------------------------
-#' @name plotEvalRes
-#' @aliases plotEvalRes
+#' @name plotEvalDE
+#' @aliases plotEvalDE
 #' @title Visualize power assessment
 #' @description This function plots the results of \code{\link{evaluateDE}} for assessing the error rates and sample size requirements.
-#' @usage plotEvalRes(evalRes, rate=c('marginal', 'stratified'),
+#' @usage plotEvalDE(evalRes, rate=c('marginal', 'stratified'),
 #'                    quick=TRUE, annot=TRUE)
 #' @param evalRes The output of \code{\link{evaluateDE}}.
 #' @param rate Character vector defining whether the marginal or condtional rates should be plotted. Conditional depends on the choice of stratify.by in \code{\link{evaluateDE}}.
@@ -237,9 +264,9 @@ plotParam <- function(estParam.out, annot=TRUE) {
 #' @importFrom cowplot plot_grid add_sub ggdraw
 #' @importFrom dplyr group_by summarise ungroup
 #' @importFrom tidyr %>%
-#' @rdname plotEvalRes
+#' @rdname plotEvalDE
 #' @export
-plotEvalRes <- function(evalRes, rate=c('marginal', 'stratified'), quick=TRUE, annot=TRUE) {
+plotEvalDE <- function(evalRes, rate=c('marginal', 'stratified'), quick=TRUE, annot=TRUE) {
 
   # marginal rates over sample sizes
   if(rate=='marginal') {
@@ -252,9 +279,9 @@ plotEvalRes <- function(evalRes, rate=c('marginal', 'stratified'), quick=TRUE, a
       dat.marginal.calc <- dat.marginal.long %>% dplyr::group_by(Var1, L1) %>% dplyr::summarise(Expectation=mean(value), Deviation=sd(value), Error=sd(value)/sqrt(n())) %>% dplyr::ungroup()
       limits <- ggplot2::aes(ymax = Expectation + Deviation, ymin= Expectation - Deviation)
       # marginal in one
-      grandplot <- ggplot2::ggplot(data = dat.marginal.long, aes(x=Var1, y=value, fill=L1)) + ggplot2::geom_boxplot() + ggthemes::theme_base() + ggplot2::xlab(NULL) + ggplot2::ylab('Rate') + ggplot2::scale_y_continuous(labels = scales::percent, limits = c(0,1)) + ggplot2::theme(legend.position='top', legend.title = element_blank(), axis.text.x=element_text(size=10, angle=45, hjust=1), axis.text.y=element_text(size=10), axis.title=element_text(size=10, face="bold"), legend.text = element_text(size=10), legend.key.size = unit(1, "cm"))
+      grandplot <- ggplot2::ggplot(data = dat.marginal.long, aes(x=Var1, y=value, fill=L1)) + ggplot2::geom_boxplot() + ggthemes::theme_base() + ggplot2::xlab(NULL) + ggplot2::ylab('Rate') + ggplot2::scale_y_continuous(labels = scales::percent, limits = c(0,1)) + ggplot2::theme(legend.position='top', legend.title = element_blank(), axis.text.x=ggplot2::element_text(size=10, angle=45, hjust=1), axis.text.y=ggplot2::element_text(size=10), axis.title=ggplot2::element_text(size=10, face="bold"), legend.text = ggplot2::element_text(size=10), legend.key.size = unit(1, "cm"))
       # faceted marginal
-      facetplot <-  ggplot2::ggplot(data = dat.marginal.calc, aes(x=Var1, y=Expectation, fill=L1, color=L1)) + ggplot2::geom_line(aes(group=L1)) + ggplot2::geom_pointrange(limits) + ggthemes::theme_base() + ggplot2::xlab('Samples') + ggplot2::ylab('Rate') + ggplot2::scale_y_continuous(labels = scales::percent) + ggplot2::theme(legend.position='none', legend.title = element_blank(), axis.text.x=element_text(size=10, angle=45, hjust=1), axis.text.y=element_text(size=10), axis.title=element_text(size=10, face="bold"), legend.text = element_text(size=10), legend.key.size = unit(1, "cm"), strip.text = element_text(size=10, face="bold")) + ggplot2::facet_wrap(~L1, scales = 'free', ncol=1) + ggplot2::geom_hline(data = refval, aes(yintercept = ref), linetype="dashed", color='grey')
+      facetplot <-  ggplot2::ggplot(data = dat.marginal.calc, aes(x=Var1, y=Expectation, fill=L1, color=L1)) + ggplot2::geom_line(aes(group=L1)) + ggplot2::geom_pointrange(limits) + ggthemes::theme_base() + ggplot2::xlab('Samples') + ggplot2::ylab('Rate') + ggplot2::scale_y_continuous(labels = scales::percent) + ggplot2::theme(legend.position='none', legend.title = element_blank(), axis.text.x=ggplot2::element_text(size=10, angle=45, hjust=1), axis.text.y=ggplot2::element_text(size=10), axis.title=ggplot2::element_text(size=10, face="bold"), legend.text = ggplot2::element_text(size=10), legend.key.size = unit(1, "cm"), strip.text = ggplot2::element_text(size=10, face="bold")) + ggplot2::facet_wrap(~L1, scales = 'free', ncol=1) + ggplot2::geom_hline(data = refval, aes(yintercept = ref), linetype="dashed", color='grey')
       # annotation under plot
       p.final <- suppressWarnings(cowplot::plot_grid(grandplot, facetplot, labels=c('A', 'B'), rel_heights = c(1,1.5), ncol=1, nrow=2))
       if(annot) {
@@ -271,9 +298,9 @@ plotEvalRes <- function(evalRes, rate=c('marginal', 'stratified'), quick=TRUE, a
       dat.marginal.calc <- dat.marginal.long %>% dplyr::group_by(Var1, L1) %>% dplyr::summarise(Expectation=mean(value), Deviation=sd(value), Error=sd(value)/sqrt(n())) %>% dplyr::ungroup()
       limits <- ggplot2::aes(ymax = Expectation + Deviation, ymin= Expectation - Deviation)
       # marginal in one
-      grandplot <- ggplot(data = dat.marginal.long, aes(x=Var1, y=value, fill=L1)) + ggplot2::geom_boxplot() + ggthemes::theme_base() + ggplot2::xlab(NULL) + ggplot2::ylab('Rate') + ggplot2::scale_y_continuous(labels = scales::percent, limits = c(0,1)) + ggplot2::theme(legend.position='top', legend.title = element_blank(), axis.text.x=element_text(size=10, angle=45, hjust=1), axis.text.y=element_text(size=10), axis.title=element_text(size=10, face="bold"), legend.text = element_text(size=10), legend.key.size = unit(1, "cm"))
+      grandplot <- ggplot(data = dat.marginal.long, aes(x=Var1, y=value, fill=L1)) + ggplot2::geom_boxplot() + ggthemes::theme_base() + ggplot2::xlab(NULL) + ggplot2::ylab('Rate') + ggplot2::scale_y_continuous(labels = scales::percent, limits = c(0,1)) + ggplot2::theme(legend.position='top', legend.title = element_blank(), axis.text.x=ggplot2::element_text(size=10, angle=45, hjust=1), axis.text.y=ggplot2::element_text(size=10), axis.title=ggplot2::element_text(size=10, face="bold"), legend.text = ggplot2::element_text(size=10), legend.key.size = unit(1, "cm"))
       # faceted marginal
-      facetplot <-  ggplot2::ggplot(data = dat.marginal.calc, aes(x=Var1, y=Expectation, fill=L1, color=L1)) + ggplot2::geom_line(aes(group=L1)) + ggplot2::geom_pointrange(limits) + ggthemes::theme_base() + ggplot2::xlab('Samples') + ggplot2::ylab('Rate') + ggplot2::scale_y_continuous(labels = scales::percent) + ggplot2::theme(legend.position='none', legend.title = element_blank(), axis.text.x=element_text(size=10, angle=45, hjust=1), axis.text.y=element_text(size=10), axis.title=element_text(size=10, face="bold"), legend.text = element_text(size=10), legend.key.size = unit(1, "cm"), strip.text = element_text(size=10, face="bold")) + ggplot2::facet_wrap(~L1, scales = 'free', ncol=2) + ggplot2::geom_hline(data = refval, aes(yintercept = ref), linetype="dashed", color='grey')
+      facetplot <-  ggplot2::ggplot(data = dat.marginal.calc, aes(x=Var1, y=Expectation, fill=L1, color=L1)) + ggplot2::geom_line(aes(group=L1)) + ggplot2::geom_pointrange(limits) + ggthemes::theme_base() + ggplot2::xlab('Samples') + ggplot2::ylab('Rate') + ggplot2::scale_y_continuous(labels = scales::percent) + ggplot2::theme(legend.position='none', legend.title = element_blank(), axis.text.x=ggplot2::element_text(size=10, angle=45, hjust=1), axis.text.y=ggplot2::element_text(size=10), axis.title=ggplot2::element_text(size=10, face="bold"), legend.text = ggplot2::element_text(size=10), legend.key.size = unit(1, "cm"), strip.text = ggplot2::element_text(size=10, face="bold")) + ggplot2::facet_wrap(~L1, scales = 'free', ncol=2) + ggplot2::geom_hline(data = refval, aes(yintercept = ref), linetype="dashed", color='grey')
       # annotation under plot
       p.final <- suppressWarnings(cowplot::plot_grid(grandplot, facetplot, labels=c('A', 'B'), rel_heights = c(1,2), ncol=1, nrow=2))
       if(annot) {
@@ -292,7 +319,7 @@ plotEvalRes <- function(evalRes, rate=c('marginal', 'stratified'), quick=TRUE, a
       dat.stratified.calc <- dat.stratified.long %>% dplyr::group_by(Var1, Var2, L1) %>% dplyr::summarise(Expectation=mean(value), Deviation=sd(value), Error=sd(value)/sqrt(n())) %>% dplyr::ungroup()
       limits <- aes(ymax = Expectation + Deviation, ymin= Expectation - Deviation)
       refval <- data.frame(L1 = c("FDR", "TPR"), ref = c(evalRes$alpha.nominal, 0.8))
-      facetplot <-  ggplot2::ggplot(data = dat.stratified.calc, aes(x=Var1, y=Expectation, fill=Var2, color=Var2)) + ggplot2::geom_point() + ggplot2::geom_line(aes(group=Var2)) +  ggplot2::geom_pointrange(limits) + ggthemes::theme_base() + ggplot2::xlab(NULL) + ggplot2::ylab('Rate') + ggplot2::scale_y_continuous(labels = scales::percent, limits = c(0,1)) + ggplot2::theme(legend.position='top', legend.title = element_blank(), axis.text.x=element_text(size=10, angle=45, hjust=1), axis.text.y=element_text(size=10), axis.title=element_text(size=10, face="bold"), legend.text = element_text(size=10), legend.key.size = unit(1, "cm"), strip.text = element_text(size=10, face="bold")) + ggplot2::facet_wrap(~L1, scales = 'free', ncol=2) + ggplot2::geom_hline(data = refval, aes(yintercept = ref), linetype="dashed", color='grey')
+      facetplot <-  ggplot2::ggplot(data = dat.stratified.calc, aes(x=Var1, y=Expectation, fill=Var2, color=Var2)) + ggplot2::geom_point() + ggplot2::geom_line(aes(group=Var2)) +  ggplot2::geom_pointrange(limits) + ggthemes::theme_base() + ggplot2::xlab(NULL) + ggplot2::ylab('Rate') + ggplot2::scale_y_continuous(labels = scales::percent, limits = c(0,1)) + ggplot2::theme(legend.position='top', legend.title = element_blank(), axis.text.x=ggplot2::element_text(size=10, angle=45, hjust=1), axis.text.y=ggplot2::element_text(size=10), axis.title=ggplot2::element_text(size=10, face="bold"), legend.text = ggplot2::element_text(size=10), legend.key.size = unit(1, "cm"), strip.text = ggplot2::element_text(size=10, face="bold")) + ggplot2::facet_wrap(~L1, scales = 'free', ncol=2) + ggplot2::geom_hline(data = refval, aes(yintercept = ref), linetype="dashed", color='grey')
       # strata genes
       N <- length(evalRes$n1)
       dat.genes <- list("Ngenes"=evalRes$stratagenes[,N,],'DEgenes'=evalRes$stratadiffgenes[,N,])
@@ -300,7 +327,7 @@ plotEvalRes <- function(evalRes, rate=c('marginal', 'stratified'), quick=TRUE, a
       dat.genes.long <- reshape2::melt(dat.genes)
       dat.genes.calc <- dat.genes.long %>% dplyr::group_by(Var1, L1) %>% dplyr::summarise(Expectation=mean(value), Deviation=sd(value), Error=sd(value)/sqrt(n())) %>% dplyr::ungroup()
       dodge <- ggplot2::position_dodge(width=0.9)
-      strataplot <- ggplot2::ggplot(data = dat.genes.calc, aes(x=Var1, y=Expectation, fill=L1)) + ggplot2::geom_bar(stat="identity")  + ggthemes::theme_base() + ggplot2::xlab('Stratum') + ggplot2::ylab('Count') + ggplot2::theme(legend.position='right', legend.title = element_blank(), axis.text.x=element_text(size=10, angle=45, hjust=1), axis.text.y=element_text(size=10), axis.title=element_text(size=10, face="bold"), legend.text = element_text(size=10), legend.key.size = unit(1, "cm"), strip.text = element_text(size=10)) + ggplot2::scale_fill_manual(values=c('grey', 'black'),breaks = c("DEgenes", "Ngenes"), labels = c("DE genes", "EE genes"))
+      strataplot <- ggplot2::ggplot(data = dat.genes.calc, aes(x=Var1, y=Expectation, fill=L1)) + ggplot2::geom_bar(stat="identity")  + ggthemes::theme_base() + ggplot2::xlab('Stratum') + ggplot2::ylab('Count') + ggplot2::theme(legend.position='right', legend.title = element_blank(), axis.text.x=ggplot2::element_text(size=10, angle=45, hjust=1), axis.text.y=ggplot2::element_text(size=10), axis.title=ggplot2::element_text(size=10, face="bold"), legend.text = ggplot2::element_text(size=10), legend.key.size = unit(1, "cm"), strip.text = ggplot2::element_text(size=10)) + ggplot2::scale_fill_manual(values=c('grey', 'black'),breaks = c("DEgenes", "Ngenes"), labels = c("DE genes", "EE genes"))
       # annotation under plot
       p.final <- suppressWarnings(cowplot::plot_grid(facetplot, strataplot, labels=c('A', 'B'), rel_heights = c(2,1), ncol=1, nrow=2))
       if(annot) {
@@ -315,7 +342,7 @@ plotEvalRes <- function(evalRes, rate=c('marginal', 'stratified'), quick=TRUE, a
       dat.stratified.calc <- dat.stratified.long %>% dplyr::group_by(Var1, Var2, L1) %>% dplyr::summarise(Expectation=mean(value), Deviation=sd(value), Error=sd(value)/sqrt(n())) %>% dplyr::ungroup()
       limits <- ggplot2::aes(ymax = Expectation + Deviation, ymin= Expectation - Deviation)
       refval <- data.frame(L1 = c("FDR", "TPR"), ref = c(evalRes$alpha.nominal, 0.8))
-      facetplot <-   ggplot2::ggplot(data = dat.stratified.calc, aes(x=Var1, y=Expectation, fill=Var2, color=Var2)) +  ggplot2::geom_point() + ggplot2::geom_line(aes(group=Var2)) +   ggplot2::geom_pointrange(limits) + ggthemes::theme_base() +  ggplot2::xlab(NULL) +  ggplot2::ylab('Rate') +  ggplot2::scale_y_continuous(labels = scales::percent, limits = c(0,1)) +  ggplot2::theme(legend.position='top', legend.title = element_blank(), axis.text.x=element_text(size=10, angle=45, hjust=1), axis.text.y=element_text(size=10), axis.title=element_text(size=10, face="bold"), legend.text = element_text(size=10), legend.key.size = unit(1, "cm"), strip.text = element_text(size=10, face="bold")) +  ggplot2::facet_wrap(~L1, scales = 'free_x', ncol=2) +  ggplot2::geom_hline(data = refval, aes(yintercept = ref), linetype="dashed", color='grey')
+      facetplot <-   ggplot2::ggplot(data = dat.stratified.calc, aes(x=Var1, y=Expectation, fill=Var2, color=Var2)) +  ggplot2::geom_point() + ggplot2::geom_line(aes(group=Var2)) +   ggplot2::geom_pointrange(limits) + ggthemes::theme_base() +  ggplot2::xlab(NULL) +  ggplot2::ylab('Rate') +  ggplot2::scale_y_continuous(labels = scales::percent, limits = c(0,1)) +  ggplot2::theme(legend.position='top', legend.title = element_blank(), axis.text.x=ggplot2::element_text(size=10, angle=45, hjust=1), axis.text.y=ggplot2::element_text(size=10), axis.title=ggplot2::element_text(size=10, face="bold"), legend.text = ggplot2::element_text(size=10), legend.key.size = unit(1, "cm"), strip.text = ggplot2::element_text(size=10, face="bold")) +  ggplot2::facet_wrap(~L1, scales = 'free_x', ncol=2) +  ggplot2::geom_hline(data = refval, aes(yintercept = ref), linetype="dashed", color='grey')
       # strata genes
       N <- length(evalRes$n1)
       dat.genes <- list("Ngenes"=evalRes$stratagenes[,N,],'DEgenes'=evalRes$stratadiffgenes[,N,])
@@ -323,7 +350,7 @@ plotEvalRes <- function(evalRes, rate=c('marginal', 'stratified'), quick=TRUE, a
       dat.genes.long <- reshape2::melt(dat.genes)
       dat.genes.calc <- dat.genes.long %>% dplyr::group_by(Var1, L1) %>% dplyr::summarise(Expectation=mean(value), Deviation=sd(value), Error=sd(value)/sqrt(n())) %>% dplyr::ungroup()
       dodge <-  ggplot2::position_dodge(width=0.9)
-      strataplot <-  ggplot2::ggplot(data = dat.genes.calc, aes(x=Var1, y=Expectation, fill=L1)) +  ggplot2::geom_bar(stat="identity")  + ggthemes::theme_base() +  ggplot2::xlab('Stratum') +  ggplot2::ylab('Count') +  ggplot2::theme(legend.position='right', legend.title = element_blank(), axis.text.x=element_text(size=10, angle=45, hjust=1), axis.text.y=element_text(size=10), axis.title=element_text(size=10, face="bold"), legend.text = element_text(size=10), legend.key.size = unit(1, "cm"), strip.text = element_text(size=10)) +  ggplot2::scale_fill_manual(values=c('grey', 'black'),breaks = c("DEgenes", "Ngenes"), labels = c("DE genes", "EE genes"))
+      strataplot <-  ggplot2::ggplot(data = dat.genes.calc, aes(x=Var1, y=Expectation, fill=L1)) +  ggplot2::geom_bar(stat="identity")  + ggthemes::theme_base() +  ggplot2::xlab('Stratum') +  ggplot2::ylab('Count') +  ggplot2::theme(legend.position='right', legend.title = element_blank(), axis.text.x=ggplot2::element_text(size=10, angle=45, hjust=1), axis.text.y=ggplot2::element_text(size=10), axis.title=ggplot2::element_text(size=10, face="bold"), legend.text = ggplot2::element_text(size=10), legend.key.size = unit(1, "cm"), strip.text = ggplot2::element_text(size=10)) +  ggplot2::scale_fill_manual(values=c('grey', 'black'),breaks = c("DEgenes", "Ngenes"), labels = c("DE genes", "EE genes"))
       # annotation under plot
       p.final <- suppressWarnings(cowplot::plot_grid(facetplot, strataplot, labels=c('A', 'B'), rel_heights = c(3,1), ncol=1, nrow=2))
       if(annot) {

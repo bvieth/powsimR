@@ -22,7 +22,7 @@ Precalculated negative binomial parameters for simulations are available via \ur
 }
 \examples{
 \dontrun{
-## not yet
+## for example see \\code{\\link{insilicoNBParam}}
 }
 }
 \author{

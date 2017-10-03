@@ -102,8 +102,8 @@
   if (simOptions$RNAseq == "bulk") {
     sim.data = .bulk.NB.RNAseq_counts(sim.options = simOptions,
                                       phenotype = phenotype,
-                                       modelmatrix = mod,
-                                       coef.dat=coeffs)
+                                      modelmatrix = mod,
+                                      coef.dat=coeffs)
   }
 
   sim.counts = sim.data$counts
@@ -157,7 +157,7 @@
     # size factor
     if(is.list(sim.options$size.factors)) {
       all.facs <- c(sim.options$size.factors$n1(length(which(phenotype==-1))),
-                   sim.options$size.factors$n2(length(which(phenotype==1))))
+                    sim.options$size.factors$n2(length(which(phenotype==1))))
     }
     if (sim.options$size.factors == "equal") {
       all.facs <- rep(1, nsamples)
@@ -173,7 +173,7 @@
         stop(message(paste0("You chose to draw from the given size factors,
                             however the sf vector is empty!")))
       }
-    }
+      }
 
     # effective means
     effective.means <- outer(true.means, all.facs, "*")
@@ -192,7 +192,7 @@
       nrow = ngenes,
       dimnames = list(paste0(rownames(mumat),"_", seq_len(ngenes)),
                       paste0('S', seq_len(nsamples))))
-  }
+    }
 
   if (attr(sim.options, 'param.type') == 'insilico') {
 
@@ -210,7 +210,7 @@
     # size factor
     if(is.list(sim.options$size.factors)) {
       all.facs <- c(sim.options$size.factors$n1(length(which(phenotype==-1))),
-                   sim.options$size.factors$n2(length(which(phenotype==1))))
+                    sim.options$size.factors$n2(length(which(phenotype==1))))
     }
     if (sim.options$size.factors == "equal") {
       all.facs <- rep(1, nsamples)
@@ -226,7 +226,7 @@
         stop(message(paste0("You chose to draw from the given size factors,
                             however the sf vector is empty!")))
       }
-    }
+      }
 
     # effective means
     effective.means <- outer(true.means, all.facs, "*")
@@ -242,7 +242,7 @@
     counts = matrix(stats::rnbinom(nsamples * ngenes,
                                    mu = 2 ^ mumat - 1, size = 1/disp),
                     ncol = nsamples, nrow = ngenes)
-  }
+    }
 
   return(list(counts=counts, sf=all.facs))
 }
@@ -261,7 +261,7 @@
   if (attr(sim.options, 'param.type') == 'estimated') {
 
     # make a low magnitude poisson count table
-    zerocounts = matrix(stats::rpois(ngenes*nsamples, lambda=0.2),
+    zerocounts = matrix(stats::rpois(ngenes*nsamples, lambda=0.1),
                         nrow=ngenes, ncol=nsamples)
     # estimate nb parameters of this zero count table
     zero_mus = rowMeans(zerocounts)
@@ -275,7 +275,7 @@
     index = sample(1:length(mu), size = length(mu), replace = F)
     true.means[index] = mu[index]
     names(true.means)[index] = names(mu)[index]
-    fillnames = sample(x = names(mu), size = ngenes - length(mu), replace = F)
+    fillnames = sample(x = names(mu), size = ngenes - length(mu), replace = T)
     names(true.means)[-index] = fillnames
 
     # estimate size parameter associated with true mean values
@@ -356,7 +356,7 @@
         stop(message(paste0("You chose to draw from the given size factors,
                             however the sf vector is empty!")))
       }
-    }
+      }
 
     # effective means
     effective.means <- outer(true.means, all.facs, "*")
@@ -370,7 +370,7 @@
 
     # result count matrix
     counts = matrix(stats::rnbinom(nsamples * ngenes, mu = 2 ^ mumat - 1, size = 1/disp), ncol = nsamples, nrow = ngenes)
-  }
+    }
 
   return(list(counts=counts, sf=all.facs))
 }
@@ -420,7 +420,7 @@
         stop(message(paste0("You chose to draw from the given size factors,
                             however the sf vector is empty!")))
       }
-    }
+      }
 
     # effective means
     effective.means <- outer(true.means, all.facs, "*")
@@ -534,7 +534,7 @@
                                      size = 2 ^ sizevec),
                       ncol = nsamples, nrow = ngenes)
     }
-  }
+    }
 
   dimnames(counts) <- list(paste0(rownames(mumat),"_", seq_len(ngenes)),
                            paste0('S', seq_len(nsamples)))
@@ -555,7 +555,7 @@
 
   if (attr(sim.options, 'param.type') == 'estimated') {
     # make a low magnitude poisson count table
-    zerocounts = matrix(stats::rpois(ngenes*nsamples, lambda=0.2),
+    zerocounts = matrix(stats::rpois(ngenes*nsamples, lambda=0.1),
                         nrow=ngenes, ncol=nsamples)
     # estimate nb parameters of this zero count table
     zero_mus = rowMeans(zerocounts)
@@ -569,7 +569,7 @@
     index = sample(1:length(mu), size = length(mu), replace = F)
     true.means[index] = mu[index]
     names(true.means)[index] = names(mu)[index]
-    fillnames = sample(x = names(mu), size = ngenes - length(mu), replace = F)
+    fillnames = sample(x = names(mu), size = ngenes - length(mu), replace = T)
     names(true.means)[-index] = fillnames
 
     # estimate size parameter associated with true mean values
@@ -767,7 +767,7 @@
         stop(message(paste0("You chose to draw from the given size factors,
                             however the sf vector is empty!")))
       }
-     }
+      }
 
     # effective means
     effective.means <- outer(true.means, all.facs, "*")
@@ -861,7 +861,7 @@
   if (attr(sim.options, 'param.type') == 'estimated') {
 
     # make a low magnitude poisson count table
-    zerocounts = matrix(stats::rpois(ngenes*nsamples, lambda=0.2),
+    zerocounts = matrix(stats::rpois(ngenes*nsamples, lambda=0.1),
                         nrow=ngenes, ncol=nsamples)
     # estimate nb parameters of this zero count table
     zero_mus = rowMeans(zerocounts)
@@ -875,7 +875,7 @@
     index = sample(1:length(mu), size = length(mu), replace = F)
     true.means[index] = mu[index]
     names(true.means)[index] = names(mu)[index]
-    fillnames = sample(x = names(mu), size = ngenes - length(mu), replace = F)
+    fillnames = sample(x = names(mu), size = ngenes - length(mu), replace = T)
     names(true.means)[-index] = fillnames
 
     # size factor
@@ -897,7 +897,7 @@
         stop(message(paste0("You chose to draw from the given size factors,
                             however the library size factor vector is empty!")))
       }
-    }
+      }
 
     # effective means
     effective.means <- outer(true.means, all.facs, "*")
@@ -1014,7 +1014,7 @@
         stop(message(paste0("You chose to draw from the given size factors,
                             however the sf vector is empty!")))
       }
-    }
+      }
 
     # effective means
     effective.means <- outer(true.means, all.facs, "*")
@@ -1154,7 +1154,7 @@
 
   if (attr(sim.options, 'param.type') == 'estimated') {
     # make a low magnitude poisson count table
-    zerocounts = matrix(stats::rpois(ngenes*nsamples, lambda=0.2),
+    zerocounts = matrix(stats::rpois(ngenes*nsamples, lambda=0.1),
                         nrow=ngenes, ncol=nsamples)
     # estimate nb parameters of this zero count table
     zero_mus = rowMeans(zerocounts)
@@ -1168,7 +1168,7 @@
     index = sample(1:length(mu), size = length(mu), replace = F)
     true.means[index] = mu[index]
     names(true.means)[index] = names(mu)[index]
-    fillnames = sample(x = names(mu), size = ngenes - length(mu), replace = F)
+    fillnames = sample(x = names(mu), size = ngenes - length(mu), replace = T)
     names(true.means)[-index] = fillnames
 
 
@@ -1192,7 +1192,7 @@
         stop(message(paste0("You chose to draw from the given size factors,
                             however the sf vector is empty!")))
       }
-    }
+      }
 
     # effective means
     effective.means <- outer(true.means, all.facs, "*")
@@ -1374,7 +1374,7 @@
         stop(message(paste0("You chose to draw from the given size factors,
                             however the sf vector is empty!")))
       }
-    }
+      }
 
     # effective means
     effective.means <- outer(true.means, all.facs, "*")
@@ -1393,7 +1393,7 @@
       dimnames = list(paste0(rownames(mumat),"_", seq_len(ngenes)),
                       paste0('S', seq_len(nsamples))))
     counts = p0mat * cnts
-  }
+    }
 
   if (attr(sim.options, 'param.type') == 'insilico') {
 
@@ -1438,7 +1438,7 @@
         stop(message(paste0("You chose to draw from the given size factors,
                             however the sf vector is empty!")))
       }
-    }
+      }
 
     # effective means
     effective.means <- outer(true.means, all.facs, "*")
@@ -1456,7 +1456,7 @@
                                  size = 1/disp),
                   ncol = nsamples, nrow = ngenes)
     counts = p0mat * cnts
-  }
+    }
 
   return(list(counts=counts, sf=all.facs))
 }

@@ -19,55 +19,50 @@ knitr::opts_chunk$set(
 To install powsimR, make sure you have installed the following R packages:
 
 ```{r, echo=T, eval=F, tidy=T}
-ipak <- function(pkg, repository=c("CRAN", "Bioconductor", "github")){
+ipak <- function(pkg, repository=c('CRAN', 'Bioconductor', 'github')){
   new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
   if (length(new.pkg)) {
-    if(repository=="CRAN") {
+    if(repository=='CRAN') {
       install.packages(new.pkg, dependencies = TRUE)
     }
-    if(repository=="Bioconductor") {
+    if(repository=='Bioconductor') {
       source("https://bioconductor.org/biocLite.R")
       biocLite(new.pkg, dependencies=TRUE, ask=FALSE)
     }
-    if(repository=="github") {
-      devtools::install_github(pkg, build_vignettes = FALSE)
+    if(repository=='github') {
+      devtools::install_github(pkg, build_vignettes = FALSE, dependencies=TRUE)
     }
   }
 }
 
 # CRAN PACKAGES
-cranpackages <- c("methods", "stats", "matrixStats", "moments", "minpack.lm", "glmnet", "cluster", "mclust", "MASS", "doParallel", "parallel", "snow", "reshape2", "plyr", "dplyr", "tidyr", "tibble", "data.table", "ggplot2", "ggthemes", "ggExtra", "cowplot", "scales", "fitdistrplus", "MASS", "pscl", "nonnest2", "cobs", "msir", "drc", "devtools", "XML", "splines", "gtools", "NBPSeq", "permute", "DrImpute", "VGAM")
-ipak(cranpackages, repository="CRAN")
+cranpackages <- c("methods", "stats", "matrixStats", "Rtsne", "moments", 
+                  "minpack.lm", "glmnet", "cluster", "mclust", "MASS", 
+                  "gtools", "doParallel", "parallel", "snow", "reshape2", 
+                  "plyr", "dplyr", "tidyr", "tibble", "data.table", "ggplot2", 
+                  "ggthemes", "ggExtra", "cowplot", "scales", "cobs" "msir", 
+                  "drc", "drImpute", "VGAM", "NBPSeq")
+ipak(cranpackages, repository='CRAN')
 
 # BIOCONDUCTOR
-biocpackages <- c("S4Vectors", "AnnotationDbi", "Biobase", "BiocParallel", "BiocGenerics", "BiocStyle", "SummarizedExperiment", "scater", "scran", "edgeR", "limma", "DESeq2", "baySeq", "NOISeq", "EBSeq", "DSS", "MAST", "ROTS", "IHW", "qvalue", "scDD", "monocle", "RUVSeq", "DEDS")
-ipak(biocpackages, repository="Bioconductor")
+biocpackages <- c("S4Vectors", "DEDS",   "AnnotationDbi", "Biobase", 
+                  "BiocGenerics", "SummarizedExperiment", "BiocParallel", 
+                  "RUVSeq", "scran", "scater", "Linnorm", "edgeR", "limma", 
+                  "DESeq2", "baySeq", "NOISeq", "EBSeq", "DSS", "MAST", "scde",
+                  "scDD", "ROTS", "monocle", "IHW", "qvalue")
+ipak(biocpackages, repository='Bioconductor')
 
 # GITHUB
-githubpackages <- c("hms-dbmi/scde", "nghiavtr/BPSC", "rhondabacher/SCnorm", "catavallejos/BASiCS")
-ipak(githubpackages, repository = "github")
+githubpackages <- c('nghiavtr/BPSC', 'rhondabacher/SCnorm', 
+                    'catavallejos/BASiCS')
+ipak(githubpackages, repository = 'github')
 
 ```
 
 After installing the dependencies, powsimR can be installed by using devtools as well.
 
 ```{r, echo=T, eval=F, tidy=T}
-devtools::install_github("bvieth/powsimR", build_vignettes = TRUE)
-```
-
-## Notes
-
-Please send bug reports and feature requests by opening a new issue on 
-[this page](https://github.com/bvieth/powsimR/issues).
-
-Note that the error "maximal number of DLLs reached..." might occur due to the loading of many shared objects by Bioconductor packages. Restarting the R session after installing dependencies / powsimR might be enough to handle this.
-
-Starting with R version 3.4.0, one can set the environmental variable "R_MAX_NUM_DLLS" to a higher number so that the error does not occur anymore. See `?Startup()` for more information. Add the line "R_MAX_NUM_DLLS=150" to your Renviron file located in "R_HOME/etc/" where R_HOME is the path to your R home directory. After that restart R and the change should have taken effect.
-
-```{r, echo=T, eval=F, tidy=T}
-R.home(component = "home")
-# add R_MAX_NUM_DLLS=150 to Renviron file, restart R and check
-Sys.getenv("R_MAX_NUM_DLLS")
+devtools::install_github('bvieth/powsimR', build_vignettes = TRUE, dependencies=FALSE)
 ```
 
 ## User Guide
@@ -76,7 +71,7 @@ For examples and tips on using the package, please see the vignette PDF
 [here](https://github.com/bvieth/powsimR/tree/master/vignettes/powsimR.pdf) 
 or open it in R by typing
 ```{r, echo=T, eval=F, tidy=T}
-browseVignettes("powsimR")
+browseVignettes('powsimR')
 ```
 
 ## Citation
@@ -90,9 +85,18 @@ citation("powsimR")
 powsimR is published in [Bioinformatics](https://doi.org/10.1101/117150). 
 A preprint paper describing powsimR is also on [bioRxiv](https://doi.org/10.1101/117150). 
 
+## Notes
+
+Please send bug reports and feature requests by opening a new issue on 
+[this page](https://github.com/bvieth/powsimR/issues).
+
+Note that the error "maximal number of DLLs reached..." might occur due to the loading of many shared objects by Bioconductor packages. Restarting the R session after installing dependencies / powsimR will help.
+
+Starting with R version 3.4.0, one can set the environmental variable 'R_MAX_NUM_DLLS' to a higher number. See `?Startup()` or the [vignette](https://github.com/bvieth/powsimR/tree/master/vignettes/powsimR.pdf) for more information.
+
 ## R Session Info
 
-```{r, tidy=T}
+```{r}
 sessionInfo()
 ```
 
