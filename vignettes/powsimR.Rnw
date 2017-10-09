@@ -82,12 +82,12 @@ cranpackages <- c("methods", "stats", "matrixStats", "Rtsne", "moments",
                   "minpack.lm", "glmnet", "cluster", "mclust", "MASS",
                   "gtools", "doParallel", "parallel", "snow", "reshape2",
                   "plyr", "dplyr", "tidyr", "tibble", "data.table", "ggplot2",
-                  "ggthemes", "ggExtra", "cowplot", "scales", "cobs" "msir",
-                  "drc", "drImpute", "VGAM", "NBPSeq")
+                  "ggthemes", "ggExtra", "cowplot", "scales", "cobs", "msir",
+                  "drc", "DrImpute", "VGAM", "NBPSeq")
 ipak(cranpackages, repository='CRAN')
 
 # BIOCONDUCTOR
-biocpackages <- c("S4Vectors", "DEDS", "AnnotationDbi", "Biobase",
+biocpackages <- c("S4Vectors", "DEDS",   "AnnotationDbi", "Biobase",
                   "BiocGenerics", "SummarizedExperiment", "BiocParallel",
                   "RUVSeq", "scran", "scater", "Linnorm", "edgeR", "limma",
                   "DESeq2", "baySeq", "NOISeq", "EBSeq", "DSS", "MAST", "scde",
@@ -95,7 +95,8 @@ biocpackages <- c("S4Vectors", "DEDS", "AnnotationDbi", "Biobase",
 ipak(biocpackages, repository='Bioconductor')
 
 # GITHUB
-githubpackages <- c('nghiavtr/BPSC', 'rhondabacher/SCnorm',
+githubpackages <- c('nghiavtr/BPSC',
+                    'rhondabacher/SCnorm',
                     'catavallejos/BASiCS')
 ipak(githubpackages, repository = 'github')
 @
