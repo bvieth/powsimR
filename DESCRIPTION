@@ -13,7 +13,7 @@ Imports: methods, stats, matrixStats, moments, minpack.lm, glmnet, cluster, mclu
           DESeq2, baySeq, NOISeq, NBPSeq, EBSeq, DSS, BASiCS, MAST, scde, scDD, ROTS, BPSC,
           monocle, VGAM, IHW, qvalue
 Remotes: nghiavtr/BPSC, catavallejos/BASiCS, rhondabacher/SCnorm
-Depends: R (>= 3.4.1), splines
+Depends: R (>= 3.4.0), splines
 Suggests: BiocStyle, knitr
 VignetteBuilder: knitr
 License: GPL
