@@ -40,7 +40,7 @@ cranpackages <- c("methods", "stats", "matrixStats", "Rtsne", "moments",
                   "minpack.lm", "glmnet", "cluster", "mclust", "MASS", 
                   "gtools", "doParallel", "parallel", "snow", "reshape2", 
                   "plyr", "dplyr", "tidyr", "tibble", "data.table", "ggplot2", 
-                  "ggthemes", "ggExtra", "cowplot", "scales", "cobs" "msir", 
+                  "ggthemes", "ggExtra", "cowplot", "scales", "cobs", "msir", 
                   "drc", "drImpute", "VGAM", "NBPSeq")
 ipak(cranpackages, repository='CRAN')
 
@@ -53,7 +53,8 @@ biocpackages <- c("S4Vectors", "DEDS",   "AnnotationDbi", "Biobase",
 ipak(biocpackages, repository='Bioconductor')
 
 # GITHUB
-githubpackages <- c('nghiavtr/BPSC', 'rhondabacher/SCnorm', 
+githubpackages <- c('nghiavtr/BPSC', 
+                    'rhondabacher/SCnorm', 
                     'catavallejos/BASiCS')
 ipak(githubpackages, repository = 'github')
 
@@ -62,7 +63,9 @@ ipak(githubpackages, repository = 'github')
 After installing the dependencies, powsimR can be installed by using devtools as well.
 
 ```{r, echo=T, eval=F, tidy=T}
-devtools::install_github('bvieth/powsimR', build_vignettes = TRUE, dependencies=FALSE)
+devtools::install_github('bvieth/powsimR', 
+                         build_vignettes = TRUE, 
+                         dependencies=FALSE)
 ```
 
 ## User Guide
