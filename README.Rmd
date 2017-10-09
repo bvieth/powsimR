@@ -41,7 +41,7 @@ cranpackages <- c("methods", "stats", "matrixStats", "Rtsne", "moments",
                   "gtools", "doParallel", "parallel", "snow", "reshape2", 
                   "plyr", "dplyr", "tidyr", "tibble", "data.table", "ggplot2", 
                   "ggthemes", "ggExtra", "cowplot", "scales", "cobs", "msir", 
-                  "drc", "drImpute", "VGAM", "NBPSeq")
+                  "drc", "DrImpute", "VGAM", "NBPSeq")
 ipak(cranpackages, repository='CRAN')
 
 # BIOCONDUCTOR

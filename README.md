@@ -29,7 +29,7 @@ ipak <- function(pkg, repository = c("CRAN", "Bioconductor", "github")) {
 cranpackages <- c("methods", "stats", "matrixStats", "Rtsne", "moments", "minpack.lm", 
     "glmnet", "cluster", "mclust", "MASS", "gtools", "doParallel", "parallel", 
     "snow", "reshape2", "plyr", "dplyr", "tidyr", "tibble", "data.table", "ggplot2", 
-    "ggthemes", "ggExtra", "cowplot", "scales", "cobs", "msir", "drc", "drImpute", 
+    "ggthemes", "ggExtra", "cowplot", "scales", "cobs", "msir", "drc", "DrImpute", 
     "VGAM", "NBPSeq")
 ipak(cranpackages, repository = "CRAN")
 
