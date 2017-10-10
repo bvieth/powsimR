@@ -129,11 +129,16 @@
     # define outlier cells
     libsize.drop <- scater::isOutlier(sce$total_counts, nmads=3, type="lower", log=TRUE)
     feature.drop <- scater::isOutlier(sce$total_features, nmads=3, type="lower", log=TRUE)
-    # kick out owly expressed genes
+    # kick out owly expressed genes (average expression and dropout rate considered)
     ave.counts <- scater::calcAverage(sce)
-    keep <- ave.counts >= 0.2
+    keep.ave <- ave.counts >= 0.2
+    nsamples = ncol(countData)
+    counts0 = countData == 0
+    nn0 = rowSums(!counts0)
+    p0 = (nsamples - nn0)/nsamples
+    keep.p0 <- p0 < 0.9
     # kick out features / cells that do not pass thresholds
-    sce <- sce[keep,!(libsize.drop | feature.drop)]
+    sce <- sce[(keep.ave | keep.p0), !(libsize.drop | feature.drop)]
 
     # adapt the auxillary objects
     countData <- sce@assayData$counts
