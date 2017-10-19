@@ -4,7 +4,7 @@ Title: Power Simulations for RNA-sequencing
 Description: This package provides simulation based methods for evaluating the statistical
           power to detect differential expression in bulk and single cell RNA-seq
           experiments.
-Version: 1.0.0.901
+Version: 1.0.0.902
 Imports: methods, stats, matrixStats, moments, minpack.lm, glmnet, cluster, mclust, MASS,
           S4Vectors, gtools, DEDS, AnnotationDbi, Biobase, BiocGenerics,
           SummarizedExperiment, BiocParallel, doParallel, parallel, snow, reshape2, plyr,
@@ -14,7 +14,7 @@ Imports: methods, stats, matrixStats, moments, minpack.lm, glmnet, cluster, mclu
           monocle, VGAM, IHW, qvalue
 Remotes: nghiavtr/BPSC, catavallejos/BASiCS, rhondabacher/SCnorm
 Depends: R (>= 3.4.0), splines
-Suggests: BiocStyle, knitr
+Suggests: BiocStyle, knitr, formatR
 VignetteBuilder: knitr
 License: GPL
 NeedsCompilation: no
