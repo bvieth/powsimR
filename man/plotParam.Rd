@@ -4,10 +4,10 @@
 \alias{plotParam}
 \title{Visualize}
 \usage{
-plotParam(estParam.out, annot=TRUE)
+plotParam(estParamRes, annot=TRUE)
 }
 \arguments{
-\item{estParam.out}{The output of \code{\link{estimateParam}} or a string specifying the name of precalculated estimates (see details).}
+\item{estParamRes}{The output of \code{\link{estimateParam}} or a string specifying the name of precalculated estimates (see details).}
 
 \item{annot}{A logical vector. If \code{TRUE}, a short figure legend is included.}
 }

@@ -41,40 +41,6 @@
              stringsAsFactors = F)
 }
 
-# convertToedgeR ----------------------------------------------------------
-
-#' @importFrom edgeR DGEList
-#' @importFrom scater counts sizeFactors.SCESet
-.convertToedgeR <- function(sce.dat) {
-  y <- edgeR::DGEList(counts = scater::counts(sce.dat), lib.size = colSums(scater::counts(sce.dat)))
-  sf <- scater::sizeFactors.SCESet(sce.dat)
-  if(any(sf<0)) { message('Negative size factors estimated.') }
-  sf[sf<0] <- min(sf[sf > 0])
-  nf <- log(sf/y$samples$lib.size)
-  nf <- exp(nf - mean(nf, na.rm=T))
-  y$samples$norm.factors <- nf
-  return(y)
-}
-
-# convertToDESeq ----------------------------------------------------------
-
-#' @importFrom DESeq2 DESeqDataSetFromMatrix sizeFactors
-#' @importFrom scater counts sizeFactors.SCESet
-.convertToDESeq <- function(sce.dat, coldat=NULL, designdat=NULL) {
-  if(is.null(coldat)) {
-    coldat = data.frame(grouping=rep("A", ncol(sce.dat)))
-  }
-  if(is.null(designdat)) {
-    designdat = ~1
-  }
-  dds <- DESeq2::DESeqDataSetFromMatrix(countData = scater::counts(sce.dat), colData = coldat, design = designdat)
-  sf <- scater::sizeFactors.SCESet(sce.dat)
-  if(any(sf<0)) { message('Negative size factors estimated.') }
-  sf[sf<0] <- min(sf[sf > 0])
-  DESeq2::sizeFactors(dds) <- sf
-  return(dds)
-}
-
 # Poisson Beta Moments Estimation -----------------------------------------
 
 #' @importFrom moments moment

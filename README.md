@@ -20,7 +20,7 @@ ipak <- function(pkg, repository = c("CRAN", "Bioconductor", "github")) {
             biocLite(new.pkg, dependencies = TRUE, ask = FALSE)
         }
         if (repository == "github") {
-            devtools::install_github(pkg, build_vignettes = FALSE, dependencies = TRUE)
+            devtools::install_github(new.pkg, build_vignettes = FALSE, dependencies = TRUE)
         }
     }
 }
@@ -29,8 +29,8 @@ ipak <- function(pkg, repository = c("CRAN", "Bioconductor", "github")) {
 cranpackages <- c("methods", "stats", "matrixStats", "Rtsne", "moments", "minpack.lm", 
     "glmnet", "cluster", "mclust", "MASS", "gtools", "doParallel", "parallel", 
     "snow", "reshape2", "plyr", "dplyr", "tidyr", "tibble", "data.table", "ggplot2", 
-    "ggthemes", "ggExtra", "cowplot", "scales", "cobs", "msir", "drc", "DrImpute", 
-    "VGAM", "NBPSeq")
+    "grid", "ggthemes", "ggExtra", "cowplot", "scales", "cobs", "msir", "drc", 
+    "DrImpute", "VGAM", "NBPSeq")
 ipak(cranpackages, repository = "CRAN")
 
 # BIOCONDUCTOR
@@ -50,6 +50,8 @@ After installing the dependencies, powsimR can be installed by using devtools as
 ``` r
 devtools::install_github("bvieth/powsimR", build_vignettes = TRUE, dependencies = FALSE)
 ```
+
+Some users have experienced issues installing powsimR due to Tex compilation errors. If that is the case, you can leave out building the vignette.
 
 User Guide
 ----------
