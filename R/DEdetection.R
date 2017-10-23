@@ -227,8 +227,8 @@
 # DESeq2 ------------------------------------------------------------------
 
 #' @importFrom DESeq2 DESeqDataSetFromMatrix estimateSizeFactors DESeq sizeFactors results
+#' @importMethodsFrom DESeq2 sizeFactors
 #' @importFrom BiocParallel MulticoreParam
-#' @importFrom scater sizeFactors
 #' @importFrom stats model.matrix
 .run.DESeq2 <- function(normData, countData, DEOpts, NCores) {
 
@@ -451,7 +451,6 @@
 
 #' @importFrom EBSeq MedianNorm EBTest
 #' @importFrom edgeR DGEList calcNormFactors
-#' @importFrom scater sizeFactors
 .run.EBSeq <- function(normData, countData, DEOpts) {
 
   groups <- data.frame(Group=factor(DEOpts$designs))
@@ -709,7 +708,7 @@
 # monocle -----------------------------------------------------------------
 
 #' @importFrom monocle newCellDataSet differentialGeneTest
-#' @importFrom BiocGenerics sizeFactors estimateDispersions sizeFactors<-
+#' @importFrom BiocGenerics sizeFactors estimateDispersions "sizeFactors<-"
 #' @importFrom VGAM negbinomial.size
 #' @importFrom methods new
 .run.monocle <- function(normData, countData, DEOpts, NCores) {
