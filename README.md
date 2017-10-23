@@ -107,8 +107,8 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] compiler_3.4.2  backports_1.1.0 magrittr_1.5    rprojroot_1.2  
+#>  [1] compiler_3.4.2  backports_1.1.1 magrittr_1.5    rprojroot_1.2  
 #>  [5] formatR_1.5     tools_3.4.2     htmltools_0.3.6 yaml_2.1.14    
-#>  [9] Rcpp_0.12.12    stringi_1.1.5   rmarkdown_1.6   knitr_1.17     
+#>  [9] Rcpp_0.12.13    stringi_1.1.5   rmarkdown_1.6   knitr_1.17     
 #> [13] stringr_1.2.0   digest_0.6.12   evaluate_0.10.1
 ```
