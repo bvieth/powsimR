@@ -24,7 +24,7 @@
 #' @param sim.settings This object specifies the simulation setup. This must be the return object from \code{\link{SimSetup}}.
 #' @param DEmethod A character vector specifying the DE detection method to be used.
 #' Available options are: limma-trend, limma-voom, edgeR-LRT, edgeR-QL, DESeq2,
-#' ROTS, baySeq, NOISeq, EBSeq, DSS, MAST, scde, BPSC, scDD, monocle.
+#' ROTS, baySeq, NOISeq, EBSeq, MAST, scde, BPSC, scDD, monocle.
 #' @param normalisation Normalisation method to use.
 #' Available options are:
 #' @param Preclust Whether to run a  hierarchical clustering prior to normalisation. Default is \code{FALSE}. This is implemented for scran and SCnorm.
@@ -88,7 +88,6 @@
 #' \item{baySeq}{applies differential testing as implemented in \code{\link[baySeq]{getLikelihoods}} based on negative binomial prior estimates (\code{\link[baySeq]{getPriors.NB}}).}
 #' \item{NOISeq}{applies differential testing as implemented in \code{\link[NOISeq]{noiseqbio}} based on CPM values.}
 #' \item{EBSeq}{applies differential testing as implemented in \code{\link[EBSeq]{EBTest}}.}
-#' \item{DSS}{applies differential testing as implemented in \code{\link[DSS]{waldTest}}.}
 #' \item{MAST}{applies differential testing as implemented in \code{\link[MAST]{zlm}} for zero-inflated model fitting followed by \code{\link[MAST]{lrTest}} on log2 CPM values.}
 #' \item{scde}{applies differential testing as implemented in \code{\link[scde]{scde.expression.difference}}.}
 #' \item{BPSC}{applies differential testing as implemented in \code{\link[BPSC]{BPglm}} on CPM values.}
@@ -130,11 +129,11 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
     stop(message(paste0("For the simulation of  spike-ins, fitting information is needed but there is no 'spike' object in 'sim.settings'.  Please consult the function estimateSpike for spike fitting and SimSetup for creating simulation setup object!")))
   }
 
-  if(!is.null(NCores) && DEmethod %in% c("edgeR-LRT","edgeR-QLRT", 'limma-voom', "limma-trend", "NOISeq", "DSS", "EBSeq", "ROTS")) {
+  if(!is.null(NCores) && DEmethod %in% c("edgeR-LRT","edgeR-QLRT", 'limma-voom', "limma-trend", "NOISeq", "EBSeq", "ROTS")) {
     message(paste0(DEmethod, " has no parallel computation option!"))
   }
 
-  if(sim.settings$RNAseq == "singlecell" && DEmethod %in% c("edgeR-LRT", "edgeR-QL", "limma-voom", "limma-trend", "DESeq2", "baySeq", "NOISeq", "DSS", "EBSeq")) {
+  if(sim.settings$RNAseq == "singlecell" && DEmethod %in% c("edgeR-LRT", "edgeR-QL", "limma-voom", "limma-trend", "DESeq2", "baySeq", "NOISeq", "EBSeq")) {
     message(paste0(DEmethod, " is developed for bulk RNA-seq experiments."))
   }
 

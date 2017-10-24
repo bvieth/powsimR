@@ -21,7 +21,7 @@ verbose=TRUE)
 
 \item{DEmethod}{A character vector specifying the DE detection method to be used.
 Available options are: limma-trend, limma-voom, edgeR-LRT, edgeR-QL, DESeq2,
-ROTS, baySeq, NOISeq, EBSeq, DSS, MAST, scde, BPSC, scDD, monocle.}
+ROTS, baySeq, NOISeq, EBSeq, MAST, scde, BPSC, scDD, monocle.}
 
 \item{normalisation}{Normalisation method to use.
 Available options are:}

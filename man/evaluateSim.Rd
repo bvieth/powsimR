@@ -2,23 +2,30 @@
 % Please edit documentation in R/Evaluate.R
 \name{evaluateSim}
 \alias{evaluateSim}
-\title{Compute the performance related metrics from simulation results}
+\title{Compute the performance related metrics from simulation results.}
 \usage{
-evaluateSim(simRes)
+evaluateSim(simRes, timing=TRUE)
 }
 \arguments{
 \item{simRes}{The result from \code{\link{simulateDE}} or \code{\link{simulateFlow}}.}
+
+\item{timing}{A logical vector indicating whether to summarise computational time of simulation run.
+Default is \code{TRUE}.}
 }
 \value{
 A list with the following entries:
-\item{Log2FoldChange}{The root mean square error and absolute mean error of
-log2 fold change differences between estimated LFC and simulated LFC. Furthermore, the fraction of missing estimated LFC.}
-\item{SizeFactors}{The median absolute deviation between the estimated and true size factors,
-the residual error of a robust linear model and the ratio between estimated and true size factors of the two groups.}
-\item{Clustering}{The adjusted rand index between the true group assignment and derived group assignment by clustering (only for \code{\link{simulateFlow}}).}
+\item{Log2FoldChange}{The absolute mean error (\code{MAE}), root mean square error (\code{RMSE})
+and root mean square residual error of a robust linear model (\code{rRMSE}, \code{\link[MASS]{rlm}})
+of log2 fold change differences between estimated LFC and simulated LFC.
+Furthermore, the fraction of missing entries (\code{NAFraction}) for MAE annd RMSE.}
+\item{SizeFactors}{The median absolute deviation (MAD) between the estimated and true size factors,
+the root mean square residual error of a robust linear model (rRMSE, \code{\link[MASS]{rlm}}) and
+the ratio between estimated and true size factors of the two groups (\code{GroupX}).}
+\item{Clustering}{The adjusted rand index between the true group assignment and derived group assignment
+by clustering (only for \code{\link{simulateFlow}}).}
 }
 \description{
-This function takes the simulation output from \code{\link{simulateDE}}
+This function takes the simulation output from \code{\link{simulateDE}} or \code{\link{simulateFlow}}
 and computes several metrics that give an indication of the simulation setup performance.
 }
 \examples{
@@ -30,7 +37,8 @@ and computes several metrics that give an indication of the simulation setup per
 \code{\link{estimateParam}} for negative binomial parameters,
 \code{\link{SimSetup}} and
 \code{\link{DESetup}} for setting up simulation parameters and
-\code{\link{simulateDE}} and \code{\link{simulateFlow}} for simulating differential expression.
+\code{\link{simulateDE}} for simulating differential expression and
+\code{\link{simulateFlow}} for simulating workflow.
 }
 \author{
 Beate Vieth

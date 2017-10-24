@@ -51,9 +51,6 @@
   if (DEmethod == "NOISeq") {DERes = .run.NOISeq(normData=normData,
                                                  countData=countData,
                                                  DEOpts=DEOpts)}
-  if (DEmethod == "DSS") {DERes = .run.DSS(normData=normData,
-                                           countData=countData,
-                                           DEOpts=DEOpts)}
   if (DEmethod=='EBSeq') {DERes = .run.EBSeq(normData=normData,
                                              countData=countData,
                                              DEOpts=DEOpts)}
@@ -410,42 +407,6 @@
 
   return(result)
 }
-
-
-# DSS ---------------------------------------------------------------------
-
-#' @importFrom DSS newSeqCountSet estNormFactors estDispersion waldTest
-#' @importFrom splines ns
-#' @importFrom edgeR DGEList
-.run.DSS <- function(normData, countData, DEOpts) {
-
-  sf <- normData$size.factors
-  sf[sf<0] <- min(sf[sf > 0])
-
-  # make input data set
-  designs <- ifelse(DEOpts$designs==min(DEOpts$designs), 0, 1)
-  cd <- countData
-  rownames(cd) <- NULL
-  colnames(cd) <- NULL
-  seqData <- DSS::newSeqCountSet(counts = cd, designs = designs)
-  seqData@normalizationFactor <- sf
-  seqData <- DSS::estDispersion(seqData)
-
-  # run DE detection
-  res.dss <- suppressWarnings(DSS::waldTest(seqData = seqData,
-                                            sampleA = 0, sampleB = 1))
-  res.dss <- res.dss[order(res.dss$geneIndex),]
-  pval <- res.dss$pval
-
-  # construct result data frame
-  result = data.frame(geneIndex=rownames(countData),
-                      pval=pval,
-                      fdr=rep(NA, nrow(countData)),
-                      lfc=res.dss$lfc,
-                      stringsAsFactors = F)
-  return(result)
-}
-
 
 # EBSeq -------------------------------------------------------------------
 

@@ -36,8 +36,8 @@ ipak(cranpackages, repository = "CRAN")
 # BIOCONDUCTOR
 biocpackages <- c("S4Vectors", "DEDS", "AnnotationDbi", "Biobase", "BiocGenerics", 
     "SummarizedExperiment", "BiocParallel", "RUVSeq", "scran", "scater", "Linnorm", 
-    "edgeR", "limma", "DESeq2", "baySeq", "NOISeq", "EBSeq", "DSS", "MAST", 
-    "scde", "scDD", "ROTS", "monocle", "IHW", "qvalue")
+    "edgeR", "limma", "DESeq2", "baySeq", "NOISeq", "EBSeq", "MAST", "scde", 
+    "scDD", "ROTS", "monocle", "IHW", "qvalue")
 ipak(biocpackages, repository = "Bioconductor")
 
 # GITHUB
