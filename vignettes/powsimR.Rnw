@@ -107,6 +107,8 @@ After installing the dependencies, \Rpackage{powsimR} can be installed by using 
 devtools::install_github('bvieth/powsimR',
                          build_vignettes = TRUE,
                          dependencies=FALSE)
+
+library(powsimR)
 @
 
 Some users have experienced issues installing powsimR due to Tex compilation errors. If that is the case, you can leave out building the vignette.
@@ -157,16 +159,16 @@ load('kolodziejczk_cnts.rda')
 kolodziejczk_cnts <- kolodziejczk_cnts[, grep('standard', colnames(kolodziejczk_cnts))]
 colnames(kolodziejczk_cnts) <- paste0(colnames(kolodziejczk_cnts), "_", 1:ncol(kolodziejczk_cnts))
 TwoiLIF.params <- estimateParam(countData=kolodziejczk_cnts,
-                                    batchData = NULL,
-                                    spikeData = NULL,
-                                    spikeInfo = NULL,
-                                    Lengths = NULL,
-                                    MeanFragLengths = NULL,
-                                    Distribution = 'ZINB',
-                                    RNAseq = 'singlecell',
-                                    normalisation = 'scran',
-                                    sigma = 1.96,
-                                    NCores = NULL)
+                                batchData = NULL,
+                                spikeData = NULL,
+                                spikeInfo = NULL,
+                                Lengths = NULL,
+                                MeanFragLengths = NULL,
+                                Distribution = 'ZINB',
+                                RNAseq = 'singlecell',
+                                normalisation = 'scran',
+                                sigma = 1.96,
+                                NCores = NULL)
 plotParam(TwoiLIF.params)
 @
 
@@ -179,8 +181,8 @@ We have found that the negative binomial distribution is particularly suited for
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.75\linewidth]{NBparams.jpeg}
-\caption{\textbf{Estimated parameters for Kolodziejczyk data set.} A) Sequencing depth per sample with median sequencing depth (grey dashed line). B) Library size normalisation factor per sample with median size factor (grey dashed line). C) Marginal Distribution of log2(mean), log2(dispersion) and dropout. D) Local polynomial regression fit between log2(mean) and log2(dispersion) estimates with variability band per gene (yellow). Common dispersion estimate (grey dashed line). E) Fraction of dropouts versus estimated mean expression per gene.}
+\includegraphics[width=0.95\linewidth]{NBparams.pdf}
+\caption{\textbf{Estimated parameters for Kolodziejczyk data set.} A) Sequencing depth per sample with median sequencing depth (grey dashed line). B) Library size normalisation factor per sample with median size factor (grey dashed line). C) Marginal Distribution of log2(mean), log2(dispersion) and dropout. D) Local polynomial regression fit between log2(mean) and log2(dispersion) estimates with variability band (yellow) per gene. Common dispersion estimate (grey dashed line). E) Fraction of dropouts versus estimated mean expression per gene.}
 \label{fig:NBparams}
 \end{figure}
 
@@ -195,13 +197,15 @@ We have found that the negative binomial distribution is particularly suited for
 
 Some normalisation methods can use spike-ins as part of their normalisation (SCnorm, RUV, Census). To use spike-in information in the simulations, their distributional characteristics need to be estimated. We follow the estimation and simulation framework presented in \cite{Kim2015-zo} where the variance is decomposed into shot noise and mRNA loss due to capture and sequencing efficiency. In short, the parameters for a Beta-distribution describes the RNA molecule capture efficiency and the parameters of a Gamma distribution describes the sequencing efficiency, which we can then use to simulate in silico spike-ins given a mean expression value. We assume that biological variance does not contribute to spike-in expression.
 The user needs to define the spike-in expression table and the spike-in information table (IDs, molecules, lengths per spike-in) in the function \Rfunction{estimateSpike}.
-The following formula is implemented in \Rfunction{calculateSpike} for calculating the number of molecules of spike-ins:
+The following formula can be used for calculating the number of molecules of spike-ins:
 
   \begin{displaymath}
     Y_{j} = c_{j} * V * 10^{-3} * D^{-1} * 10^{-18} * {Avogadro}, \quad j=1,\dots,92
   \end{displaymath}
 
 The number of molecules $Y_{j}$ for each ERCC spike-in species is the product of the molar concentration $c_{j}$ (attomoles per microlitre), the dilution factor $1/D$, the volume $V$ (nanolitre), Avogadros' constant ($6.02214129*10^{23}$) and conversion factors between unit scales.
+
+% The molecule calculation is implemented in \Rfunction{calculateSpike}.
 
 %If spike-ins were not added to the original experiment there is the possibility to simulate them in silico. For that, we implemented the framework presented in \cite{Qiu2017-qa}.
 
@@ -232,7 +236,7 @@ With the setup defined, the differential expression simulation is run with \Rfun
 
 \begin{description}
   \item[Replicates] The number of sample replicates per group (n1 and n2). These can be unbalanced.
-  \item[DEmethod] The differential testing method. The user can choose between 12 methods in total.  8 developed for bulk, 4 developed for single cells (see the detail section of \Rfunction{simulateDE}).
+  \item[DEmethod] The differential testing method. The user can choose between 11 methods in total.  7 developed for bulk, 4 developed for single cells (see the detail section of \Rfunction{simulateDE}).
   \item[normalisation] The normalisation method. The user can choose between 11 methods in total.  6 developed for bulk, 5 developed for single cells (see the detail section of \Rfunction{estimateParam}).
 \end{description}
 
@@ -254,7 +258,7 @@ There also additional options: Whether to apply a preprocessing step prior to no
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.6\linewidth]{lfcdist.jpeg}
+\includegraphics[width=0.8\linewidth]{lfcdist.jpeg}
 \caption{Log2 fold change examples for gamma, uniform and normal distribution}
 \label{fig:lfcs}
 \end{figure}
@@ -267,7 +271,7 @@ There also additional options: Whether to apply a preprocessing step prior to no
 \section{Evaluation}
 
 The results of differential expression simulation are evaluated with \Rfunction{evaluateDE}. We have separated the evaluation from DE detection to allow the user to evaluate power in a comprehensive way as advocated by \cite{Wu2015-uj}.
-In this function, the proporations and error rates are estimated. The rates can be stratified by mean, dispersion dropout or log fold change. Furthermore, the user can choose between different multiple testing correction methods (see \Rfunction{p.adjust.methods}, \Rfunction{ihw} in \Biocpkg{IHW} and \Rfunction{qvalue} in \Biocpkg{qvalue}). Also, the genes can be filtered by mean, dispersion or dropout. To define biologically interesting genes, a cutoff for the log2 fold change with delta can be set.
+In this function, the proportions and error rates are estimated. The rates can be stratified by mean, dispersion dropout or log fold change. Furthermore, the user can choose between different multiple testing correction methods (see \Rfunction{p.adjust.methods}, \Rfunction{ihw} in \Biocpkg{IHW} and \Rfunction{qvalue} in \Biocpkg{qvalue}). Also, the genes can be filtered by mean, dispersion or dropout. To define biologically interesting genes, a cutoff for the log2 fold change with delta can be set.
 
 With the following command we evaluate the marginal TPR and FDR conditional on the mean expression for the simulation based on Kolodziejczyk data.
 
@@ -285,7 +289,7 @@ evalDE = evaluateDE(simRes = simDE,
 
 The results of the evaluation can be plotted with \Rfunction{plotEvalDE}.
 \begin{description}
-  \item[rate] Marginal or Conditional Error Rates calculations. The conditional error rates are determined and calculated with \Rfunction{evaluateDE}. The number of genes per stratum are also summarised.
+  \item[rate] Marginal or conditional error rates calculations. The conditional error rates are determined and calculated with \Rfunction{evaluateDE}. The number of genes per stratum are also summarised.
   \item[quick] If this is set to \R{TRUE} then only the TPR and FDR will be plotted.
 \end{description}
 

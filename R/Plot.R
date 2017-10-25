@@ -80,8 +80,9 @@ plotParam <- function(estParamRes, annot=TRUE) {
                          linetype=2, size=1, colour="orange") +
       ggplot2::labs(y=expression(bold(paste(Log[2], " Dispersion", sep=""))),
                     x=expression(bold(paste(Log[2], " (Mean)")))) +
-      ggplot2::theme(legend.position='none', axis.text=ggplot2::element_text(size=8),
-                     axis.title=ggplot2::element_text(size=10, face="bold"))
+      ggplot2::theme(legend.position='none',
+                     axis.text=ggplot2::element_text(size=10),
+                     axis.title=ggplot2::element_text(size=12, face="bold"))
     # mean vs p0 plot
     meanvsp0.dat <- data.frame(Means=log2(estParamRes$means+1),
                                Dropout=estParamRes$p0)
@@ -94,8 +95,9 @@ plotParam <- function(estParamRes, annot=TRUE) {
       ggplot2::scale_fill_gradientn(colours = colorRampPalette(c("white", blues9))(256))+
       ggplot2::ylim(c(0,1)) +
       ggplot2::labs(y="Dropout Fraction", x=expression(bold(paste(Log[2], " (Mean)")))) +
-      ggplot2::theme(legend.position='none', axis.text=ggplot2::element_text(size=8),
-                     axis.title=ggplot2::element_text(size=10, face="bold"))
+      ggplot2::theme(legend.position='none',
+                     axis.text=ggplot2::element_text(size=10),
+                     axis.title=ggplot2::element_text(size=12, face="bold"))
     if(estParamRes$RNAseq=="bulk" && !is.null(estParamRes$p0.cut)) {
       meanvsp0.plot <- meanvsp0.plot + ggplot2::annotate("rect", xmin=0, ymax=1,
                                                          ymin=0, xmax=estParamRes$p0.cut+1,
@@ -181,8 +183,9 @@ plotParam <- function(estParamRes, annot=TRUE) {
                          linetype=2, size=1, colour="orange") +
       ggplot2::labs(y=expression(bold(paste(Log[2], " Dispersion", sep=""))),
                     x=expression(bold(paste(Log[2], " (Mean)")))) +
-      ggplot2::theme(legend.position='none', axis.text=ggplot2::element_text(size=6),
-                     axis.title=ggplot2::element_text(size=8, face="bold"))
+      ggplot2::theme(legend.position='none',
+                     axis.text=ggplot2::element_text(size=10),
+                     axis.title=ggplot2::element_text(size=12, face="bold"))
     # mean vs p0 plot
     meanvsp0.dat <- data.frame(Means=log2(estParamRes$means+1),
                                Dropout=estParamRes$p0)
@@ -197,8 +200,8 @@ plotParam <- function(estParamRes, annot=TRUE) {
       ggplot2::ylim(c(0,1)) +
       ggplot2::labs(y="Dropout Fraction", x=expression(bold(paste(Log[2], " (Mean)")))) +
       ggplot2::theme(legend.position='none',
-                     axis.text=ggplot2::element_text(size=6),
-                     axis.title=ggplot2::element_text(size=8, face="bold"))
+                     axis.text=ggplot2::element_text(size=10),
+                     axis.title=ggplot2::element_text(size=12, face="bold"))
 
     top_row <- suppressWarnings(cowplot::plot_grid(libsize.plot,
                                                    sf.plot,

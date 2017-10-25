@@ -127,8 +127,8 @@
     # apply quality filters
     sce <- scater::calculateQCMetrics(sce, nmads = 3)
     # define outlier cells
-    libsize.drop <- scater::isOutlier(sce$total_counts, nmads=3, type="lower", log=TRUE)
-    feature.drop <- scater::isOutlier(sce$total_features, nmads=3, type="lower", log=TRUE)
+    libsize.drop <- scater::isOutlier(sce$total_counts, nmads=3, type="both", log=TRUE)
+    feature.drop <- scater::isOutlier(sce$total_features, nmads=3, type="both", log=TRUE)
     # kick out owly expressed genes (average expression and dropout rate considered)
     ave.counts <- scater::calcAverage(sce)
     keep.ave <- ave.counts >= 0.2
