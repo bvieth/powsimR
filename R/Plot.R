@@ -280,7 +280,8 @@ plotEvalDE <- function(evalRes, rate=c('marginal', 'stratified'), quick=TRUE, an
       dat.marginal <- lapply(dat.marginal, "rownames<-", paste0(evalRes[['n1']], " vs ", evalRes[['n2']]))
       dat.marginal.long <- reshape2::melt(dat.marginal)
       refval <- data.frame(L1 = c("FDR", "TPR"), ref = c(evalRes$alpha.nominal, 0.8))
-      dat.marginal.calc <- dat.marginal.long %>% dplyr::group_by(Var1, L1) %>%
+      dat.marginal.calc <- dat.marginal.long %>%
+        dplyr::group_by(Var1, L1) %>%
         dplyr::summarise(Expectation=mean(value), Deviation=sd(value), Error=sd(value)/sqrt(n())) %>%
         dplyr::ungroup()
       limits <- ggplot2::aes(ymax = Expectation + Deviation, ymin= Expectation - Deviation)

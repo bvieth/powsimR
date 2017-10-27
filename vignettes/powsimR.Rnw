@@ -293,7 +293,7 @@ The results of the evaluation can be plotted with \Rfunction{plotEvalDE}.
   \item[quick] If this is set to \R{TRUE} then only the TPR and FDR will be plotted.
 \end{description}
 
-With the following commands, the quick marginal and conditional power assessment for the Kolodziejczyk data is plotted.
+With the following commands, the quick marginal and conditional power assessments for the Kolodziejczyk data are plotted.
 
 <<echo=TRUE,eval=FALSE>>=
 plotEvalDE(evalRes = evalDE,
@@ -304,6 +304,20 @@ plotEvalDE(evalRes = evalDE,
             rate='stratified',
             quick=TRUE, annot=TRUE)
 @
+
+% \begin{figure}[h]
+% \centering
+% \includegraphics[width=0.8\linewidth]{margpower.pdf}
+% \caption{Log2 fold change examples for gamma, uniform and normal distribution}
+% \label{fig:margpower}
+% \end{figure}
+%
+% \begin{figure}[h]
+% \centering
+% \includegraphics[width=0.8\linewidth]{condpower.pdf}
+% \caption{Log2 fold change examples for gamma, uniform and normal distribution}
+% \label{fig:condpower}
+% \end{figure}
 
 %---------------------------------------------------------
 \section{Additional Functionalities}
