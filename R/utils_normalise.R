@@ -167,9 +167,9 @@
 # scran ------------------------------------------------------
 
 #' @importFrom scran computeSumFactors
-#' @importFrom scater newSCESet
+#' @importFrom SingleCellExperiment SingleCellExperiment
 .scran.calc <- function(countData) {
-  sce <- scater::newSCESet(countData=data.frame(countData))
+  sce <- SingleCellExperiment::SingleCellExperiment(assays = list(counts = countData))
   if(ncol(countData)<=14) {
     sizes <- c(round(seq(from=2, to=trunc(ncol(countData)/2), by = 1)))
     sf <- scran::computeSumFactors(sce,
@@ -202,9 +202,9 @@
 }
 
 #' @importFrom scran computeSumFactors quickCluster
-#' @importFrom scater newSCESet
+#' @importFrom SingleCellExperiment SingleCellExperiment
 .scranclust.calc <- function(countData, PreclustNumber) {
-  sce <- scater::newSCESet(countData=data.frame(countData))
+  sce <- SingleCellExperiment::SingleCellExperiment(assays = list(counts = countData))
   if(ncol(countData)<=14) {
     clusters <- scran::quickCluster(sce, method="hclust", min.size=floor(PreclustNumber/2))
     sizes <- unique(c(round(seq(from=2, to=min(table(clusters))-1, by = 1))))

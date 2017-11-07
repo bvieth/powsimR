@@ -95,7 +95,7 @@ For \code{Linnorm}, the user can also supply \code{spikeData}.}
 (2) utilizing replicate samples, i.e. samples for which the covariates of interest are considered constant.
 This annotation is stored in \code{batchData} (\code{\link[RUVSeq]{RUVs}}).}
 \item{BASiCS}{removes technical variation by utilizing negative control genes, i.e. spike-ins stored in \code{spikeData},
-as implemented in \code{\link[BASiCS]{DenoisedCounts}}.
+as implemented in \code{\link[BASiCS]{BASiCS_DenoisedCounts}}.
 Furthermore, the molecule counts of spike-ins added to the cell lysate need to be supplied in \code{spikeInfo}.}
 \item{Census}{converts relative measures of TPM/FPKM values into mRNAs per cell (RPC) without the need of spike-in standards.
 Census at least needs \code{Lengths} for single-end data and preferably \code{MeanFragLengths} for paired-end data.

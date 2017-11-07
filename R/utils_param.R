@@ -34,7 +34,9 @@
 
 # checkup -----------------------------------------------------------------
 
-#' @importFrom scater newSCESet calculateQCMetrics isOutlier calcAverage
+#' @importFrom SingleCellExperiment SingleCellExperiment
+#' @importFrom scater calculateQCMetrics isOutlier calcAverage
+#' @importFrom BiocGenerics counts
 .run.checkup <- function(countData,
                          batchData,
                          spikeData,
@@ -111,18 +113,13 @@
   }
 
   if(RNAseq == 'singlecell') {
-    # create SCEset
+    # create SingleCellExperiment
     if(is.null(batchData)) {
-      sce <- scater::newSCESet(countData = countData,
-                               lowerDetectionLimit = 0,
-                               logExprsOffset = 1)
+      sce <- SingleCellExperiment::SingleCellExperiment(assays = list(counts = countData))
     }
     if(!is.null(batchData)) {
-      pd <- new("AnnotatedDataFrame", data = batchData)
-      sce <- scater::newSCESet(countData = countData,
-                               phenoData = pd,
-                               lowerDetectionLimit = 0,
-                               logExprsOffset = 1)
+      sce <- SingleCellExperiment::SingleCellExperiment(assays = list(counts = countData),
+                                                        colData = pd)
     }
     # apply quality filters
     sce <- scater::calculateQCMetrics(sce, nmads = 3)
@@ -141,7 +138,7 @@
     sce <- sce[(keep.ave | keep.p0), !(libsize.drop | feature.drop)]
 
     # adapt the auxillary objects
-    countData <- sce@assayData$counts
+    countData <- BiocGenerics::counts(sce)
 
     # batch
     if(!is.null(batchData)) {
@@ -170,7 +167,7 @@
               spikeData = spikeData,
               spikeInfo = spikeInfo,
               Lengths = Lengths,
-              MeanFragLengths =MeanFragLengths))
+              MeanFragLengths = MeanFragLengths))
 }
 
 
