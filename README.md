@@ -6,7 +6,14 @@ powsimR: Power analysis for bulk and single cell RNA-seq experiments
 Installation Guide
 ------------------
 
-To install powsimR, make sure you have installed the following R packages:
+You can install powsimR from GitHub using devtools:
+
+``` r
+library(devtools)
+install_github("bvieth/powsimR")
+```
+
+If the default installation does not work, you can install powsimR by first installing its dependencies:
 
 ``` r
 ipak <- function(pkg, repository = c("CRAN", "Bioconductor", "github")) {
@@ -71,7 +78,7 @@ Please use the following entry for citing powsimR.
 citation("powsimR")
 ```
 
-powsimR is published in [Bioinformatics](https://doi.org/10.1101/117150). A preprint paper describing powsimR is also on [bioRxiv](https://doi.org/10.1101/117150).
+powsimR is published in [Bioinformatics](https://doi.org/10.1101/117150). A preprint paper is also on [bioRxiv](https://doi.org/10.1101/117150).
 
 Notes
 -----
