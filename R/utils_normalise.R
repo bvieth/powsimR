@@ -26,10 +26,10 @@
                                                         batchData = batchData,
                                                         NCores = NCores)}
   if(normalisation=='SCnorm' && !is.null(PreclustNumber)) {NormData <- .SCnormclust.calc(countData = countData,
-                                                        spikeData = spikeData,
-                                                        batchData = batchData,
-                                                        PreclustNumber=PreclustNumber,
-                                                        NCores = NCores)}
+                                                                                         spikeData = spikeData,
+                                                                                         batchData = batchData,
+                                                                                         PreclustNumber=PreclustNumber,
+                                                                                         NCores = NCores)}
   if(normalisation=='Census') {NormData <- .Census.calc(countData=countData,
                                                         batchData=batchData,
                                                         Lengths=Lengths,
@@ -89,8 +89,8 @@
 #' @importFrom DESeq2 DESeqDataSetFromMatrix estimateSizeFactors counts
 .MR.calc <- function(countData) {
   dds <- suppressMessages(DESeq2::DESeqDataSetFromMatrix(countData = countData,
-                                        colData=data.frame(group=rep('A', ncol(countData))),
-                                        design=~1))
+                                                         colData=data.frame(group=rep('A', ncol(countData))),
+                                                         design=~1))
   dds <- DESeq2::estimateSizeFactors(dds, type='ratio')
   sf <- DESeq2::sizeFactors(dds)
   names(sf) <- colnames(countData)
@@ -110,7 +110,7 @@
     DESeq2::DESeqDataSetFromMatrix(countData = countData,
                                    colData=data.frame(group=rep('A', ncol(countData))),
                                    design=~1)
-    )
+  )
   dds <- DESeq2::estimateSizeFactors(dds, type='poscounts')
   sf <- DESeq2::sizeFactors(dds)
   names(sf) <- colnames(countData)
@@ -155,7 +155,8 @@
   norm.counts <- linnorm.out[!grepl(pattern="ERCC", rownames(linnorm.out)),]
   gsf <-  t(t(countData)/t(norm.counts))
   sf <- apply(gsf, 2, stats::median, na.rm=T)
-  sf <- sf - mean(sf) + 1
+  # sf <- sf - mean(sf) + 1
+  sf <- sf*length(sf)/sum(sf)
   names(sf) <- colnames(countData)
   res <- list(NormCounts=norm.counts,
               RoundNormCounts=round(norm.counts),
@@ -169,7 +170,7 @@
 #' @importFrom scran computeSumFactors
 #' @importFrom SingleCellExperiment SingleCellExperiment
 .scran.calc <- function(countData) {
-  sce <- SingleCellExperiment::SingleCellExperiment(assays = list(counts = countData))
+  sce <- SingleCellExperiment::SingleCellExperiment(assays = list(counts = as.matrix(countData)))
   if(ncol(countData)<=14) {
     sizes <- c(round(seq(from=2, to=trunc(ncol(countData)/2), by = 1)))
     sf <- scran::computeSumFactors(sce,
@@ -204,7 +205,7 @@
 #' @importFrom scran computeSumFactors quickCluster
 #' @importFrom SingleCellExperiment SingleCellExperiment
 .scranclust.calc <- function(countData, PreclustNumber) {
-  sce <- SingleCellExperiment::SingleCellExperiment(assays = list(counts = countData))
+  sce <- SingleCellExperiment::SingleCellExperiment(assays = list(counts = as.matrix(countData)))
   if(ncol(countData)<=14) {
     clusters <- scran::quickCluster(sce, method="hclust", min.size=floor(PreclustNumber/2))
     sizes <- unique(c(round(seq(from=2, to=min(table(clusters))-1, by = 1))))
@@ -330,10 +331,10 @@
   if(is.null(batchData) && !is.null(PreclustNumber)) {
     if(ncol(countData)<=5000) {
       clusters <- scran::quickCluster(cnts, method="hclust", min.size=floor(PreclustNumber/2))
-      }
+    }
     if(ncol(countData)>5000) {
       clusters <- scran::quickCluster(cnts, method="igraph", min.size=floor(PreclustNumber/2))
-      }
+    }
     cond <- as.character(clusters)
   }
 
@@ -468,10 +469,10 @@
     }
 
     rel.results <- .relative2abs(relative_cds = cds,
-                                relative_spike = ed.spike,
-                                spikeInfo = spikeInfo,
-                                verbose = verbose,
-                                cores = ncores)
+                                 relative_spike = ed.spike,
+                                 spikeInfo = spikeInfo,
+                                 verbose = verbose,
+                                 cores = ncores)
     rpc_matrix <- rel.results$norm_cds
 
     #create cell data set wih RPC
@@ -624,7 +625,7 @@
     tryCatch({
       norm_df <- data.frame(log_fpkm = log10(cell_exprs))
       res <- 10^stats::predict(molModel, type = "response",
-                        newdata = norm_df)
+                               newdata = norm_df)
     }, error = function(e) {
       rep(NA, length(cell_exprs))
     })
@@ -648,7 +649,7 @@
               kb_slope = kb_slope,
               kb_intercept = kb_intercept,
               k_b_solution = k_b_solution))
-}
+  }
 
 
 
@@ -668,14 +669,14 @@
 
     #RUVg calculation
     RUV.out = RUVSeq::RUVg(x=as.matrix(cnts),
-                            cIdx=spike,
-                            k=1,
-                            drop=0,
-                            center=TRUE,
-                            round=FALSE,
-                            epsilon=1,
-                            tolerance=1e-8,
-                            isLog=FALSE)
+                           cIdx=spike,
+                           k=1,
+                           drop=0,
+                           center=TRUE,
+                           round=FALSE,
+                           epsilon=1,
+                           tolerance=1e-8,
+                           isLog=FALSE)
   }
 
   if(!is.null(batchData) && !is.null(spikeData)) {
@@ -747,6 +748,7 @@
   # RUV proxy size factors
   gsf <-  t(t(countData)/t(normCounts))
   sf <- apply(gsf, 2, stats::median, na.rm=T)
+  sf <- sf*length(sf)/sum(sf)
   names(sf) <- colnames(countData)
   res <- list(NormCounts = normCounts,
               RoundNormCounts = round(normCounts),
@@ -775,20 +777,20 @@
 
   # perform filtering
   Filter = suppressMessages(BASiCS::BASiCS_Filter(Counts=cnts,
-                                 Tech=spike,
-                                 SpikeInput=spikeInfo$SpikeInput,
-                                 BatchInfo = cond,
-                                 MinTotalCountsPerCell = 2,
-                                 MinTotalCountsPerGene = 2,
-                                 MinCellsWithExpression = 2,
-                                 MinAvCountsPerCellsWithExpression = 2))
+                                                  Tech=spike,
+                                                  SpikeInput=spikeInfo$SpikeInput,
+                                                  BatchInfo = cond,
+                                                  MinTotalCountsPerCell = 2,
+                                                  MinTotalCountsPerGene = 2,
+                                                  MinCellsWithExpression = 2,
+                                                  MinAvCountsPerCellsWithExpression = 2))
   SpikeInfoFilter = spikeInfo[rownames(spikeInfo) %in% names(Filter$IncludeGenes)[Filter$IncludeGenes == TRUE],]
 
   invisible(utils::capture.output(
     FilterData <- BASiCS::newBASiCS_Data(Counts = Filter$Counts,
-                                 Tech = Filter$Tech,
-                                 SpikeInfo = SpikeInfoFilter,
-                                 BatchInfo = Filter$BatchInfo)
+                                         Tech = Filter$Tech,
+                                         SpikeInfo = SpikeInfoFilter,
+                                         BatchInfo = Filter$BatchInfo)
   ))
 
   # fit MCMC

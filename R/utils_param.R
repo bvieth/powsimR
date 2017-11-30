@@ -114,28 +114,17 @@
 
   if(RNAseq == 'singlecell') {
     # create SingleCellExperiment
-    if(is.null(batchData)) {
-      sce <- SingleCellExperiment::SingleCellExperiment(assays = list(counts = countData))
-    }
-    if(!is.null(batchData)) {
-      sce <- SingleCellExperiment::SingleCellExperiment(assays = list(counts = countData),
-                                                        colData = pd)
-    }
+    sce <- SingleCellExperiment::SingleCellExperiment(assays = list(counts = as.matrix(countData)))
     # apply quality filters
     sce <- scater::calculateQCMetrics(sce, nmads = 3)
     # define outlier cells
     libsize.drop <- scater::isOutlier(sce$total_counts, nmads=3, type="both", log=TRUE)
     feature.drop <- scater::isOutlier(sce$total_features, nmads=3, type="both", log=TRUE)
-    # kick out owly expressed genes (average expression and dropout rate considered)
+    # kick out owly expressed genes
     ave.counts <- scater::calcAverage(sce)
-    keep.ave <- ave.counts >= 0.2
-    nsamples = ncol(countData)
-    counts0 = countData == 0
-    nn0 = rowSums(!counts0)
-    p0 = (nsamples - nn0)/nsamples
-    keep.p0 <- p0 < 0.9
+    keep <- ave.counts >= 0.2
     # kick out features / cells that do not pass thresholds
-    sce <- sce[(keep.ave | keep.p0), !(libsize.drop | feature.drop)]
+    sce <- sce[keep,!(libsize.drop | feature.drop)]
 
     # adapt the auxillary objects
     countData <- BiocGenerics::counts(sce)
@@ -167,7 +156,7 @@
               spikeData = spikeData,
               spikeInfo = spikeInfo,
               Lengths = Lengths,
-              MeanFragLengths = MeanFragLengths))
+              MeanFragLengths =MeanFragLengths))
 }
 
 
@@ -552,3 +541,4 @@
               estG = estG)
   return(res)
 }
+

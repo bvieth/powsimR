@@ -1,27 +1,28 @@
 Package: powsimR
 Type: Package
 Title: Power Simulations for RNA-sequencing
-Description: This package provides simulation based methods for evaluating the statistical power to
-           detect differential expression in bulk and single cell RNA-seq experiments.
-Version: 1.0.0.906
-Imports: methods, stats, matrixStats, moments, minpack.lm, glmnet, cluster, mclust, MASS, S4Vectors,
-           gtools, DEDS, AnnotationDbi, Biobase, BiocGenerics, SummarizedExperiment, BiocParallel,
-           doParallel, parallel, snow, reshape2, plyr, dplyr, tidyr, tibble, data.table, ggplot2, grid,
-           ggthemes, ggExtra, cowplot, scales, cobs, msir, drc, DrImpute, RUVSeq, scran, scater,
-           SingleCellExperiment, SCnorm, Linnorm, edgeR, limma, DESeq2, baySeq, NOISeq, NBPSeq, EBSeq,
-           BASiCS, MAST, scde, scDD, ROTS, BPSC, monocle, VGAM, IHW, qvalue
+Description: This package provides simulation based methods for evaluating the statistical power
+          to detect differential expression in bulk and single cell RNA-seq experiments.
+Version: 1.0.0.907
+Imports: methods, stats, matrixStats, moments, minpack.lm, glmnet, cluster, mclust, MASS,
+          S4Vectors, gtools, DEDS, AnnotationDbi, Biobase, BiocGenerics, SummarizedExperiment,
+          BiocParallel, doParallel, parallel, snow, reshape2, plyr, dplyr, tidyr, tibble,
+          data.table, ggplot2, grid, ggthemes, ggExtra, cowplot, scales, cobs, msir, drc,
+          DrImpute, RUVSeq, scran, scater, SingleCellExperiment, SCnorm, Linnorm, edgeR, limma,
+          DESeq2, baySeq, NOISeq, NBPSeq, EBSeq, BASiCS, MAST, scde, scDD, ROTS, BPSC, monocle,
+          VGAM, IHW, qvalue
 Remotes: nghiavtr/BPSC, catavallejos/BASiCS, rhondabacher/SCnorm, bioc::S4Vectors, bioc::DEDS,
-           bioc::AnnotationDbi, bioc::Biobase, bioc::BiocGenerics, bioc::SummarizedExperiment,
-           bioc::BiocParallel, bioc::RUVSeq, bioc::scran, bioc::scater, bioc::SingleCellExperiment,
-           bioc::Linnorm, bioc::edgeR, bioc::limma, bioc::DESeq2, bioc::baySeq, bioc::NOISeq,
-           bioc::EBSeq, bioc::MAST, bioc::scde, bioc::scDD, bioc::ROTS, bioc::monocle, bioc::IHW,
-           bioc::qvalue
+          bioc::AnnotationDbi, bioc::Biobase, bioc::BiocGenerics, bioc::SummarizedExperiment,
+          bioc::BiocParallel, bioc::RUVSeq, bioc::scran, bioc::scater,
+          bioc::SingleCellExperiment, bioc::Linnorm, bioc::edgeR, bioc::limma, bioc::DESeq2,
+          bioc::baySeq, bioc::NOISeq, bioc::EBSeq, bioc::MAST, bioc::scde, bioc::scDD,
+          bioc::ROTS, bioc::monocle, bioc::IHW, bioc::qvalue
 Depends: R (>= 3.4.0)
 Suggests: BiocStyle, knitr
 VignetteBuilder: knitr
 License: GPL
 NeedsCompilation: no
 Author: Beate Vieth
-Date: 2017-11-07
+Date: 2017-11-30
 Maintainer: Beate Vieth <vieth.beate@gmail.com>
 RoxygenNote: 6.0.1
