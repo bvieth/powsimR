@@ -85,11 +85,7 @@ In addition, the user limits for open files (unix: ulimit) might have to be set 
 User Guide
 ----------
 
-For examples and tips on using the package, please see the vignette [here](https://github.com/bvieth/powsimR/tree/master/vignettes/powsimR.Rmd) or open it in R by typing
-
-``` r
-browseVignettes("powsimR")
-```
+For examples and tips on using the package, please see the vignette [here](https://github.com/bvieth/powsimR/tree/master/vignettes/powsimR.html)
 
 Citation
 --------
