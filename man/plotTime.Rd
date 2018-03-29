@@ -2,7 +2,7 @@
 % Please edit documentation in R/Plot.R
 \name{plotTime}
 \alias{plotTime}
-\title{Visualize computational time}
+\title{Visualize computational time of simulations}
 \usage{
 plotTime(simRes, Table=TRUE, annot=TRUE)
 }
