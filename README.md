@@ -78,6 +78,10 @@ library("powsimR")
 
 Some users have experienced issues installing powsimR due to Tex compilation errors. If that is the case, you can leave out building the vignette.
 
+Note that the error "maximal number of DLLs reached..." might occur due to the loading of many shared objects by Bioconductor packages. Restarting the R session after installing dependencies / powsimR will help. Starting with R version 3.4.0, one can set the environmental variable 'R\_MAX\_NUM\_DLLS' to a higher number. See `?Startup()` for more information. I recommend to increase the maximum number of DLLs that can be loaded to at least 500. The environmental variable R\_MAX\_NUM\_DLLS can be set in R\_HOME/etc/Renviron prior to starting R. For that locate the Renviron file and add the following line: R\_MAX\_NUM\_DLLS=xy where xy is the number of DLLs. On my Ubuntu machine, the Renviron file is in /usr/lib/R/etc/ and I can set it to 500. A smaller number, e.g. 300, is sufficient however.
+
+In addition, the user limits for open files (unix: ulimit) might have to be set to a higher number. For doing this on a MAC, check out this help page [here](https://gist.github.com/tombigel/d503800a282fcadbee14b537735d202c).
+
 User Guide
 ----------
 
@@ -102,10 +106,6 @@ Notes
 -----
 
 Please send bug reports and feature requests by opening a new issue on [this page](https://github.com/bvieth/powsimR/issues).
-
-Note that the error "maximal number of DLLs reached..." might occur due to the loading of many shared objects by Bioconductor packages. Restarting the R session after installing dependencies / powsimR will help.
-
-Starting with R version 3.4.0, one can set the environmental variable 'R\_MAX\_NUM\_DLLS' to a higher number. See `?Startup()` for more information.
 
 R Session Info
 --------------

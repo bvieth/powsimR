@@ -10,7 +10,7 @@ output:
     toc_float: true
     highlight: pygments
   BiocStyle::pdf_document: default
-package: powsimRDev
+package: powsimR
 bibliography: Bioc.bib
 self_contained: no
 abstract: |
@@ -37,7 +37,7 @@ knitr::opts_chunk$set(tidy.opts=list(width.cutoff=50),
 # Prerequisites {.unnumbered}
 
 `powsimR` has a number of dependencies that need to be installed before hand (see also the README file on github). I recommend to increase the maximum number of DLLs that can be loaded to at least 500. The environmental variable R\_MAX\_NUM\_DLLS can be set in R\_HOME/etc/Renviron prior to starting R (for further details see `Startup()`). For that locate the Renviron file and add the following line: R\_MAX\_NUM\_DLLS=xy where xy is the number of DLLs.
-On my Ubuntu machine, the Renviron file is in /usr/lib/R/etc/ and I can set it to 500. A smaller number, e.g. 153, is sufficient however.
+On my Ubuntu machine, the Renviron file is in /usr/lib/R/etc/ and I can set it to 500. A smaller number, e.g. 300, is sufficient however.
 
 ```{r dep, echo = TRUE, eval = FALSE, tidy = FALSE}
 ipak <- function(pkg, repository=c('CRAN', 'Bioconductor', 'github')){
@@ -86,9 +86,11 @@ After installing the dependencies, `powsimR` can be installed by using devtools 
 ```{r install, echo=TRUE, eval=FALSE, tidy=FALSE}
 devtools::install_github('bvieth/powsimR', build_vignettes = TRUE, 
                          dependencies = FALSE)
-library(powsimR)
 ```
 
+```{r load, echo=TRUE, eval=T, tidy=T}
+library(powsimR)
+```
 
 # Introduction
 
@@ -121,7 +123,6 @@ The estimates, sequencing depth and normalisation factors are plotted with `plot
 With the following command, we estimate and plot the parameters for the embryonic stem cells cultured in standard 2i+lif medium [@Kolodziejczyk2015-vn] (Figure \@ref(fig:paramsplot)). As expected for single cell RNA-seq, the variability (i.e. dispersion) and dropout rates are high. Furthermore, the dispersion strongly depends on the mean and does not level off with higher mean values.
 
 ```{r params, echo=T, eval=T, include=T}
-library("powsimRDev")
 data("kolodziejczk_cnts")
 kolodziejczk_cnts <- kolodziejczk_cnts[, grep('standard',
                                               colnames(kolodziejczk_cnts))]
