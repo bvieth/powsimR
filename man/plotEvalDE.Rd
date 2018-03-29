@@ -24,14 +24,10 @@ This function plots the results of \code{\link{evaluateDE}} for assessing the er
 }
 \examples{
 \dontrun{
-## for example simres object see \\code{\\link{simulateDE}}
-evalres <- evaluateDE(simRes=simres,
-alpha.type="adjusted",
-MTC="BH", alpha.nominal=0.1,
-stratify.by="mean", filter.by="none",
-target.by="lfc", delta=0)
-plotEvalRes(evalRes=evalres, rate ="marginal", quick=T, annot=T)
-plotEvalRes(evalRes=evalres, rate ="stratified", quick=T, annot=T)
+## using example data set
+eval.de <- evaluateDE(simRes = kolodziejczk_simDE)
+plotEvalDE(evalRes=eval.de, rate ="marginal", quick=T, annot=T)
+plotEvalDE(evalRes=eval.de, rate ="stratified", quick=T, annot=T)
 }
 }
 \author{

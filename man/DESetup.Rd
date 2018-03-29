@@ -4,28 +4,36 @@
 \alias{DESetup}
 \title{Setup options for RNA-seq count simulations.}
 \usage{
-DESetup(ngenes, nsims=25,
-p.DE=0.1, p.B=NULL,
-pLFC, bLFC=NULL, sim.seed)
+DESetup(ngenes=10000, nsims=25,
+p.DE=0.1, pLFC,
+p.B=NULL, bLFC=NULL, bPattern="uncorrelated",
+sim.seed)
 }
 \arguments{
-\item{ngenes}{Number of genes to be simulated.}
+\item{ngenes}{The total number of genes to simulate. Default is \code{10000}.}
 
 \item{nsims}{Number of simulations to run. Default is 25.}
 
-\item{p.DE}{Percentage of genes being differentially expressed (DE). Default is 10\%.}
-
-\item{p.B}{Percentage of genes being differentially expressed between batches. Default is \code{NULL}.}
+\item{p.DE}{Numeric vector between 0 and 1 representing
+the percentage of genes being differentially expressed due to phenotype,
+i.e. biological signal. Default is \code{0.1}.}
 
 \item{pLFC}{The log2 phenotypic fold change for DE genes. This can be:
 (1) a constant, e.g. 2;
 (2) a vector of values with length being number of DE genes. If the input is a vector and the length is not the number of DE genes, it will be sampled with replacement to generate log-fold change;
 (3) a function that takes an integer n, and generates a vector of length n, e.g. function(x) rnorm(x, mean=0, sd=1.5).}
 
+\item{p.B}{Numeric vector between 0 and 1 representing the percentage of genes
+being differentially expressed between batches. Default is \code{NULL}, i.e. no batch effect.}
+
 \item{bLFC}{The log2 batch fold change for all genes. This can be:
 (1) a constant, e.g. 2;
 (2) a vector of values with length being number of all genes. If the input is a vector and the length is not the number of total genes, it will be sampled with replacement to generate log2 fold changes;
-(3) a function that takes an integer n, and generates a vector of length n, e.g. function(x) rnorm(x, mean=0, sd=1.5).}
+(3) a function that takes an integer n, and generates a vector of length n, e.g. function(x) rnorm(x, mean=0, sd=1.5).
+Note that only two batches will be simulated.}
+
+\item{bPattern}{Character vector for batch effect pattern if \code{p.B} is non-null. Possible options include:
+"uncorrelated", "orthogonal" and " correlated". Default is \code{"uncorrelated"}.}
 
 \item{sim.seed}{Simulation seed.}
 }
@@ -45,10 +53,10 @@ This function generates a set of differential expressed gene IDs with associated
 }
 \examples{
 \dontrun{
-desettings <- DESetup(ngenes=10000,
-nsims=25,
-p.DE=0.2,
-pLFC=function(x) sample(c(-1,1), size=x,replace=TRUE)*rgamma(x, 3, 3))
+desettings <- DESetup(ngenes = 10000, nsims = 25,
+p.DE = 0.2, pLFC = function(x) sample(c(-1,1), size=x,replace=TRUE)*rgamma(x, 3, 3),
+p.B=0.1, bLFC = function(x) rnorm(x, mean=0, sd=1.5), bPattern="uncorrelated",
+sim.seed = 43856)
 }
 }
 \author{

@@ -1,12 +1,15 @@
-###########################################################################
-## summary of the evaluation of simulation result.
-## The input is an object from evalSim function.
-###########################################################################
-#' @name printEvalRes
-#' @aliases printEvalRes
+
+# printEvalRes ------------------------------------------------------------
+
+#' @name printEvalDE
+#' @aliases printEvalDE
 #' @title Summary table of power assessment
-#' @description This function takes as input a result object from \code{\link{evaluateDE}} and prints out a table to summarize important error-rates-related quantities. The results are marginalized, meaning that they are averaged quantities over all strata and simulations. This provides a quick view of the marginal results per sample size.
-#' @usage printEvalRes(evalRes)
+#' @description This function takes as input a result object from \code{\link{evaluateDE}}
+#' and prints out a table to summarize important error-rates-related quantities.
+#' The results are marginalized, meaning that they are averaged quantities
+#' over all strata and simulations.
+#' This provides a quick view of the marginal results per sample size.
+#' @usage printEvalDE(evalRes)
 #' @param evalRes The result object from \code{\link{evaluateDE}}.
 #' @return A matrix of results per sample size considered (rows). Columns include sample size, specified nomial type I control value (for FDR or p-values), actual error rate, marginal TPR, averaged number of true and false discoveries, and false discovery costs.
 #' @author Beate Vieth
@@ -16,9 +19,9 @@
 #' ## for example evaluation result see \code{\link{evaluateDE}}
 #' printEvalRes(evalRes=evalres)
 #' }
-#' @rdname printEvalRes
+#' @rdname printEvalDE
 #' @export
-printEvalRes <- function(evalRes) {
+printEvalDE <- function(evalRes) {
   nreps1 <- evalRes$n1
   nreps2 <- evalRes$n2
   alpha.type <- evalRes$alpha.type
@@ -45,3 +48,6 @@ printEvalRes <- function(evalRes) {
   print(signif(res,2))
   return(invisible(res))
 }
+
+
+

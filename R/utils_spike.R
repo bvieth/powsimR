@@ -106,15 +106,18 @@
 }
 
 
-# Simulating single-cell data
+# Simulating spike-in data
 #' @importFrom stats rgamma rbeta rbinom lm coefficients
 #' @importFrom minpack.lm nlsLM
 .simulateCountGenes <- function(Xi, ETheta, VTheta, EGamma, VGamma, Aij, nCell, BV) {
+
   nGenes = length(Xi)
+
   if (VGamma > 0) {
     gammaShape = EGamma^2 / VGamma
     gammaScale = VGamma / EGamma
   }
+
   if (VTheta > 0) {
     thetaA = ETheta*( (ETheta*(1-ETheta))/VTheta - 1)
     thetaB = (1-ETheta)*( (ETheta*(1-ETheta))/VTheta - 1)
@@ -124,13 +127,23 @@
   } else {
     gammaj = rep(EGamma, nCell*nGenes)
   }
+
   if (VTheta > 0) {
-    thetaj = stats::rbeta(nCell*nGenes, shape1=thetaA, shape2=thetaB)
+    thetaj = tryCatch({
+      stats::rbeta(nCell*nGenes, shape1=thetaA, shape2=thetaB)
+    }, warning = function(war) {
+      rep(ETheta, nCell*nGenes)
+    })
   } else {
     thetaj = rep(ETheta, nCell*nGenes)
   }
+
   if (sum(BV) > 0) {
-    Yi = stats::rgamma(nCell*nGenes, shape=Xi^2/BV, scale=BV/Xi)
+    Yi = tryCatch({
+      stats::rgamma(nCell*nGenes, shape=Xi^2/BV, scale=BV/Xi)
+    }, warning = function(war) {
+      Yi = rep(Xi, nCell)
+    })
   } else {
     Yi = rep(Xi, nCell)
   }

@@ -1,3 +1,7 @@
+# TODO
+# change behaviour of minus mean values
+# change the poisson filling?
+
 
 # Simulate DE between 2 groups (DE of mean) -------------------------------
 
@@ -7,19 +11,41 @@
   if(is.null(simOptions$bLFC)) {
     ## make group labels for phenotype LFC
     phenotype <- c(rep(-1, n1), rep(1, n2))
+    batch <- NULL
     ## make model matrix
     mod = stats::model.matrix(~-1 + phenotype)
     coeffs = cbind(simOptions$pLFC)
   }
 
   if(!is.null(simOptions$bLFC)) {
-    # make group labels for phenotype LFC
-    phenotype <- c(rep(-1, n1), rep(1, n2))
-    # make batch labels for batch LFC
-    batch <- rep_len(c(-1,1), n1+n2)
-    # make model matrix
-    mod = stats::model.matrix(~-1 + batch + phenotype)
-    coeffs = cbind(simOptions$bLFC, simOptions$pLFC)
+    if(simOptions$bPattern=="uncorrelated") {
+      # make group labels for phenotype LFC
+      phenotype <- c(rep(-1, n1), rep(1, n2))
+      # make batch labels for batch LFC
+      batch <- rep_len(c(-1,1), n1+n2)
+      # make model matrix
+      mod = stats::model.matrix(~-1 + phenotype + batch)
+      coeffs = cbind(simOptions$pLFC, simOptions$bLFC)
+    }
+    if(simOptions$bPattern=="orthogonal") {
+      # make group labels for phenotype LFC
+      phenotype <- c(rep(-1, n1), rep(1, n2))
+      # make batch labels for batch LFC
+      batch <-  1 - 2*rbinom(n1+n2, size=1, prob=0.5)
+      # make model matrix
+      mod = stats::model.matrix(~-1 + phenotype + batch)
+      coeffs = cbind(simOptions$pLFC, simOptions$bLFC)
+    }
+    if(simOptions$bPattern=="correlated") {
+      # make group labels for phenotype LFC
+      phenotype <- c(rep(-1, n1), rep(1, n2))
+      # make batch labels for batch LFC
+      flip <- rbinom(n1+n2, size = 1, prob = 0.9)
+      batch <- phenotype*flip + -phenotype*(1-flip)
+      # make model matrix
+      mod = stats::model.matrix(~-1 + phenotype + batch)
+      coeffs = cbind(simOptions$pLFC, simOptions$bLFC)
+    }
   }
 
   # generate read counts
@@ -110,16 +136,191 @@
   sf.value = sim.data$sf
 
   sim.counts <- apply(sim.counts,2,function(x) {storage.mode(x) <- 'integer'; x})
-  # fill in pseudonames if missing
+
+  # fill in gene pseudonames if missing (only true for in silico)
   if (is.null(rownames(sim.counts))) {
     rownames(sim.counts) <- paste0("G", 1:nrow(sim.counts))
   }
+  # add human readable sample names
   if (is.null(colnames(sim.counts))) {
-    colnames(sim.counts) <- paste0("S", 1:ncol(sim.counts))
+    if(is.null(batch)) {
+      ngroup <- c(rep('n1', n1), rep('n2', n2))
+      colnames(sim.counts) <- paste0("S", 1:ncol(sim.counts), "_", ngroup)
+    }
+    if(!is.null(batch)) {
+      ngroup <- c(rep('n1', n1), rep('n2', n2))
+      nbatch <- ifelse(batch==-1, "b1", "b2")
+      colnames(sim.counts) <- paste0("S", 1:ncol(sim.counts), "_", ngroup, "_", nbatch)
+    }
   }
 
   ## return
   list(counts = sim.counts, designs = phenotype, sf = sf.value, simOptions = simOptions)
+}
+
+
+# Simulate multiple groups ------------------------------------------------
+
+#' @importFrom stats model.matrix coef poisson sd rbinom
+.simRNAseq.multi <- function(simOptions, n, verbose) {
+
+  if(is.null(simOptions$bLFC)) {
+    ## make group labels for phenotype LFC
+    ## solve the issue by naming n!
+    phenotype <- as.factor(unlist(sapply(names(n), function(i) {rep(i, n[i])}, simplify = F, USE.NAMES = F)))
+    ## make model matrix
+    mod = stats::model.matrix(~-1 + phenotype)
+    coeffs = cbind(simOptions$pLFC)
+    batch = NULL
+  }
+
+  if(!is.null(simOptions$bLFC)) {
+    if(simOptions$bPattern=="uncorrelated") {
+      ## make group labels for phenotype LFC
+      phenotype <- as.factor(unlist(sapply(names(n), function(i) {rep(i, n[i])}, simplify = F, USE.NAMES = F)))
+      # make batch labels for batch LFC
+      batch <- as.factor(unlist(sapply(names(n), function(i) {rep_len(c(-1,1), n[i])}, simplify = F, USE.NAMES = F)))
+      # make model matrix
+      mod = stats::model.matrix(~-1 + phenotype + batch)
+      coeffs = cbind(simOptions$pLFC, simOptions$bLFC)
+    }
+    if(simOptions$bPattern=="orthogonal") {
+      ## make group labels for phenotype LFC
+      phenotype <- as.factor(unlist(sapply(names(n), function(i) {rep(i, n[i])}, simplify = F, USE.NAMES = F)))
+      # make batch labels for batch LFC
+      batch <- as.factor(unlist(sapply(names(n), function(i) {
+        1 - 2*stats::rbinom(n[i],size=1,prob=0.5)
+        }, simplify = F)))
+      # make model matrix
+      mod = stats::model.matrix(~-1 + phenotype + batch)
+      coeffs = cbind(simOptions$pLFC, simOptions$bLFC)
+    }
+    if(simOptions$bPattern=="correlated") {
+      ## make group labels for phenotype LFC
+      phenotype <- as.factor(unlist(sapply(names(n), function(i) {rep(i, n[i])}, simplify = F, USE.NAMES = F)))
+      # make batch labels for batch LFC
+      flip <- stats::rbinom(sum(n), size = 1, prob = 0.9)
+      corgroup <- sample(levels(phenotype), size = 1)
+      phenogroups <- ifelse(phenotype==corgroup, -1, 1)
+      batch <- as.numeric(phenogroups)*flip + -as.numeric(phenogroups)*(1-flip)
+      # make model matrix
+      mod = stats::model.matrix(~-1 + phenotype + batch)
+      coeffs = cbind(simOptions$pLFC, simOptions$bLFC)
+    }
+  }
+
+  # generate read counts
+  if (simOptions$RNAseq == "singlecell") {
+    # take mean dispersion relationship as is
+    if (!isTRUE(simOptions$downsample)) {
+      if (verbose) {message(paste0("Predict dispersion based on true mean values.")) }
+      if (attr(simOptions, 'Distribution') == 'NB') {
+        if (!isTRUE(simOptions$geneset)) {
+          if (verbose) {message(paste0("Sampling with replace.")) }
+          sim.data = .sc.NB.SampleWReplace_counts(sim.options = simOptions,
+                                                  phenotype = phenotype,
+                                                  modelmatrix = mod,
+                                                  coef.dat=coeffs)
+        }
+        if (isTRUE(simOptions$geneset)) {
+          if (verbose) {message(paste0("Fill in with low magnitude Poisson.")) }
+          sim.data = .sc.NB.FillIn_counts(sim.options = simOptions,
+                                          phenotype = phenotype,
+                                          modelmatrix = mod,
+                                          coef.dat=coeffs)
+        }
+      }
+      if (attr(simOptions, 'Distribution') == 'ZINB') {
+        if (!isTRUE(simOptions$geneset)) {
+          if (verbose) {message(paste0("Sampling with replace.")) }
+          sim.data = .sc.ZINB.SampleWReplace_counts(sim.options = simOptions,
+                                                    phenotype = phenotype,
+                                                    modelmatrix = mod,
+                                                    coef.dat=coeffs)
+        }
+        if (isTRUE(simOptions$geneset)) {
+          if (verbose) {message(paste0("Fill in with low magnitude Poisson.")) }
+          sim.data = .sc.ZINB.FillIn_counts(sim.options = simOptions,
+                                            phenotype = phenotype,
+                                            modelmatrix = mod,
+                                            coef.dat=coeffs)
+        }
+      }
+    }
+
+    # downsample mean and then draw dispersion
+    if (isTRUE(simOptions$downsample)) {
+      if (verbose) {message(paste0("Predict dispersion based on effective mean values.")) }
+      if (attr(simOptions, 'Distribution') == 'NB') {
+        if (!isTRUE(simOptions$geneset)) {
+          if (verbose) {message(paste0("Sampling with replace.")) }
+          sim.data = .sc.NB.SampleWReplace_downsample_counts(sim.options = simOptions,
+                                                             phenotype = phenotype,
+                                                             modelmatrix = mod,
+                                                             coef.dat=coeffs)
+        }
+        if (isTRUE(simOptions$geneset)) {
+          if (verbose) {message(paste0("Fill in with low magnitude Poisson.")) }
+          sim.data = .sc.NB.FillIn_downsample_counts(sim.options = simOptions,
+                                                     phenotype = phenotype,
+                                                     modelmatrix = mod,
+                                                     coef.dat=coeffs)
+        }
+      }
+      if (attr(simOptions, 'Distribution') == 'ZINB') {
+        if (!isTRUE(simOptions$geneset)) {
+          if (verbose) {message(paste0("Sampling with replace.")) }
+          sim.data = .sc.ZINB.SampleWReplace_downsample_counts(sim.options = simOptions,
+                                                               phenotype = phenotype,
+                                                               modelmatrix = mod,
+                                                               coef.dat=coeffs)
+        }
+        if (isTRUE(simOptions$geneset)) {
+          if (verbose) {message(paste0("Fill in with low magnitude Poisson.")) }
+          sim.data = .sc.ZINB.FillIn_downsample_counts(sim.options = simOptions,
+                                                       phenotype = phenotype,
+                                                       modelmatrix = mod,
+                                                       coef.dat=coeffs)
+        }
+      }
+    }
+  }
+
+  if (simOptions$RNAseq == "bulk") {
+    sim.data = .bulk.NB.RNAseq_counts(sim.options = simOptions,
+                                      phenotype = phenotype,
+                                      modelmatrix = mod,
+                                      coef.dat=coeffs)
+  }
+
+  sim.counts = sim.data$counts
+  sf.value = sim.data$sf
+
+  sim.counts <- apply(sim.counts,2,function(x) {storage.mode(x) <- 'integer'; x})
+
+  # fill in gene pseudonames if missing (only true for in silico)
+  if (is.null(rownames(sim.counts))) {
+    rownames(sim.counts) <- paste0("G", 1:nrow(sim.counts))
+  }
+  # add human readable sample names
+  if (is.null(colnames(sim.counts))) {
+    if(is.null(batch)) {
+      ngroup <- phenotype
+      colnames(sim.counts) <- paste0("S", 1:ncol(sim.counts), "_", ngroup)
+    }
+    if(!is.null(batch)) {
+      ngroup <- phenotype
+      nbatch <- ifelse(batch==-1, "b1", "b2")
+      colnames(sim.counts) <- paste0("S", 1:ncol(sim.counts), "_", ngroup, "_", nbatch)
+    }
+  }
+
+  ## return
+  list(counts = sim.counts,
+       phenotypes = phenotype,
+       batches = batch,
+       sf = sf.value,
+       simOptions = simOptions)
 }
 
 
@@ -131,7 +332,6 @@
 .sc.NB.SampleWReplace_counts <- function(sim.options, phenotype, modelmatrix, coef.dat) {
 
   set.seed(sim.options$sim.seed)
-
 
   nsamples = nrow(modelmatrix)
   ngenes = sim.options$ngenes
@@ -191,7 +391,7 @@
       ncol = nsamples,
       nrow = ngenes,
       dimnames = list(paste0(rownames(mumat),"_", seq_len(ngenes)),
-                      paste0('S', seq_len(nsamples))))
+                      NULL))
     }
 
   if (attr(sim.options, 'param.type') == 'insilico') {
@@ -252,7 +452,6 @@
 
   set.seed(sim.options$sim.seed)
 
-
   nsamples = nrow(modelmatrix)
   ngenes = sim.options$ngenes
   mod = modelmatrix
@@ -260,23 +459,25 @@
 
   if (attr(sim.options, 'param.type') == 'estimated') {
 
-    # make a low magnitude poisson count table
-    zerocounts = matrix(stats::rpois(ngenes*nsamples, lambda=0.1),
-                        nrow=ngenes, ncol=nsamples)
-    # estimate nb parameters of this zero count table
-    zero_mus = rowMeans(zerocounts)
-    true.means = ifelse(is.na(zero_mus), 0, zero_mus)
+    # # make a low magnitude poisson count table
+    # zerocounts = matrix(stats::rpois(ngenes*nsamples, lambda=0.1),
+    #                     nrow=ngenes, ncol=nsamples)
+    # # estimate nb parameters of this zero count table
+    # zero_mus = rowMeans(zerocounts)
+    # true.means = ifelse(is.na(zero_mus), 0, zero_mus)
 
     # define NB params
     mu = sim.options$means
     meansizefit = sim.options$meansizefit
 
     # sample from the mean parameter observed
+    true.means = vector(mode = "numeric", length = ngenes)
     index = sample(1:length(mu), size = length(mu), replace = F)
     true.means[index] = mu[index]
     names(true.means)[index] = names(mu)[index]
     fillnames = sample(x = names(mu), size = ngenes - length(mu), replace = T)
     names(true.means)[-index] = fillnames
+    true.means[-index] = min(mu)/2
 
     # estimate size parameter associated with true mean values
     lmu = log2(true.means + 1)
@@ -313,6 +514,7 @@
     mod = cbind(mod[, ind])
     beta = cbind(beta[, ind])
     mumat = log2(effective.means + 1) + beta %*% t(mod)
+    mumat[-index,] = min(mu)/2
     mumat[mumat < 0] = 0
 
     # result count matrix
@@ -321,7 +523,7 @@
       ncol = nsamples,
       nrow = ngenes,
       dimnames = list(paste0(rownames(mumat),"_", seq_len(ngenes)),
-                      paste0('S', seq_len(nsamples))))
+                      NULL))
     }
 
   if (attr(sim.options, 'param.type') == 'insilico') {
@@ -379,7 +581,6 @@
 .sc.ZINB.SampleWReplace_counts <- function(sim.options, phenotype, modelmatrix, coef.dat) {
 
   set.seed(sim.options$sim.seed)
-
 
   nsamples = nrow(modelmatrix)
   ngenes = sim.options$ngenes
@@ -537,7 +738,7 @@
     }
 
   dimnames(counts) <- list(paste0(rownames(mumat),"_", seq_len(ngenes)),
-                           paste0('S', seq_len(nsamples)))
+                           NULL)
 
   return(list(counts=counts, sf=all.facs))
 }
@@ -547,30 +748,25 @@
 
   set.seed(sim.options$sim.seed)
 
-
   nsamples = nrow(modelmatrix)
   ngenes = sim.options$ngenes
   mod = modelmatrix
   beta = coef.dat
 
   if (attr(sim.options, 'param.type') == 'estimated') {
-    # make a low magnitude poisson count table
-    zerocounts = matrix(stats::rpois(ngenes*nsamples, lambda=0.1),
-                        nrow=ngenes, ncol=nsamples)
-    # estimate nb parameters of this zero count table
-    zero_mus = rowMeans(zerocounts)
-    true.means = ifelse(is.na(zero_mus), 0, zero_mus)
 
     # define NB params
     mu = sim.options$means
     meansizefit = sim.options$meansizefit
 
     # sample from the mean parameter observed
+    true.means = vector(mode = "numeric", length = ngenes)
     index = sample(1:length(mu), size = length(mu), replace = F)
     true.means[index] = mu[index]
     names(true.means)[index] = names(mu)[index]
     fillnames = sample(x = names(mu), size = ngenes - length(mu), replace = T)
     names(true.means)[-index] = fillnames
+    true.means[-index] = min(mu)/2
 
     # estimate size parameter associated with true mean values
     lmu = log2(true.means + 1)
@@ -607,6 +803,7 @@
     mod = cbind(mod[, ind])
     beta = cbind(beta[, ind])
     mumat = log2(effective.means + 1) + beta %*% t(mod)
+    mumat[-index,] = min(mu)/2
     mumat[mumat < 0] = 0
     muvec = as.vector(mumat)
 
@@ -714,7 +911,7 @@
     }
 
   dimnames(counts) <- list(paste0(rownames(mumat),"_", seq_len(ngenes)),
-                           paste0('S', seq_len(nsamples)))
+                           NULL)
 
   return(list(counts=counts, sf=all.facs))
 }
@@ -725,7 +922,6 @@
 .sc.NB.SampleWReplace_downsample_counts <- function(sim.options, phenotype, modelmatrix, coef.dat) {
 
   set.seed(sim.options$sim.seed)
-
 
   nsamples = nrow(modelmatrix)
   ngenes = sim.options$ngenes
@@ -791,7 +987,7 @@
       ncol = nsamples,
       nrow = ngenes,
       dimnames = list(paste0(rownames(mumat),"_", seq_len(ngenes)),
-                      paste0('S', seq_len(nsamples))))
+                      NULL))
     }
 
   if (attr(sim.options, 'param.type') == 'insilico') {
@@ -860,23 +1056,25 @@
 
   if (attr(sim.options, 'param.type') == 'estimated') {
 
-    # make a low magnitude poisson count table
-    zerocounts = matrix(stats::rpois(ngenes*nsamples, lambda=0.1),
-                        nrow=ngenes, ncol=nsamples)
-    # estimate nb parameters of this zero count table
-    zero_mus = rowMeans(zerocounts)
-    true.means = ifelse(is.na(zero_mus), 0, zero_mus)
+    # # make a low magnitude poisson count table
+    # zerocounts = matrix(stats::rpois(ngenes*nsamples, lambda=0.1),
+    #                     nrow=ngenes, ncol=nsamples)
+    # # estimate nb parameters of this zero count table
+    # zero_mus = rowMeans(zerocounts)
+    # true.means = ifelse(is.na(zero_mus), 0, zero_mus)
 
     # define NB params
     mu = sim.options$means
     meansizefit = sim.options$meansizefit
 
     # sample from the mean parameter observed
+    true.means = vector(mode = "numeric", length = ngenes)
     index = sample(1:length(mu), size = length(mu), replace = F)
     true.means[index] = mu[index]
     names(true.means)[index] = names(mu)[index]
     fillnames = sample(x = names(mu), size = ngenes - length(mu), replace = T)
     names(true.means)[-index] = fillnames
+    true.means[-index] = min(mu)/2
 
     # size factor
     if(is.list(sim.options$size.factors)) {
@@ -913,6 +1111,7 @@
     mod = cbind(mod[, ind])
     beta = cbind(beta[, ind])
     mumat = log2(effective.means + 1) + beta %*% t(mod)
+    mumat[-index,] = min(mu)/2
     mumat[mumat < 0] = 0
 
     # result count matrix
@@ -921,7 +1120,7 @@
       ncol = nsamples,
       nrow = ngenes,
       dimnames = list(paste0(rownames(mumat),"_", seq_len(ngenes)),
-                      paste0('S', seq_len(nsamples))))
+                      NULL))
     }
 
   if (attr(sim.options, 'param.type') == 'insilico') {
@@ -979,7 +1178,6 @@
 .sc.ZINB.SampleWReplace_downsample_counts <- function(sim.options, phenotype, modelmatrix, coef.dat) {
 
   set.seed(sim.options$sim.seed)
-
 
   nsamples = nrow(modelmatrix)
   ngenes = sim.options$ngenes
@@ -1137,7 +1335,7 @@
     }
 
   dimnames(counts) <- list(paste0(rownames(mumat),"_", seq_len(ngenes)),
-                           paste0('S', seq_len(nsamples)))
+                           NULL)
 
   return(list(counts=counts, sf=all.facs))
 }
@@ -1153,23 +1351,26 @@
   beta = coef.dat
 
   if (attr(sim.options, 'param.type') == 'estimated') {
-    # make a low magnitude poisson count table
-    zerocounts = matrix(stats::rpois(ngenes*nsamples, lambda=0.1),
-                        nrow=ngenes, ncol=nsamples)
-    # estimate nb parameters of this zero count table
-    zero_mus = rowMeans(zerocounts)
-    true.means = ifelse(is.na(zero_mus), 0, zero_mus)
+
+    # # make a low magnitude poisson count table
+    # zerocounts = matrix(stats::rpois(ngenes*nsamples, lambda=0.1),
+    #                     nrow=ngenes, ncol=nsamples)
+    # # estimate nb parameters of this zero count table
+    # zero_mus = rowMeans(zerocounts)
+    # true.means = ifelse(is.na(zero_mus), 0, zero_mus)
 
     # define NB params
     mu = sim.options$means
     meansizefit = sim.options$meansizefit
 
     # sample from the mean parameter observed
+    true.means = vector(mode = "numeric", length = ngenes)
     index = sample(1:length(mu), size = length(mu), replace = F)
     true.means[index] = mu[index]
     names(true.means)[index] = names(mu)[index]
     fillnames = sample(x = names(mu), size = ngenes - length(mu), replace = T)
     names(true.means)[-index] = fillnames
+    true.means[-index] = min(mu)/2
 
 
 
@@ -1208,6 +1409,7 @@
     mod = cbind(mod[, ind])
     beta = cbind(beta[, ind])
     mumat = log2(effective.means + 1) + beta %*% t(mod)
+    mumat[-index,] = min(mu)/2
     mumat[mumat < 0] = 0
     muvec = as.vector(mumat)
 
@@ -1315,7 +1517,7 @@
     }
 
   dimnames(counts) <- list(paste0(rownames(mumat),"_", seq_len(ngenes)),
-                           paste0('S', seq_len(nsamples)))
+                           NULL)
 
   return(list(counts=counts, sf=all.facs))
 }
@@ -1391,7 +1593,7 @@
       stats::rnbinom(nsamples * ngenes, mu = 2 ^ mumat - 1, size = 2 ^ sizevec),
       ncol = nsamples, nrow = ngenes,
       dimnames = list(paste0(rownames(mumat),"_", seq_len(ngenes)),
-                      paste0('S', seq_len(nsamples))))
+                      NULL))
     counts = p0mat * cnts
     }
 

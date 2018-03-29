@@ -13,7 +13,7 @@ MeanFragLengths = NULL,
 Distribution = c('NB', 'ZINB'),
 RNAseq = c('bulk', 'singlecell'),
 normalisation = c('TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm',
-                  'SCnorm', 'RUV', 'BASiCS', 'Census', 'depth', 'none'),
+                  'SCnorm', 'RUV', 'Census', 'depth', 'none'),
 sigma = 1.96,
 NCores = NULL,
 verbose=TRUE)
@@ -34,24 +34,24 @@ The order of columns should be the same as in the \code{countData}.}
 Rows correspond to spike-ins. The order of rows should be the same as in the \code{spikeData}.
 The column names should be 'SpikeID' and 'SpikeInput' for molecule counts of spike-ins.}
 
-\item{Lengths}{is a numeric vector of transcript lengths with the same length as rows in countData.
+\item{Lengths}{is a numeric vector of transcript lengths with the same length and order as the rows in countData.
 This variable is only used for internal TPM calculations if Census normalization is specified.}
 
 \item{MeanFragLengths}{is a numeric vector of mean fragment lengths with the same length as columns in countData.
 This variable is only used for internal TPM calculations if Census normalization is specified.}
 
-\item{Distribution}{is a character value: "NB" for negative binomial or "ZINB" for zero-inflated negative binomial.}
+\item{Distribution}{is a character value: "NB" for negative binomial or "ZINB" for zero-inflated negative binomial distribution fitting.}
 
 \item{RNAseq}{is a character value: "bulk" or "singlecell".}
 
-\item{normalisation}{is a character value: 'TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'scranCLUST',
-'SCnorm', 'RUV', 'BASiCS', 'Census', 'depth', 'none'.
+\item{normalisation}{is a character value: 'TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm',
+'SCnorm', 'RUV', 'Census', 'depth', 'none'.
 For more information, please consult the details section.}
 
-\item{sigma}{The variability band width for mean-dispersion loess fit defining the prediction interval for read cound simulation. Default is 1.96, i.e. 95\% interval. For more information see \code{\link[msir]{loess.sd}}.}
+\item{sigma}{The variability band width for mean-dispersion loess fit defining the prediction interval for read count simulation. Default is 1.96, i.e. 95\% interval. For more information see \code{\link[msir]{loess.sd}}.}
 
 \item{NCores}{The number of cores for normalisation method SCnorm and Census.
-If \code{NULL}, the number of detected cores minus 1 is used.}
+The default \code{NULL} means 1 core.}
 
 \item{verbose}{Logical value to indicate whether to print function information. Default is \code{TRUE}.}
 }
@@ -85,8 +85,7 @@ as implemented in \code{\link[edgeR]{calcNormFactors}}, respectively.}
 \item{MR, PosCounts}{employ the DESeq2 style normalization of median ratio method and a modified geometric mean method
 as implemented in \code{\link[DESeq2]{estimateSizeFactors}}, respectively.}
 \item{scran, SCnorm}{apply the deconvolution and quantile regression normalization methods developed for sparse RNA-seq data
-as implemented in \code{\link[scran]{computeSumFactors}} and \code{\link[SCnorm]{SCnorm}}, respectively.
-For \code{SCnorm}, the user can also supply \code{spikeData}.}
+as implemented in \code{\link[scran]{computeSumFactors}} and \code{\link[SCnorm]{SCnorm}}, respectively. Spike-ins can also be supplied for both methods via \code{spikeData}. Note, however that this means for scran that the normalisation as implemented in \code{\link[scran]{computeSpikeFactors}} is also applied to genes (\code{general.use=TRUE}).}
 \item{Linnorm}{apply the normalization method for sparse RNA-seq data
 as implemented in \code{\link[Linnorm]{Linnorm.Norm}}.
 For \code{Linnorm}, the user can also supply \code{spikeData}.}
@@ -94,9 +93,6 @@ For \code{Linnorm}, the user can also supply \code{spikeData}.}
 (1) utilizing negative control genes, i.e. spike-ins stored in \code{spikeData} (\code{\link[RUVSeq]{RUVg}}).
 (2) utilizing replicate samples, i.e. samples for which the covariates of interest are considered constant.
 This annotation is stored in \code{batchData} (\code{\link[RUVSeq]{RUVs}}).}
-\item{BASiCS}{removes technical variation by utilizing negative control genes, i.e. spike-ins stored in \code{spikeData},
-as implemented in \code{\link[BASiCS]{BASiCS_DenoisedCounts}}.
-Furthermore, the molecule counts of spike-ins added to the cell lysate need to be supplied in \code{spikeInfo}.}
 \item{Census}{converts relative measures of TPM/FPKM values into mRNAs per cell (RPC) without the need of spike-in standards.
 Census at least needs \code{Lengths} for single-end data and preferably \code{MeanFragLengths} for paired-end data.
 Do not use this algorithm for UMI data!}
@@ -106,6 +102,16 @@ Do not use this algorithm for UMI data!}
 }
 \examples{
 \dontrun{
+## using example data set
+data(kolodziejczk_cnts)
+kolodziejczk_estparam <- estimateParam(countData=kolodziejczk_cnts,
+                          spikeData=NULL, spikeInfo = NULL,
+                          Lengths=NULL, MeanFragLengths=NULL,
+                          Distribution='ZINB',
+                          RNAseq="singlecell",
+                          normalisation='scran',
+                          NCores=NULL,
+                          sigma=1.96)
 ## simulating single cell RNA-seq experiment
 ngenes <- 10000
 ncells <- 100

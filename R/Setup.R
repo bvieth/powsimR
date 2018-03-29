@@ -5,21 +5,28 @@
 #' @aliases DESetup
 #' @title Setup options for RNA-seq count simulations.
 #' @description This function generates a set of differential expressed gene IDs with associated fold changes for a given number of genes, simulations and fraction of DE genes.
-#' @usage DESetup(ngenes, nsims=25,
-#' p.DE=0.1, p.B=NULL,
-#' pLFC, bLFC=NULL, sim.seed)
-#' @param ngenes Number of genes to be simulated.
+#' @usage DESetup(ngenes=10000, nsims=25,
+#' p.DE=0.1, pLFC,
+#' p.B=NULL, bLFC=NULL, bPattern="uncorrelated",
+#' sim.seed)
+#' @param ngenes The total number of genes to simulate. Default is \code{10000}.
 #' @param nsims Number of simulations to run. Default is 25.
-#' @param p.DE Percentage of genes being differentially expressed (DE). Default is 10\%.
-#' @param p.B Percentage of genes being differentially expressed between batches. Default is \code{NULL}.
+#' @param p.DE Numeric vector between 0 and 1 representing
+#' the percentage of genes being differentially expressed due to phenotype,
+#' i.e. biological signal. Default is \code{0.1}.
 #' @param pLFC The log2 phenotypic fold change for DE genes. This can be:
 #' (1) a constant, e.g. 2;
 #' (2) a vector of values with length being number of DE genes. If the input is a vector and the length is not the number of DE genes, it will be sampled with replacement to generate log-fold change;
 #' (3) a function that takes an integer n, and generates a vector of length n, e.g. function(x) rnorm(x, mean=0, sd=1.5).
+#' @param p.B Numeric vector between 0 and 1 representing the percentage of genes
+#' being differentially expressed between batches. Default is \code{NULL}, i.e. no batch effect.
 #' @param bLFC The log2 batch fold change for all genes. This can be:
 #' (1) a constant, e.g. 2;
 #' (2) a vector of values with length being number of all genes. If the input is a vector and the length is not the number of total genes, it will be sampled with replacement to generate log2 fold changes;
 #' (3) a function that takes an integer n, and generates a vector of length n, e.g. function(x) rnorm(x, mean=0, sd=1.5).
+#' Note that only two batches will be simulated.
+#' @param bPattern Character vector for batch effect pattern if \code{p.B} is non-null. Possible options include:
+#' "uncorrelated", "orthogonal" and " correlated". Default is \code{"uncorrelated"}.
 #' @param sim.seed Simulation seed.
 #' @return A list with the following entries:
 #' \item{ngenes}{An integer for number of genes.}
@@ -33,16 +40,16 @@
 #' @author Beate Vieth
 #' @examples
 #' \dontrun{
-#' desettings <- DESetup(ngenes=10000,
-#' nsims=25,
-#' p.DE=0.2,
-#' pLFC=function(x) sample(c(-1,1), size=x,replace=TRUE)*rgamma(x, 3, 3))
+#' desettings <- DESetup(ngenes = 10000, nsims = 25,
+#' p.DE = 0.2, pLFC = function(x) sample(c(-1,1), size=x,replace=TRUE)*rgamma(x, 3, 3),
+#' p.B=0.1, bLFC = function(x) rnorm(x, mean=0, sd=1.5), bPattern="uncorrelated",
+#' sim.seed = 43856)
 #' }
 #' @rdname DESetup
 #' @export
-DESetup <- function(ngenes, nsims=25,
-                    p.DE=0.1, p.B=NULL,
-                    pLFC, bLFC=NULL,
+DESetup <- function(ngenes=10000, nsims=25,
+                    p.DE=0.1, pLFC,
+                    p.B=NULL, bLFC=NULL, bPattern="uncorrelated",
                     sim.seed) {
   if (missing(sim.seed))
     sim.seed = sample(1:1000000, size = 1)
@@ -57,7 +64,7 @@ DESetup <- function(ngenes, nsims=25,
     DEids[[i]] <- DEid
     ## generate lfc for all genes: 0 for nonDE and LFC for DE
     plfc = rep(0, ngenes)
-    plfc[DEid] = .setFC(pLFC, nDE)
+    plfc[DEid] = .setFC(pLFC, nDE, k=2)
     plfcs[[i]] = plfc
     if(!is.null(bLFC)) {
       # generate a random id for batch affected genes
@@ -65,7 +72,7 @@ DESetup <- function(ngenes, nsims=25,
       Bids[[i]] <- Bid
       ## generate lfc for all genes: 0 for nonDE and LFC for DE
       blfc = rep(0, ngenes)
-      blfc[Bid] = .setFC(bLFC, nB)
+      blfc[Bid] = .setFC(bLFC, nB, k=2)
       blfcs[[i]] = blfc
     }
   }
@@ -83,6 +90,7 @@ DESetup <- function(ngenes, nsims=25,
                 nsims = nsims,
                 p.DE = p.DE,
                 p.B = p.B,
+                bPattern = bPattern,
                 sim.seed.DESetting = sim.seed),
            list(sim.seed = sim.seed), design = "2grp")
   return(res)
@@ -125,11 +133,16 @@ DESetup <- function(ngenes, nsims=25,
 #' @author Beate Vieth
 #' @examples
 #' \dontrun{
-#' desettings <- DESetup(ngenes=10000,
-#' nsims=25, p.DE=0.2,
-#' pLFC=function(x) sample(c(-1,1), size=x,replace=TRUE)*rgamma(x, 3, 3))
-#' simsettings <- SimSetup(desetup=desettings,
-#' params=estparam, size.factors='equal')
+#' ## Setting DE options
+#' de.opts <- DESetup(ngenes = 10000, nsims = 25,
+#' p.DE = 0.2, pLFC = function(x) sample(c(-1,1), size=x,replace=TRUE)*rgamma(x, 3, 3),
+#' p.B=0.1, bLFC = function(x) rnorm(x, mean=0, sd=1.5), bPattern="uncorrelated",
+#' sim.seed = 43856)
+#' ## Combining DE options with parameters
+#' sim.opts <- SimSetup(desetup = de.opts,
+#' params = kolodziejczk_param,
+#' spike=NULL, size.factors = "equal",
+#' downsample = FALSE, geneset = FALSE)
 #' }
 #' @rdname SimSetup
 #' @export

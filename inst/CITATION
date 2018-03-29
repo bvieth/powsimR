@@ -11,7 +11,11 @@ bibentry(bibtype = "Article",
          doi = "10.1093/bioinformatics/btx435",
          journal = "Bioinformatics",
          year = "2017",
+         volume = "33",
+         number = "21",
+         pages = "3486-88",
          note = note,
          url = "https://github.com/bvieth/powsimR")
 
-textVersion = paste0("Vieth, Beate, Christoph Ziegenhain, Swati Parekh, Wolfgang Enard, and Ines Hellmann. 2017. powsimR: Power Analysis for Bulk and Single Cell RNA-Seq Experiments. Bioinformatics, July. doi:10.1093/bioinformatics/btx435.")
+textVersion = paste0("Vieth, Beate, Christoph Ziegenhain, Swati Parekh, Wolfgang Enard, and Ines Hellmann. 2017. powsimR: Power Analysis for Bulk and Single Cell RNA-Seq Experiments. Bioinformatics  33 (21): 3486-88.")
+

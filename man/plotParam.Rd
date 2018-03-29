@@ -2,12 +2,12 @@
 % Please edit documentation in R/Plot.R
 \name{plotParam}
 \alias{plotParam}
-\title{Visualize}
+\title{Visualize distributional characteristics of RNAseq experiment}
 \usage{
 plotParam(estParamRes, annot=TRUE)
 }
 \arguments{
-\item{estParamRes}{The output of \code{\link{estimateParam}} or a string specifying the name of precalculated estimates (see details).}
+\item{estParamRes}{The output of \code{\link{estimateParam}}.}
 
 \item{annot}{A logical vector. If \code{TRUE}, a short figure legend is included.}
 }
@@ -15,14 +15,11 @@ plotParam(estParamRes, annot=TRUE)
 A ggplot object.
 }
 \description{
-This function plots the results of the parameter estimation. This includes the absolute and relative sequencing depth (i.e. library size factor) and marginal mean, dispersion and dropout. Also the mean-dispersion relationship with loess fit for simulations is visualized. Lastly the mean-dropout rate is presented as a smooth scatter plot.
-}
-\details{
-Precalculated negative binomial parameters for simulations are available via \url{}.
+This function plots the results of the parameter estimation. This includes the absolute and relative sequencing depth (i.e. library size factor) as well as marginal log2(mean+1), log2(dispersion) and dropout. Furthermore, the mean-dispersion relationship with loess fit for simulations is visualized. Lastly, the mean-dropout rate is presented as a smooth scatter plot.
 }
 \examples{
 \dontrun{
-## for example see \\code{\\link{insilicoNBParam}}
+plotParam(estParamRes = kolodziejczk_param, annot=TRUE)
 }
 }
 \author{

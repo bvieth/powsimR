@@ -46,11 +46,16 @@ This function adds user provided options for simulating RNA-seq data to RNAseq.S
 }
 \examples{
 \dontrun{
-desettings <- DESetup(ngenes=10000,
-nsims=25, p.DE=0.2,
-pLFC=function(x) sample(c(-1,1), size=x,replace=TRUE)*rgamma(x, 3, 3))
-simsettings <- SimSetup(desetup=desettings,
-params=estparam, size.factors='equal')
+## Setting DE options
+de.opts <- DESetup(ngenes = 10000, nsims = 25,
+p.DE = 0.2, pLFC = function(x) sample(c(-1,1), size=x,replace=TRUE)*rgamma(x, 3, 3),
+p.B=0.1, bLFC = function(x) rnorm(x, mean=0, sd=1.5), bPattern="uncorrelated",
+sim.seed = 43856)
+## Combining DE options with parameters
+sim.opts <- SimSetup(desetup = de.opts,
+params = kolodziejczk_param,
+spike=NULL, size.factors = "equal",
+downsample = FALSE, geneset = FALSE)
 }
 }
 \author{

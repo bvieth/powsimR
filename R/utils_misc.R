@@ -1,6 +1,60 @@
 # set LFC -----------------------------------------------------------------
+#' @importFrom methods is
 
-.setFC <- function(input, nDEgenes) {
+.setFC <- function(input, nDEgenes, k) {
+  # two groups
+  if(k==2) {
+    if (is.vector(input)) { ## vector
+      if (length(input) == 1) { ## constant
+        lfc = rep(input, nDEgenes)
+      } else if (length(input) != nDEgenes) { ## vector
+        lfc = sample(input, nDEgenes, replace = TRUE)
+      } else {
+        lfc = input
+      }
+    } else if (is.function(input)) { # a function
+      lfc = input(nDEgenes)
+    }   else {
+      stop("Unrecognized form of lfc!\n")
+    }
+  }
+
+  # multi group
+  if(k>2) {
+    if(is.list(input)) { # list
+      if(!length(input) == k) { stop("The LFC vector has not the same number of entries as n groups specified!")}
+      if(all(sapply(input, length)==1)) { # constant lfc
+        lfc = sapply(1:length(input), function(i) { rep(i, nDEgenes)})
+      }
+      if(any(!sapply(input, length)==nDEgenes)) { ## vector of lfcs
+        lfc = sapply(1:length(input), function(i) {
+          sample(x = input[[i]], size = nDEgenes, replace = TRUE)
+        })
+      }
+      if(all(sapply(input, length)==nDEgenes)) {
+        lfc = do.call("cbind", input)
+      }
+    }
+    if(is.function(input)) {
+      lfc = input(nDEgenes)
+      if(any(c(!ncol(lfc) == k), c(is.vector(lfc)))) {
+        stop("The provided LFC function has not the same number of entries as n groups specified!")
+        }
+    }
+    if(all(!is.list(input), !is.function(input))) {
+      stop(message("Unrecognized form of lfc!"))
+      }
+  }
+  # return lfc object
+  return(lfc)
+}
+
+.setMarker <- function(input, nDEgenes, idpool, ngenes, k) {
+  lfcs =  matrix(0, nrow = ngenes, ncol = k)
+  # generate random id for marker genes and sample group
+  Mids <- sample(idpool, nDEgenes, replace = FALSE)
+  Kids <- sample(1:k, length(Mids), replace=TRUE)
+
   if (is.vector(input)) { ## vector
     if (length(input) == 1) { ## constant
       lfc = rep(input, nDEgenes)
@@ -14,7 +68,13 @@
   }   else {
     stop("Unrecognized form of lfc!\n")
   }
-  lfc
+
+  for (i in 1:length(Mids)) {
+    lfcs[Mids[i], Kids[i]] = lfc[i]
+  }
+
+  # return matrix lfc object
+  return(list(lfcs=lfcs, id=Mids))
 }
 
 # remove scientific notation ----------------------------------------------
@@ -29,6 +89,17 @@
   sse0 <- rowSums(resids^2)
   aic <- dat.n + dat.n*log(2*pi) + dat.n * log(sse0/dat.n) + k*npar
   return(aic)
+}
+
+# ## Calculate goodness of fit chisquare test from fitdistrplus ------------
+
+#' @importFrom fitdistrplus gofstat
+.fitdistrplusGOF <- function(fitdistobj) {
+  gof <- fitdistrplus::gofstat(f = fitdistobj, discrete = T)
+  data.frame(gof.stats=gof$chisq,
+             gof.df = gof$chisqdf,
+             gof.pval = gof$chisqpvalue,
+             stringsAsFactors = F)
 }
 
 # Calculate goodness of fit -----------------------------------------------

@@ -6,9 +6,10 @@
 \usage{
 evaluateDE(simRes,
 alpha.type=c("adjusted","raw"),
-MTC=c('BH', 'BY', 'holm', 'hochberg', 'hommel', 'bonferroni', 'Storey', 'IHW'),
+MTC=c('BY', 'BH', 'holm', 'hochberg', 'hommel', 'bonferroni', 'Storey', 'IHW'),
 alpha.nominal=0.1,
 stratify.by=c("mean", "dispersion", "dropout", "lfc"),
+strata.probs = c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9),
 filter.by=c("none", "mean", "dispersion", "dropout"),
 strata.filtered=1, target.by=c("lfc", "effectsize"), delta=0)
 }
@@ -23,13 +24,15 @@ Available options are \code{"adjusted"} i.e. applying multiple testing correctio
 1) see \link[stats]{p.adjust.methods},
 2) Storey's qvalue see \link[qvalue]{qvalue} and
 3) Independent Hypothesis Weighting considering mean expression as covariate (see \link[IHW]{ihw}).
-Default is \code{BH}, i.e. Benjamini-Hochberg FDR correction method.}
+Default is \code{BY}, i.e. Benjamini-Yekutieli FDR correction method.}
 
 \item{alpha.nominal}{The nomial value of significance. Default is 0.1.}
 
 \item{stratify.by}{A string to represent the way to stratify genes.
 Available options are \code{"mean"}, \code{"dispersion"}, \code{"dropout"} and \code{"lfc"},
 for stratifying genes by average expression levels, dispersion, dropout rates or estimated log2 fold changes.}
+
+\item{strata.probs}{A vector specifying the probability values for sample quantiles of the strata. See \link[qvalue]{qvalue}.}
 
 \item{filter.by}{A string to represent the way to filter genes.
 This is used in conjunction with strata.filtered for gene filtering.
@@ -66,9 +69,9 @@ N is number of different sample sizes settings, and nsims is number of simulatio
 \item{TNR.marginal, TPR.marginal, FPR.marginal, FNR.marginal, FDR.marginal}{Matrix representing the marginal rates for all simulation settings.
 The dimension of the matrices are N * nsims.}
 \item{stratagenes, stratadiffgenes}{Number of genes per stratum and number of DE genes per stratum.}
-\item{stratify.by}{The input stratify.by.}
+\item{stratify.by}{The input "stratify.by".}
 \item{strata}{The input strata.}
-\item{Nreps}{Sample sizes one wants to perform simulation on.
+\item{n1,n2}{Sample sizes per group.
 This is taken from the simulation options.}
 \item{target.by}{The input method to define "biologically important" DE genes,
 either by log fold change or effect size.}
@@ -77,21 +80,21 @@ If delta=0, all target.by will be considered.}
 }
 \description{
 This function takes the simulation output from \code{\link{simulateDE}}
-and computes quantities of the confusion matrix of classification testing
+and computes quantities of the confusion matrix for statistical power evaluation.
 }
 \details{
 This is the main function to compute various power-related quantities,
 using stratification and filtering.
 \describe{
 \item{Gene stratification}{We recommend to compute and visualize error rates (especially TPR)
-conditional on expression characteristics like mean, dispersion and dropout rate.
-It is likely that the power to detect DE genes is stronly dependent on
+conditional on expression characteristics like mean, dispersion and/or dropout rate.
+It is likely that the power to detect DE genes is strongly dependent on
 mean expression levels even though the magnitude of effect sizes is the same.
 The stratified results will provide a more comprehensive power assessment and
 better guide the investigators in experimental designs and analysis strategies.}
 \item{Gene filtering}{Sometimes it is advisible to filter out some genes
 (such as the ones with very low mean expression) before DE detection.
-The filtering option here provides an opportunity to compare the powers before and after filtering.}
+The filtering option here provides an opportunity to compare the rates before and after filtering.}
 \item{Define biologically interesting genes}{We provide two options to define biologically interesting genes:
 by absolute values of log fold changes or effect sizes
 (absolute values of log fold changes divided by the square root of 1/(mean+dispersions)).
@@ -101,20 +104,16 @@ and the rate calculations are based on these genes.}
 }
 \examples{
 \dontrun{
-## for example DE simulation result see simulateDE
-evalres <- evaluateSim(simRes=simres,
-alpha.type="adjusted",
-MTC="BH", alpha.nominal=0.1,
-stratify.by="mean",
-filter.by="none", target.by="lfc",
-delta=0)
+data(kolodziejczk_simDE)
+eval.de <- evaluateDE(simRes = kolodziejczk_simDE)
 }
 }
 \seealso{
 \code{\link{estimateParam}} for negative binomial parameters,
 \code{\link{SimSetup}} and
 \code{\link{DESetup}} for setting up simulation parameters and
-\code{\link{simulateDE}} for simulating differential expression.
+\code{\link{simulateDE}} for simulating differential expression and
+\code{\link{plotEvalDE}} for visualisation.
 }
 \author{
 Beate Vieth

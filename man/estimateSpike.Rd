@@ -31,8 +31,12 @@ The first column should contain the batch annotation, e.g. 'a' for batch 1, 'b' 
 }
 \value{
 List object with the following entries:
-\item{normCounts}{The normalised spike-in read counts.}
+\item{normCounts}{The normalised spike-in read counts \code{data.frame}.}
+\item{normParams}{The mean and standard deviation per spike-in using normalised read counts in a \code{data.frame}.}
+\item{CaptureEfficiency}{The ad-hoc estimated as well as fitted detection probabilities with confidence interval per spike-in using normalised read counts in a \code{data.frame}.}
 \item{sf}{The estimated library size factors.}
+\item{seqDepth}{Library size, i.e. total number of reads per library}
+\item{seqDepth}{The estimated library size factors.}
 \item{EVGammaThetaEstimates}{Estimation of the four parameters capturing technical variability, namely E[\eqn{\gamma}], Var[\eqn{\gamma}], E[\eqn{\theta}] and Var[\eqn{\theta}]. For more details, please consult supplementary information of Kim et al. 2016 (DOI: 10.1038/ncomms9687). These estimates are needed for simulating spike-in read counts.}
 \item{Input}{The input spike-in expression \code{matrix}, molecule counts \code{data.frame} and batch annotation \code{data.frame}, filtered so that only spike-ins with nonzero expression and samples with at least 100 reads are retained.}
 \item{Settings}{Reporting the chosen normalisation framework.}
@@ -49,7 +53,20 @@ Normalisation methods
 }
 \examples{
 \dontrun{
-## not yet
+## batch annotation
+data(scrbseq_spike_cnts)
+data(scrbseq_spike_info)
+batch_info <- data.frame(Batch = ifelse(grepl(pattern = "SCRBseqA_",
+colnames(scrbseq_spike_cnts)), "A", "B"),
+row.names = colnames(scrbseq_spike_cnts))
+## spike information table
+spike_info <- scrbseq_spike_info[-1,]
+## estimation
+spike_param <- estimateSpike(spikeData = scrbseq_spike_cnts,
+spikeInfo = spike_info,
+MeanFragLength = NULL,
+batchData = batch_info,
+normalisation = 'depth')
 }
 }
 \author{

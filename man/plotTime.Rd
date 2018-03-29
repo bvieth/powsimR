@@ -7,7 +7,7 @@
 plotTime(simRes, Table=TRUE, annot=TRUE)
 }
 \arguments{
-\item{simRes}{The output of \code{\link{simulateDE}} or \code{\link{simulateFlow}}.}
+\item{simRes}{The output of \code{\link{simulateDE}}.}
 
 \item{Table}{A logical vector. If \code{TRUE}, a table of average computational running time per step and sample size is printed additionally.}
 
@@ -21,7 +21,8 @@ This function plots the computational running time of simulations.
 }
 \examples{
 \dontrun{
-## not yet
+## using example data set
+plotTime(simRes = kolodziejczk_simDE)
 }
 }
 \author{

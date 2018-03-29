@@ -55,23 +55,28 @@
     message(paste0("No samples names were provided for batch information so that pseudo sample names are assigned."))
   }
   if (!is.null(Lengths) && is.null(names(Lengths)) && is.null(rownames(countData)) ) {
-    stop(message(paste0("The gene lengths vector and the count data have no names so that correct matching is not possible. Please provide names in both input objects")))
+    stop(message(paste0("The gene lengths vector and the count data have no names so that correct matching is not possible. Please provide names in both input objects.")))
   }
   if (!is.null(Lengths) && !is.null(names(Lengths)) && !is.null(rownames(countData)) ) {
-    # match and sort Lengths based on countData
-    Lengths <- Lengths[names(Lengths) %in% rownames(countData)]
-    Lengths <- Lengths[match(rownames(countData), names(Lengths))]
-    if (length(Lengths)==0) {
-      stop(message(paste0("Please provide Lengths and countData with matching gene names!")))
+    if (length(setdiff(rownames(countData), names(Lengths))) > 0) {
+      stop(message(paste0("The gene lengths vector and the count data have nonoverlapping gene ID entries. Please provide matching objects.")))
     }
-    if (!is.null(rownames(countData)) && any(grepl(pattern = "_", rownames(countData))) ) {
-      message(paste0("Some of the gene names contain '_' which will interfere with simulations later on. They will be replaced with '--'."))
-      rownames(countData) <- gsub(pattern = "_",
-                                  replacement = "--",
-                                  x = rownames(countData))
-      names(Lengths) <- gsub(pattern = "_",
-                             replacement = "--",
-                             x = names(Lengths))
+    if (length(setdiff(rownames(countData), names(Lengths))) == 0) {
+      # match and sort Lengths based on countData
+      Lengths <- Lengths[names(Lengths) %in% rownames(countData)]
+      Lengths <- Lengths[match(rownames(countData), names(Lengths))]
+      if (length(Lengths)==0) {
+        stop(message(paste0("Please provide Lengths and countData with matching gene names!")))
+      }
+      if (!is.null(rownames(countData)) && any(grepl(pattern = "_", rownames(countData))) ) {
+        message(paste0("Some of the gene names contain '_' which will interfere with simulations later on. They will be replaced with '--'."))
+        rownames(countData) <- gsub(pattern = "_",
+                                    replacement = "--",
+                                    x = rownames(countData))
+        names(Lengths) <- gsub(pattern = "_",
+                               replacement = "--",
+                               x = names(Lengths))
+      }
     }
   }
 
@@ -200,7 +205,7 @@
     spikeInfo <- spikeInfo[rownames(spikeInfo) %in% rownames(spikeData), , drop = FALSE]
     spikeInfo <- spikeInfo[match(rownames(spikeData), rownames(spikeInfo)), , drop = FALSE ]
     if(nrow(spikeData)<10 || nrow(spikeInfo)<10) {
-      stop(message(paste0("Not enough spike-ins detected to allow reliable normalisation. Please proceed with spike-in independent methods, e.g. TMM, scran, SCnorm, etc.")))
+      stop(message(paste0("Not enough spike-ins detected to allow reliable normalisation. Please proceed with spike-in independent methods, e.g. MR, TMM, scran, SCnorm, etc.")))
       }
   }
 
@@ -265,11 +270,11 @@
   seqDepth = colSums(countData)
   names(seqDepth) = colnames(countData)
 
-  nsamples = dim(countData)[2]
-  counts0 = countData == 0
-  nn0 = rowSums(!counts0)
-
   X2 = NormData$NormCounts
+
+  nsamples = dim(X2)[2]
+  counts0 = X2 == 0
+  nn0 = rowSums(!counts0)
 
   # the negative binomial
   mu = rowSums(X2)/ncol(X2)
@@ -321,15 +326,15 @@
   seqDepth = colSums(countData)
   names(seqDepth) = colnames(countData)
 
-  nsamples = dim(countData)[2]
-  counts0 = countData == 0
-  nn0 = rowSums(!counts0)
-
   X2 = NormData$NormCounts
 
-  # the negative binomial portion
-  mu = rowSums((!counts0) * countData)/nn0
-  s2 = rowSums((!counts0) * (countData - mu)^2)/(nn0 - 1)
+  nsamples = dim(X2)[2]
+  counts0 = X2 == 0
+  nn0 = rowSums(!counts0)
+
+  # the negative binomial
+  mu = rowSums(X2)/ncol(X2)
+  s2 = rowSums((X2 - mu) ^ 2) / ncol(X2)
   size = mu ^ 2 / (s2 - mu + 1e-04)
   size = ifelse(size > 0, size, NA)
   p0 = (nsamples - nn0)/nsamples
@@ -491,15 +496,15 @@
   seqDepth = colSums(countData)
   names(seqDepth) = colnames(countData)
 
-  nsamples = dim(countData)[2]
-  counts0 = countData == 0
-  nn0 = rowSums(!counts0)
-
   X2 = NormData$NormCounts
 
-  # the negative binomial portion
-  mu = rowSums((!counts0) * countData)/nn0
-  s2 = rowSums((!counts0) * (countData - mu)^2)/(nn0 - 1)
+  nsamples = dim(X2)[2]
+  counts0 = X2 == 0
+  nn0 = rowSums(!counts0)
+
+  # the negative binomial
+  mu = rowSums(X2)/ncol(X2)
+  s2 = rowSums((X2 - mu) ^ 2) / ncol(X2)
   size = mu ^ 2 / (s2 - mu + 1e-04)
   size = ifelse(size > 0, size, NA)
   p0 = (nsamples - nn0)/nsamples
@@ -541,4 +546,3 @@
               estG = estG)
   return(res)
 }
-

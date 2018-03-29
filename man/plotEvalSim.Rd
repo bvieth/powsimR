@@ -19,7 +19,9 @@ This function plots the results of \code{\link{evaluateSim}} for assessing the s
 }
 \examples{
 \dontrun{
-## not yet
+## using example data set
+eval.sim <- evaluateSim(simRes = kolodziejczk_simDE, timing = T)
+plotEvalSim(eval.sim)
 }
 }
 \author{

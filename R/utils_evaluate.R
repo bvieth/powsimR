@@ -8,9 +8,8 @@
   RMSE <- sqrt(mean(SE, na.rm=T))
   MAE <- mean(AE, na.rm=T)
 
-  folddiff <- abs(truth - estimated)
   # robust fitting
-  fitted <- MASS::rlm(folddiff ~ 1, na.action=na.exclude)
+  fitted <- MASS::rlm(AE ~ 1, na.action=na.exclude)
   resids <- stats::residuals(fitted)
   # error of estimation
   err.all <- 2^sqrt(mean(resids^2, na.rm = T))-1
@@ -39,14 +38,11 @@
   return(err.all)
 }
 
-#' @importFrom dplyr mutate group_by summarise
+#' @importFrom stats aggregate
 #' @importFrom tidyr %>%
 .ratio.sf <- function(estimated.nsf, true.nsf, group) {
-  dat <- data.frame(estimated.nsf, true.nsf, group)
-  dat.proc <- dat %>%
-    dplyr::mutate(ratio=estimated.nsf/true.nsf)  %>%
-    dplyr::group_by(group) %>%
-    dplyr::summarise(avg = mean(ratio))
+  dat <- data.frame(estimated.nsf, true.nsf, ratio=estimated.nsf/true.nsf, group=as.factor(group))
+  dat.proc <- stats::aggregate(ratio ~ group, data=dat, FUN= mean)
 
   res <- data.frame(group1=as.numeric(dat.proc[1,2]), group2=as.numeric(dat.proc[2,2]))
   return(res)

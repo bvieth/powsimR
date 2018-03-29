@@ -105,7 +105,7 @@ insilicoNBParam <- function(means, dispersion, dropout=NULL, sf=NULL, RNAseq=c("
 #' Distribution = c('NB', 'ZINB'),
 #' RNAseq = c('bulk', 'singlecell'),
 #' normalisation = c('TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm',
-#'                   'SCnorm', 'RUV', 'BASiCS', 'Census', 'depth', 'none'),
+#'                   'SCnorm', 'RUV', 'Census', 'depth', 'none'),
 #' sigma = 1.96,
 #' NCores = NULL,
 #' verbose=TRUE)
@@ -120,18 +120,18 @@ insilicoNBParam <- function(means, dispersion, dropout=NULL, sf=NULL, RNAseq=c("
 #' @param spikeInfo is a molecule count \code{matrix} of spike-ins.
 #' Rows correspond to spike-ins. The order of rows should be the same as in the \code{spikeData}.
 #' The column names should be 'SpikeID' and 'SpikeInput' for molecule counts of spike-ins.
-#' @param Lengths is a numeric vector of transcript lengths with the same length as rows in countData.
+#' @param Lengths is a numeric vector of transcript lengths with the same length and order as the rows in countData.
 #' This variable is only used for internal TPM calculations if Census normalization is specified.
 #' @param MeanFragLengths is a numeric vector of mean fragment lengths with the same length as columns in countData.
 #' This variable is only used for internal TPM calculations if Census normalization is specified.
-#' @param Distribution is a character value: "NB" for negative binomial or "ZINB" for zero-inflated negative binomial.
+#' @param Distribution is a character value: "NB" for negative binomial or "ZINB" for zero-inflated negative binomial distribution fitting.
 #' @param RNAseq is a character value: "bulk" or "singlecell".
-#' @param normalisation is a character value: 'TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'scranCLUST',
-#' 'SCnorm', 'RUV', 'BASiCS', 'Census', 'depth', 'none'.
+#' @param normalisation is a character value: 'TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm',
+#' 'SCnorm', 'RUV', 'Census', 'depth', 'none'.
 #' For more information, please consult the details section.
-#' @param sigma The variability band width for mean-dispersion loess fit defining the prediction interval for read cound simulation. Default is 1.96, i.e. 95\% interval. For more information see \code{\link[msir]{loess.sd}}.
+#' @param sigma The variability band width for mean-dispersion loess fit defining the prediction interval for read count simulation. Default is 1.96, i.e. 95\% interval. For more information see \code{\link[msir]{loess.sd}}.
 #' @param NCores The number of cores for normalisation method SCnorm and Census.
-#' If \code{NULL}, the number of detected cores minus 1 is used.
+#' The default \code{NULL} means 1 core.
 #' @param verbose Logical value to indicate whether to print function information. Default is \code{TRUE}.
 #' @return List object with the following entries
 #' \item{seqDepth}{Library size, i.e. total number of reads per library}
@@ -158,8 +158,7 @@ insilicoNBParam <- function(means, dispersion, dropout=NULL, sf=NULL, RNAseq=c("
 #' \item{MR, PosCounts}{employ the DESeq2 style normalization of median ratio method and a modified geometric mean method
 #' as implemented in \code{\link[DESeq2]{estimateSizeFactors}}, respectively.}
 #' \item{scran, SCnorm}{apply the deconvolution and quantile regression normalization methods developed for sparse RNA-seq data
-#' as implemented in \code{\link[scran]{computeSumFactors}} and \code{\link[SCnorm]{SCnorm}}, respectively.
-#' For \code{SCnorm}, the user can also supply \code{spikeData}.}
+#' as implemented in \code{\link[scran]{computeSumFactors}} and \code{\link[SCnorm]{SCnorm}}, respectively. Spike-ins can also be supplied for both methods via \code{spikeData}. Note, however that this means for scran that the normalisation as implemented in \code{\link[scran]{computeSpikeFactors}} is also applied to genes (\code{general.use=TRUE}).}
 #' \item{Linnorm}{apply the normalization method for sparse RNA-seq data
 #' as implemented in \code{\link[Linnorm]{Linnorm.Norm}}.
 #' For \code{Linnorm}, the user can also supply \code{spikeData}.}
@@ -167,9 +166,6 @@ insilicoNBParam <- function(means, dispersion, dropout=NULL, sf=NULL, RNAseq=c("
 #' (1) utilizing negative control genes, i.e. spike-ins stored in \code{spikeData} (\code{\link[RUVSeq]{RUVg}}).
 #' (2) utilizing replicate samples, i.e. samples for which the covariates of interest are considered constant.
 #' This annotation is stored in \code{batchData} (\code{\link[RUVSeq]{RUVs}}).}
-#' \item{BASiCS}{removes technical variation by utilizing negative control genes, i.e. spike-ins stored in \code{spikeData},
-#' as implemented in \code{\link[BASiCS]{BASiCS_DenoisedCounts}}.
-#' Furthermore, the molecule counts of spike-ins added to the cell lysate need to be supplied in \code{spikeInfo}.}
 #' \item{Census}{converts relative measures of TPM/FPKM values into mRNAs per cell (RPC) without the need of spike-in standards.
 #' Census at least needs \code{Lengths} for single-end data and preferably \code{MeanFragLengths} for paired-end data.
 #' Do not use this algorithm for UMI data!}
@@ -178,6 +174,16 @@ insilicoNBParam <- function(means, dispersion, dropout=NULL, sf=NULL, RNAseq=c("
 #' }
 #' @examples
 #' \dontrun{
+#' ## using example data set
+#' data(kolodziejczk_cnts)
+#' kolodziejczk_estparam <- estimateParam(countData=kolodziejczk_cnts,
+#'                           spikeData=NULL, spikeInfo = NULL,
+#'                           Lengths=NULL, MeanFragLengths=NULL,
+#'                           Distribution='ZINB',
+#'                           RNAseq="singlecell",
+#'                           normalisation='scran',
+#'                           NCores=NULL,
+#'                           sigma=1.96)
 #' ## simulating single cell RNA-seq experiment
 #' ngenes <- 10000
 #' ncells <- 100
@@ -227,7 +233,7 @@ estimateParam <- function(countData,
                           Distribution = c('NB', 'ZINB'),
                           RNAseq = c('bulk', 'singlecell'),
                           normalisation = c('TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm',
-                                            'SCnorm', 'RUV', 'BASiCS', 'Census', 'depth', 'none'),
+                                            'SCnorm', 'RUV', 'Census', 'depth', 'none'),
                           sigma = 1.96,
                           NCores = NULL,
                           verbose=TRUE) {
@@ -253,10 +259,10 @@ estimateParam <- function(countData,
   if (RNAseq=='bulk' && normalisation %in% c('BASiCS', 'Census')) {
     stop(message(paste0(normalisation, " is only developed and implemented for single cell RNA-seq experiments.")))
   }
-  if (normalisation %in% c('BASiCS') && is.null(spikeData)) {
+  if (normalisation=='BASiCS' && is.null(spikeData)) {
     stop(message(paste0(normalisation, " needs spike-in information! \nPlease provide an additional table of spike-in read counts.")))
   }
-  if (normalisation == 'BASiCS' && is.null(spikeInfo)) {
+  if (normalisation=='BASiCS' && is.null(spikeInfo)) {
     stop(message(paste0(normalisation, " needs spike-in information! \nPlease provide an additional table of spike-in molecule counts.")))
   }
   if (normalisation == 'BASiCS' && !is.null(spikeInfo) && !is.null(colnames(spikeInfo)) && !all(colnames(spikeInfo) %in% c("SpikeID", "SpikeInput"))) {
@@ -266,6 +272,14 @@ estimateParam <- function(countData,
   if (normalisation=='none' && all((countData - round(countData)) == 0)) {
     stop(message(paste0("No normalisation should only be done with pre-normalized data, eg. RSEM output, but the provided input matrix contains only integer values!")))
   }
+  # c('TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm', 'SCnorm', 'RUV', 'BASiCS', 'Census', 'depth', 'none')
+
+  if (normalisation %in% c('TMM', 'MR', 'PosCounts', 'UQ', 'depth', 'none') && !is.null(spikeData)) {
+    message(paste0("The normalisation method ", normalisation, " does not utilize spike-ins."))
+    spikeData = NULL
+    spikeInfo = NULL
+  }
+
 
   # check the matching of names
   checkup <- .run.checkup(
@@ -341,14 +355,31 @@ estimateParam <- function(countData,
 #' The first column should contain the batch annotation, e.g. 'a' for batch 1, 'b' for batch 2.
 #' @param normalisation is a character value: 'depth' or 'none'. For more information, please consult the details section.
 #' @return List object with the following entries:
-#' \item{normCounts}{The normalised spike-in read counts.}
+#' \item{normCounts}{The normalised spike-in read counts \code{data.frame}.}
+#' \item{normParams}{The mean and standard deviation per spike-in using normalised read counts in a \code{data.frame}.}
+#' \item{CaptureEfficiency}{The ad-hoc estimated as well as fitted detection probabilities with confidence interval per spike-in using normalised read counts in a \code{data.frame}.}
 #' \item{sf}{The estimated library size factors.}
+#' \item{seqDepth}{Library size, i.e. total number of reads per library}
+#' \item{seqDepth}{The estimated library size factors.}
 #' \item{EVGammaThetaEstimates}{Estimation of the four parameters capturing technical variability, namely E[\eqn{\gamma}], Var[\eqn{\gamma}], E[\eqn{\theta}] and Var[\eqn{\theta}]. For more details, please consult supplementary information of Kim et al. 2016 (DOI: 10.1038/ncomms9687). These estimates are needed for simulating spike-in read counts.}
 #' \item{Input}{The input spike-in expression \code{matrix}, molecule counts \code{data.frame} and batch annotation \code{data.frame}, filtered so that only spike-ins with nonzero expression and samples with at least 100 reads are retained.}
 #' \item{Settings}{Reporting the chosen normalisation framework.}
 #' @examples
 #' \dontrun{
-#' ## not yet
+#' ## batch annotation
+#' data(scrbseq_spike_cnts)
+#' data(scrbseq_spike_info)
+#' batch_info <- data.frame(Batch = ifelse(grepl(pattern = "SCRBseqA_",
+#' colnames(scrbseq_spike_cnts)), "A", "B"),
+#' row.names = colnames(scrbseq_spike_cnts))
+#' ## spike information table
+#' spike_info <- scrbseq_spike_info[-1,]
+#' ## estimation
+#' spike_param <- estimateSpike(spikeData = scrbseq_spike_cnts,
+#' spikeInfo = spike_info,
+#' MeanFragLength = NULL,
+#' batchData = batch_info,
+#' normalisation = 'depth')
 #' }
 #' @details
 #' Normalisation methods
@@ -358,7 +389,9 @@ estimateParam <- function(countData,
 #' }
 #' @author Beate Vieth
 #' @rdname estimateSpike
-#' @importFrom stats setNames
+#' @importFrom stats setNames dbinom
+#' @importFrom bbmle mle2
+#' @importFrom Hmisc binconf
 #' @importFrom matrixStats rowSds
 #' @export
 estimateSpike <- function(spikeData,
@@ -452,8 +485,11 @@ estimateSpike <- function(spikeData,
 
       # return normalized, batch-corrected counts and size factors for spike-ins
       normCounts <- do.call('cbind', normCountsL)
-      sizeFactor <- unlist(lapply(normspikeData,function(x) x$size.factors))
+      sizeFactor <- unlist(lapply(normspikeData, function(x) x$size.factors))
+      seqDepth <- colSums(spikeData.red)
+      names(seqDepth) <- colnames(spikeData.red)
     }
+
     if(is.null(batchData)) {
       # calculate normalized spike-ins
       normspikeData <- .norm.calc(normalisation=normalisation,
@@ -467,6 +503,8 @@ estimateSpike <- function(spikeData,
       # return normalized, batch-corrected counts and size factors for spike-ins
       normCounts <- normspikeData$NormCounts
       sizeFactor <- normspikeData$size.factors
+      seqDepth <- colSums(spikeData.red)
+      names(seqDepth) <- colnames(spikeData.red)
     }
 
     # technical noise fit
@@ -486,6 +524,48 @@ estimateSpike <- function(spikeData,
                                                  sizeFactorMatrix = sizeFactorMatrix)
   }
 
+  ## capture efficiency
+  # sum of complete failures (Count=0) and successes= total- failures over all libraries
+  capture.dat <- data.frame(detect_fail=apply(spikeData==0,1,sum),
+                            detect_success=apply(spikeData>0,1,sum),
+                            row.names = rownames(spikeData))
+  noobs <- ncol(spikeData.red)
+  capture.dat[,"p_fail"] <- capture.dat["detect_fail"]/noobs
+  capture.dat[,"p_success"] <- capture.dat["detect_success"]/noobs
+  # estimate the mean percentage of detection / complete failures over all spike-ins and experiments
+  #  (gives starting value for maximum likelihood estimation per spike-in)
+  mean_p_fail <- mean(capture.dat[,"detect_fail"])/noobs
+  mean_p_success <- mean(capture.dat[,"detect_success"])/noobs
+  # maximum likelihhod estimation. we know the number of failures, extrapolate the number of successes.
+  # estimate the prob(success) per ercc
+  hat_p_success <- c()
+  hat_p_fail <- c()
+
+  for (i in 1:nrow(capture.dat)) {
+    mydata <- capture.dat[i,"detect_success"]
+    myfunc <- function(size,prob) {  -sum(stats::dbinom(mydata,size,prob,log=TRUE))  }
+    invisible(capture.output(
+      hat_p_success[i] <- suppressMessages(try(bbmle::mle2(myfunc, start=list(prob=mean_p_success),
+                                                           data=list(size=noobs))@coef, silent = T))
+    ))
+    if(is(hat_p_success[i],"try-error")) {next}
+    mydata <- capture.dat[i,"detect_fail"]
+    invisible(capture.output(
+      hat_p_fail[i] <- suppressMessages(try(bbmle::mle2(myfunc, start=list(prob=mean_p_fail),
+                                                        data=list(size=noobs))@coef, silent = TRUE))
+    ))
+    if(is(hat_p_fail[i],"try-error")) {next}
+  }
+  capture.dat[, "hat_p_success"] <- as.numeric(hat_p_success)
+  capture.dat[, "hat_p_fail"] <- as.numeric(hat_p_fail)
+  # confidence intervals of MLE p (applying Wilson interval which is a score based method as normal approximation can be biased if n*p is not sufficiently large which is the case for some of the spike ins (very low p))
+  capture.dat [, "hat_p_success_cilower"] <- Hmisc::binconf(capture.dat$detect_success, noobs, method="wilson")[,2]
+  capture.dat [, "hat_p_success_ciupper"] <- Hmisc::binconf(capture.dat$detect_success, noobs, method="wilson")[,3]
+  capture.dat [, "hat_p_fail_cilower"] <- Hmisc::binconf(capture.dat$detect_fail, noobs, method="wilson")[,2]
+  capture.dat [, "hat_p_fail_ciupper"] <- Hmisc::binconf(capture.dat$detect_fail, noobs, method="wilson")[,3]
+
+
+  ## estimated moments of normalized counts
   normParams <- data.frame(Log2Means=rowMeans(log2(as.matrix(normCounts)+1)),
                            Log2Sd=matrixStats::rowSds(log2(as.matrix(normCounts)+1)),
                            row.names = row.names(normCounts))
@@ -493,7 +573,9 @@ estimateSpike <- function(spikeData,
   # return object
   res <- list("normCounts" = normCounts,
               "normParams" = normParams,
+              "CaptureEfficiency"=capture.dat,
               "size.factors" = sizeFactor,
+              "seqDepth" = seqDepth,
               "EVGammaThetaEstimates" = EVGammaThetaEstimate,
               "Input" = list("spikeData"=spikeData,
                              "spikeInfo"=spikeInfo,
