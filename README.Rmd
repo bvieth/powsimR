@@ -110,7 +110,7 @@ Please use the following entry for citing powsimR.
 citation("powsimR")
 ```
 
-powsimR is published in [Bioinformatics](https://doi.org/10.1101/117150). 
+powsimR is published in [Bioinformatics](https://doi.org/10.1093/bioinformatics/btx435). 
 A preprint paper is also on [bioRxiv](https://doi.org/10.1101/117150). 
 
 ## Notes

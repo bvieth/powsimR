@@ -6,7 +6,7 @@ powsimR: Power analysis for bulk and single cell RNA-seq experiments
 NEWS
 ----
 
-Version 1.1.0 released with the following changes / additions (2018-03-29):
+Version 1.1.0 released with the following changes / additions (2018-04-09):
 
 -   simulation of batch effects (see options `p.B`, `bLFC` and `bPattern` in `DESetup` and `simulateCounts`)
 -   simulation of spike-in expression (see `estimateSpike` , `plotSpike` and option `spikeIns` in `simulateDE` and `simulateCounts`)
@@ -96,7 +96,7 @@ Please use the following entry for citing powsimR.
 citation("powsimR")
 ```
 
-powsimR is published in [Bioinformatics](https://doi.org/10.1101/117150). A preprint paper is also on [bioRxiv](https://doi.org/10.1101/117150).
+powsimR is published in [Bioinformatics](https://doi.org/10.1093/bioinformatics/btx435). A preprint paper is also on [bioRxiv](https://doi.org/10.1101/117150).
 
 Notes
 -----
