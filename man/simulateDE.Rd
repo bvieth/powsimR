@@ -21,13 +21,10 @@ verbose=TRUE)
 \item{sim.settings}{This object specifies the simulation setup. This must be the return object from \code{\link{SimSetup}}.}
 
 \item{DEmethod}{A character vector specifying the DE detection method to be used.
-Available options include "edgeR-LRT", "edgeR-QL", "edgeR-zingeR", "edgeR-ZINB-WaVE", "limma-voom", "limma-trend", "DESeq2", "DESeq2-zingeR", "DESeq2-ZINB-WaVE", "ROTS", "baySeq", "NOISeq", "EBSeq", "MAST", "scde", "BPSC", "scDD", "DECENT".
-Please consult the Details section for more information.}
+Please consult the Details section for available options.}
 
 \item{normalisation}{Normalisation method to use.
-Available options include 'TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm',
-'SCnorm', 'Census'.
-Please consult the Details section for more information.}
+Please consult the Details section for available options.}
 
 \item{Preclust}{Whether to run a  hierarchical clustering prior to normalisation.
 This is implemented for scran only. Default is \code{FALSE}.
@@ -36,14 +33,12 @@ For details, see \code{\link[scran]{quickCluster}}.}
 \item{Prefilter}{A character vector specifying the gene expression filtering method
 to be used prior to normalisation (and possibly imputation).
 Default is \code{NULL}, i.e. no filtering.
-Available options include 'FreqFilter', 'CountFilter'.
-Please consult the Details section for more information.}
+Please consult the Details section for available options.}
 
 \item{Impute}{A character vector specifying the gene expression imputation method
 to be used prior to normalisation.
 Default is \code{NULL}, i.e. no imputation.
-Available options include 'DrImpute', 'scImpute', 'scone', 'Seurat', 'SAVER'.
-Please consult the Details section for more information.}
+Please consult the Details section for available options.}
 
 \item{spikeIns}{Logical value to indicate whether to simulate spike-ins.
 Default is \code{FALSE}.}
@@ -71,7 +66,7 @@ simulateDE is the main function to simulate differential expression for RNA-seq 
 The simulation parameters are specified with \code{\link{SimSetup}}.
 The user needs to specify furthermore
 the number of samples per group, preprocessing, normalisation and differential testing method.
-There is also the option to consider spike-ins or apply imputation prior to normalisation. \cr
+There is also the option to consider spike-ins. \cr
 The return object contains DE test results from all simulations as well as descriptive statistics.
 The error matrix calculations will be conducted with \code{\link{evaluateDE}}.\cr
 }

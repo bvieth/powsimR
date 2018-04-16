@@ -1,4 +1,3 @@
-
 # simulateDE --------------------------------------------------------------
 
 #' @name simulateDE
@@ -8,7 +7,7 @@
 #' The simulation parameters are specified with \code{\link{SimSetup}}.
 #' The user needs to specify furthermore
 #' the number of samples per group, preprocessing, normalisation and differential testing method.
-#' There is also the option to consider spike-ins or apply imputation prior to normalisation. \cr
+#' There is also the option to consider spike-ins. \cr
 #' The return object contains DE test results from all simulations as well as descriptive statistics.
 #' The error matrix calculations will be conducted with \code{\link{evaluateDE}}.\cr
 #' @usage simulateDE(n1=c(20,50,100), n2=c(30,60,120),
@@ -24,25 +23,20 @@
 #' @param n1,n2 Integer vectors specifying the number of biological replicates in each group. Default values are n1=c(20,50,100) and n2=c(30,60,120).
 #' @param sim.settings This object specifies the simulation setup. This must be the return object from \code{\link{SimSetup}}.
 #' @param DEmethod A character vector specifying the DE detection method to be used.
-#' Available options include "edgeR-LRT", "edgeR-QL", "edgeR-zingeR", "edgeR-ZINB-WaVE", "limma-voom", "limma-trend", "DESeq2", "DESeq2-zingeR", "DESeq2-ZINB-WaVE", "ROTS", "baySeq", "NOISeq", "EBSeq", "MAST", "scde", "BPSC", "scDD", "DECENT".
-#' Please consult the Details section for more information.
+#' Please consult the Details section for available options.
 #' @param normalisation Normalisation method to use.
-#' Available options include 'TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm',
-#' 'SCnorm', 'Census'.
-#' Please consult the Details section for more information.
+#' Please consult the Details section for available options.
 #' @param Preclust Whether to run a  hierarchical clustering prior to normalisation.
 #' This is implemented for scran only. Default is \code{FALSE}.
 #' For details, see \code{\link[scran]{quickCluster}}.
 #' @param Prefilter A character vector specifying the gene expression filtering method
 #' to be used prior to normalisation (and possibly imputation).
 #' Default is \code{NULL}, i.e. no filtering.
-#' Available options include 'FreqFilter', 'CountFilter'.
-#' Please consult the Details section for more information.
+#' Please consult the Details section for available options.
 #' @param Impute A character vector specifying the gene expression imputation method
 #' to be used prior to normalisation.
 #' Default is \code{NULL}, i.e. no imputation.
-#' Available options include 'DrImpute', 'scImpute', 'scone', 'Seurat', 'SAVER'.
-#' Please consult the Details section for more information.
+#' Please consult the Details section for available options.
 #' @param spikeIns Logical value to indicate whether to simulate spike-ins.
 #' Default is \code{FALSE}.
 #' @param NCores integer positive number of cores for parallel processing.
@@ -250,7 +244,8 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
     ## generate spike-in read counts
     if(isTRUE(spikeIns)) {
       if (verbose) { message(paste0("Generating spike-in read counts")) }
-      spike.data = .simSpike(SpikeOptions = tmp.simOpts$spike, n1 = max.n, n2 = max.n)
+      spike.data = .simSpike(SpikeOptions = tmp.simOpts$spike,
+                             n1 = max.n, n2 = max.n, sf = gene.data$sf)
     }
     if(!isTRUE(spikeIns)) {
       spike.data = NULL
@@ -718,7 +713,8 @@ simulateCounts <- function(n=c(20,100,30,25,500),
     if (verbose) { message(paste0("Generating spike-in read counts")) }
     spike.simdata = .simSpike(SpikeOptions = sim.settings$spike,
                               n1 = floor(sum(n)/2),
-                              n2 = ceiling(sum(n)/2))
+                              n2 = ceiling(sum(n)/2),
+                              sf = gene.data$sf)
     spike.data = spike.simdata$counts
   }
   if(!isTRUE(spikeIns)) {

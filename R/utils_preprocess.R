@@ -163,69 +163,53 @@
 # this is one that apparently works but is really slow and needs cores!
 # as an example: would need 30 minutes for 3500 genes in 500 cells on 10 cores
 # so i changed the number of cells and genes used in predictions
-#' @importFrom SAVER saver
+#' @importFrom SAVER saver combine.saver
 #' @importFrom utils capture.output
 #' @importFrom doParallel registerDoParallel stopImplicitCluster
 .saver.impute <- function(countData, NCores, verbose) {
 
-  parallel = ifelse(is.null(NCores), FALSE, TRUE)
-
-  if(is.null(NCores)) {
-    parallel = FALSE
-  }
-
   if(!is.null(NCores)) {
-    parallel = TRUE
     doParallel::registerDoParallel(cores = NCores)
   }
 
   npred <- nrow(countData)/3 # number of genes for regression prediction
-  nzero <- round(ncol(countData)*0.1) # number of genes to run prediction for (minimum number of nonzero measurements)
 
-  if(!isTRUE(verbose)) {
-    message(paste0("SAVER messages:"))
+  # find genes with at least 50 % dropout and only do imputation for those
+  nsamples = ncol(countData)
+  counts0 = countData == 0
+  nn0 = rowSums(!counts0)
+  p0 = (nsamples - nn0)/nsamples
+  highDrop <- p0 > 0.5
+
+  d <- rownames(countData)[highDrop]
+  max.g <- 2500
+  x <- seq_along(d)
+  d1 <- split(d, ceiling(x/max.g))
+  str(d1)
+  saver.outs <- sapply(1:length(d1), function(s) {
+    genes <- d1[[s]]
+    genes.ind <- which(rownames(countData) %in% genes)
     invisible(utils::capture.output(
-      saver.out <- suppressMessages(
+      tmp <- suppressMessages(
         SAVER::saver(x = countData,
+                     do.fast = TRUE,
                      size.factor = NULL,
-                     parallel = parallel,
-                     nzero = nzero,
                      npred = npred,
                      pred.cells = NULL,
-                     pred.genes = NULL,
-                     pred.genes.only = FALSE,
-                     null.model = FALSE,
-                     dfmax = 300,
-                     nfolds = 5,
-                     nlambda = 50,
-                     remove.zero.genes = FALSE,
-                     verbose = TRUE,
-                     predict.time = TRUE)
-      )
-    ))
+                     pred.genes = genes.ind,
+                     pred.genes.only = TRUE,
+                     null.model = FALSE)
+    )))
+    tmp
+  }, simplify = F)
+
+  if(length(saver.outs)==1) {
+    saver.out <- saver.outs[[1]]
   }
 
-  if(isTRUE(verbose)) {
-    invisible(utils::capture.output(
-      saver.out <- SAVER::saver(x = countData,
-                                size.factor = NULL,
-                                parallel = parallel,
-                                nzero = nzero,
-                                npred = npred,
-                                pred.cells = NULL,
-                                pred.genes = NULL,
-                                pred.genes.only = FALSE,
-                                null.model = FALSE,
-                                dfmax = 300,
-                                nfolds = 5,
-                                nlambda = 50,
-                                remove.zero.genes = FALSE,
-                                verbose = FALSE,
-                                predict.time = TRUE)
-    ))
+  if(length(saver.outs)>1) {
+    saver.out <- .combine.saver(saver.outs)
   }
-
-
 
   if(!is.null(NCores)) {
     doParallel::stopImplicitCluster()
@@ -237,18 +221,29 @@
 
   ImputeData = saver.out$estimate
   # round to integer counts
-  ImputeData = round(ImputeData)
-  rownames(ImputeData) = rownames(countData)
-  colnames(ImputeData) = colnames(countData)
+  ImputeData = as.matrix(round(ImputeData))
+
+  dim(ImputeData)
+  dim(countData)
+  table(rownames(countData) == rownames(ImputeData))
+
+  # combine ImputeData with countData since imputation
+  # was only done for the genes with higher dropouts
+  ImputeData <- ImputeData[order(match(rownames(ImputeData), rownames(countData))),]
+  CombineData <- countData
+  CombineData[rownames(countData) %in% rownames(ImputeData),] <- ImputeData
+
+  rownames(CombineData) = rownames(countData)
+  colnames(CombineData) = colnames(countData)
 
   invisible(gc())
 
   # return object
-  return(ImputeData)
+  return(CombineData)
 }
 
 # Seurat
-#' @importFrom Seurat CreateSeuratObject AddImputedScore ExpMean LogVMR
+#' @importFrom Seurat CreateSeuratObject ExpMean LogVMR
 .seurat.impute <- function(countData, NCores, verbose) {
 
   # the original function returned Inf values for high expression genes,
@@ -265,63 +260,57 @@
                                            do.scale = FALSE,
                                            do.center = FALSE)
 
-  if(!isTRUE(verbose)) {
-    # find variable genes
-    seurat.obj <- .FindVarGenes(object = seurat.obj,
-                                mean.function = Seurat::ExpMean,
-                                dispersion.function = Seurat::LogVMR,
-                                set.var.genes = TRUE,
-                                x.low.cutoff = 0.1,
-                                x.high.cutoff = Inf,
-                                y.cutoff = 1,
-                                y.high.cutoff = Inf,
-                                num.bin = 20,
-                                sort.results = TRUE)
-    # imputation
-    seurat.obj <- Seurat::AddImputedScore(object = seurat.obj,
-                                          genes.use = seurat.obj@var.genes,
-                                          genes.fit = rownames(x = seurat.obj@data),
-                                          s.use = 20,
-                                          do.print = FALSE,
-                                          gram = ifelse(seurat.obj@var.genes<500, TRUE, FALSE))
-  }
+  # find genes with at least 50 % dropout and only do imputation for those
+  nsamples = ncol(countData)
+  counts0 = countData == 0
+  nn0 = rowSums(!counts0)
+  p0 = (nsamples - nn0)/nsamples
+  highDrop <- p0 > 0.5
 
-  if(isTRUE(verbose)) {
-    # find variable genes
-    seurat.obj <- .FindVarGenes(object = seurat.obj,
-                                mean.function = Seurat::ExpMean,
-                                dispersion.function = Seurat::LogVMR,
-                                set.var.genes = TRUE,
-                                x.low.cutoff = 0.1,
-                                x.high.cutoff = Inf,
-                                y.cutoff = 1,
-                                y.high.cutoff = Inf,
-                                num.bin = 20,
-                                sort.results = TRUE)
-    # imputation
-    seurat.obj <- Seurat::AddImputedScore(object = seurat.obj,
-                                          genes.use = seurat.obj@var.genes,
-                                          genes.fit = rownames(x = seurat.obj@data),
-                                          s.use = 20,
-                                          do.print = TRUE,
-                                          gram = ifelse(seurat.obj@var.genes<500, TRUE, FALSE))
-  }
+  # find variable genes
+  seurat.obj <- .FindVarGenes(object = seurat.obj,
+                              mean.function = Seurat::ExpMean,
+                              dispersion.function = Seurat::LogVMR,
+                              set.var.genes = TRUE,
+                              x.low.cutoff = 0.1,
+                              x.high.cutoff = Inf,
+                              y.cutoff = 1,
+                              y.high.cutoff = Inf,
+                              num.bin = 20,
+                              sort.results = TRUE)
+
+  print(length(seurat.obj@var.genes))
+  print(table(highDrop))
+
+  # imputation
+  seurat.obj <- .AddImputedScore(object = seurat.obj,
+                                 genes.use = seurat.obj@var.genes,
+                                 genes.fit = rownames(x = seurat.obj@data)[highDrop],
+                                 gram = ifelse(length(seurat.obj@var.genes)<500, TRUE, FALSE))
 
   # Seurat uses a lasso fit and subsequent preidciton for imputation
   # resulting in negative estimates.
   # i changed these to zero.
 
-  ImputeData = seurat.obj$imputed
+  ImputeData = seurat.obj@imputed
   ImputeData[ImputeData<0] = 0
   # round to integer counts
-  ImputeData = round(ImputeData)
-  rownames(ImputeData) = rownames(countData)
-  colnames(ImputeData) = colnames(countData)
+  ImputeData = as.matrix(round(ImputeData))
+
+  # combine ImputeData with countData since imputation
+  # was only done for the genes with higher dropouts
+  countData <- as.matrix(seurat.obj@raw.data)
+  ImputeData <- ImputeData[order(match(rownames(ImputeData), rownames(countData))),]
+  CombineData <- countData
+  CombineData[rownames(countData) %in% rownames(ImputeData),] <- ImputeData
+
+  rownames(CombineData) = rownames(countData)
+  colnames(CombineData) = colnames(countData)
 
   invisible(gc())
 
   # return object
-  return(ImputeData)
+  return(CombineData)
 }
 
 # scone

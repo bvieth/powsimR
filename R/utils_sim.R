@@ -383,7 +383,7 @@
     mod = cbind(mod[, ind])
     beta = cbind(beta[, ind])
     mumat = log2(effective.means + 1) + beta %*% t(mod)
-    mumat[mumat < 0] = 0
+    mumat[mumat < 0] = min(log2(effective.means + 1))
 
     # result count matrix
     counts = matrix(
@@ -436,7 +436,7 @@
     mod = cbind(mod[, ind])
     beta = cbind(beta[, ind])
     mumat = log2(effective.means + 1) + beta %*% t(mod)
-    mumat[mumat < 0] = 0
+    mumat[mumat < 0] = min(log2(effective.means + 1))
 
     # result count matrix
     counts = matrix(stats::rnbinom(nsamples * ngenes,
@@ -515,7 +515,7 @@
     beta = cbind(beta[, ind])
     mumat = log2(effective.means + 1) + beta %*% t(mod)
     mumat[-index,] = min(mu)/2
-    mumat[mumat < 0] = 0
+    mumat[mumat < 0] = min(log2(effective.means + 1))
 
     # result count matrix
     counts = matrix(
@@ -568,7 +568,7 @@
     mod = cbind(mod[, ind])
     beta = cbind(beta[, ind])
     mumat = log2(effective.means + 1) + beta %*% t(mod)
-    mumat[mumat < 0] = 0
+    mumat[mumat < 0] = min(log2(effective.means + 1))
 
     # result count matrix
     counts = matrix(stats::rnbinom(nsamples * ngenes, mu = 2 ^ mumat - 1, size = 1/disp), ncol = nsamples, nrow = ngenes)
@@ -631,7 +631,7 @@
     mod = cbind(mod[, ind])
     beta = cbind(beta[, ind])
     mumat = log2(effective.means + 1) + beta %*% t(mod)
-    mumat[mumat < 0] = 0
+    mumat[mumat < 0] = min(log2(effective.means + 1))
     muvec = as.vector(mumat)
 
     meanp0fit.nonamplified = sim.options$meanp0fit.nonamplified
@@ -804,7 +804,7 @@
     beta = cbind(beta[, ind])
     mumat = log2(effective.means + 1) + beta %*% t(mod)
     mumat[-index,] = min(mu)/2
-    mumat[mumat < 0] = 0
+    mumat[mumat < 0] = min(log2(effective.means + 1))
     muvec = as.vector(mumat)
 
     meanp0fit.nonamplified = sim.options$meanp0fit.nonamplified
@@ -979,7 +979,7 @@
     mod = cbind(mod[, ind])
     beta = cbind(beta[, ind])
     mumat = log2(effective.means + 1) + beta %*% t(mod)
-    mumat[mumat < 0] = 0
+    mumat[mumat < 0] = min(log2(effective.means + 1))
 
     # result count matrix
     counts = matrix(
@@ -1032,7 +1032,7 @@
     mod = cbind(mod[, ind])
     beta = cbind(beta[, ind])
     mumat = log2(effective.means + 1) + beta %*% t(mod)
-    mumat[mumat < 0] = 0
+    mumat[mumat < 0] = min(log2(effective.means + 1))
 
     # result count matrix
     counts = matrix(stats::rnbinom(nsamples * ngenes,
@@ -1112,7 +1112,7 @@
     beta = cbind(beta[, ind])
     mumat = log2(effective.means + 1) + beta %*% t(mod)
     mumat[-index,] = min(mu)/2
-    mumat[mumat < 0] = 0
+    mumat[mumat < 0] = min(log2(effective.means + 1))
 
     # result count matrix
     counts = matrix(
@@ -1165,7 +1165,7 @@
     mod = cbind(mod[, ind])
     beta = cbind(beta[, ind])
     mumat = log2(effective.means + 1) + beta %*% t(mod)
-    mumat[mumat < 0] = 0
+    mumat[mumat < 0] = min(log2(effective.means + 1))
 
     # result count matrix
     counts = matrix(stats::rnbinom(nsamples * ngenes, mu = 2 ^ mumat - 1, size = 1/disp), ncol = nsamples, nrow = ngenes)
@@ -1228,7 +1228,7 @@
     mod = cbind(mod[, ind])
     beta = cbind(beta[, ind])
     mumat = log2(effective.means + 1) + beta %*% t(mod)
-    mumat[mumat < 0] = 0
+    mumat[mumat < 0] = min(log2(effective.means + 1))
     muvec = as.vector(mumat)
 
     meanp0fit.nonamplified = sim.options$meanp0fit.nonamplified
@@ -1410,7 +1410,7 @@
     beta = cbind(beta[, ind])
     mumat = log2(effective.means + 1) + beta %*% t(mod)
     mumat[-index,] = min(mu)/2
-    mumat[mumat < 0] = 0
+    mumat[mumat < 0] = min(log2(effective.means + 1))
     muvec = as.vector(mumat)
 
     meanp0fit.nonamplified = sim.options$meanp0fit.nonamplified
@@ -1586,7 +1586,7 @@
     mod = cbind(mod[, ind])
     beta = cbind(beta[, ind])
     mumat = log2(effective.means + 1) + beta %*% t(mod)
-    mumat[mumat < 0] = 0
+    mumat[mumat < 0] = min(log2(effective.means + 1))
 
     # result count matrix
     cnts = matrix(
@@ -1650,7 +1650,7 @@
     mod = cbind(mod[, ind])
     beta = cbind(beta[, ind])
     mumat = log2(effective.means + 1) + beta %*% t(mod)
-    mumat[mumat < 0] = 0
+    mumat[mumat < 0] = min(log2(effective.means + 1))
 
     # result count matrix
     cnts = matrix(stats::rnbinom(nsamples * ngenes,
@@ -1666,14 +1666,20 @@
 
 # Simulate spike-in reads -------------------------------------------------
 
-.simSpike <- function(SpikeOptions, n1, n2) {
+.simSpike <- function(SpikeOptions, n1, n2, sf = NULL) {
   # sample mean expression values of spike-ins
   predictedMean = rowMeans(SpikeOptions$normCounts) /
     (SpikeOptions$EVGammaThetaEstimates$EGamma * SpikeOptions$EVGammaThetaEstimates$ETheta)
 
   # create size factor matrix
-  sf =  rep(1, n1+n2)
-  sizefactors.mat = .repmat(t(as.matrix(sf)), length(predictedMean), 1)
+  if(is.null(sf)) {
+    sf =  rep(1, n1+n2)
+    sizefactors.mat = .repmat(t(as.matrix(sf)), length(predictedMean), 1)
+  }
+  if(!is.null(sf)) {
+    sizefactors.mat = .repmat(t(as.matrix(sf)), length(predictedMean), 1)
+  }
+
 
   # simulate spike-ins assuming no biological variance contribution
   spike.cnts <- .simulateCountGenes(Xi=predictedMean,

@@ -32,16 +32,16 @@ knitr::opts_chunk$set(tidy.opts=list(width.cutoff=50),
 #  ipak(cranpackages, repository='CRAN')
 #  
 #  # BIOCONDUCTOR
-#  biocpackages <- c("AnnotationDbi", "BASiCS", "baySeq", "Biobase", "BiocGenerics",
+#  biocpackages <- c("AnnotationDbi", "baySeq", "Biobase", "BiocGenerics",
 #                    "BiocParallel", "DEDS", "DESeq2", "EBSeq", "edgeR", "IHW", "limma",
 #                    "Linnorm", "MAST", "monocle", "NOISeq", "qvalue", "ROTS", "RUVSeq",
-#                    "S4Vectors", "scater", "scDD", "scde", "scone", "scran",
+#                    "S4Vectors", "scater", "scDD", "scde", "scone", "scran", "SCnorm",
 #                    "SingleCellExperiment", "SummarizedExperiment", "zinbwave")
 #  ipak(biocpackages, repository='Bioconductor')
 #  
 #  # GITHUB
 #  githubpackages <- c('nghiavtr/BPSC', 'VCCRI/cidr', 'cz-ye/DECENT',
-#                      'mohuangx/SAVER', 'rhondabacher/SCnorm', 'statOmics/zingeR')
+#                      'mohuangx/SAVER', 'statOmics/zingeR')
 #  ipak(githubpackages, repository = 'github')
 
 ## ----install, echo=TRUE, eval=FALSE, tidy=FALSE----------------------------

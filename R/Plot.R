@@ -330,8 +330,8 @@ plotSpike <- function(estSpike, annot=TRUE) {
                   Deviation=sd(normCounts),
                   Error=sd(normCounts)/sqrt(n())) %>%
     dplyr::ungroup()
-  limits <- ggplot2::aes(ymax = Expectation + Error,
-                         ymin= Expectation - Error)
+  limits <- ggplot2::aes(ymax = log10(Expectation) + log10(Error),
+                         ymin= log10(Expectation) - log10(Error))
   Calibration = cal.dat %>%
     dplyr::left_join(estSpike$Input$spikeInfo, by="SpikeID") %>%
     dplyr::group_by(SampleID) %>%
@@ -342,16 +342,16 @@ plotSpike <- function(estSpike, annot=TRUE) {
 
   # calibration curve plot
   cal.plot <- ggplot2::ggplot(data = cal.info.dat,
-                              ggplot2::aes(x=SpikeInput,
-                                           y=Expectation)) +
-    # ggplot2::geom_pointrange(limits) +
+                              ggplot2::aes(x=log10(SpikeInput),
+                                           y=log10(Expectation))) +
+    ggplot2::geom_pointrange(limits) +
     ggplot2::geom_point() +
-    ggplot2::geom_smooth(method='lm', se=TRUE) +
+    ggplot2::geom_smooth(method='lm',formula=y~x) +
     ggplot2::annotate("text", label = paste0("italic(R) ^ 2 == ",
                                              round(Calibration$Rsquared, digits = 2),
                                              "%+-%",
                                              round(Calibration$RsquaredSE, digits = 2)),
-                      parse = T, x = 0.1, y = 100, size = 4) +
+                      parse = T, x = 0.2, y = 4, size = 4) +
     ggplot2::theme_minimal() +
     ggplot2::scale_x_log10(labels=c("0.1","1","10","100","1,000"),breaks=c(0.1,1,10,100,1000)) +
     ggplot2::scale_y_log10(labels=c("0.1","1","10","100","1,000"),breaks=c(0.1,1,10,100,1000)) +
@@ -372,7 +372,7 @@ plotSpike <- function(estSpike, annot=TRUE) {
     dplyr::left_join(estSpike$Input$spikeInfo, by="SpikeID")
 
   capture.plot <- ggplot2::ggplot(data = capture.dat,
-                                  ggplot2::aes(x=SpikeInput,
+                                  ggplot2::aes(x=log10(SpikeInput+1),
                                                y=hat_p_success)) +
     ggplot2::geom_point() +
     ggplot2::geom_smooth(method="glm",  method.args = list(family = "binomial"), se=T) +
@@ -551,7 +551,7 @@ plotCounts <- function(simCounts, Distance, Scale, DimReduce, verbose = T) {
 # plotEvalDE -------------------------------------------------------------
 #' @name plotEvalDE
 #' @aliases plotEvalDE
-#' @title Visualize statistical power assessment
+#' @title Visualize power assessment
 #' @description This function plots the results of \code{\link{evaluateDE}} for assessing the error rates and sample size requirements.
 #' @usage plotEvalDE(evalRes, rate=c('marginal', 'stratified'),
 #'                    quick=TRUE, annot=TRUE)
@@ -824,7 +824,7 @@ plotEvalDE <- function(evalRes, rate=c('marginal', 'stratified'), quick=TRUE, an
 
 #' @name plotEvalSim
 #' @aliases plotEvalSim
-#' @title Visualize simulation setup assessment
+#' @title Visualize power assessment
 #' @description This function plots the results of \code{\link{evaluateSim}} for assessing the setup performance, i.e. normalisation method performance.
 #' @usage plotEvalSim(evalRes, annot=TRUE)
 #' @param evalRes The output of \code{\link{evaluateSim}}.
@@ -1093,10 +1093,10 @@ plotEvalSim <- function(evalRes, annot=TRUE) {
 
 #' @name plotTime
 #' @aliases plotTime
-#' @title Visualize computational time of simulations
+#' @title Visualize computational time
 #' @description This function plots the computational running time of simulations.
 #' @usage plotTime(simRes, Table=TRUE, annot=TRUE)
-#' @param simRes The output of \code{\link{simulateDE}}.
+#' @param simRes The output of \code{\link{simulateDE}} or \code{\link{simulateFlow}}.
 #' @param Table A logical vector. If \code{TRUE}, a table of average computational running time per step and sample size is printed additionally.
 #' @param annot A logical vector. If \code{TRUE}, a short figure legend under the plot is included.
 #' @return A ggplot object.

@@ -2,7 +2,7 @@
 % Please edit documentation in R/Plot.R
 \name{plotEvalDE}
 \alias{plotEvalDE}
-\title{Visualize statistical power assessment}
+\title{Visualize power assessment}
 \usage{
 plotEvalDE(evalRes, rate=c('marginal', 'stratified'),
                    quick=TRUE, annot=TRUE)

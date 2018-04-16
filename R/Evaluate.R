@@ -366,10 +366,10 @@ evaluateDist <- function(countData, batchData =NULL,
 #' @name evaluateSim
 #' @aliases evaluateSim
 #' @title Compute the performance related metrics from simulation results.
-#' @description This function takes the simulation output from \code{\link{simulateDE}}
+#' @description This function takes the simulation output from \code{\link{simulateDE}} or \code{\link{simulateFlow}}
 #' and computes several metrics that give an indication of the simulation setup performance.
 #' @usage evaluateSim(simRes, timing=TRUE)
-#' @param simRes The result from \code{\link{simulateDE}}.
+#' @param simRes The result from \code{\link{simulateDE}} or \code{\link{simulateFlow}}.
 #' @param timing A logical vector indicating whether to summarise computational time of simulation run.
 #' Default is \code{TRUE}.
 #' @return A list with the following entries:
@@ -381,12 +381,13 @@ evaluateDist <- function(countData, batchData =NULL,
 #' the root mean square residual error of a robust linear model (rRMSE, \code{\link[MASS]{rlm}}) and
 #' the ratio between estimated and true size factors of the two groups (\code{GroupX}).}
 #' \item{Clustering}{The adjusted rand index between the true group assignment and derived group assignment
-#' by clustering (not applicable for the moment).}
+#' by clustering (only for \code{\link{simulateFlow}}).}
 #' @author Beate Vieth
 #' @seealso \code{\link{estimateParam}} for negative binomial parameters,
 #' \code{\link{SimSetup}} and
 #' \code{\link{DESetup}} for setting up simulation parameters and
-#' \code{\link{simulateDE}} for simulating differential expression
+#' \code{\link{simulateDE}} for simulating differential expression and
+#' \code{\link{simulateFlow}} for simulating workflow.
 #' @examples
 #' \dontrun{
 #' ## using example data set
@@ -739,13 +740,18 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
       Zg = Zg2 = rep(0, ngenes)
       Zg[DEid] = 1
       ## find target (interesting) genes
-      if(target.by == "lfc") {
-        ix = abs(lfc) > delta
-      } else if (target.by == "effectsize") {
-        effectsize = lfc / sqrt(1/(log2(mu[,,i])+log2(disp[,,i])))
-        ix = abs(effectsize) > delta
+      if(delta == 0) {
+        Zg2 = Zg
       }
-      Zg2[ix] = 1
+      if(!delta == 0) {
+        if(target.by == "lfc") {
+          ix = abs(lfc) > delta
+        } else if (target.by == "effectsize") {
+          effectsize = lfc / sqrt(1/(log2(mu[,,i])+log2(disp[,,i])))
+          ix = abs(effectsize) > delta
+        }
+        Zg2[ix] = 1
+      }
 
       ### STRATIFICATION
       ## calculate stratificaton
@@ -1082,6 +1088,7 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
 #' @importFrom IHW ihw adj_pvalues
 #' @importFrom ROCR prediction performance
 #' @importFrom zoo rollmean
+#' @importFrom iCOBRA calculate_performance COBRAData
 #' @export
 evaluateROC <- function(simRes, alpha.type=c("adjusted","raw"),
                        MTC=c('BY', 'BH', 'Storey', 'IHW',
@@ -1100,6 +1107,7 @@ evaluateROC <- function(simRes, alpha.type=c("adjusted","raw"),
   sim.opts = simRes$sim.settings
   DEids = simRes$sim.settings$DEid
   lfcs = simRes$sim.settings$pLFC
+  elfcs = simRes$elfc
   nsims = simRes$sim.settings$nsims
   DEmethod = simRes$sim.settings$DEmethod
   pvalue = simRes$pvalue
@@ -1109,26 +1117,36 @@ evaluateROC <- function(simRes, alpha.type=c("adjusted","raw"),
   ## output objects
   my.names = paste0(Nreps1," vs ",Nreps2)
   Truths = Predictions = array(NA,dim=c(length(Nreps1), ngenes, nsims))
-  predObjs = rocObjs = prcObjs = rocaucObjs = prcaucObjs = matObjs = stats::setNames(replicate(length(Nreps1),NULL),my.names)
+  predObjs = rocObjs = prcObjs = rocaucObjs = prcaucObjs = matObjs = f1Objs = stats::setNames(replicate(length(Nreps1),NULL),my.names)
+  perfCOBRA = stats::setNames(replicate(length(Nreps1),NULL),my.names)
+  perfCOBRA <- lapply(1:length(perfCOBRA), function(x) {
+    perfCOBRA[[x]] = vector("list", nsims)
+  })
 
   ## loop over simulation and replicates
   for(i in 1:nsims) {
     for(j in seq(along=Nreps1)) {
       Nrep1 = Nreps1[j]
       Nrep2 = Nreps2[j]
+      elfc = as.numeric(elfcs[,j,i])
       ## get DE flags.
       DEid = DEids[[i]]
       lfc = lfcs[[i]]
-      Zg = Zg2 = rep(1, ngenes)
-      Zg[DEid] = 0
+      Zg = Zg2 = rep(0, ngenes)
+      Zg[DEid] = 1
       ## find target (interesting) genes
-      if(target.by == "lfc") {
-        ix = abs(lfc) > delta
-      } else if (target.by == "effectsize") {
-        effectsize = lfc / sqrt(1/(log2(mu[,,i])+log2(disp[,,i])))
-        ix = abs(effectsize) > delta
+      if(delta == 0) {
+        Zg2 = Zg
       }
-      Zg2[ix] = 0
+      if(!delta == 0) {
+        if(target.by == "lfc") {
+          ix = abs(lfc) > delta
+        } else if (target.by == "effectsize") {
+          effectsize = lfc / sqrt(1/(log2(mu[,,i])+log2(disp[,,i])))
+          ix = abs(effectsize) > delta
+        }
+        Zg2[ix] = 1
+      }
 
       ## get type I error alpha (pvalue or fdr output from testing)
       if(alpha.type == "raw") {
@@ -1177,12 +1195,25 @@ evaluateROC <- function(simRes, alpha.type=c("adjusted","raw"),
 
     Truths[j,,i] = Zg2
     Predictions[j,,i] = x
+
+    # iCOBRA
+    cobradata <- iCOBRA::COBRAData(pval = data.frame("Sim" = pval, row.names = paste0("G", 1:ngenes)),
+                                  padj = data.frame("Sim" = x, row.names = paste0("G", 1:ngenes)),
+                                  score =  data.frame("Sim" = elfc, row.names = paste0("G", 1:ngenes)),
+                                  truth = data.frame("status" = Zg2, "logFC" = lfc, "expr" = meanexpr, row.names = paste0("G", 1:ngenes)))
+    invisible(capture.output(
+      perfCOBRA[[j]][[i]] <- suppressMessages(
+        iCOBRA::calculate_performance(cobradata, binary_truth = "status", cont_truth = "logFC", thrs = seq(from=0.01, to=0.2, by=0.01), svalthrs = c(0.01, 0.05, 0.1), splv = "none", maxsplit = 4, onlyshared = FALSE, thr_venn = 0.05, type_venn = "adjp", topn_venn = 100, rank_by_abs = TRUE, prefer_pval = TRUE)
+        )
+      ))
     }
+
   }
 
   for(j in seq(along=Nreps1)) {
     predObjs[[j]] <- ROCR::prediction(predictions = Predictions[j,,],
-                                      labels = Truths[j,,])
+                                      labels = Truths[j,,],
+                                      label.ordering = c(0, 1))
 
     # ROC curve: TPR vs FPR
     rocObjs[[j]] <- ROCR::performance(predObjs[[j]], "tpr", "fpr")
@@ -1203,6 +1234,8 @@ evaluateROC <- function(simRes, alpha.type=c("adjusted","raw"),
     prcaucObjs[[j]]@y.name <- c("Area under the Precision-Recall ROC curve")
 
     matObjs[[j]] <- ROCR::performance(predObjs[[j]], "mat")
+
+    f1Objs[[j]] <- ROCR::performance(predObjs[[j]], "f")
   }
 
   output <- list(`ROCR-Prediction` = predObjs,
@@ -1211,6 +1244,8 @@ evaluateROC <- function(simRes, alpha.type=c("adjusted","raw"),
                  `ROCR-MAT`= matObjs,
                  `ROCR-AUC`= rocaucObjs,
                  `PRC-AUC` = prcaucObjs,
+                 `PRC-Fscore` = f1Objs,
+                 `iCOBRA-Performance` = perfCOBRA,
                  ## below are input parameters:
                  alpha.type=alpha.type,
                  MTC=ifelse(alpha.type=="adjusted", MTC, "not applicable"),

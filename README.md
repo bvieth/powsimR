@@ -6,7 +6,7 @@ powsimR: Power analysis for bulk and single cell RNA-seq experiments
 NEWS
 ----
 
-Version 1.1.0 released with the following changes / additions (2018-04-09):
+Version 1.1.0 released with the following changes / additions (2018-04-16):
 
 -   simulation of batch effects (see options `p.B`, `bLFC` and `bPattern` in `DESetup` and `simulateCounts`)
 -   simulation of spike-in expression (see `estimateSpike` , `plotSpike` and option `spikeIns` in `simulateDE` and `simulateCounts`)
@@ -56,16 +56,16 @@ cranpackages <- c("bbmle", "broom", "cluster", "cobs", "cowplot", "data.table",
 ipak(cranpackages, repository = "CRAN")
 
 # BIOCONDUCTOR
-biocpackages <- c("AnnotationDbi", "BASiCS", "baySeq", "Biobase", "BiocGenerics", 
-    "BiocParallel", "DEDS", "DESeq2", "EBSeq", "edgeR", "IHW", "limma", "Linnorm", 
-    "MAST", "monocle", "NOISeq", "qvalue", "ROTS", "RUVSeq", "S4Vectors", "scater", 
-    "scDD", "scde", "scone", "scran", "SingleCellExperiment", "SummarizedExperiment", 
+biocpackages <- c("AnnotationDbi", "baySeq", "Biobase", "BiocGenerics", "BiocParallel", 
+    "DEDS", "DESeq2", "EBSeq", "edgeR", "IHW", "limma", "Linnorm", "MAST", "monocle", 
+    "NOISeq", "qvalue", "ROTS", "RUVSeq", "S4Vectors", "scater", "scDD", "scde", 
+    "scone", "scran", "SCnorm", "SingleCellExperiment", "SummarizedExperiment", 
     "zinbwave")
 ipak(biocpackages, repository = "Bioconductor")
 
 # GITHUB
 githubpackages <- c("nghiavtr/BPSC", "VCCRI/cidr", "cz-ye/DECENT", "mohuangx/SAVER", 
-    "rhondabacher/SCnorm", "statOmics/zingeR")
+    "statOmics/zingeR")
 ipak(githubpackages, repository = "github")
 ```
 

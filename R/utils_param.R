@@ -125,7 +125,7 @@
     # define outlier cells
     libsize.drop <- scater::isOutlier(sce$total_counts, nmads=3, type="both", log=TRUE)
     feature.drop <- scater::isOutlier(sce$total_features, nmads=3, type="both", log=TRUE)
-    # kick out owly expressed genes
+    # kick out lowly expressed genes
     ave.counts <- scater::calcAverage(sce)
     keep <- ave.counts >= 0.2
     # kick out features / cells that do not pass thresholds

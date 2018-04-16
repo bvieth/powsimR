@@ -1,6 +1,7 @@
 # NOTES -------------------------------------------------------------------
 
-# Note that the function in scater gave negative values and when cpm.DGEList was allowed to take the log itself all CPMs were nonzero!
+# Note that the function in scater gave negative values and
+# when cpm.DGEList was allowed to take the log itself all CPMs were nonzero!
 
 # ROTS, NOISeq, EBSeq, monocle, scDD have no log fold changes internally calculated?
 

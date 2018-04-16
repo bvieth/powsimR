@@ -67,7 +67,36 @@
   return(object)
 }
 
+.AddImputedScore <- function (object, genes.use = NULL, genes.fit = NULL, gram = TRUE)
+{
+  genes.use <- genes.use[genes.use %in% rownames(x = object@data)]
+  genes.fit <- genes.fit[genes.fit %in% rownames(x = object@data)]
+  lasso.input <- t(x = object@data[genes.use, ])
+  lasso.fits <- data.frame(t(x = sapply(X = genes.fit, FUN = function(x) {
+    return(.lasso.fxn(lasso.input = as.matrix(t(x = object@data[genes.use[genes.use != x], ])),
+                     genes.obs = object@data[x, ],
+                     gene.name = x, gram = gram))
+  }, USE.NAMES = T)))
+  genes.old <- genes.fit[genes.fit %in% rownames(x = object@imputed)]
+  genes.new <- genes.fit[!(genes.fit %in% rownames(x = object@imputed))]
+  if (length(x = genes.old) > 0) {
+    object@imputed[genes.old, ] <- lasso.fits[genes.old,]
+  }
+  object@imputed <- rbind(object@imputed, lasso.fits[genes.new, ])
+  return(object)
+}
 
+#' @importFrom lars lars predict.lars
+.lasso.fxn <- function (lasso.input, genes.obs, s.use = 20, gene.name = NULL,
+                        gram = TRUE)
+{
+  lasso.model <- lars::lars(x = lasso.input, y = as.numeric(x = genes.obs),
+                      type = "lasso", use.Gram = gram)
+  lasso.fits <- lars::predict.lars(object = lasso.model, newx = lasso.input,
+                             type = "fit")$fit
+  lasso.fit <- rowMeans(lasso.fits, na.rm = TRUE)
+  return(lasso.fit)
+}
 # # ORIGINAL ----------------------------------------------------------------
 #
 # Seurat::FindVariableGenes

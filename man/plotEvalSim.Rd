@@ -2,7 +2,7 @@
 % Please edit documentation in R/Plot.R
 \name{plotEvalSim}
 \alias{plotEvalSim}
-\title{Visualize simulation setup assessment}
+\title{Visualize power assessment}
 \usage{
 plotEvalSim(evalRes, annot=TRUE)
 }
