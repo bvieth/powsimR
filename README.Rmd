@@ -16,7 +16,11 @@ knitr::opts_chunk$set(
 
 ## NEWS
 
-Version 1.1.0 released with the following changes / additions (`r Sys.Date()`):
+**Version 1.1.1** released with the following changes / additions (2018-04-19):
+
+* `simulateDE` now with the option to perform DE testing on filtered/imputed counts (option `DEFilter`)
+
+**Version 1.1.0** released with the following changes / additions (2018-03-29):
 
 * simulation of batch effects (see options `p.B`, `bLFC` and `bPattern` in `DESetup` and `simulateCounts`)
 * simulation of spike-in expression (see `estimateSpike` , `plotSpike` and option `spikeIns` in `simulateDE` and `simulateCounts`)
@@ -28,18 +32,19 @@ Version 1.1.0 released with the following changes / additions (`r Sys.Date()`):
 
 ## Installation Guide
 
-You can install powsimR from GitHub using devtools:
+For the installation, the R package `devtools` is needed.
 
 ```{r, echo=T, eval=F, tidy=T}
+install.packages('devtools')
 library(devtools)
-install_github("bvieth/powsimR")
 ```
 
-If the default installation does not work, you can install powsimR by first installing its dependencies:
+I recommend to install first the dependencies manually and then powsimR: 
 
 ```{r, echo=T, eval=F, tidy=T}
 ipak <- function(pkg, repository=c('CRAN', 'Bioconductor', 'github')){
   new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  # new.pkg <- pkg
   if (length(new.pkg)) {
     if(repository=='CRAN') {
       install.packages(new.pkg, dependencies = TRUE)
@@ -89,13 +94,21 @@ devtools::install_github('bvieth/powsimR',
 library("powsimR")
 ```
 
-Some users have experienced issues installing powsimR due to Tex compilation errors. If that is the case, you can leave out building the vignette.
+Alternative, you can try to install powsimR and its dependencies directly using devtools:
+
+```{r, echo=T, eval=F, tidy=T}
+devtools::install_github("bvieth/powsimR")
+```
+
+Some users have experienced issues installing powsimR due to vignette compilation errors. If that is the case, you can leave out building the vignette.
+
+### DLLs and ulimit
 
 Note that the error "maximal number of DLLs reached..." might occur due to the loading of many shared objects by Bioconductor packages. Restarting the R session after installing dependencies / powsimR will help.
 Starting with R version 3.4.0, one can set the environmental variable 'R_MAX_NUM_DLLS' to a higher number. See `?Startup()` for more information. I recommend to increase the maximum number of DLLs that can be loaded to at least 500. The environmental variable R\_MAX\_NUM\_DLLS can be set in R\_HOME/etc/Renviron prior to starting R. For that locate the Renviron file and add the following line: R\_MAX\_NUM\_DLLS=xy where xy is the number of DLLs.
-On my Ubuntu machine, the Renviron file is in /usr/lib/R/etc/ and I can set it to 500. A smaller number, e.g. 300, is sufficient however.
+On my Ubuntu machine, the Renviron file is in /usr/lib/R/etc/ and I can set it to 500.
 
-In addition, the user limits for open files (unix: ulimit) might have to be set to a higher number. For doing this on a MAC, check out this help page [here](https://gist.github.com/tombigel/d503800a282fcadbee14b537735d202c).
+In addition, the user limits for open files (unix: ulimit) might have to be set to a higher number to accomodate the increase in DLLs. Please check out the help pages for [MACs](https://gist.github.com/tombigel/d503800a282fcadbee14b537735d202c) and [Linux](https://glassonionblog.wordpress.com/2013/01/27/increase-ulimit-and-file-descriptors-limit/) for guidance.
 
 ## User Guide
 
@@ -123,6 +136,7 @@ Please send bug reports and feature requests by opening a new issue on
 ## R Session Info
 
 ```{r}
+library(powsimR)
 sessionInfo()
 ```
 

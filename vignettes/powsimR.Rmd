@@ -37,7 +37,7 @@ knitr::opts_chunk$set(tidy.opts=list(width.cutoff=50),
 # Prerequisites {.unnumbered}
 
 `powsimR` has a number of dependencies that need to be installed before hand (see also the README file on github). I recommend to increase the maximum number of DLLs that can be loaded to at least 500. The environmental variable R\_MAX\_NUM\_DLLS can be set in R\_HOME/etc/Renviron prior to starting R (for further details see `Startup()`). For that locate the Renviron file and add the following line: R\_MAX\_NUM\_DLLS=xy where xy is the number of DLLs.
-On my Ubuntu machine, the Renviron file is in /usr/lib/R/etc/ and I can set it to 500. A smaller number, e.g. 300, is sufficient however.
+On my Ubuntu machine, the Renviron file is in /usr/lib/R/etc/ and I can set it to 500. 
 
 ```{r dep, echo = TRUE, eval = FALSE, tidy = FALSE}
 ipak <- function(pkg, repository=c('CRAN', 'Bioconductor', 'github')){
@@ -226,6 +226,7 @@ simDE = simulateDE(n1 = c(24,48,96,192,384,800),
                    Preclust = FALSE,
                    Prefilter = NULL,
                    Impute = NULL,
+                   DEFilter = FALSE,
                    spikeIns = FALSE,
                    NCores = NULL,
                    verbose = TRUE)

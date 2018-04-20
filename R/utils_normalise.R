@@ -16,8 +16,10 @@
   if(normalisation=='UQ') {NormData <- .UQ.calc(countData = countData,
                                                 verbose = verbose)}
   if(normalisation=='MR') {NormData <- .MR.calc(countData = countData,
+                                                spikeData = spikeData,
                                                 verbose = verbose)}
   if(normalisation=='PosCounts') {NormData <- .PosCounts.calc(countData = countData,
+                                                              spikeData = spikeData,
                                                               verbose = verbose)}
   if(normalisation=='Linnorm') {NormData <- .linnormnorm.calc(countData = countData,
                                                           spikeData = spikeData,
@@ -52,11 +54,11 @@
                                                   spikeData = spikeData,
                                                   batchData = batchData,
                                                   verbose = verbose)}
-  if(normalisation=='BASiCS') {NormData <- .BASiCS.calc(countData = countData,
-                                                        spikeData = spikeData,
-                                                        spikeInfo = spikeInfo,
-                                                        batchData = batchData,
-                                                        verbose = verbose)}
+  # if(normalisation=='BASiCS') {NormData <- .BASiCS.calc(countData = countData,
+  #                                                       spikeData = spikeData,
+  #                                                       spikeInfo = spikeInfo,
+  #                                                       batchData = batchData,
+  #                                                       verbose = verbose)}
   if(normalisation=='depth') {NormData <- .depth.calc(countData = countData,
                                                       verbose = verbose)}
   if(normalisation=='none') {NormData <- .none.calc(countData = countData,
@@ -101,11 +103,28 @@
 # MR ---------------------------------------------------------
 
 #' @importFrom DESeq2 DESeqDataSetFromMatrix estimateSizeFactors counts
-.MR.calc <- function(countData, verbose) {
-  dds <- suppressMessages(DESeq2::DESeqDataSetFromMatrix(countData = countData,
-                                        colData=data.frame(group=rep('A', ncol(countData))),
-                                        design=~1))
-  dds <- DESeq2::estimateSizeFactors(dds, type='ratio')
+.MR.calc <- function(countData, spikeData, verbose) {
+
+  spike = ifelse(is.null(spikeData), FALSE, TRUE)
+
+  if(spike==TRUE) {
+    message(paste0("Using controlGenes, i.e. spike-ins for normalisation!"))
+    rownames(spikeData) = paste('ERCC', 1:nrow(spikeData), sep="-")
+    cnts = rbind(countData, spikeData)
+    controlgenes = grepl(pattern='ERCC', rownames(cnts))
+    dds <- suppressMessages(DESeq2::DESeqDataSetFromMatrix(countData = cnts,
+                                                           colData=data.frame(group=rep('A', ncol(countData))),
+                                                           design=~1))
+    dds <- DESeq2::estimateSizeFactors(dds, type='ratio', controlGenes = controlgenes)
+  }
+  if(spike==FALSE) {
+    message(paste0("Using all genes for normalisation!"))
+    dds <- suppressMessages(DESeq2::DESeqDataSetFromMatrix(countData = countData,
+                                                           colData=data.frame(group=rep('A', ncol(countData))),
+                                                           design=~1))
+    dds <- DESeq2::estimateSizeFactors(dds, type='ratio')
+  }
+
   sf <- DESeq2::sizeFactors(dds)
   names(sf) <- colnames(countData)
   norm.counts <- DESeq2::counts(dds, normalized=TRUE)
@@ -119,13 +138,27 @@
 # poscounts -------------------------------------------------
 
 #' @importFrom DESeq2 DESeqDataSetFromMatrix estimateSizeFactors
-.PosCounts.calc <- function(countData, verbose) {
-  dds <- suppressMessages(
-    DESeq2::DESeqDataSetFromMatrix(countData = countData,
-                                   colData=data.frame(group=rep('A', ncol(countData))),
-                                   design=~1)
-    )
-  dds <- DESeq2::estimateSizeFactors(dds, type='poscounts')
+.PosCounts.calc <- function(countData, spikeData, verbose) {
+  spike = ifelse(is.null(spikeData), FALSE, TRUE)
+
+  if(spike==TRUE) {
+    message(paste0("Using controlGenes, i.e. spike-ins for normalisation!"))
+    rownames(spikeData) = paste('ERCC', 1:nrow(spikeData), sep="-")
+    cnts = rbind(countData, spikeData)
+    controlgenes = grepl(pattern='ERCC', rownames(cnts))
+    dds <- suppressMessages(DESeq2::DESeqDataSetFromMatrix(countData = cnts,
+                                                           colData=data.frame(group=rep('A', ncol(countData))),
+                                                           design=~1))
+    dds <- DESeq2::estimateSizeFactors(dds, type='poscounts', controlGenes = controlgenes)
+  }
+  if(spike==FALSE) {
+    message(paste0("Using all genes for normalisation!"))
+    dds <- suppressMessages(DESeq2::DESeqDataSetFromMatrix(countData = countData,
+                                                           colData=data.frame(group=rep('A', ncol(countData))),
+                                                           design=~1))
+    dds <- DESeq2::estimateSizeFactors(dds, type='poscounts')
+  }
+
   sf <- DESeq2::sizeFactors(dds)
   names(sf) <- colnames(countData)
   norm.counts <- DESeq2::counts(dds, normalized=TRUE)
@@ -478,7 +511,7 @@
 
   ncores = ifelse(is.null(NCores), 1, NCores)
 
-  # calculate TPM / CPM
+  # calculate TPM / CPM of genes
   if(!is.null(Lengths) && !is.null(MeanFragLengths)) {
     if(verbose) {message(paste0("Calculating TPM using Lengths and MeanFragLengths."))}
     ed <- .counts_to_tpm(countData=countData,
@@ -495,11 +528,12 @@
   }
 
   # make annotated dataframes for monocle
+  # for genes
   gene.dat <- data.frame(row.names = rownames(countData),
                          gene_short_name = rownames(countData),
                          biotype=rep("protein_coding", nrow(countData)),
                          num_cells_expressed=rowSums(countData>0))
-
+  # for cells
   if(!is.null(batchData)) {
     if(!is.vector(batchData)) {
       cell.dat <- data.frame(row.names=colnames(countData),
@@ -545,7 +579,7 @@
                                           cores = ncores,
                                           verbose = verbose)
 
-      #create cell data set wih RPC
+      # create cell data set wih RPC
       eds <- monocle::newCellDataSet(cellData = as.matrix(rpc_matrix),
                                      phenoData = pd,
                                      featureData = fd,
@@ -611,9 +645,7 @@
                                              locfunc=median,
                                              round_exprs = T,
                                              method = "mean-geometric-mean-total")
-    #  It can be either "mean-geometric-mean-total" (default), "weighted-median", "median-geometric-mean", "median", "mode", "geometric-mean-total".
     names(sf) <- colnames(Biobase::exprs(eds))
-
     norm.counts <- t(t(countData)/sf)
     }
 

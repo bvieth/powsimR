@@ -22,8 +22,6 @@
                      DEOpts,
                      spikeData,
                      spikeInfo,
-                     Lengths,
-                     MeanFragLengths,
                      NCores,
                      verbose) {
   # methods developed for bulk

@@ -115,6 +115,7 @@ knitr::include_graphics("lfcdist.jpeg")
 #                     Preclust = FALSE,
 #                     Prefilter = NULL,
 #                     Impute = NULL,
+#                     DEFilter = FALSE,
 #                     spikeIns = FALSE,
 #                     NCores = NULL,
 #                     verbose = TRUE)

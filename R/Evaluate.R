@@ -366,10 +366,10 @@ evaluateDist <- function(countData, batchData =NULL,
 #' @name evaluateSim
 #' @aliases evaluateSim
 #' @title Compute the performance related metrics from simulation results.
-#' @description This function takes the simulation output from \code{\link{simulateDE}} or \code{\link{simulateFlow}}
+#' @description This function takes the simulation output from \code{\link{simulateDE}}
 #' and computes several metrics that give an indication of the simulation setup performance.
 #' @usage evaluateSim(simRes, timing=TRUE)
-#' @param simRes The result from \code{\link{simulateDE}} or \code{\link{simulateFlow}}.
+#' @param simRes The result from \code{\link{simulateDE}}.
 #' @param timing A logical vector indicating whether to summarise computational time of simulation run.
 #' Default is \code{TRUE}.
 #' @return A list with the following entries:
@@ -380,14 +380,11 @@ evaluateDist <- function(countData, batchData =NULL,
 #' \item{SizeFactors}{The median absolute deviation (MAD) between the estimated and true size factors,
 #' the root mean square residual error of a robust linear model (rRMSE, \code{\link[MASS]{rlm}}) and
 #' the ratio between estimated and true size factors of the two groups (\code{GroupX}).}
-#' \item{Clustering}{The adjusted rand index between the true group assignment and derived group assignment
-#' by clustering (only for \code{\link{simulateFlow}}).}
 #' @author Beate Vieth
 #' @seealso \code{\link{estimateParam}} for negative binomial parameters,
 #' \code{\link{SimSetup}} and
 #' \code{\link{DESetup}} for setting up simulation parameters and
-#' \code{\link{simulateDE}} for simulating differential expression and
-#' \code{\link{simulateFlow}} for simulating workflow.
+#' \code{\link{simulateDE}} for simulating differential expression
 #' @examples
 #' \dontrun{
 #' ## using example data set

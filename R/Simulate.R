@@ -1,3 +1,4 @@
+
 # simulateDE --------------------------------------------------------------
 
 #' @name simulateDE
@@ -14,19 +15,20 @@
 #' sim.settings,
 #' DEmethod,
 #' normalisation,
-#' Preclust=FALSE,
+#' Preclust = FALSE,
 #' Prefilter = NULL,
-#' Impute=NULL,
-#' spikeIns=FALSE,
-#' NCores=NULL,
-#' verbose=TRUE)
+#' Impute = NULL,
+#' DEFilter = FALSE,
+#' spikeIns = FALSE,
+#' NCores = NULL,
+#' verbose = TRUE)
 #' @param n1,n2 Integer vectors specifying the number of biological replicates in each group. Default values are n1=c(20,50,100) and n2=c(30,60,120).
 #' @param sim.settings This object specifies the simulation setup. This must be the return object from \code{\link{SimSetup}}.
 #' @param DEmethod A character vector specifying the DE detection method to be used.
 #' Please consult the Details section for available options.
 #' @param normalisation Normalisation method to use.
 #' Please consult the Details section for available options.
-#' @param Preclust Whether to run a  hierarchical clustering prior to normalisation.
+#' @param Preclust A logical vector indicating whether to run a hierarchical clustering prior to normalisation.
 #' This is implemented for scran only. Default is \code{FALSE}.
 #' For details, see \code{\link[scran]{quickCluster}}.
 #' @param Prefilter A character vector specifying the gene expression filtering method
@@ -37,13 +39,15 @@
 #' to be used prior to normalisation.
 #' Default is \code{NULL}, i.e. no imputation.
 #' Please consult the Details section for available options.
-#' @param spikeIns Logical value to indicate whether to simulate spike-ins.
+#' @param DEFilter A logical vector indicating whether to run DE testing on filtered and/or imputed count data.
+#' Default is \code{FALSE}.
+#' @param spikeIns Logical vector to indicate whether to simulate spike-ins.
 #' Default is \code{FALSE}.
 #' @param NCores integer positive number of cores for parallel processing.
 #' Default is \code{NULL}, i.e. 1 core.
-#' @param verbose Logical value to indicate whether to show progress report of simulations.
+#' @param verbose Logical vector to indicate whether to show progress report of simulations.
 #' Default is \code{TRUE}.
-#' @return A list with the following fields.
+#' @return A list with the following fields:
 #' \item{pvalue, fdr}{3D array (ngenes * N * nsims) for p-values and FDR from each simulation.
 #' Note that FDR values will be empty and the calculation will be done by \code{\link{evaluateDE}} whenever applicable.}
 #' \item{mu,disp,dropout}{3D (ngenes * N * nsims) array for mean, dispersion and dropout of library size factor normalized read counts.}
@@ -52,27 +56,27 @@
 #' \item{sf.values,gsf.values}{3D array (ngenes * N * nsims) for size factor estimates.
 #' Global estimates per sample in sf.values; Gene- and sample-wise estimates in gsf.values only for SCnorm normalisation.}
 #' \item{sim.settings}{The input sim.settings to which the specifications of \code{simulateDE} is added.}
-#' \item{time.taken}{The time taken for each simulation, given for preprocessing, normalisation, clustering, differential expression testing and moment estimation.}
+#' \item{time.taken}{The time taken for each simulation, given for preprocessing, normalisation, differential expression testing and moment estimation.}
 #' @seealso \code{\link{estimateParam}},  \code{\link{insilicoNBParam}} for negative binomial parameter specifications;\cr
 #'  \code{\link{DESetup}}, \code{\link{SimSetup}} for simulation setup;\cr
-#'  \code{\link{evaluateDE}} for simulation evaluation.
+#'  \code{\link{evaluateDE}} for DE evaluation.
 #' @details
 #' Here you can find detailed information about preprocessing, imputation, normalisation and differential testing choices.
 #' @section Prefiltering prior to imputation/normalisation:
 #' \describe{
 #' \item{CountFilter}{removes genes that have a mean expression below 0.2.}
-#' \item{FreqFilter}{removes genes that have more than 80% dropouts.}
+#' \item{FreqFilter}{removes genes that have more than 80 percent dropouts.}
 #' }
 #' @section Imputation prior to normalisation:
 #' \describe{
 #' \item{scImpute}{employs scImpute method of imputing dropouts as implemented
-#' in \code{\link[scImpute]{scimpute}}. Please consider multiple cores to speed up computation.}
+#' in \code{\link[scImpute]{scimpute}}. Imputation is only carried out for genes with more than 50 percent dropout. Please consider multiple cores to speed up computation.}
 #' \item{DrImpute}{employs DrImpute method of imputing dropouts as implemented
 #' in \code{\link[DrImpute]{DrImpute}}.}
 #' \item{SAVER}{employs SAVER method of imputing dropouts as implemented
-#' in \code{\link[SAVER]{saver}}.}
+#' in \code{\link[SAVER]{saver}}. Imputation is only carried out for genes with more than 50 percent dropout.}
 #' \item{Seurat}{employs Seurat method of imputing dropouts as implemented
-#' in \code{\link[Seurat]{AddImputedScore}} using variable genes identified with \code{\link[Seurat]{FindVariableGenes}}.}
+#' in \code{\link[Seurat]{AddImputedScore}} using variable genes identified with \code{\link[Seurat]{FindVariableGenes}}. Imputation is only carried out for genes with more than 50 percent dropout.}
 #' \item{scone}{employs scone method of imputing dropouts as implemented
 #' in \code{\link[scone]{scone}} using estimated dropout probabilities of \code{\link[scone]{estimate_ziber}}.}
 #' }
@@ -81,7 +85,7 @@
 #' \item{TMM, UQ}{employ the edgeR style normalization of weighted trimmed mean of M-values and upperquartile
 #' as implemented in \code{\link[edgeR]{calcNormFactors}}, respectively.}
 #' \item{MR, PosCounts}{employ the DESeq2 style normalization of median ratio method and a modified geometric mean method
-#' as implemented in \code{\link[DESeq2]{estimateSizeFactors}}, respectively.}
+#' as implemented in \code{\link[DESeq2]{estimateSizeFactors}}, respectively. Spike-ins can also be supplied for both methods via \code{spikeData}.}
 #' \item{scran, SCnorm}{apply the deconvolution and quantile regression normalization methods developed for sparse RNA-seq data
 #' as implemented in \code{\link[scran]{computeSumFactors}} and \code{\link[SCnorm]{SCnorm}}, respectively. Spike-ins can also be supplied for both methods via \code{spikeData}. Note, however that this means for scran that the normalisation as implemented in \code{\link[scran]{computeSpikeFactors}} is also applied to genes (\code{general.use=TRUE}). Please consider multiple cores to speed up computation for SCnorm.}
 #' \item{Linnorm}{apply the normalization method for sparse RNA-seq data
@@ -148,6 +152,7 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
                        Preclust = FALSE,
                        Prefilter = NULL,
                        Impute = NULL,
+                       DEFilter = FALSE,
                        spikeIns = FALSE,
                        NCores = NULL,
                        verbose = TRUE) {
@@ -179,6 +184,10 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
     Impute = NULL
   }
 
+  if(c(all(is.null(Impute), is.null(Prefilter)) && isTRUE(DEFilter))) {
+    stop(message(paste0("You wish to use imputed/filtered gene expression values for DE testing but you did not specify the imputation/filtering method. Aborting.")))
+  }
+
   # define the maximal count matrix for simulations
   max.n = max(n1,n2)
   min.n = min(n1, n2)
@@ -193,6 +202,7 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
   sim.settings$Preclust = Preclust
   sim.settings$Prefilter = Prefilter
   sim.settings$Impute = Impute
+  sim.settings$DEFilter = DEFilter
   sim.settings$clustNumber = ifelse(sim.settings$design=="2grp", 2, NULL)
   if(isTRUE(Preclust)) {PreclustNumber <- min.n}
   if(!isTRUE(Preclust)) {PreclustNumber <- NULL}
@@ -225,6 +235,11 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
   if(!sim.settings$normalisation=="SCnorm") {
     est.gsf = NULL
   }
+
+  true.designs = stats::setNames(replicate(length(n1),NULL),my.names)
+  true.designs <- lapply(1:length(true.designs), function(x) {
+    true.designs[[x]] = matrix(NA, nrow = sim.settings$nsims, ncol = n1[x] + n2[x])
+  })
 
   ## start simulation
   for (i in 1:sim.settings$nsims) {
@@ -351,6 +366,8 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
                                     spikeData=count.spike,
                                     batchData=def.design,
                                     clustNumber=tmp.simOpts$clustNumber,
+                                    Lengths = length.data,
+                                    MeanFragLengths = meanfrag.data,
                                     NCores=tmp.simOpts$NCores,
                                     verbose=verbose)
         fornorm.count.data <- impute.data
@@ -387,18 +404,29 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
       DEOpts <- list(designs=def.design, p.DE=tmp.simOpts$p.DE)
 
       ## Run DE detection
-      if (verbose) { message(paste0("Applying ", DEmethod, " for DE analysis")) }
       start.time.DE <- Sys.time()
-      res.de = .de.calc(DEmethod=tmp.simOpts$DEmethod,
-                        normData=norm.data,
-                        countData=count.data,
-                        DEOpts=DEOpts,
-                        spikeData=count.spike,
-                        spikeInfo=spike.info,
-                        Lengths=length.data,
-                        MeanFragLengths=meanfrag.data,
-                        NCores=tmp.simOpts$NCores,
-                        verbose=verbose)
+      if(!isTRUE(tmp.simOpts$DEFilter)) {
+        if (verbose) { message(paste0("Applying ", DEmethod, " for DE analysis on raw count data.")) }
+        res.de = .de.calc(DEmethod=tmp.simOpts$DEmethod,
+                          normData=norm.data,
+                          countData=count.data,
+                          DEOpts=DEOpts,
+                          spikeData=count.spike,
+                          spikeInfo=spike.info,
+                          NCores=tmp.simOpts$NCores,
+                          verbose=verbose)
+      }
+      if(isTRUE(tmp.simOpts$DEFilter)) {
+        if (verbose) { message(paste0("Applying ", DEmethod, " for DE analysis on imputed/filtered count data.")) }
+        res.de = .de.calc(DEmethod=tmp.simOpts$DEmethod,
+                          normData=norm.data,
+                          countData=fornorm.count.data,
+                          DEOpts=DEOpts,
+                          spikeData=count.spike,
+                          spikeInfo=spike.info,
+                          NCores=tmp.simOpts$NCores,
+                          verbose=verbose)
+      }
       end.time.DE <- Sys.time()
 
       if(tmp.simOpts$DEmethod =="DECENT") {
@@ -415,10 +443,15 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
 
       # generate empty vectors
       pval = fdr = est.lfc = raw.lfc = mu.tmp = disp.tmp = p0.tmp = rep(NA, nrow(sim.cnts))
+      # indicator of tested genes
+      allgenes <- rownames(sim.cnts)
+      testedgenes <- res.de$geneIndex
+      ixx.valid <- allgenes %in% testedgenes
       ## extract results of DE testing
-      pval[ix.valid] = res.de$pval
-      fdr[ix.valid] = res.de$fdr
-      est.lfc[ix.valid] = res.de$lfc
+      pval[ixx.valid] = res.de$pval
+      fdr[ixx.valid] = res.de$fdr
+      est.lfc[ixx.valid] = res.de$lfc
+      # extract parameter estimates
       raw.lfc[ix.valid] = res.params$lfc
       mu.tmp[ix.valid] = res.params$means
       disp.tmp[ix.valid] = res.params$dispersion
@@ -440,6 +473,8 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
         ixx.valid <- allgenes %in% testedgenes
         est.gsf[[j]][i, ixx.valid, ] = norm.data$scale.factors
       }
+
+      true.designs[[j]][i,] = true.design
 
       # time taken for each step
       # copy designs into list of matrices
@@ -483,14 +518,13 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
                   true.sf = true.sf,
                   est.sf = est.sf,
                   est.gsf = est.gsf,
+                  true.designs = true.designs,
                   time.taken = time.taken,
                   sim.settings = sim.settings)
 
   attr(res.out, 'Simulation') <- "DE"
   return(res.out)
 }
-
-
 
 
 # simulateCounts ----------------------------------------------------------

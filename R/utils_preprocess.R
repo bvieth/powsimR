@@ -6,6 +6,8 @@
                          spikeData,
                          batchData,
                          clustNumber,
+                         Lengths,
+                         MeanFragLengths,
                          NCores,
                          verbose) {
   if(Impute=='scImpute') {invisible(capture.output(
@@ -28,11 +30,13 @@
   if(Impute=='scone') {FilterData <- .scone.impute(countData = countData,
                                                    spikeData = spikeData,
                                                    batchData = batchData,
+                                                   Lengths = Lengths,
+                                                   MeanFragLengths = MeanFragLengths,
                                                    NCores = NCores,
                                                    verbose = verbose)}
 
-  if(Impute=='BISCUIT') {FilterData <- .biscuit.impute(countData = countData,
-                                                       verbose = verbose)}
+  # if(Impute=='BISCUIT') {FilterData <- .biscuit.impute(countData = countData,
+  #                                                      verbose = verbose)}
 
   ## no easy way of extracting cidr imputed values, C++ function call
   # if(Impute=='CIDR') {FilterData <- .cidr.impute(countData = countData,
@@ -318,7 +322,7 @@
 #' @importFrom SummarizedExperiment SummarizedExperiment assays
 #' @importFrom S4Vectors SimpleList
 #' @importFrom BiocParallel SerialParam MulticoreParam register bpparam
-.scone.impute <- function(countData, spikeData, batchData, NCores, verbose) {
+.scone.impute <- function(countData, spikeData, batchData, Lengths, MeanFragLengths, NCores, verbose) {
 
   spike = ifelse(is.null(spikeData), FALSE, TRUE)
   if(spike==TRUE) {
@@ -361,13 +365,42 @@
                              rowData=rowdata, colData=coldata)
   scone1 <- scone::SconeExperiment(se, which_bio=1L, which_negconeval=1L)
 
-
   # Simple FNR model estimation with SCONE::estimate_ziber
+  # use only genes with very low dropouts and small variance
   counts0 = cnts == 0
   nn0 = rowSums(!counts0)
   nsamples = ncol(cnts)
   dropout = (nsamples - nn0)/nsamples
-  posgenes = dropout < 0.15
+  expressed = rownames(cnts)[dropout < 0.2]
+  if(verbose) {message(paste0(length(expressed), " genes with no dropouts."))}
+  # calculate TPM / CPM of genes
+  if(!is.null(Lengths) && !is.null(MeanFragLengths)) {
+    if(verbose) {message(paste0("Calculating TPM using Lengths and MeanFragLengths."))}
+    ed <- .counts_to_tpm(countData=countData,
+                         Lengths=Lengths,
+                         MeanFragLengths=MeanFragLengths)
+  }
+  if(!is.null(Lengths) && is.null(MeanFragLengths)) {
+    if(verbose) {message(paste0("Calculating TPM using Lengths."))}
+    ed <- .calculateTPM(countData = countData, Lengths=Lengths)
+  }
+  if(is.null(Lengths) && is.null(MeanFragLengths)) {
+    if(verbose) {message(paste0("Calculating CPM."))}
+    ed <- .calculateCPM(countData = countData)
+  }
+
+  sds = matrixStats::rowSds(log2(ed+1))
+  tmp.ecdf.sds = stats::ecdf(sds)
+  tmp.quantile.sds = stats::quantile(tmp.ecdf.sds, probs=0.2)
+  lowvar = rownames(cnts)[which(sds<tmp.quantile.sds)]
+  if(verbose) {message(paste0(length(lowvar), " low variance genes."))}
+  combined = base::intersect(expressed, lowvar)
+  posgenes = rownames(cnts) %in% combined
+  if(verbose) {message(paste0(length(combined), " housekeeping genes identified."))}
+  if(length(combined)<25) {
+    posgenes = dropout < 0.05
+  }
+
   fnr_out = scone::estimate_ziber(x = cnts,
                                   bulk_model = TRUE,
                                   pos_controls = posgenes,

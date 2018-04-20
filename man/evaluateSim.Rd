@@ -7,7 +7,7 @@
 evaluateSim(simRes, timing=TRUE)
 }
 \arguments{
-\item{simRes}{The result from \code{\link{simulateDE}} or \code{\link{simulateFlow}}.}
+\item{simRes}{The result from \code{\link{simulateDE}}.}
 
 \item{timing}{A logical vector indicating whether to summarise computational time of simulation run.
 Default is \code{TRUE}.}
@@ -21,11 +21,9 @@ Furthermore, the fraction of missing entries (\code{NAFraction}) for MAE annd RM
 \item{SizeFactors}{The median absolute deviation (MAD) between the estimated and true size factors,
 the root mean square residual error of a robust linear model (rRMSE, \code{\link[MASS]{rlm}}) and
 the ratio between estimated and true size factors of the two groups (\code{GroupX}).}
-\item{Clustering}{The adjusted rand index between the true group assignment and derived group assignment
-by clustering (only for \code{\link{simulateFlow}}).}
 }
 \description{
-This function takes the simulation output from \code{\link{simulateDE}} or \code{\link{simulateFlow}}
+This function takes the simulation output from \code{\link{simulateDE}}
 and computes several metrics that give an indication of the simulation setup performance.
 }
 \examples{
@@ -39,8 +37,7 @@ eval.sim <- evaluateSim(simRes = kolodziejczk_simDE, timing = T)
 \code{\link{estimateParam}} for negative binomial parameters,
 \code{\link{SimSetup}} and
 \code{\link{DESetup}} for setting up simulation parameters and
-\code{\link{simulateDE}} for simulating differential expression and
-\code{\link{simulateFlow}} for simulating workflow.
+\code{\link{simulateDE}} for simulating differential expression
 }
 \author{
 Beate Vieth
