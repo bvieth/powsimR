@@ -16,6 +16,11 @@ knitr::opts_chunk$set(
 
 ## NEWS
 
+**Version 1.1.2** released with the following fixes (2018-06-20):
+
+* `estimateParam` error fixed concerning expression cleanup.
+* precompiled vignette in inst/doc/.
+
 **Version 1.1.1** released with the following changes / additions (2018-04-19):
 
 * `simulateDE` now with the option to perform DE testing on filtered/imputed counts (option `DEFilter`)
@@ -61,8 +66,9 @@ ipak <- function(pkg, repository=c('CRAN', 'Bioconductor', 'github')){
 
 # CRAN PACKAGES
 cranpackages <- c("bbmle", "broom", "cluster", "cobs", "cowplot", 
-                  "data.table", "doParallel", "dplyr", "drc", "DrImpute", "fastICA", "fitdistrplus",
-                  "foreach", "gamlss.dist", "ggExtra", "ggplot2", "ggthemes", "grDevices",
+                  "data.table", "devtools", "doParallel", "dplyr", "drc", "DrImpute", 
+                  "fastICA", "fitdistrplus", "foreach", 
+                  "gamlss.dist", "ggExtra", "ggplot2", "ggthemes", "grDevices",
                   "glmnet", "grid", "gtools", "Hmisc", "kernlab", "MASS", 
                   "matrixStats", "mclust", "methods", "minpack.lm", "moments", "msir", 
                   "NBPSeq", "nonnest2", "parallel", "penalized", "plyr", "pscl",
@@ -100,7 +106,7 @@ Alternative, you can try to install powsimR and its dependencies directly using 
 devtools::install_github("bvieth/powsimR")
 ```
 
-Some users have experienced issues installing powsimR due to vignette compilation errors. If that is the case, you can leave out building the vignette.
+Some users have experienced issues installing powsimR due to vignette compilation errors. If that is the case, you can leave out building the vignette and read it [here](https://github.com/bvieth/powsimR/tree/master/inst/doc/powsimR.html) instead.
 
 ### DLLs and ulimit
 

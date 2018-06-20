@@ -220,7 +220,13 @@
   dge$weights <- zinger.weights
   # run DE testing
   dge <- edgeR::estimateDisp(y=dge, design = design.mat)
-  fit.edgeR <- edgeR::glmFit(dge, design = design.mat)
+  if (attr(normData, 'normFramework') == 'SCnorm') {
+    wgenes <- normData$scale.factors
+    fit.edgeR <- edgeR::glmFit(dge, design = design.mat, weights = wgenes)
+  }
+  if (!attr(normData, 'normFramework') == 'SCnorm') {
+    fit.edgeR <- edgeR::glmFit(dge, design = design.mat)
+  }
   lrt.zinger <- zingeR::glmWeightedF(glmfit = fit.edgeR,
                                      coef = 2,
                                      contrast = NULL,
@@ -343,7 +349,13 @@
   # run DE testing
   p.DE <- DEOpts$p.DE
   design.mat <- stats::model.matrix( ~ DEOpts$designs)
-  v <- limma::voom(dge, design.mat, plot=FALSE)
+  if (attr(normData, 'normFramework') == 'SCnorm') {
+    wgenes <- normData$scale.factors
+    v <- limma::voom(dge, design.mat, plot=FALSE, weights = wgenes)
+  }
+  if (!attr(normData, 'normFramework') == 'SCnorm') {
+    v <- limma::voom(dge, design.mat, plot=FALSE)
+  }
   fit <- limma::lmFit(object = v, design = design.mat)
   fit <- limma::eBayes(fit, proportion=p.DE, robust=TRUE)
   resT <- limma::topTable(fit=fit, coef=2, number=Inf, adjust.method = "BH", sort.by = "none")
@@ -378,7 +390,15 @@
   design.mat <- stats::model.matrix( ~ DEOpts$designs)
   y <- new("EList")
   y$E <- edgeR::cpm(dge, log = TRUE, prior.count = 3)
-  fit <- limma::lmFit(object = y, design = design.mat)
+
+  if (attr(normData, 'normFramework') == 'SCnorm') {
+    wgenes <- normData$scale.factors
+    fit <- limma::lmFit(object = y, design = design.mat, weights = wgenes)
+  }
+  if (!attr(normData, 'normFramework') == 'SCnorm') {
+    fit <- limma::lmFit(object = y, design = design.mat)
+  }
+
   fit <- limma::eBayes(fit, trend=TRUE, proportion=p.DE, robust=TRUE)
   resT <- limma::topTable(fit=fit, coef=2, number=Inf, adjust.method = "BH", sort.by = "none")
 
@@ -834,7 +854,7 @@
                         norm.factors = nsf,
                         group = factor(DEOpts$designs),
                         remove.zeros = FALSE)
-  # 1. size factor normalised log2(CPM+1) values.
+  # 1. size factor normalised log2(CPM+1) / log2(TPM+1) values.
   out.cpm <- edgeR::cpm.DGEList(dge, normalized.lib.sizes = T, log = F)
   out.expr <- log2(out.cpm+1)
 

@@ -2,6 +2,7 @@
 # Normalisation Wrapper ---------------------------------------------------
 
 .norm.calc <- function(normalisation,
+                       sf,
                        countData,
                        spikeData,
                        spikeInfo,
@@ -61,6 +62,9 @@
   #                                                       verbose = verbose)}
   if(normalisation=='depth') {NormData <- .depth.calc(countData = countData,
                                                       verbose = verbose)}
+  if(normalisation=='SF') {NormData <- .sf.calc(countData = countData,
+                                                  sf=sf,
+                                                  verbose = verbose)}
   if(normalisation=='none') {NormData <- .none.calc(countData = countData,
                                                     verbose = verbose)}
   return(NormData)
@@ -330,7 +334,7 @@
 
 #' @importFrom SCnorm SCnorm
 #' @importFrom parallel detectCores
-#' @importFrom stats median
+#' @importFrom stats weighted.mean
 #' @importFrom utils capture.output
 .SCnorm.calc <- function(countData, spikeData, batchData, NCores, verbose) {
 
@@ -408,7 +412,10 @@
     ))
   }
 
-  sf <- apply(scnorm.out@metadata$ScaleFactors, 2, stats::median)
+  wmu <- rowMeans(scnorm.out@metadata$NormalizedData)
+  sf <- apply(scnorm.out@metadata$ScaleFactors, 2, function(x) {
+    stats::weighted.mean(x = x, w = wmu, na.rm = TRUE)
+    })
   names(sf) <- colnames(cnts)
   gsf <- scnorm.out@metadata$ScaleFactors
   rownames(gsf) <- rownames(cnts)
@@ -427,7 +434,7 @@
 
 #' @importFrom SCnorm SCnorm
 #' @importFrom parallel detectCores
-#' @importFrom stats median
+#' @importFrom stats weighted.mean
 .SCnormclust.calc <- function(countData, spikeData, batchData, PreclustNumber, NCores, verbose) {
 
   spike = ifelse(is.null(spikeData), FALSE, TRUE)
@@ -479,7 +486,10 @@
                                useSpikes = spike,
                                useZerosToScale = FALSE)
 
-  sf <- apply(scnorm.out@metadata$ScaleFactors, 2, stats::median)
+  wmu <- rowMeans(scnorm.out@metadata$NormalizedData)
+  sf <- apply(scnorm.out@metadata$ScaleFactors, 2, function(x) {
+    stats::weighted.mean(x = x, w = wmu, na.rm = TRUE)
+  })
   names(sf) <- colnames(cnts)
   gsf <- scnorm.out@metadata$ScaleFactors
   rownames(gsf) <- rownames(cnts)
@@ -490,6 +500,9 @@
               size.factors=sf,
               scale.factors=gsf)
   attr(res, 'normFramework') <- "SCnorm"
+
+  invisible(gc()) # hopefully this helps with the resource issue
+
   return(res)
 }
 
@@ -921,6 +934,20 @@
   attr(res, 'normFramework') <- "depth"
   return(res)
 }
+
+
+# SF normalisation --------------------------------------------------------
+
+.sf.calc <- function(countData, sf, verbose) {
+  names(sf) <- colnames(countData)
+  norm.counts <- t(t(countData)/sf)
+  res <- list(NormCounts=norm.counts,
+              RoundNormCounts=round(norm.counts),
+              size.factors=sf)
+  attr(res, 'normFramework') <- "SF"
+  return(res)
+}
+
 
 # No normalisation --------------------------------------------------------
 

@@ -366,10 +366,10 @@ evaluateDist <- function(countData, batchData =NULL,
 #' @name evaluateSim
 #' @aliases evaluateSim
 #' @title Compute the performance related metrics from simulation results.
-#' @description This function takes the simulation output from \code{\link{simulateDE}}
+#' @description This function takes the simulation output from \code{\link{simulateDE}} or \code{\link{simulateFlow}}
 #' and computes several metrics that give an indication of the simulation setup performance.
 #' @usage evaluateSim(simRes, timing=TRUE)
-#' @param simRes The result from \code{\link{simulateDE}}.
+#' @param simRes The result from \code{\link{simulateDE}} or \code{\link{simulateFlow}}.
 #' @param timing A logical vector indicating whether to summarise computational time of simulation run.
 #' Default is \code{TRUE}.
 #' @return A list with the following entries:
@@ -380,11 +380,14 @@ evaluateDist <- function(countData, batchData =NULL,
 #' \item{SizeFactors}{The median absolute deviation (MAD) between the estimated and true size factors,
 #' the root mean square residual error of a robust linear model (rRMSE, \code{\link[MASS]{rlm}}) and
 #' the ratio between estimated and true size factors of the two groups (\code{GroupX}).}
+#' \item{Clustering}{The adjusted rand index between the true group assignment and derived group assignment
+#' by clustering (only for \code{\link{simulateFlow}}).}
 #' @author Beate Vieth
 #' @seealso \code{\link{estimateParam}} for negative binomial parameters,
 #' \code{\link{SimSetup}} and
 #' \code{\link{DESetup}} for setting up simulation parameters and
-#' \code{\link{simulateDE}} for simulating differential expression
+#' \code{\link{simulateDE}} for simulating differential expression and
+#' \code{\link{simulateFlow}} for simulating workflow.
 #' @examples
 #' \dontrun{
 #' ## using example data set
@@ -398,157 +401,157 @@ evaluateDist <- function(countData, batchData =NULL,
 #' @export
 evaluateSim <- function(simRes, timing=TRUE) {
 
-    # simulation parameters
-    Nreps1 = simRes$sim.settings$n1
-    Nreps2 = simRes$sim.settings$n2
-    ngenes = simRes$sim.settings$ngenes
-    sim.opts = simRes$sim.settings
-    DEids = simRes$sim.settings$DEid
-    tlfcs = simRes$sim.settings$pLFC
-    nsims = simRes$sim.settings$nsims
+  # simulation parameters
+  Nreps1 = simRes$sim.settings$n1
+  Nreps2 = simRes$sim.settings$n2
+  ngenes = simRes$sim.settings$ngenes
+  sim.opts = simRes$sim.settings
+  DEids = simRes$sim.settings$DEid
+  tlfcs = simRes$sim.settings$pLFC
+  nsims = simRes$sim.settings$nsims
 
-    # estimated parameters
-    elfcs = simRes$elfc
-    tsfs = simRes$true.sf
-    esfs = simRes$est.sf
+  # estimated parameters
+  elfcs = simRes$elfc
+  tsfs = simRes$true.sf
+  esfs = simRes$est.sf
 
-    t.designs = simRes$true.designs
+  t.designs = simRes$true.designs
 
-    if (attr(simRes, 'Simulation') == 'Flow') {
-      e.designs = simRes$def.designs
-    }
-    if (attr(simRes, 'Simulation') == 'DE') {
-      e.designs = NULL
-    }
+  if (attr(simRes, 'Simulation') == 'Flow') {
+    e.designs = simRes$def.designs
+  }
+  if (attr(simRes, 'Simulation') == 'DE') {
+    e.designs = NULL
+  }
 
-    # create output objects
-    my.names = paste0(Nreps1, " vs ", Nreps2)
-    # error in log2 fold changes
-    lfc.error.mat <- lapply(1:length(my.names), function(x) {
-      matrix(NA, nrow =  nsims, ncol = 15,
-             dimnames = list(c(paste0("Sim", 1:nsims)),
-                             c(paste0(rep(x=c("ALL", "DE", "EE"),each=5),"_",
-                                      c('RMSE_Value', "MAE_Value", "RMSE_NAFraction", "MAE_NAFraction", "rRMSE_Value")))))
-    })
-    names(lfc.error.mat) <- my.names
+  # create output objects
+  my.names = paste0(Nreps1, " vs ", Nreps2)
+  # error in log2 fold changes
+  lfc.error.mat <- lapply(1:length(my.names), function(x) {
+    matrix(NA, nrow =  nsims, ncol = 15,
+           dimnames = list(c(paste0("Sim", 1:nsims)),
+                           c(paste0(rep(x=c("ALL", "DE", "EE"),each=5),"_",
+                                    c('RMSE_Value', "MAE_Value", "RMSE_NAFraction", "MAE_NAFraction", "rRMSE_Value")))))
+  })
+  names(lfc.error.mat) <- my.names
 
-    # error in size factors
-    sf.error.mat <- lapply(1:length(my.names), function(x) {
-      matrix(NA, nrow =  nsims, ncol = 4,
+  # error in size factors
+  sf.error.mat <- lapply(1:length(my.names), function(x) {
+    matrix(NA, nrow =  nsims, ncol = 4,
+           dimnames = list(c(paste0("Sim_", 1:nsims)),
+                           c("MAD", "rRMSE", "Group 1","Group 2")))
+  })
+  names(sf.error.mat) <- my.names
+
+  # error in clustering
+  if (attr(simRes, 'Simulation') == 'Flow') {
+    clust.error.mat <- lapply(1:length(my.names), function(x) {
+      matrix(NA, nrow =  nsims, ncol = 1,
              dimnames = list(c(paste0("Sim_", 1:nsims)),
-                             c("MAD", "rRMSE", "Group 1","Group 2")))
+                             c("RandIndex")))
     })
-    names(sf.error.mat) <- my.names
+    names(clust.error.mat) <- my.names
+  }
+  if (attr(simRes, 'Simulation') == 'DE') {
+    clust.error.mat = NULL
+  }
 
-    # error in clustering
-    if (attr(simRes, 'Simulation') == 'Flow') {
-      clust.error.mat <- lapply(1:length(my.names), function(x) {
-        matrix(NA, nrow =  nsims, ncol = 1,
-               dimnames = list(c(paste0("Sim_", 1:nsims)),
-                               c("RandIndex")))
-      })
-      names(clust.error.mat) <- my.names
-    }
-    if (attr(simRes, 'Simulation') == 'DE') {
-      clust.error.mat = NULL
-    }
+  ## loop over simulation and replicates
+  for(i in 1:nsims) {
+    # DE flag
+    DEid = DEids[[i]]
+    Zg = rep(0, ngenes)
+    Zg[DEid] = 1
+    # true log fold change of all genes
+    all.tlfc = tlfcs[[i]]
+    # true log fold change of DE genes
+    de.tlfc = all.tlfc[which(Zg==1)]
+    # true log fold change of EE genes
+    ee.tlfc = all.tlfc[which(Zg==0)]
 
-    ## loop over simulation and replicates
-    for(i in 1:nsims) {
-      # DE flag
-      DEid = DEids[[i]]
-      Zg = rep(0, ngenes)
-      Zg[DEid] = 1
-      # true log fold change of all genes
-      all.tlfc = tlfcs[[i]]
-      # true log fold change of DE genes
-      de.tlfc = all.tlfc[which(Zg==1)]
-      # true log fold change of EE genes
-      ee.tlfc = all.tlfc[which(Zg==0)]
+    for(j in seq(along=Nreps1)) {
 
-      for(j in seq(along=Nreps1)) {
+      ## LOG2 FOLD CHANGES
+      # estimated log fold change of all genes
+      all.elfc = elfcs[, j, i]
+      # estimated log fold changes of EE genes
+      ix.ee.lfc = which(Zg==0)
+      ee.lfc = all.elfc[ix.ee.lfc]
+      # estimated log fold change of DE genes
+      ix.de.lfc = which(Zg==1)
+      de.lfc = all.elfc[ix.de.lfc]
+      # estimate mean squared error and absolute error
+      all.error <- .lfc.evaluate(truth=all.tlfc, estimated=all.elfc)
+      ee.error <- .lfc.evaluate(truth=ee.tlfc, estimated=ee.lfc)
+      de.error <- .lfc.evaluate(truth=de.tlfc, estimated=de.lfc)
+      error.est <- c(all.error, de.error, ee.error)
+      lfc.error.mat[[j]][i,] = error.est
 
-        ## LOG2 FOLD CHANGES
-        # estimated log fold change of all genes
-        all.elfc = elfcs[, j, i]
-        # estimated log fold changes of EE genes
-        ix.ee.lfc = which(Zg==0)
-        ee.lfc = all.elfc[ix.ee.lfc]
-        # estimated log fold change of DE genes
-        ix.de.lfc = which(Zg==1)
-        de.lfc = all.elfc[ix.de.lfc]
-        # estimate mean squared error and absolute error
-        all.error <- .lfc.evaluate(truth=all.tlfc, estimated=all.elfc)
-        ee.error <- .lfc.evaluate(truth=ee.tlfc, estimated=ee.lfc)
-        de.error <- .lfc.evaluate(truth=de.tlfc, estimated=de.lfc)
-        error.est <- c(all.error, de.error, ee.error)
-        lfc.error.mat[[j]][i,] = error.est
+      ## SIZE FACTORS
+      # true sf over all samples, center to mean=1
+      tsf = tsfs[[j]][i, ]
+      n.tsf = tsf*length(tsf)/sum(tsf)
 
-        ## SIZE FACTORS
-        # true sf over all samples, center to mean=1
-        tsf = tsfs[[j]][i, ]
-        n.tsf = tsf*length(tsf)/sum(tsf)
+      # estimated sf over all sample, center to mean=1
+      esf = esfs[[j]][i,]
+      n.esf = esf*length(esf)/sum(esf)
 
-        # estimated sf over all sample, center to mean=1
-        esf = esfs[[j]][i,]
-        n.esf = esf*length(esf)/sum(esf)
+      # MAD of log fold change difference between estimated and true size factors
+      lfc.nsf = log2(esf) - log2(tsf)
+      mad.nsf = stats::mad(lfc.nsf)
 
-        # MAD of log fold change difference between estimated and true size factors
-        lfc.nsf = log2(esf) - log2(tsf)
-        mad.nsf = stats::mad(lfc.nsf)
+      # error of estimation
+      error.sf <- .fiterror.sf(estimated.sf = n.esf, true.sf = n.tsf)
 
-        # error of estimation
-        error.sf <- .fiterror.sf(estimated.sf = n.esf, true.sf = n.tsf)
+      # ratio of estimated and true size factors per true group assignment
+      t.design = t.designs[[j]][i,]
+      ratio.sf <- .ratio.sf(estimated.nsf = n.esf,
+                            true.nsf = n.tsf,
+                            group=t.design)
+      sf.res <- unlist(c(mad.nsf, error.sf, ratio.sf))
+      names(sf.res) <- NULL
 
-        # ratio of estimated and true size factors per true group assignment
-        t.design = t.designs[[j]][i,]
-        ratio.sf <- .ratio.sf(estimated.nsf = n.esf,
-                              true.nsf = n.tsf,
-                              group=t.design)
-        sf.res <- unlist(c(mad.nsf, error.sf, ratio.sf))
-        names(sf.res) <- NULL
+      sf.error.mat[[j]][i,] = sf.res
 
-        sf.error.mat[[j]][i,] = sf.res
-
-        ## CLUSTERING
-        if (attr(simRes, 'Simulation') == 'Flow') {
+      ## CLUSTERING
+      if (attr(simRes, 'Simulation') == 'Flow') {
         e.design = e.designs[[j]][i,]
         randindex <- mclust::adjustedRandIndex(t.design, e.design)
         clust.error.mat[[j]][i,] = randindex
-        }
-
       }
+
     }
+  }
 
-    output <- list(Log2FoldChange=lfc.error.mat,
-                   SizeFactors=sf.error.mat,
-                   Clustering=clust.error.mat,
-                   sim.settings=simRes$sim.settings)
+  output <- list(Log2FoldChange=lfc.error.mat,
+                 SizeFactors=sf.error.mat,
+                 Clustering=clust.error.mat,
+                 sim.settings=simRes$sim.settings)
 
-    if(isTRUE(timing)) {
-      time.taken <- simRes$time.taken
-      # create output objects
-      time.taken.mat <- lapply(1:length(my.names), function(x) {
-        data.frame(matrix(NA, nrow = length(rownames(time.taken[,1,]))+1,
-                          ncol = 3, dimnames = list(c(rownames(time.taken[,1,]), "Total"),
-                                                    c("Mean", "SD", "SEM")))
-        )
-      })
-      names(time.taken.mat) <- my.names
-      for(j in seq(along=Nreps1)) {
-        tmp.time <- time.taken[,j,]
-        Total <- colSums(tmp.time, na.rm = T)
-        tmp.time <- rbind(tmp.time, Total)
-        time.taken.mat[[j]][,"Mean"] <- rowMeans(tmp.time)
-        time.taken.mat[[j]][,"SD"] <- matrixStats::rowSds(tmp.time)
-        time.taken.mat[[j]][,"SEM"] <- matrixStats::rowSds(tmp.time)/sqrt(nsims)
-      }
-      output <- c(output, list(Timing=time.taken.mat))
+  if(isTRUE(timing)) {
+    time.taken <- simRes$time.taken
+    # create output objects
+    time.taken.mat <- lapply(1:length(my.names), function(x) {
+      data.frame(matrix(NA, nrow = length(rownames(time.taken[,1,]))+1,
+                        ncol = 3, dimnames = list(c(rownames(time.taken[,1,]), "Total"),
+                                                  c("Mean", "SD", "SEM")))
+      )
+    })
+    names(time.taken.mat) <- my.names
+    for(j in seq(along=Nreps1)) {
+      tmp.time <- time.taken[,j,]
+      Total <- colSums(tmp.time, na.rm = T)
+      tmp.time <- rbind(tmp.time, Total)
+      time.taken.mat[[j]][,"Mean"] <- rowMeans(tmp.time)
+      time.taken.mat[[j]][,"SD"] <- matrixStats::rowSds(tmp.time)
+      time.taken.mat[[j]][,"SEM"] <- matrixStats::rowSds(tmp.time)/sqrt(nsims)
     }
+    output <- c(output, list(Timing=time.taken.mat))
+  }
 
-    # return object
-    attr(output, 'Simulation') = attr(simRes, 'Simulation')
-    return(output)
+  # return object
+  attr(output, 'Simulation') = attr(simRes, 'Simulation')
+  return(output)
 }
 
 # EVALUATE DIFFERENTIAL EXPRESSION ----------------------------------------
@@ -1037,6 +1040,7 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
 #' alpha.type=c("adjusted","raw"),
 #' MTC=c('BY', 'BH', 'Storey', 'IHW',
 #' 'holm', 'hochberg', 'hommel', 'bonferroni'),
+#' alpha.nominal = 0.1,
 #' target.by=c("lfc", "effectsize"),
 #' delta=0)
 #' @param simRes The result from \code{\link{simulateDE}}.
@@ -1048,6 +1052,7 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
 #' 2) Storey's qvalue see \link[qvalue]{qvalue} and
 #' 3) Independent Hypothesis Weighting considering mean expression as covariate (see \link[IHW]{ihw}).
 #' Default is \code{BY}, i.e. Benjamini-Yekutieli FDR correction method.
+#' @param alpha.nominal The nomial value of significance. Default is 0.1.
 #' @param target.by A string to specify the method to define "biologically important" DE genes.
 #' Available options are (1) \code{"lfc"}: interesting genes are defined by absolute log2 fold changes.
 #' (2) \code{"effectsize"}: interesting genes are defined by
@@ -1088,16 +1093,14 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
 #' @importFrom iCOBRA calculate_performance COBRAData
 #' @export
 evaluateROC <- function(simRes, alpha.type=c("adjusted","raw"),
-                       MTC=c('BY', 'BH', 'Storey', 'IHW',
-                             'holm', 'hochberg', 'hommel', 'bonferroni'),
-                       target.by=c("lfc", "effectsize"),
-                       delta=0) {
-
+                        MTC=c('BY', 'BH', 'Storey', 'IHW',
+                              'holm', 'hochberg', 'hommel', 'bonferroni'),
+                        alpha.nominal = 0.1,
+                        target.by=c("lfc", "effectsize"),
+                        delta=0) {
   alpha.type = match.arg(alpha.type)
   MTC = match.arg(MTC)
   target.by = match.arg(target.by)
-
-  ## some general parameters
   Nreps1 = simRes$sim.settings$n1
   Nreps2 = simRes$sim.settings$n2
   ngenes = simRes$sim.settings$ngenes
@@ -1110,149 +1113,145 @@ evaluateROC <- function(simRes, alpha.type=c("adjusted","raw"),
   pvalue = simRes$pvalue
   fdr = simRes$fdr
   mu = simRes$mu
-
-  ## output objects
-  my.names = paste0(Nreps1," vs ",Nreps2)
-  Truths = Predictions = array(NA,dim=c(length(Nreps1), ngenes, nsims))
-  predObjs = rocObjs = prcObjs = rocaucObjs = prcaucObjs = matObjs = f1Objs = stats::setNames(replicate(length(Nreps1),NULL),my.names)
-  perfCOBRA = stats::setNames(replicate(length(Nreps1),NULL),my.names)
+  my.names = paste0(Nreps1, " vs ", Nreps2)
+  Truths = Predictions = array(NA, dim = c(length(Nreps1),
+                                           ngenes, nsims))
+  predObjs = rocObjs = prcObjs = rocaucObjs = prcaucObjs = matObjs = f1Objs = stats::setNames(replicate(length(Nreps1),
+                                                                                                        NULL), my.names)
+  perfCOBRA = stats::setNames(replicate(length(Nreps1), NULL),
+                              my.names)
   perfCOBRA <- lapply(1:length(perfCOBRA), function(x) {
     perfCOBRA[[x]] = vector("list", nsims)
   })
-
-  ## loop over simulation and replicates
-  for(i in 1:nsims) {
-    for(j in seq(along=Nreps1)) {
+  for (i in 1:nsims) {
+    for (j in seq(along = Nreps1)) {
       Nrep1 = Nreps1[j]
       Nrep2 = Nreps2[j]
-      elfc = as.numeric(elfcs[,j,i])
-      ## get DE flags.
+      elfc = as.numeric(elfcs[, j, i])
       DEid = DEids[[i]]
       lfc = lfcs[[i]]
       Zg = Zg2 = rep(0, ngenes)
       Zg[DEid] = 1
-      ## find target (interesting) genes
-      if(delta == 0) {
+      if (delta == 0) {
         Zg2 = Zg
       }
-      if(!delta == 0) {
-        if(target.by == "lfc") {
+      if (!delta == 0) {
+        if (target.by == "lfc") {
           ix = abs(lfc) > delta
-        } else if (target.by == "effectsize") {
-          effectsize = lfc / sqrt(1/(log2(mu[,,i])+log2(disp[,,i])))
+        }
+        else if (target.by == "effectsize") {
+          effectsize = lfc/sqrt(1/(log2(mu[, , i]) +
+                                     log2(disp[, , i])))
           ix = abs(effectsize) > delta
         }
         Zg2[ix] = 1
       }
-
-      ## get type I error alpha (pvalue or fdr output from testing)
-      if(alpha.type == "raw") {
-        if(DEmethod %in% c("edgeR-QL", "edgeR-LRT", "limma-voom", "limma-trend", "NBPSeq",
-                           "DESeq2", "ROTS", "MAST", "scde", "BPSC", "scDD", "monocle", "DECENT",
-                           "edgeR-zingeR", "edgeR-ZINB-WaVE", "DESeq2-zingeR", "DESeq2-ZINB-WaVE")) {
-          x = pvalue[,j,i]
+      if (alpha.type == "raw") {
+        if (DEmethod %in% c("edgeR-QL", "edgeR-LRT",
+                            "limma-voom", "limma-trend", "NBPSeq", "DESeq2",
+                            "ROTS", "MAST", "scde", "BPSC", "scDD", "monocle",
+                            "DECENT", "edgeR-zingeR", "edgeR-ZINB-WaVE",
+                            "DESeq2-zingeR", "DESeq2-ZINB-WaVE")) {
+          x = pvalue[, j, i]
           x[is.na(x)] = 1
         }
-        if(DEmethod %in% c("baySeq", "NOISeq", "EBSeq")) {
-          message(paste0("The DE method ", DEmethod," only provides adjusted p-values."))
-          x = fdr[,j,i]
+        if (DEmethod %in% c("baySeq", "NOISeq", "EBSeq")) {
+          message(paste0("The DE method ", DEmethod,
+                         " only provides adjusted p-values."))
+          x = fdr[, j, i]
           x[is.na(x)] = 1
         }
       }
-      if(alpha.type == "adjusted") {
-        if(DEmethod %in% c("edgeR-QL", "edgeR-LRT", "limma-voom", "limma-trend", "NBPSeq",
-                           "DESeq2", "ROTS", "MAST", "scde", "BPSC", "scDD", "monocle", "DECENT",
-                           "edgeR-zingeR", "edgeR-ZINB-WaVE", "DESeq2-zingeR", "DESeq2-ZINB-WaVE")) {
-          pval = pvalue[,j,i]
-          meanexpr = mu[,j,i]
-          if(MTC %in% stats::p.adjust.methods) {
+      if (alpha.type == "adjusted") {
+        if (DEmethod %in% c("edgeR-QL", "edgeR-LRT",
+                            "limma-voom", "limma-trend", "NBPSeq", "DESeq2",
+                            "ROTS", "MAST", "scde", "BPSC", "scDD", "monocle",
+                            "DECENT", "edgeR-zingeR", "edgeR-ZINB-WaVE",
+                            "DESeq2-zingeR", "DESeq2-ZINB-WaVE")) {
+          pval = pvalue[, j, i]
+          meanexpr = mu[, j, i]
+          if (MTC %in% stats::p.adjust.methods) {
             x = stats::p.adjust(pval, method = MTC)
             x[is.na(x)] = 1
           }
-          if(MTC %in% "Storey") {
+          if (MTC %in% "Storey") {
             tmp.p = pval[!is.na(pval)]
             tmp.q = qvalue::qvalue(p = tmp.p)$qvalues
             x = rep(NA, length(pval))
             x[!is.na(pval)] = tmp.q
             x[is.na(x)] = 1
           }
-          if(MTC %in% "IHW") {
+          if (MTC %in% "IHW") {
             in.dat = data.frame(pvalue = pval, meanexpr = meanexpr)
-            tmp = IHW::ihw(pvalue ~ meanexpr, data = in.dat, alpha = alpha.nominal)
+            tmp = IHW::ihw(pvalue ~ meanexpr, data = in.dat,
+                           alpha = alpha.nominal)
             x = IHW::adj_pvalues(tmp)
             x[is.na(x)] = 1
           }
         }
-        if(DEmethod %in% c("baySeq", "NOISeq", "EBSeq")) {
-          message(paste0("The DE method ", DEmethod," only provides adjusted p-values."))
-          x = fdr[,j,i]
+        if (DEmethod %in% c("baySeq", "NOISeq", "EBSeq")) {
+          message(paste0("The DE method ", DEmethod,
+                         " only provides adjusted p-values."))
+          x = fdr[, j, i]
           x[is.na(x)] = 1
         }
       }
-
-    Truths[j,,i] = Zg2
-    Predictions[j,,i] = x
-
-    # iCOBRA
-    cobradata <- iCOBRA::COBRAData(pval = data.frame("Sim" = pval, row.names = paste0("G", 1:ngenes)),
-                                  padj = data.frame("Sim" = x, row.names = paste0("G", 1:ngenes)),
-                                  score =  data.frame("Sim" = elfc, row.names = paste0("G", 1:ngenes)),
-                                  truth = data.frame("status" = Zg2, "logFC" = lfc, "expr" = meanexpr, row.names = paste0("G", 1:ngenes)))
-    invisible(capture.output(
-      perfCOBRA[[j]][[i]] <- suppressMessages(
-        iCOBRA::calculate_performance(cobradata, binary_truth = "status", cont_truth = "logFC", thrs = seq(from=0.01, to=0.2, by=0.01), svalthrs = c(0.01, 0.05, 0.1), splv = "none", maxsplit = 4, onlyshared = FALSE, thr_venn = 0.05, type_venn = "adjp", topn_venn = 100, rank_by_abs = TRUE, prefer_pval = TRUE)
-        )
-      ))
+      Truths[j, , i] = Zg2
+      Predictions[j, , i] = x
+      cobradata <- iCOBRA::COBRAData(pval = data.frame(Sim = pval,
+                                                       row.names = paste0("G", 1:ngenes)), padj = data.frame(Sim = x,
+                                                                                                             row.names = paste0("G", 1:ngenes)), score = data.frame(Sim = elfc,
+                                                                                                                                                                    row.names = paste0("G", 1:ngenes)), truth = data.frame(status = Zg2,
+                                                                                                                                                                                                                           logFC = lfc, expr = meanexpr, row.names = paste0("G",
+                                                                                                                                                                                                                                                                            1:ngenes)))
+      invisible(capture.output(perfCOBRA[[j]][[i]] <- suppressMessages(iCOBRA::calculate_performance(cobradata,
+                                                                                                     binary_truth = "status", cont_truth = "logFC",
+                                                                                                     thrs = seq(from = 0.01, to = 0.2, by = 0.01),
+                                                                                                     svalthrs = c(0.01, 0.05, 0.1), splv = "none",
+                                                                                                     maxsplit = 4, onlyshared = FALSE, thr_venn = 0.05,
+                                                                                                     type_venn = "adjp", topn_venn = 100, rank_by_abs = TRUE,
+                                                                                                     prefer_pval = TRUE))))
     }
-
   }
-
-  for(j in seq(along=Nreps1)) {
-    predObjs[[j]] <- ROCR::prediction(predictions = Predictions[j,,],
-                                      labels = Truths[j,,],
-                                      label.ordering = c(0, 1))
-
-    # ROC curve: TPR vs FPR
-    rocObjs[[j]] <- ROCR::performance(predObjs[[j]], "tpr", "fpr")
+  for (j in seq(along = Nreps1)) {
+    predObjs[[j]] <- ROCR::prediction(predictions = Predictions[j,
+                                                                , ], labels = Truths[j, , ], label.ordering = c(1,
+                                                                                                                0))
+    rocObjs[[j]] <- ROCR::performance(predObjs[[j]], "tpr",
+                                      "fpr")
     rocaucObjs[[j]] <- ROCR::performance(predObjs[[j]], "auc")
-
-    # ROC curve: Precision vs Recall
-    prcObjs[[j]] <- ROCR::performance(predObjs[[j]], "prec", "rec")
+    prcObjs[[j]] <- ROCR::performance(predObjs[[j]], "prec",
+                                      "rec")
     y.values <- lapply(1:nsims, function(i) {
-      x <- prcObjs[[j]]@x.values[[i]] # Recall values
-      y <- prcObjs[[j]]@y.values[[i]] # Precision values
-      x1 <- x[!is.na(x)&!is.na(y)]
-      y1 <- y[!is.na(x)&!is.na(y)]
+      x <- prcObjs[[j]]@x.values[[i]]
+      y <- prcObjs[[j]]@y.values[[i]]
+      x1 <- x[!is.na(x) & !is.na(y)]
+      y1 <- y[!is.na(x) & !is.na(y)]
       id <- order(x1)
-      sum(diff(x1[id])*zoo::rollmean(y1[id],2))
+      sum(diff(x1[id]) * zoo::rollmean(y1[id], 2))
     })
     prcaucObjs[[j]] <- rocaucObjs[[j]]
     prcaucObjs[[j]]@y.values <- y.values
     prcaucObjs[[j]]@y.name <- c("Area under the Precision-Recall ROC curve")
-
     matObjs[[j]] <- ROCR::performance(predObjs[[j]], "mat")
-
     f1Objs[[j]] <- ROCR::performance(predObjs[[j]], "f")
   }
-
   output <- list(`ROCR-Prediction` = predObjs,
                  `ROCR-TPRvsFPR` = rocObjs,
                  `ROCR-PrecvsRec` = prcObjs,
-                 `ROCR-MAT`= matObjs,
-                 `ROCR-AUC`= rocaucObjs,
+                 `ROCR-MAT` = matObjs,
+                 `ROCR-AUC` = rocaucObjs,
                  `PRC-AUC` = prcaucObjs,
                  `PRC-Fscore` = f1Objs,
                  `iCOBRA-Performance` = perfCOBRA,
-                 ## below are input parameters:
-                 alpha.type=alpha.type,
-                 MTC=ifelse(alpha.type=="adjusted", MTC, "not applicable"),
-                 target.by=target.by,
-                 n1=Nreps1, n2=Nreps2,
-                 delta=delta)
-
+                 alpha.type = alpha.type,
+                 MTC = ifelse(alpha.type == "adjusted", MTC, "not applicable"),
+                 target.by = target.by,
+                 n1 = Nreps1,
+                 n2 = Nreps2,
+                 delta = delta)
   return(output)
 }
-
 
 
 

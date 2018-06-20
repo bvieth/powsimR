@@ -51,6 +51,7 @@
 #' \item{pvalue, fdr}{3D array (ngenes * N * nsims) for p-values and FDR from each simulation.
 #' Note that FDR values will be empty and the calculation will be done by \code{\link{evaluateDE}} whenever applicable.}
 #' \item{mu,disp,dropout}{3D (ngenes * N * nsims) array for mean, dispersion and dropout of library size factor normalized read counts.}
+#' \item{true.mu,true.disp,true.dropout}{3D (ngenes * N * nsims) array for true mean, dispersion and dropout of simulated read counts.}
 #' \item{elfc,rlfc}{3D array (ngenes * N * nsims) for log2 fold changes (LFC):
 #' elfc is for the DE tool estimated LFC; rlfc is for the LFC estimated from the normalised read counts.}
 #' \item{sf.values,gsf.values}{3D array (ngenes * N * nsims) for size factor estimates.
@@ -213,7 +214,7 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
   my.names = paste0(n1,"vs",n2)
 
   #set up output arrays
-  pvalues = fdrs = elfcs = rlfcs = mus = disps = dropouts = array(NA,dim=c(sim.settings$ngenes,length(n1), sim.settings$nsims))
+  pvalues = fdrs = elfcs = rlfcs = mus = true.mus = disps = true.disps = dropouts = true.drops = array(NA,dim=c(sim.settings$ngenes,length(n1), sim.settings$nsims))
   time.taken = array(NA,dim = c(4,length(n1), sim.settings$nsims),
                      dimnames = list(c('Preprocess', "Normalisation", "DE", "Moments"),
                                      NULL, NULL))
@@ -389,6 +390,7 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
       if (verbose) { message(paste0("Applying ", normalisation, " normalisation")) }
       start.time.norm <- Sys.time()
       norm.data <- .norm.calc(normalisation=tmp.simOpts$normalisation,
+                              sf=gene.sf,
                               countData=fornorm.count.data,
                               spikeData=count.spike,
                               spikeInfo=spike.info,
@@ -434,6 +436,15 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
         norm.data <- res.de[["NormData"]]
       }
 
+      # move up to use in param estimation
+      if(attr(norm.data, 'normFramework') == 'SCnorm') {
+        allgenes <- rownames(sim.cnts)
+        testedgenes <- rownames(norm.data$scale.factors)
+        ixx.valid <- allgenes %in% testedgenes
+        est.gsf[[j]][i, ixx.valid, ] = norm.data$scale.factors
+        norm.data$scale.factors = est.gsf[[j]][i,,]
+      }
+
       ## estimate moments of read counts simulated
       start.time.NB <- Sys.time()
       res.params <- .run.params(countData=count.data,
@@ -442,7 +453,7 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
       end.time.NB <- Sys.time()
 
       # generate empty vectors
-      pval = fdr = est.lfc = raw.lfc = mu.tmp = disp.tmp = p0.tmp = rep(NA, nrow(sim.cnts))
+      pval = fdr = est.lfc = raw.lfc = mu.tmp = true.mu.tmp = disp.tmp = true.disp.tmp = p0.tmp = true.p0.tmp = rep(NA, nrow(sim.cnts))
       # indicator of tested genes
       allgenes <- rownames(sim.cnts)
       testedgenes <- res.de$geneIndex
@@ -456,23 +467,23 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
       mu.tmp[ix.valid] = res.params$means
       disp.tmp[ix.valid] = res.params$dispersion
       p0.tmp[ix.valid] = res.params$dropout
+      # extract true parameters
+      true.mu.tmp[ix.valid] = gene.data$mus
+      true.disp.tmp[ix.valid] = gene.data$disps
+      true.p0.tmp[ix.valid] = gene.data$drops
       # copy it in 3D array of results
       pvalues[,j,i] = pval
       fdrs[,j,i] = fdr
       elfcs[,j,i] = est.lfc
       rlfcs[,j,i] = raw.lfc
       mus[,j,i] = mu.tmp
+      true.mus[,j,i] = true.mu.tmp
       disps[,j,i] = disp.tmp
+      true.disps[,j,i] = true.disp.tmp
       dropouts[,j,i] = p0.tmp
+      true.drops[,j,i] = true.p0.tmp
       true.sf[[j]][i,] = gene.sf
       est.sf[[j]][i,] = norm.data$size.factors
-
-      if(attr(norm.data, 'normFramework') == 'SCnorm') {
-        allgenes <- rownames(sim.cnts)
-        testedgenes <- rownames(norm.data$scale.factors)
-        ixx.valid <- allgenes %in% testedgenes
-        est.gsf[[j]][i, ixx.valid, ] = norm.data$scale.factors
-      }
 
       true.designs[[j]][i,] = true.design
 
@@ -513,8 +524,11 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
                   elfc = elfcs,
                   rlfc = rlfcs,
                   mu = mus,
+                  true.mu = true.mus,
                   disp = disps,
+                  true.disp = true.disps,
                   dropout = dropouts,
+                  true.dropout = true.drops,
                   true.sf = true.sf,
                   est.sf = est.sf,
                   est.gsf = est.gsf,

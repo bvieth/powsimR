@@ -134,12 +134,16 @@
 
   sim.counts = sim.data$counts
   sf.value = sim.data$sf
+  mus = sim.data$mus
+  disps = sim.data$disps
+  drops = sim.data$drops
 
   sim.counts <- apply(sim.counts,2,function(x) {storage.mode(x) <- 'integer'; x})
 
   # fill in gene pseudonames if missing (only true for in silico)
   if (is.null(rownames(sim.counts))) {
     rownames(sim.counts) <- paste0("G", 1:nrow(sim.counts))
+    names(mus) <- names(disps) <- names(drops) <- rownames(sim.counts)
   }
   # add human readable sample names
   if (is.null(colnames(sim.counts))) {
@@ -155,7 +159,13 @@
   }
 
   ## return
-  list(counts = sim.counts, designs = phenotype, sf = sf.value, simOptions = simOptions)
+  list(counts = sim.counts,
+       mus=mus,
+       disps=disps,
+       drops=drops,
+       designs = phenotype,
+       sf = sf.value,
+       simOptions = simOptions)
 }
 
 
@@ -295,12 +305,16 @@
 
   sim.counts = sim.data$counts
   sf.value = sim.data$sf
+  mus = sim.data$mus
+  disps = sim.data$disps
+  drops = sim.data$drops
 
   sim.counts <- apply(sim.counts,2,function(x) {storage.mode(x) <- 'integer'; x})
 
   # fill in gene pseudonames if missing (only true for in silico)
   if (is.null(rownames(sim.counts))) {
     rownames(sim.counts) <- paste0("G", 1:nrow(sim.counts))
+    names(mus) <- names(disps) <- names(drops) <- rownames(sim.counts)
   }
   # add human readable sample names
   if (is.null(colnames(sim.counts))) {
@@ -318,6 +332,9 @@
   ## return
   list(counts = sim.counts,
        phenotypes = phenotype,
+       mus=mus,
+       disps=disps,
+       drops=drops,
        batches = batch,
        sf = sf.value,
        simOptions = simOptions)
@@ -329,7 +346,10 @@
 # MEAN-VARIANCE RELATIONSHIP AS IS
 
 #' @importFrom stats rnorm rnbinom
-.sc.NB.SampleWReplace_counts <- function(sim.options, phenotype, modelmatrix, coef.dat) {
+.sc.NB.SampleWReplace_counts <- function(sim.options,
+                                         phenotype,
+                                         modelmatrix,
+                                         coef.dat) {
 
   set.seed(sim.options$sim.seed)
 
@@ -352,7 +372,6 @@
     predsize.mean = approx(meansizefit$x, meansizefit$y, xout = lmu, rule=2)$y
     predsize.sd = approx(meansizefit$x, meansizefit$sd, xout = lmu, rule=2)$y
     sizevec = rnorm(n = length(lmu), mean = predsize.mean, sd = predsize.sd)
-
 
     # size factor
     if(is.list(sim.options$size.factors)) {
@@ -392,6 +411,9 @@
       nrow = ngenes,
       dimnames = list(paste0(rownames(mumat),"_", seq_len(ngenes)),
                       NULL))
+    counts0 = counts == 0
+    nn0 = rowSums(!counts0)
+    dropout = (nsamples - nn0)/nsamples
     }
 
   if (attr(sim.options, 'param.type') == 'insilico') {
@@ -431,6 +453,14 @@
     # effective means
     effective.means <- outer(true.means, all.facs, "*")
 
+    # effective dispersions
+    if(length(disp) == 1) {
+      sizevec <- rep(1/disp, ngenes)
+    }
+    if(length(disp) > 1) {
+      sizevec <- disp
+    }
+
     # make mean expression with beta coefficients added as defined by model matrix
     ind = !apply(mod, 2, function(x) { all(x == 1) })
     mod = cbind(mod[, ind])
@@ -442,9 +472,12 @@
     counts = matrix(stats::rnbinom(nsamples * ngenes,
                                    mu = 2 ^ mumat - 1, size = 1/disp),
                     ncol = nsamples, nrow = ngenes)
+    counts0 = counts == 0
+    nn0 = rowSums(!counts0)
+    dropout = (nsamples - nn0)/nsamples
     }
 
-  return(list(counts=counts, sf=all.facs))
+  return(list(counts=counts, sf=all.facs, mus=true.means, disps=sizevec, drops=dropout))
 }
 
 #' @importFrom stats rnorm rnbinom rpois
@@ -524,6 +557,10 @@
       nrow = ngenes,
       dimnames = list(paste0(rownames(mumat),"_", seq_len(ngenes)),
                       NULL))
+
+    counts0 = counts == 0
+    nn0 = rowSums(!counts0)
+    dropout = (nsamples - nn0)/nsamples
     }
 
   if (attr(sim.options, 'param.type') == 'insilico') {
@@ -563,6 +600,14 @@
     # effective means
     effective.means <- outer(true.means, all.facs, "*")
 
+    # effective dispersions
+    if(length(disp) == 1) {
+      sizevec <- rep(1/disp, ngenes)
+    }
+    if(length(disp) > 1) {
+      sizevec <- disp
+    }
+
     # make mean expression with beta coefficients added as defined by model matrix
     ind = !apply(mod, 2, function(x) { all(x == 1) })
     mod = cbind(mod[, ind])
@@ -571,10 +616,16 @@
     mumat[mumat < 0] = min(log2(effective.means + 1))
 
     # result count matrix
-    counts = matrix(stats::rnbinom(nsamples * ngenes, mu = 2 ^ mumat - 1, size = 1/disp), ncol = nsamples, nrow = ngenes)
+    counts = matrix(stats::rnbinom(nsamples * ngenes,
+                                   mu = 2 ^ mumat - 1,
+                                   size = 1/disp),
+                    ncol = nsamples, nrow = ngenes)
+    counts0 = counts == 0
+    nn0 = rowSums(!counts0)
+    dropout = (nsamples - nn0)/nsamples
     }
 
-  return(list(counts=counts, sf=all.facs))
+  return(list(counts=counts, sf=all.facs, mus=true.means, disps=sizevec, drops=dropout))
 }
 
 #' @importFrom stats rnorm rnbinom runif approx
@@ -683,6 +734,10 @@
 
       p0mat = matrix(t(zero.mark), nrow = ngenes, ncol = nsamples)
 
+      counts0 = p0mat == 0
+      nn0 = rowSums(!counts0)
+      dropout = (nsamples - nn0)/nsamples
+
       # result count matrix
       counts.nb = matrix(stats::rnbinom(nsamples * ngenes,
                                         mu = 2 ^ mumat - 1,
@@ -720,6 +775,10 @@
 
       p0mat = matrix(t(zero.mark), nrow = ngenes, ncol = nsamples)
 
+      counts0 = p0mat == 0
+      nn0 = rowSums(!counts0)
+      dropout = (nsamples - nn0)/nsamples
+
       # result count matrix
       counts.nb = matrix(stats::rnbinom(nsamples * ngenes,
                                         mu = 2 ^ mumat - 1,
@@ -734,13 +793,15 @@
                                      mu = 2 ^ mumat - 1,
                                      size = 2 ^ sizevec),
                       ncol = nsamples, nrow = ngenes)
+      counts0 = counts == 0
+      nn0 = rowSums(!counts0)
+      dropout = (nsamples - nn0)/nsamples
     }
     }
 
-  dimnames(counts) <- list(paste0(rownames(mumat),"_", seq_len(ngenes)),
-                           NULL)
+  dimnames(counts) <- list(paste0(rownames(mumat),"_", seq_len(ngenes)), NULL)
 
-  return(list(counts=counts, sf=all.facs))
+  return(list(counts=counts, sf=all.facs, mus=true.means, disps=sizevec, drops=dropout))
 }
 
 #' @importFrom stats rnorm rnbinom runif approx rpois
@@ -856,6 +917,10 @@
 
       p0mat = matrix(t(zero.mark), nrow = ngenes, ncol = nsamples)
 
+      counts0 = p0mat == 0
+      nn0 = rowSums(!counts0)
+      dropout = (nsamples - nn0)/nsamples
+
       # result count matrix
       counts.nb = matrix(stats::rnbinom(nsamples * ngenes,
                                         mu = 2 ^ mumat - 1,
@@ -893,6 +958,10 @@
 
       p0mat = matrix(t(zero.mark), nrow = ngenes, ncol = nsamples)
 
+      counts0 = p0mat == 0
+      nn0 = rowSums(!counts0)
+      dropout = (nsamples - nn0)/nsamples
+
       # result count matrix
       counts.nb = matrix(stats::rnbinom(nsamples * ngenes,
                                         mu = 2 ^ mumat - 1,
@@ -907,13 +976,16 @@
                                      mu = 2 ^ mumat - 1,
                                      size = 2 ^ sizevec),
                       ncol = nsamples, nrow = ngenes)
+      counts0 = counts == 0
+      nn0 = rowSums(!counts0)
+      dropout = (nsamples - nn0)/nsamples
     }
     }
 
   dimnames(counts) <- list(paste0(rownames(mumat),"_", seq_len(ngenes)),
                            NULL)
 
-  return(list(counts=counts, sf=all.facs))
+  return(list(counts=counts, sf=all.facs, mus=true.means, disps=sizevec, drops=dropout))
 }
 
 # MEAN-VARIANCE RELATIONSHIP AFTER MEAN DRAW
@@ -988,6 +1060,9 @@
       nrow = ngenes,
       dimnames = list(paste0(rownames(mumat),"_", seq_len(ngenes)),
                       NULL))
+    counts0 = counts == 0
+    nn0 = rowSums(!counts0)
+    dropout = (nsamples - nn0)/nsamples
     }
 
   if (attr(sim.options, 'param.type') == 'insilico') {
@@ -1027,6 +1102,14 @@
     # effective means
     effective.means <- outer(true.means, all.facs, "*")
 
+    # effective dispersions
+    if(length(disp) == 1) {
+      sizevec <- rep(1/disp, ngenes)
+    }
+    if(length(disp) > 1) {
+      sizevec <- disp
+    }
+
     # make mean expression with beta coefficients added as defined by model matrix
     ind = !apply(mod, 2, function(x) { all(x == 1) })
     mod = cbind(mod[, ind])
@@ -1040,14 +1123,13 @@
                     ncol = nsamples, nrow = ngenes)
     }
 
-  return(list(counts=counts, sf=all.facs))
+  return(list(counts=counts, sf=all.facs, mus=true.means, disps=sizevec, drops=dropout))
 }
 
 #' @importFrom stats rnorm rnbinom rpois
 .sc.NB.FillIn_downsample_counts <- function(sim.options, phenotype, modelmatrix, coef.dat) {
 
   set.seed(sim.options$sim.seed)
-
 
   nsamples = nrow(modelmatrix)
   ngenes = sim.options$ngenes
@@ -1121,6 +1203,9 @@
       nrow = ngenes,
       dimnames = list(paste0(rownames(mumat),"_", seq_len(ngenes)),
                       NULL))
+    counts0 = counts == 0
+    nn0 = rowSums(!counts0)
+    dropout = (nsamples - nn0)/nsamples
     }
 
   if (attr(sim.options, 'param.type') == 'insilico') {
@@ -1160,6 +1245,14 @@
     # effective means
     effective.means <- outer(true.means, all.facs, "*")
 
+    # effective dispersions
+    if(length(disp) == 1) {
+      sizevec <- rep(1/disp, ngenes)
+    }
+    if(length(disp) > 1) {
+      sizevec <- disp
+    }
+
     # make mean expression with beta coefficients added as defined by model matrix
     ind = !apply(mod, 2, function(x) { all(x == 1) })
     mod = cbind(mod[, ind])
@@ -1168,10 +1261,15 @@
     mumat[mumat < 0] = min(log2(effective.means + 1))
 
     # result count matrix
-    counts = matrix(stats::rnbinom(nsamples * ngenes, mu = 2 ^ mumat - 1, size = 1/disp), ncol = nsamples, nrow = ngenes)
+    counts = matrix(stats::rnbinom(nsamples * ngenes,
+                                   mu = 2 ^ mumat - 1, size = 1/disp),
+                    ncol = nsamples, nrow = ngenes)
+    counts0 = counts == 0
+    nn0 = rowSums(!counts0)
+    dropout = (nsamples - nn0)/nsamples
     }
 
-  return(list(counts=counts, sf=all.facs))
+  return(list(counts=counts, sf=all.facs, mus=true.means, disps=sizevec, drops=dropout))
 }
 
 #' @importFrom stats rnorm rnbinom runif approx
@@ -1280,6 +1378,10 @@
 
       p0mat = matrix(t(zero.mark), nrow = ngenes, ncol = nsamples)
 
+      counts0 = p0mat == 0
+      nn0 = rowSums(!counts0)
+      dropout = (nsamples - nn0)/nsamples
+
       # result count matrix
       counts.nb = matrix(stats::rnbinom(nsamples * ngenes,
                                         mu = 2 ^ mumat - 1,
@@ -1317,6 +1419,10 @@
 
       p0mat = matrix(t(zero.mark), nrow = ngenes, ncol = nsamples)
 
+      counts0 = p0mat == 0
+      nn0 = rowSums(!counts0)
+      dropout = (nsamples - nn0)/nsamples
+
       # result count matrix
       counts.nb = matrix(stats::rnbinom(nsamples * ngenes,
                                         mu = 2 ^ mumat - 1,
@@ -1331,13 +1437,17 @@
                                      mu = 2 ^ mumat - 1,
                                      size = 2 ^ sizevec),
                       ncol = nsamples, nrow = ngenes)
+
+      counts0 = counts == 0
+      nn0 = rowSums(!counts0)
+      dropout = (nsamples - nn0)/nsamples
     }
     }
 
   dimnames(counts) <- list(paste0(rownames(mumat),"_", seq_len(ngenes)),
                            NULL)
 
-  return(list(counts=counts, sf=all.facs))
+  return(list(counts=counts, sf=all.facs, mus=true.means, disps=sizevec, drops=dropout))
 }
 
 #' @importFrom stats rnorm rnbinom runif approx rpois
@@ -1462,6 +1572,10 @@
 
       p0mat = matrix(t(zero.mark), nrow = ngenes, ncol = nsamples)
 
+      counts0 = p0mat == 0
+      nn0 = rowSums(!counts0)
+      dropout = (nsamples - nn0)/nsamples
+
       # result count matrix
       counts.nb = matrix(stats::rnbinom(nsamples * ngenes,
                                         mu = 2 ^ mumat - 1,
@@ -1499,6 +1613,10 @@
 
       p0mat = matrix(t(zero.mark), nrow = ngenes, ncol = nsamples)
 
+      counts0 = p0mat == 0
+      nn0 = rowSums(!counts0)
+      dropout = (nsamples - nn0)/nsamples
+
       # result count matrix
       counts.nb = matrix(stats::rnbinom(nsamples * ngenes,
                                         mu = 2 ^ mumat - 1,
@@ -1513,13 +1631,16 @@
                                      mu = 2 ^ mumat - 1,
                                      size = 2 ^ sizevec),
                       ncol = nsamples, nrow = ngenes)
+      counts0 = counts == 0
+      nn0 = rowSums(!counts0)
+      dropout = (nsamples - nn0)/nsamples
     }
     }
 
   dimnames(counts) <- list(paste0(rownames(mumat),"_", seq_len(ngenes)),
                            NULL)
 
-  return(list(counts=counts, sf=all.facs))
+  return(list(counts=counts, sf=all.facs, mus=true.means, disps=sizevec, drops=dropout))
 }
 
 
@@ -1556,6 +1677,10 @@
     p0mat = t(sapply(p0s, function(x) {
       stats::rbinom(nsamples, prob = 1 - x, size = 1)
     }, simplify = T))
+
+    counts0 = p0mat == 0
+    nn0 = rowSums(!counts0)
+    dropout = (nsamples - nn0)/nsamples
 
     # size factor
     if(is.list(sim.options$size.factors)) {
@@ -1613,6 +1738,10 @@
       stats::rbinom(nsamples, prob = 1 - x, size = 1)
     }, simplify = T))
 
+    counts0 = p0mat == 0
+    nn0 = rowSums(!counts0)
+    dropout = (nsamples - nn0)/nsamples
+
     # associate with dispersion parameter
     if (length(sim.options$dispersion) == 1) {
       disp = sim.options$dispersion
@@ -1645,6 +1774,14 @@
     # effective means
     effective.means <- outer(true.means, all.facs, "*")
 
+    # effective dispersions
+    if(length(disp) == 1) {
+      sizevec <- rep(1/disp, ngenes)
+    }
+    if(length(disp) > 1) {
+      sizevec <- disp
+    }
+
     # make mean expression with beta coefficients added as defined by model matrix
     ind = !apply(mod, 2, function(x) { all(x == 1) })
     mod = cbind(mod[, ind])
@@ -1660,7 +1797,7 @@
     counts = p0mat * cnts
     }
 
-  return(list(counts=counts, sf=all.facs))
+  return(list(counts=counts, sf=all.facs, mus=true.means, disps=sizevec, drops=dropout))
 }
 
 

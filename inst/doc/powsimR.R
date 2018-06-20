@@ -6,6 +6,7 @@ knitr::opts_chunk$set(tidy.opts=list(width.cutoff=50),
 ## ----dep, echo = TRUE, eval = FALSE, tidy = FALSE--------------------------
 #  ipak <- function(pkg, repository=c('CRAN', 'Bioconductor', 'github')){
 #    new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+#    # new.pkg <- pkg
 #    if (length(new.pkg)) {
 #      if(repository=='CRAN') {
 #        install.packages(new.pkg, dependencies = TRUE)
@@ -22,8 +23,9 @@ knitr::opts_chunk$set(tidy.opts=list(width.cutoff=50),
 #  
 #  # CRAN PACKAGES
 #  cranpackages <- c("bbmle", "broom", "cluster", "cobs", "cowplot",
-#                    "data.table", "doParallel", "dplyr", "drc", "DrImpute", "fastICA", "fitdistrplus",
-#                    "foreach", "gamlss.dist", "ggExtra", "ggplot2", "ggthemes", "grDevices",
+#                    "data.table", "devtools", "doParallel", "dplyr", "drc", "DrImpute",
+#                    "fastICA", "fitdistrplus", "foreach",
+#                    "gamlss.dist", "ggExtra", "ggplot2", "ggthemes", "grDevices",
 #                    "glmnet", "grid", "gtools", "Hmisc", "kernlab", "MASS",
 #                    "matrixStats", "mclust", "methods", "minpack.lm", "moments", "msir",
 #                    "NBPSeq", "nonnest2", "parallel", "penalized", "plyr", "pscl",
@@ -33,8 +35,8 @@ knitr::opts_chunk$set(tidy.opts=list(width.cutoff=50),
 #  
 #  # BIOCONDUCTOR
 #  biocpackages <- c("AnnotationDbi", "baySeq", "Biobase", "BiocGenerics",
-#                    "BiocParallel", "DEDS", "DESeq2", "EBSeq", "edgeR", "IHW", "limma",
-#                    "Linnorm", "MAST", "monocle", "NOISeq", "qvalue", "ROTS", "RUVSeq",
+#                    "BiocParallel", "DEDS", "DESeq2", "EBSeq", "edgeR", "IHW", "iCOBRA",
+#                    "limma", "Linnorm", "MAST", "monocle", "NOISeq", "qvalue", "ROTS", "RUVSeq",
 #                    "S4Vectors", "scater", "scDD", "scde", "scone", "scran", "SCnorm",
 #                    "SingleCellExperiment", "SummarizedExperiment", "zinbwave")
 #  ipak(biocpackages, repository='Bioconductor')
@@ -45,16 +47,16 @@ knitr::opts_chunk$set(tidy.opts=list(width.cutoff=50),
 #  ipak(githubpackages, repository = 'github')
 
 ## ----install, echo=TRUE, eval=FALSE, tidy=FALSE----------------------------
-#  devtools::install_github('bvieth/powsimR', build_vignettes = TRUE,
-#                           dependencies = FALSE)
-
-## ----load, echo=TRUE, eval=T, tidy=T---------------------------------------
-library(powsimR)
+#  devtools::install_github('bvieth/powsimR',
+#                           build_vignettes = TRUE,
+#                           dependencies=FALSE)
+#  library("powsimR")
 
 ## ----schematic, fig.cap="PowsimR schematic overview. (A) Estimation (B) Simulation (C) Evaluation.", echo=F, eval=T, include=T, fig.wide = T----
 knitr::include_graphics("powsimR-vignette-schematic.png")
 
 ## ----params, echo=T, eval=T, include=T-------------------------------------
+library("powsimR")
 data("kolodziejczk_cnts")
 kolodziejczk_cnts <- kolodziejczk_cnts[, grep('standard',
                                               colnames(kolodziejczk_cnts))]
@@ -115,7 +117,6 @@ knitr::include_graphics("lfcdist.jpeg")
 #                     Preclust = FALSE,
 #                     Prefilter = NULL,
 #                     Impute = NULL,
-#                     DEFilter = FALSE,
 #                     spikeIns = FALSE,
 #                     NCores = NULL,
 #                     verbose = TRUE)
@@ -162,15 +163,15 @@ simcounts.2grp <- simulateCounts(n=c(120, 100),
                                  sim.seed=NULL,
                                  verbose=TRUE)
 
-## ----plot2grp, echo=T, eval=T----------------------------------------------
+## ----plottwogrp, fig.cap="PCA plot showing two simulated groups.", echo=F, eval=T, include=T, out.width = "95%"----
 plotCounts(simCounts = simcounts.2grp, Distance = "euclidean", Scale = T, DimReduce = "PCA", verbose = T)
 
-## ----multigroup, echo = TRUE, eval = TRUE----------------------------------
+## ----multigroup, echo=T, eval=T, include=T---------------------------------
 if(length(grep("MBESS",installed.packages()))==0){
-   install.packages("MBESS", dependencies = TRUE)
+   install.packages("MBESS", dependencies = TRUE, repos = "https://cran.rstudio.com/")
 }
 if(length(grep("mvtnorm",installed.packages()))==0){
-   install.packages("mvtnorm", dependencies = TRUE)
+   install.packages("mvtnorm", dependencies = TRUE, repos = "https://cran.rstudio.com/")
  }
 cor.lfc <- matrix(c(1,0.5,0.7,0.5,1,0.95,0.7,0.95,1), nrow=3, ncol=3)
 v.lfc <- c(4,1,1)
@@ -196,7 +197,7 @@ simcounts.3grp <- simulateCounts(n=c(100, 50, 50),
                                  sim.seed=NULL,
                                  verbose=TRUE)
 
-## ----plot3grp, echo=T, eval=T----------------------------------------------
+## ----plotthreegrp, fig.cap="PCA plot showing three simulated groups.", echo=F, eval=T, include=T, out.width = "95%"----
 plotCounts(simCounts = simcounts.3grp, Distance = "euclidean", Scale = F, DimReduce = "PCA", verbose = T)
 
 ## ----online_repos, echo = T, eval = F--------------------------------------

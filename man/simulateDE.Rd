@@ -58,6 +58,7 @@ A list with the following fields:
 \item{pvalue, fdr}{3D array (ngenes * N * nsims) for p-values and FDR from each simulation.
 Note that FDR values will be empty and the calculation will be done by \code{\link{evaluateDE}} whenever applicable.}
 \item{mu,disp,dropout}{3D (ngenes * N * nsims) array for mean, dispersion and dropout of library size factor normalized read counts.}
+\item{true.mu,true.disp,true.dropout}{3D (ngenes * N * nsims) array for true mean, dispersion and dropout of simulated read counts.}
 \item{elfc,rlfc}{3D array (ngenes * N * nsims) for log2 fold changes (LFC):
 elfc is for the DE tool estimated LFC; rlfc is for the LFC estimated from the normalised read counts.}
 \item{sf.values,gsf.values}{3D array (ngenes * N * nsims) for size factor estimates.

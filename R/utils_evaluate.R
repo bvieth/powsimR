@@ -3,16 +3,23 @@
 #' @importFrom MASS rlm
 #' @importFrom stats residuals na.exclude
 .lfc.evaluate <- function(truth, estimated) {
+
+  # input
   SE <- ((truth - estimated)^2)
   AE <- abs(truth - estimated)
-  RMSE <- sqrt(mean(SE, na.rm=T))
-  MAE <- mean(AE, na.rm=T)
+  RMSE <- sqrt(mean(SE, na.rm = T))
+  MAE <- mean(AE, na.rm = T)
+  AE.uniq <- unique(AE)
 
-  # robust fitting
-  fitted <- MASS::rlm(AE ~ 1, na.action=na.exclude)
-  resids <- stats::residuals(fitted)
-  # error of estimation
-  err.all <- 2^sqrt(mean(resids^2, na.rm = T))-1
+  # robust fitting and error of estimation
+  fitted <- try(MASS::rlm(AE.uniq ~ 1, na.action = na.exclude), silent = T)
+  if(inherits(fitted, 'try-error')){
+    resids <- NA
+    err.all <- NA
+  } else{
+    resids <- stats::residuals(fitted)
+    err.all <- 2^sqrt(mean(resids^2, na.rm = T)) - 1
+  }
 
   return(c(RMSE.Value=RMSE,
            MAE.Value=MAE,
@@ -25,15 +32,18 @@
 #' @importFrom stats residuals na.exclude
 .fiterror.sf <- function(estimated.sf, true.sf){
 
-    # log fold change calculation
-    logfold <- log2(estimated.sf) - log2(true.sf)
+  # log fold change calculation
+  logfold <- log2(estimated.sf) - log2(true.sf)
 
-    # robust fitting
-    fitted <- MASS::rlm(logfold ~ 1, na.action=na.exclude)
+  # robust fitting and error of estimation
+  fitted <- try(MASS::rlm(logfold ~ 1, na.action = na.exclude), silent = T)
+  if(inherits(fitted, 'try-error')){
+    resids <- NA
+    err.all <- NA
+  } else{
     resids <- stats::residuals(fitted)
-
-    # error of estimation
-    err.all <- 2^sqrt(mean(resids^2,na.rm = T))-1
+    err.all <- 2^sqrt(mean(resids^2, na.rm = T)) - 1
+  }
 
   return(err.all)
 }

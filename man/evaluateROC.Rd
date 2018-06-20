@@ -8,6 +8,7 @@ evaluateROC(simRes,
 alpha.type=c("adjusted","raw"),
 MTC=c('BY', 'BH', 'Storey', 'IHW',
 'holm', 'hochberg', 'hommel', 'bonferroni'),
+alpha.nominal = 0.1,
 target.by=c("lfc", "effectsize"),
 delta=0)
 }
@@ -23,6 +24,8 @@ Available options are \code{"adjusted"} i.e. applying multiple testing correctio
 2) Storey's qvalue see \link[qvalue]{qvalue} and
 3) Independent Hypothesis Weighting considering mean expression as covariate (see \link[IHW]{ihw}).
 Default is \code{BY}, i.e. Benjamini-Yekutieli FDR correction method.}
+
+\item{alpha.nominal}{The nomial value of significance. Default is 0.1.}
 
 \item{target.by}{A string to specify the method to define "biologically important" DE genes.
 Available options are (1) \code{"lfc"}: interesting genes are defined by absolute log2 fold changes.
