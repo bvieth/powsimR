@@ -3,6 +3,8 @@
 powsimR: Power analysis for bulk and single cell RNA-seq experiments
 ====================================================================
 
+Please also consult my Github Page of [powsimR](https://bvieth.github.io/powsimR/) made with [pkgdown](http://pkgdown.r-lib.org/index.html)!
+
 Installation Guide
 ------------------
 
@@ -69,18 +71,22 @@ Alternative, you can try to install powsimR and its dependencies directly using 
 devtools::install_github("bvieth/powsimR")
 ```
 
-Some users have experienced issues installing powsimR due to vignette compilation errors. If that is the case, you can leave out building the vignette and read it [here](https://github.com/bvieth/powsimR/tree/master/inst/doc/powsimR.html) instead.
+User Guide
+----------
+
+For examples and tips on using the package, please consult the vignette after successful installation by
+
+``` r
+browseVignettes("powsimR")
+```
+
+Some users have experienced issues installing powsimR due to vignette compilation errors. If that is the case, you can leave out building the vignette and read it on my Github Page of [powsimR](https://bvieth.github.io/powsimR/articles/powsimR.html) or download it as a html file [here](https://github.com/bvieth/powsimR/tree/master/inst/doc/powsimR.html).
 
 ### DLLs and ulimit
 
 Note that the error "maximal number of DLLs reached..." might occur due to the loading of many shared objects by Bioconductor packages. Restarting the R session after installing dependencies / powsimR will help. Starting with R version 3.4.0, one can set the environmental variable 'R\_MAX\_NUM\_DLLS' to a higher number. See `?Startup()` for more information. I recommend to increase the maximum number of DLLs that can be loaded to at least 500. The environmental variable R\_MAX\_NUM\_DLLS can be set in R\_HOME/etc/Renviron prior to starting R. For that locate the Renviron file and add the following line: R\_MAX\_NUM\_DLLS=xy where xy is the number of DLLs. On my Ubuntu machine, the Renviron file is in /usr/lib/R/etc/ and I can set it to 500.
 
 In addition, the user limits for open files (unix: ulimit) might have to be set to a higher number to accomodate the increase in DLLs. Please check out the help pages for [MACs](https://gist.github.com/tombigel/d503800a282fcadbee14b537735d202c) and [Linux](https://glassonionblog.wordpress.com/2013/01/27/increase-ulimit-and-file-descriptors-limit/) for guidance.
-
-User Guide
-----------
-
-For examples and tips on using the package, please see the vignette [here](https://github.com/bvieth/powsimR/tree/master/inst/doc/powsimR.html).
 
 Citation
 --------
