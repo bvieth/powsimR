@@ -94,35 +94,7 @@
 <div id="powsimr-power-analysis-for-bulk-and-single-cell-rna-seq-experiments" class="section level1">
 <div class="page-header"><h1 class="hasAnchor">
 <a href="#powsimr-power-analysis-for-bulk-and-single-cell-rna-seq-experiments" class="anchor"></a>powsimR: Power analysis for bulk and single cell RNA-seq experiments</h1></div>
-<div id="news" class="section level2">
-<h2 class="hasAnchor">
-<a href="#news" class="anchor"></a>NEWS</h2>
-<p><strong>Version 1.1.2</strong> released with the following fixes (2018-06-20):</p>
-<ul>
-<li>
-<code>estimateParam</code> error fixed concerning expression cleanup.</li>
-<li>precompiled vignette in inst/doc/.</li>
-</ul>
-<p><strong>Version 1.1.1</strong> released with the following changes / additions (2018-04-19):</p>
-<ul>
-<li>
-<code>simulateDE</code> now with the option to perform DE testing on filtered/imputed counts (option <code>DEFilter</code>)</li>
-</ul>
-<p><strong>Version 1.1.0</strong> released with the following changes / additions (2018-03-29):</p>
-<ul>
-<li>simulation of batch effects (see options <code>p.B</code>, <code>bLFC</code> and <code>bPattern</code> in <code>DESetup</code> and <code>simulateCounts</code>)</li>
-<li>simulation of spike-in expression (see <code>estimateSpike</code> , <code>plotSpike</code> and option <code>spikeIns</code> in <code>simulateDE</code> and <code>simulateCounts</code>)</li>
-<li>simulation of multiple sample groups (e.g. single cell populations) with <code>simulateCounts</code>
-</li>
-<li>imputation and prefiltering options prior to normalisation in DE power simulations added (scImpute, scone, Seurat, DrImpute, SAVER)</li>
-<li>additional normalisation options and DE tools (esp. for single cells) included in <code>simulateDE</code>
-</li>
-<li>evaluation of simulation setup using estimated versus true value comparisons of library size factors and log2 fold changes in <code>evaluateSim</code> and <code>plotEvalSim</code>
-</li>
-<li>increased flexibility in preprocessing for distribution evaluation in <code>evaluateDist</code>
-</li>
-</ul>
-</div>
+<p>Please also consult my Github Page of <a href="https://bvieth.github.io/powsimR/">powsimR</a> made with <a href="http://pkgdown.r-lib.org/index.html">pkgdown</a>!</p>
 <div id="installation-guide" class="section level2">
 <h2 class="hasAnchor">
 <a href="#installation-guide" class="anchor"></a>Installation Guide</h2>
@@ -173,18 +145,19 @@ githubpackages &lt;-<span class="st"> </span><span class="kw">c</span>(<span cla
 <span class="kw">library</span>(<span class="st">"powsimR"</span>)</code></pre></div>
 <p>Alternative, you can try to install powsimR and its dependencies directly using devtools:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">devtools<span class="op">::</span><span class="kw"><a href="http://www.rdocumentation.org/packages/devtools/topics/install_github">install_github</a></span>(<span class="st">"bvieth/powsimR"</span>)</code></pre></div>
-<p>Some users have experienced issues installing powsimR due to vignette compilation errors. If that is the case, you can leave out building the vignette and read it <a href="https://github.com/bvieth/powsimR/tree/master/inst/doc/powsimR.html">here</a> instead.</p>
+</div>
+<div id="user-guide" class="section level2">
+<h2 class="hasAnchor">
+<a href="#user-guide" class="anchor"></a>User Guide</h2>
+<p>For examples and tips on using the package, please consult the vignette after successful installation by</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">browseVignettes</span>(<span class="st">"powsimR"</span>)</code></pre></div>
+<p>Some users have experienced issues installing powsimR due to vignette compilation errors. If that is the case, you can leave out building the vignette and read it on my Github Page of <a href="https://bvieth.github.io/powsimR/articles/powsimR.html">powsimR</a> or download it as a html file <a href="https://github.com/bvieth/powsimR/tree/master/inst/doc/powsimR.html">here</a>.</p>
 <div id="dlls-and-ulimit" class="section level3">
 <h3 class="hasAnchor">
 <a href="#dlls-and-ulimit" class="anchor"></a>DLLs and ulimit</h3>
 <p>Note that the error “maximal number of DLLs reached…” might occur due to the loading of many shared objects by Bioconductor packages. Restarting the R session after installing dependencies / powsimR will help. Starting with R version 3.4.0, one can set the environmental variable ‘R_MAX_NUM_DLLS’ to a higher number. See <code>?Startup()</code> for more information. I recommend to increase the maximum number of DLLs that can be loaded to at least 500. The environmental variable R_MAX_NUM_DLLS can be set in R_HOME/etc/Renviron prior to starting R. For that locate the Renviron file and add the following line: R_MAX_NUM_DLLS=xy where xy is the number of DLLs. On my Ubuntu machine, the Renviron file is in /usr/lib/R/etc/ and I can set it to 500.</p>
 <p>In addition, the user limits for open files (unix: ulimit) might have to be set to a higher number to accomodate the increase in DLLs. Please check out the help pages for <a href="https://gist.github.com/tombigel/d503800a282fcadbee14b537735d202c">MACs</a> and <a href="https://glassonionblog.wordpress.com/2013/01/27/increase-ulimit-and-file-descriptors-limit/">Linux</a> for guidance.</p>
 </div>
-</div>
-<div id="user-guide" class="section level2">
-<h2 class="hasAnchor">
-<a href="#user-guide" class="anchor"></a>User Guide</h2>
-<p>For examples and tips on using the package, please see the vignette <a href="https://github.com/bvieth/powsimR/tree/master/inst/doc/powsimR.html">here</a>.</p>
 </div>
 <div id="citation" class="section level2">
 <h2 class="hasAnchor">
