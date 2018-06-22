@@ -19,6 +19,7 @@
 .de.calc <- function(DEmethod,
                      normData,
                      countData,
+                     Lengths,
                      DEOpts,
                      spikeData,
                      spikeInfo,
@@ -84,6 +85,7 @@
   # methods developed for single cell
   if (DEmethod == "MAST") {DERes = .run.MAST(normData=normData,
                                              countData=countData,
+                                             Lengths=Lengths,
                                              DEOpts=DEOpts,
                                              NCores=NCores,
                                              verbose=verbose)}
@@ -144,7 +146,17 @@
   # run DE testing
   design.mat <- stats::model.matrix( ~ DEOpts$designs)
   dge <- edgeR::estimateGLMRobustDisp(y=dge, design = design.mat)
-  fit.edgeR <- edgeR::glmFit(dge, design = design.mat)
+  if (attr(normData, 'normFramework') == 'SCnorm') {
+    scale.facts <- normData$scale.factors
+    ixx.valid <- rownames(countData) %in% rownames(scale.facts)
+    wgenes <- countData
+    wgenes[1:nrow(wgenes), 1:ncol(wgenes)] <- NA
+    wgenes[ixx.valid, ] <- scale.facts
+    fit.edgeR <- edgeR::glmFit(dge, design = design.mat, weights = wgenes)
+  }
+  if (!attr(normData, 'normFramework') == 'SCnorm') {
+    fit.edgeR <- edgeR::glmFit(dge, design = design.mat)
+  }
   lrt.edgeR <- edgeR::glmLRT(fit.edgeR)
   res.edgeR <- edgeR::topTags(lrt.edgeR, adjust.method="BH", n=Inf, sort.by = 'none')
 
@@ -175,7 +187,17 @@
   # run DE testing
   design.mat <- stats::model.matrix( ~DEOpts$designs)
   dge <- edgeR::estimateDisp(y=dge, design = design.mat)
-  fit.edgeR <- edgeR::glmQLFit(dge, design = design.mat, robust=TRUE)
+  if (attr(normData, 'normFramework') == 'SCnorm') {
+    scale.facts <- normData$scale.factors
+    ixx.valid <- rownames(countData) %in% rownames(scale.facts)
+    wgenes <- countData
+    wgenes[1:nrow(wgenes), 1:ncol(wgenes)] <- NA
+    wgenes[ixx.valid, ] <- scale.facts
+    fit.edgeR <- edgeR::glmQLFit(dge, design = design.mat, robust=TRUE, weights = wgenes)
+  }
+  if (!attr(normData, 'normFramework') == 'SCnorm') {
+    fit.edgeR <- edgeR::glmQLFit(dge, design = design.mat, robust=TRUE)
+  }
   ql.edgeR <- edgeR::glmQLFTest(fit.edgeR)
   res.edgeR <- edgeR::topTags(ql.edgeR, adjust.method="BH", n=Inf, sort.by = 'none')
 
@@ -220,13 +242,6 @@
   dge$weights <- zinger.weights
   # run DE testing
   dge <- edgeR::estimateDisp(y=dge, design = design.mat)
-  if (attr(normData, 'normFramework') == 'SCnorm') {
-    wgenes <- normData$scale.factors
-    fit.edgeR <- edgeR::glmFit(dge, design = design.mat, weights = wgenes)
-  }
-  if (!attr(normData, 'normFramework') == 'SCnorm') {
-    fit.edgeR <- edgeR::glmFit(dge, design = design.mat)
-  }
   lrt.zinger <- zingeR::glmWeightedF(glmfit = fit.edgeR,
                                      coef = 2,
                                      contrast = NULL,
@@ -350,7 +365,11 @@
   p.DE <- DEOpts$p.DE
   design.mat <- stats::model.matrix( ~ DEOpts$designs)
   if (attr(normData, 'normFramework') == 'SCnorm') {
-    wgenes <- normData$scale.factors
+    scale.facts <- normData$scale.factors
+    ixx.valid <- rownames(countData) %in% rownames(scale.facts)
+    wgenes <- countData
+    wgenes[1:nrow(wgenes), 1:ncol(wgenes)] <- NA
+    wgenes[ixx.valid, ] <- scale.facts
     v <- limma::voom(dge, design.mat, plot=FALSE, weights = wgenes)
   }
   if (!attr(normData, 'normFramework') == 'SCnorm') {
@@ -392,7 +411,11 @@
   y$E <- edgeR::cpm(dge, log = TRUE, prior.count = 3)
 
   if (attr(normData, 'normFramework') == 'SCnorm') {
-    wgenes <- normData$scale.factors
+    scale.facts <- normData$scale.factors
+    ixx.valid <- rownames(countData) %in% rownames(scale.facts)
+    wgenes <- countData
+    wgenes[1:nrow(wgenes), 1:ncol(wgenes)] <- NA
+    wgenes[ixx.valid, ] <- scale.facts
     fit <- limma::lmFit(object = y, design = design.mat, weights = wgenes)
   }
   if (!attr(normData, 'normFramework') == 'SCnorm') {
@@ -429,6 +452,15 @@
                                                          tidy = FALSE,
                                                          ignoreRank = FALSE))
   DESeq2::sizeFactors(dds) <- sf
+
+  if (attr(normData, 'normFramework') == 'SCnorm') {
+    scale.facts <- normData$scale.factors
+    ixx.valid <- rownames(countData) %in% rownames(scale.facts)
+    wgenes <- countData
+    wgenes[1:nrow(wgenes), 1:ncol(wgenes)] <- NA
+    wgenes[ixx.valid, ] <- scale.facts
+    SummarizedExperiment::assays(dds)[["weights"]] <- wgenes
+  }
 
   # run DE testing
   if (is.null(NCores)) {
@@ -837,11 +869,11 @@
 #' @importFrom MAST FromMatrix zlm.SingleCellAssay lrTest summary
 #' @importFrom S4Vectors mcols
 #' @importFrom AnnotationDbi as.list
-#' @importFrom edgeR DGEList calcNormFactors cpm.DGEList
+#' @importFrom edgeR DGEList rpkm.DGEList
 #' @importFrom data.table data.table
 #' @importFrom reshape2 melt
 #' @importFrom parallel mclapply
-.run.MAST <- function(normData, countData, DEOpts, NCores, verbose) {
+.run.MAST <- function(normData, countData, Lengths, DEOpts, NCores, verbose) {
 
   # calculate normalisation factors
   sf <- normData$size.factors
@@ -855,7 +887,7 @@
                         group = factor(DEOpts$designs),
                         remove.zeros = FALSE)
   # 1. size factor normalised log2(CPM+1) / log2(TPM+1) values.
-  out.cpm <- edgeR::cpm.DGEList(dge, normalized.lib.sizes = T, log = F)
+  out.cpm <- edgeR::rpkm.DGEList(dge, gene.length=Lengths, normalized.lib.sizes = T, log = F)
   out.expr <- log2(out.cpm+1)
 
   # 2.: cell (sample ID, CDR, condition) and gene (gene name) annotation
@@ -1319,9 +1351,6 @@
 
 #TODO: Implement testing of monocle
 
-
 # D3E ---------------------------------------------------------------------
 
 # TODO: Do a system call since D3E is written in python
-
-

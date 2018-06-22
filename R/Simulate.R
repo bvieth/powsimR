@@ -405,6 +405,17 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
       ## create an DE options object to pass into DE detection
       DEOpts <- list(designs=def.design, p.DE=tmp.simOpts$p.DE)
 
+      ## rematch sampled gene names with given gene lengths
+      if(!is.null(Length.data)) {
+        if (verbose) { message(paste0("Reassociate gene lengths with sampled gene expression")) }
+        gene.id = sub('_([^_]*)$', '', rownames(count.data))
+        length.data = Length.data
+        length.data = length.data[match(gene.id,names(length.data))]
+      }
+      if(is.null(Length.data)) {
+        length.data = NULL
+      }
+
       ## Run DE detection
       start.time.DE <- Sys.time()
       if(!isTRUE(tmp.simOpts$DEFilter)) {
@@ -412,6 +423,7 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
         res.de = .de.calc(DEmethod=tmp.simOpts$DEmethod,
                           normData=norm.data,
                           countData=count.data,
+                          Lengths=length.data,
                           DEOpts=DEOpts,
                           spikeData=count.spike,
                           spikeInfo=spike.info,
@@ -423,6 +435,7 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
         res.de = .de.calc(DEmethod=tmp.simOpts$DEmethod,
                           normData=norm.data,
                           countData=fornorm.count.data,
+                          Lengths=length.data,
                           DEOpts=DEOpts,
                           spikeData=count.spike,
                           spikeInfo=spike.info,
@@ -468,9 +481,9 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
       disp.tmp[ix.valid] = res.params$dispersion
       p0.tmp[ix.valid] = res.params$dropout
       # extract true parameters
-      true.mu.tmp[ix.valid] = gene.data$mus
-      true.disp.tmp[ix.valid] = gene.data$disps
-      true.p0.tmp[ix.valid] = gene.data$drops
+      true.mu.tmp = gene.data$mus
+      true.disp.tmp = gene.data$disps
+      true.p0.tmp = gene.data$drops
       # copy it in 3D array of results
       pvalues[,j,i] = pval
       fdrs[,j,i] = fdr

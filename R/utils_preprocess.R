@@ -38,13 +38,10 @@
   # if(Impute=='BISCUIT') {FilterData <- .biscuit.impute(countData = countData,
   #                                                      verbose = verbose)}
 
-  ## no easy way of extracting cidr imputed values, C++ function call
-  # if(Impute=='CIDR') {FilterData <- .cidr.impute(countData = countData,
-  #                                                NCores = NCores)}
+  ## CIDR: no easy way of extracting cidr imputed values, C++ function call, asked authors on github
 
-  # the authors do not recommend doing it and
+  # Linnorm: the authors do not recommend doing it and
   # it is applied after normalisation and transformation, not to help normalisaion!
-  # if(Impute=='Linnorm') {FilterData <- .linnorm.impute(countData = countData)}
 
   # the current R implementation has a lot of coding errors,
   # and also the imputation gives weird results (all of the expr values turned into miniscule tiny values)

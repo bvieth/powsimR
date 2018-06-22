@@ -412,8 +412,12 @@
     ))
   }
 
-  wmu <- rowMeans(scnorm.out@metadata$NormalizedData)
-  sf <- apply(scnorm.out@metadata$ScaleFactors, 2, function(x) {
+  norm.counts <- scnorm.out@metadata$NormalizedData[!grepl(pattern="ERCC",
+                                                           rownames(scnorm.out@metadata$NormalizedData)),]
+  scale.facts <- scnorm.out@metadata$ScaleFactors[!grepl(pattern="ERCC",
+                                                         rownames(scnorm.out@metadata$ScaleFactors)),]
+  wmu <- rowMeans(norm.counts)
+  sf <- apply(scale.facts, 2, function(x) {
     stats::weighted.mean(x = x, w = wmu, na.rm = TRUE)
     })
   names(sf) <- colnames(cnts)
@@ -421,8 +425,8 @@
   rownames(gsf) <- rownames(cnts)
   colnames(gsf) <- colnames(cnts)
   gsf <- gsf[!grepl(pattern="ERCC", rownames(gsf)),]
-  res <- list(NormCounts=scnorm.out@metadata$NormalizedData,
-              RoundNormCounts=round(scnorm.out@metadata$NormalizedData),
+  res <- list(NormCounts=norm.counts,
+              RoundNormCounts=round(norm.counts),
               size.factors=sf,
               scale.factors=gsf)
   attr(res, 'normFramework') <- "SCnorm"

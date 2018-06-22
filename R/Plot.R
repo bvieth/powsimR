@@ -1096,7 +1096,7 @@ plotEvalSim <- function(evalRes, annot=TRUE) {
 #' @title Visualize computational time
 #' @description This function plots the computational running time of simulations.
 #' @usage plotTime(simRes, Table=TRUE, annot=TRUE)
-#' @param simRes The output of \code{\link{simulateDE}} or \code{\link{simulateFlow}}.
+#' @param simRes The output of \code{\link{simulateDE}}.
 #' @param Table A logical vector. If \code{TRUE}, a table of average computational running time per step and sample size is printed additionally.
 #' @param annot A logical vector. If \code{TRUE}, a short figure legend under the plot is included.
 #' @return A ggplot object.
