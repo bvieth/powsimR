@@ -360,7 +360,7 @@
 
   if (verbose) { message(paste0("Using DE-group annotation.")) }
 
-  print(table(cond))
+  NCores = NULL # that is for the servers
 
   ncores = ifelse(is.null(NCores), 1, NCores)
 
@@ -371,7 +371,6 @@
   }
 
   FilterExpression = 0.5
-
 
   if(isTRUE(verbose)) {
     message(paste0("SCnorm messages:"))
@@ -416,10 +415,11 @@
                                                            rownames(scnorm.out@metadata$NormalizedData)),]
   scale.facts <- scnorm.out@metadata$ScaleFactors[!grepl(pattern="ERCC",
                                                          rownames(scnorm.out@metadata$ScaleFactors)),]
-  wmu <- rowMeans(norm.counts)
+  wmu <- rowMeans(norm.counts, na.rm = TRUE)
   sf <- apply(scale.facts, 2, function(x) {
     stats::weighted.mean(x = x, w = wmu, na.rm = TRUE)
     })
+  sf[is.infinite(sf)] <- mean(sf[is.finite(sf)])
   names(sf) <- colnames(cnts)
   gsf <- scnorm.out@metadata$ScaleFactors
   rownames(gsf) <- rownames(cnts)
@@ -458,9 +458,9 @@
   }
   cond <- as.character(clusters)
 
-  if (verbose) { message(paste0("SCnorm with preclustering")) }
+  if (verbose) { message(paste0("SCnorm with preclustering.")) }
 
-  print(table(cond))
+  NCores = NULL # that is for the servers
 
   ncores = ifelse(is.null(NCores), 1, NCores)
 

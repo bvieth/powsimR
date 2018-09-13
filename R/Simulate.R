@@ -103,7 +103,7 @@
 #' }
 #' @section Differential testing using raw read count matrix:
 #' \describe{
-#' \item{limma-trend, limma-voom}{apply differential testing as implemented in \code{\link[limma]{lmFit}}
+#' \item{T-Test}{A T-Test per gene is applied using log2 transformed and normalized expression values (i.e. CPM or TPM).}
 #' followed by \code{\link[limma]{eBayes}} on counts transformed by \code{\link[limma]{voom}} or by applying mean-variance trend on log2 CPM values in \code{\link[limma]{eBayes}}.}
 #' \item{edgeR-LRT, edgeR-QL}{apply differential testing as implemented in \code{\link[edgeR]{glmFit}}, \code{\link[edgeR]{glmLRT}} and\code{\link[edgeR]{glmQLFit}}, \code{\link[edgeR]{glmQLFTest}}, respectively.}
 #' \item{DESeq2}{applies differential testing as implemented in \code{\link[DESeq2]{DESeq}}.}
@@ -424,6 +424,7 @@ simulateDE <- function(n1=c(20,50,100), n2=c(30,60,120),
                           normData=norm.data,
                           countData=count.data,
                           Lengths=length.data,
+                          MeanFragLengths=meanfrag.data,
                           DEOpts=DEOpts,
                           spikeData=count.spike,
                           spikeInfo=spike.info,

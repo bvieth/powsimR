@@ -67,7 +67,7 @@ The error matrix calculations will be conducted with evaluateDE." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">powsimR</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">1.1.2</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">1.1.3</span>
       </span>
     </div>
 
@@ -233,7 +233,7 @@ Global estimates per sample in sf.values; Gene- and sample-wise estimates in gsf
     
     <dl class='dl-horizontal'>
 <dt>scImpute</dt><dd><p>employs scImpute method of imputing dropouts as implemented
-in <code><a href='http://www.rdocumentation.org/packages/scImpute/topics/scimpute'>scimpute</a></code>. Imputation is only carried out for genes with more than 50 percent dropout. Please consider multiple cores to speed up computation.</p></dd>
+in <code>scimpute</code>. Imputation is only carried out for genes with more than 50 percent dropout. Please consider multiple cores to speed up computation.</p></dd>
 <dt>DrImpute</dt><dd><p>employs DrImpute method of imputing dropouts as implemented
 in <code><a href='http://www.rdocumentation.org/packages/DrImpute/topics/DrImpute'>DrImpute</a></code>.</p></dd>
 <dt>SAVER</dt><dd><p>employs SAVER method of imputing dropouts as implemented
@@ -265,27 +265,6 @@ This annotation is stored in <code>batchData</code> (<code><a href='http://www.r
 Census at least needs <code>Lengths</code> for single-end data and preferably <code>MeanFragLengths</code> for paired-end data.
 Do not use this algorithm for UMI data!</p></dd>
 <dt>depth</dt><dd><p>Sequencing depth normalisation.</p></dd>
-</dl>
-    
-    <h2 class="hasAnchor" id="differential-testing-using-raw-read-count-matrix"><a class="anchor" href="#differential-testing-using-raw-read-count-matrix"></a>Differential testing using raw read count matrix</h2>
-
-    
-    <dl class='dl-horizontal'>
-<dt>limma-trend, limma-voom</dt><dd><p>apply differential testing as implemented in <code><a href='http://www.rdocumentation.org/packages/limma/topics/lmFit'>lmFit</a></code>
-followed by <code><a href='http://www.rdocumentation.org/packages/limma/topics/ebayes'>eBayes</a></code> on counts transformed by <code><a href='http://www.rdocumentation.org/packages/limma/topics/voom'>voom</a></code> or by applying mean-variance trend on log2 CPM values in <code><a href='http://www.rdocumentation.org/packages/limma/topics/ebayes'>eBayes</a></code>.</p></dd>
-<dt>edgeR-LRT, edgeR-QL</dt><dd><p>apply differential testing as implemented in <code><a href='http://www.rdocumentation.org/packages/edgeR/topics/glmfit'>glmFit</a></code>, <code><a href='http://www.rdocumentation.org/packages/edgeR/topics/glmfit'>glmLRT</a></code> and<code><a href='http://www.rdocumentation.org/packages/edgeR/topics/glmQLFTest'>glmQLFit</a></code>, <code><a href='http://www.rdocumentation.org/packages/edgeR/topics/glmQLFTest'>glmQLFTest</a></code>, respectively.</p></dd>
-<dt>DESeq2</dt><dd><p>applies differential testing as implemented in <code><a href='http://www.rdocumentation.org/packages/DESeq2/topics/DESeq'>DESeq</a></code>.</p></dd>
-<dt>ROTS</dt><dd><p>applies differential testing as implemented in <code><a href='http://www.rdocumentation.org/packages/ROTS/topics/ROTS'>ROTS</a></code> with 100 permutations on transformed counts (<code><a href='http://www.rdocumentation.org/packages/limma/topics/voom'>voom</a></code>).</p></dd>
-<dt>baySeq</dt><dd><p>applies differential testing as implemented in <code><a href='http://www.rdocumentation.org/packages/baySeq/topics/getLikelihoods'>getLikelihoods</a></code> based on negative binomial prior estimates (<code><a href='http://www.rdocumentation.org/packages/baySeq/topics/getPriors'>getPriors.NB</a></code>).</p></dd>
-<dt>NOISeq</dt><dd><p>applies differential testing as implemented in <code><a href='http://www.rdocumentation.org/packages/NOISeq/topics/noiseqbio'>noiseqbio</a></code> based on CPM values.</p></dd>
-<dt>EBSeq</dt><dd><p>applies differential testing as implemented in <code><a href='http://www.rdocumentation.org/packages/EBSeq/topics/EBTest'>EBTest</a></code>.</p></dd>
-<dt>MAST</dt><dd><p>applies differential testing as implemented in <code><a href='http://www.rdocumentation.org/packages/MAST/topics/zlm'>zlm</a></code> for zero-inflated model fitting followed by <code><a href='http://www.rdocumentation.org/packages/MAST/topics/lrTest'>lrTest</a></code> on log2 CPM values.</p></dd>
-<dt>scde</dt><dd><p>applies differential testing as implemented in <code><a href='http://www.rdocumentation.org/packages/scde/topics/scde.expression.difference'>scde.expression.difference</a></code>.</p></dd>
-<dt>BPSC</dt><dd><p>applies differential testing as implemented in <code><a href='http://www.rdocumentation.org/packages/BPSC/topics/BPglm'>BPglm</a></code> on CPM values.</p></dd>
-<dt>scDD</dt><dd><p>applies differential testing as implemented in <code><a href='http://www.rdocumentation.org/packages/scDD/topics/scDD'>scDD</a></code> on CPM values.</p></dd>
-<dt>DECENT</dt><dd><p>applies differential testing as implemented in <code><a href='http://www.rdocumentation.org/packages/DECENT/topics/decent'>decent</a></code>.</p></dd>
-<dt>edgeR-zingeR, DESeq2-zingeR</dt><dd><p>In a first step, the posterior probabilities of the zero-inflated negative binomial component are estimated (see <code><a href='http://www.rdocumentation.org/packages/zingeR/topics/zeroWeightsLS'>zeroWeightsLS</a></code>) and used to define a weight matrix for dispersion estimation in <code><a href='http://www.rdocumentation.org/packages/edgeR/topics/estimateDisp'>estimateDisp</a></code>. For the edgeR approach, the generalized model as implemented in <code><a href='http://www.rdocumentation.org/packages/edgeR/topics/glmfit'>glmFit</a></code> is fitted. This is followed by an adapted LRT for differential testing to account for the weighting (see <code><a href='http://www.rdocumentation.org/packages/zingeR/topics/glmWeightedF'>glmWeightedF</a></code>). For DESeq2, the generalized linear model coefficients are estimated using <code><a href='http://www.rdocumentation.org/packages/DESeq2/topics/nbinomWaldTest'>nbinomWaldTest</a></code> and the weighting is done by setting the degrees of freedom for the T distribution.</p></dd>
-<dt>edgeR-ZINB-WaVE, DESeq2-ZINB-WaVE</dt><dd><p>In a first step, a zero-inflated negative binomial regression model  is fitted (see <code><a href='http://www.rdocumentation.org/packages/zinbwave/topics/zinbFit'>zinbFit</a></code>) to estimate observational weights (see <code><a href='http://www.rdocumentation.org/packages/zinbwave/topics/computeObservationalWeights'>computeObservationalWeights</a></code>) used for dispersion estimation in <code><a href='http://www.rdocumentation.org/packages/edgeR/topics/estimateDisp'>estimateDisp</a></code>. For the edgeR approach, the generalized model as implemented in <code><a href='http://www.rdocumentation.org/packages/edgeR/topics/glmfit'>glmFit</a></code> is fitted. This is followed by an adapted LRT for differential testing to account for the weighting (see <code><a href='http://www.rdocumentation.org/packages/zinbwave/topics/glmWeightedF'>glmWeightedF</a></code>). For DESeq2, the generalized linear model coefficients are estimated using <code><a href='http://www.rdocumentation.org/packages/DESeq2/topics/nbinomWaldTest'>nbinomWaldTest</a></code> and the weighting is done by setting the degrees of freedom for the T distribution.</p></dd>
 </dl>
     
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
@@ -333,8 +312,6 @@ followed by <code><a href='http://www.rdocumentation.org/packages/limma/topics/e
       <li><a href="#imputation-prior-to-normalisation">Imputation prior to normalisation</a></li>
 
       <li><a href="#normalisation-applied-to-imputed-read-count-matrix">Normalisation applied to (imputed) read count matrix</a></li>
-
-      <li><a href="#differential-testing-using-raw-read-count-matrix">Differential testing using raw read count matrix</a></li>
 
       <li><a href="#see-also">See also</a></li>
       

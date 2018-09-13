@@ -20,11 +20,18 @@
                      normData,
                      countData,
                      Lengths,
+                     MeanFragLengths,
                      DEOpts,
                      spikeData,
                      spikeInfo,
                      NCores,
                      verbose) {
+  # classic testing
+  if (DEmethod == "T-Test") {DERes = .run.TTest(normData=normData,
+                                             countData=countData,
+                                             Lengths=Lengths,
+                                             MeanFragLengths=MeanFragLengths,
+                                             DEOpts=DEOpts)}
   # methods developed for bulk
   if (DEmethod == "edgeR-LRT") {DERes = .run.edgeRLRT(normData=normData,
                                                       countData=countData,
@@ -86,6 +93,7 @@
   if (DEmethod == "MAST") {DERes = .run.MAST(normData=normData,
                                              countData=countData,
                                              Lengths=Lengths,
+                                             MeanFragLengths=MeanFragLengths,
                                              DEOpts=DEOpts,
                                              NCores=NCores,
                                              verbose=verbose)}
@@ -242,6 +250,7 @@
   dge$weights <- zinger.weights
   # run DE testing
   dge <- edgeR::estimateDisp(y=dge, design = design.mat)
+  fit.edgeR <- edgeR::glmFit(y = dge, design = design.mat)
   lrt.zinger <- zingeR::glmWeightedF(glmfit = fit.edgeR,
                                      coef = 2,
                                      contrast = NULL,
@@ -869,26 +878,18 @@
 #' @importFrom MAST FromMatrix zlm.SingleCellAssay lrTest summary
 #' @importFrom S4Vectors mcols
 #' @importFrom AnnotationDbi as.list
-#' @importFrom edgeR DGEList rpkm.DGEList
+#' @importFrom edgeR DGEList
 #' @importFrom data.table data.table
 #' @importFrom reshape2 melt
 #' @importFrom parallel mclapply
-.run.MAST <- function(normData, countData, Lengths, DEOpts, NCores, verbose) {
+.run.MAST <- function(normData, countData, Lengths, MeanFragLengths, DEOpts, NCores, verbose) {
 
-  # calculate normalisation factors
-  sf <- normData$size.factors
-  sf[sf<0] <- min(sf[sf > 0])
-  nsf <- log(sf/colSums(countData))
-  nsf <- exp(nsf - mean(nsf, na.rm=T))
-  # construct input object
-  dge <- edgeR::DGEList(counts = countData,
-                        lib.size = colSums(countData),
-                        norm.factors = nsf,
-                        group = factor(DEOpts$designs),
-                        remove.zeros = FALSE)
-  # 1. size factor normalised log2(CPM+1) / log2(TPM+1) values.
-  out.cpm <- edgeR::rpkm.DGEList(dge, gene.length=Lengths, normalized.lib.sizes = T, log = F)
-  out.expr <- log2(out.cpm+1)
+  # 1. calculate size factor normalised expression values (ie log2 CPM OR TPM + 1).
+  out.expr <- .calculateExpr(countData=countData,
+                             normData=normData,
+                             Lengths=Lengths,
+                             MeanFragLengths=MeanFragLengths)
+  out.expr <- log2(out.expr+1)
 
   # 2.: cell (sample ID, CDR, condition) and gene (gene name) annotation
   ids = colnames(out.expr)
@@ -1237,10 +1238,43 @@
 }
 
 
+# T -TEST -----------------------------------------------------------------
+
+#' @importFrom stats t.test
+.run.TTest <- function(normData, countData, Lengths, MeanFragLengths, DEOpts) {
+
+  # 1. calculate size factor normalised expression values (ie CPM, TPM).
+  out.expr <- .calculateExpr(countData=countData,
+                             normData=normData,
+                             Lengths=Lengths,
+                             MeanFragLengths=MeanFragLengths)
+  out.expr <- log2(out.expr+1)
+
+  # 2. perform T test per gene
+  cond <- factor(DEOpts$designs)
+  idx <- seq_len(nrow(out.expr))
+  names(idx) <- rownames(out.expr)
+  ttest_res <- sapply(idx, function(i) {
+    ttest <- stats::t.test(out.expr[i, ] ~ cond)
+    pval <- ttest$p.value
+    lfc <- as.numeric(log2(ttest$estimate[1]/ttest$estimate[2]))
+    data.frame("pval"=pval, "lfc"=lfc)
+  }, simplify=FALSE, USE.NAMES = TRUE)
+  ttest_res <- do.call("rbind", ttest_res)
+  ## construct results
+  result <- data.frame(geneIndex=rownames(out.expr),
+                       pval=ttest_res[,'pval'],
+                       fdr=rep(NA, nrow(out.expr)),
+                       lfc=ttest_res[,'lfc'],
+                       stringsAsFactors = F)
+  return(result)
+}
+
+
 
 # DECENT ------------------------------------------------------------------
 
-#' @importFrom DECENT fitDE fitNoDE lrTest
+#' @importFrom DECENT fitNoDE lrTest
 #' @importFrom parallel makeCluster
 #' @importFrom doParallel registerDoParallel stopImplicitCluster
 #' @importFrom utils capture.output
@@ -1252,11 +1286,21 @@
                         NCores,
                         verbose) {
 
-  # define parameters of adapted decent wrapper
-  data.obs <- countData
-  cell.type <- DEOpts$designs # vector of group assignment
-  cell.type <- ifelse(cell.type==-1, 1, 2)
-  if (length(unique(cell.type)) != 2) stop('Number of groups (cell types) should be two.')
+  # fixed
+  W = NULL
+  CE.range = c(0.02, 0.1)
+  tau.init = c(-5,0)
+  tau.global = TRUE
+  tau.est = "endo"
+  maxit = 30
+  s.imputed = F
+  E.imputed = F
+  normalize = 'ML'
+  GQ.approx = TRUE
+
+  # variable
+  data.obs = countData
+  X = model.matrix(~DEOpts$designs)
   if (!is.null(spikeData) && !is.null(spikeInfo)) {
     spikes = spikeData
     spike.conc = round(spikeInfo$SpikeInput)
@@ -1267,10 +1311,6 @@
     spike.conc = NULL
     use.spikes = FALSE
   }
-  CE.range = c(0.02, 0.25) # range of estimated capture efficiencies, only used when no spikes are available! I have used capture efficieny stated in census
-  normalize = 'ML'
-  GQ.approx = TRUE
-  maxit = 30
   if(!is.null(NCores)) {
     parallel <- TRUE
     n.cores <- NCores
@@ -1282,45 +1322,28 @@
     n.cores <- 0
   }
 
-  # run DE testing
+  X <- model.matrix(X)
+  if(!is.null(W))
+    W <- model.matrix(W)[,-1]
+
+  #if (length(unique(cell.type)) != 2) stop('Number of groups (cell types) should be two.')
+  if (CE.range[1] < 0 | CE.range[1] > CE.range[2] | CE.range[2] > 1) stop('CE.range invalid.')
+
+  # Fit no-DE model
   invisible(utils::capture.output(
-    out.DE <- suppressMessages(DECENT::fitDE(data.obs=data.obs,
-                                             cell.type=cell.type,
-                                             spikes=spikes,
-                                             spike.conc=spike.conc,
-                                             CE.range=CE.range,
-                                             use.spikes=use.spikes,
-                                             normalize=normalize,
-                                             GQ.approx=GQ.approx,
-                                             maxit=maxit,
-                                             parallel=parallel)
-                               )
+  out.noDE <- suppressMessages(DECENT:::fitNoDE(data.obs,
+                               spikes, spike.conc, use.spikes,
+                               CE.range, tau.init, tau.global, tau.est,
+                               normalize, GQ.approx, maxit, parallel))
   ))
 
+  # Likelihood-ratio test
   invisible(utils::capture.output(
-    out.noDE <- suppressMessages(DECENT::fitNoDE(data.obs=data.obs,
-                                                 CE = out.DE$CE,
-                                                 normalize=normalize,
-                                                 GQ.approx=GQ.approx,
-                                                 maxit=maxit,
-                                                 parallel=parallel)
-                                 )
+  out <- suppressMessages(DECENT:::lrTest(data.obs, out = out.noDE,
+                         X=X, W=W, tau= cbind(out.noDE$tau0, out.noDE$tau1),
+                         parallel))
   ))
 
-  invisible(utils::capture.output(
-  out <- suppressMessages(DECENT::lrTest(data.obs=data.obs,
-                                         out = out.DE,
-                                         out2 = out.noDE,
-                                         cell.type=cell.type,
-                                         parallel=parallel)
-                          )
-  ))
-  # data.imp <- DECENT::getImputed(data.obs,
-  #                                out$par.DE,
-  #                                out.DE$est.sf,
-  #                                out.DE$CE,
-  #                                cell.type,
-  #                                parallel)
   if(!is.null(NCores)) {
     doParallel::stopImplicitCluster()
   }

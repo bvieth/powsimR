@@ -20,6 +20,7 @@
 
 # find_neighbors
 #' @importFrom stats prcomp quantile
+#' @importFrom rsvd rpca
 #' @importFrom kernlab specc
 #' @importFrom parallel mclapply
 .find_neighbors <- function(count_hv,
@@ -28,28 +29,101 @@
                             Kcluster = NULL,
                             ncores,
                             cell_labels = NULL){
-  ## dimeansion reduction
-  pca = stats::prcomp(t(count_hv))
-  eigs = (pca$sdev)^2
-  var_cum = cumsum(eigs)/sum(eigs)
-  npc = which.max(var_cum > 0.4)
-  if (labeled == FALSE){ npc = max(npc, Kcluster) }
-  if (npc < 3){ npc = 3 }
-  mat_pcs = t(pca$x[, 1:npc]) # columns are cells
+  if(labeled == TRUE){
+    if(class(cell_labels) == "character"){
+      labels_uniq = unique(cell_labels)
+      labels_mth = 1:length(labels_uniq)
+      names(labels_mth) = labels_uniq
+      clust = labels_mth[cell_labels]
+    }else{
+      clust = cell_labels
+    }
+    nclust = length(unique(clust))
+    dist_list = lapply(1:nclust, function(ll){
+      cell_inds = which(clust == ll)
+      count_hv_sub = count_hv[, cell_inds, drop = FALSE]
+      if(length(cell_inds) < 1000){
+        var_thre = 0.4
+        pca = stats::prcomp(t(count_hv_sub))
+        eigs = (pca$sdev)^2
+        var_cum = cumsum(eigs)/sum(eigs)
+        if(max(var_cum) <= var_thre){
+          npc = length(var_cum)
+        }else{
+          npc = which.max(var_cum > var_thre)
+          if (labeled == FALSE){ npc = max(npc, Kcluster) }
+        }
+      }else{
+        var_thre = 0.6
+        pca = rsvd::rpca(t(count_hv_sub), k = 1000, center = TRUE, scale = FALSE)
+        eigs = (pca$sdev)^2
+        var_cum = cumsum(eigs)/sum(eigs)
+        if(max(var_cum) <= var_thre){
+          npc = length(var_cum)
+        }else{
+          npc = which.max(var_cum > var_thre)
+          if (labeled == FALSE){ npc = max(npc, Kcluster) }
+        }
+      }
 
-  ## detect outliers
-  dist_cells_list = parallel::mclapply(1:J, function(id1){
-    sapply(1:J, function(id2){
-      if(id1 <= id2) return(0)
-      sse = sum((mat_pcs[, id1] - mat_pcs[, id2])^2)
-      sqrt(sse)
+      if (npc < 3){ npc = 3 }
+      mat_pcs = t(pca$x[, 1:npc])
+
+      dist_cells_list = mclapply(1:length(cell_inds), function(id1){
+        d = sapply(1:id1, function(id2){
+          sse = sum((mat_pcs[, id1] - mat_pcs[, id2])^2)
+          sqrt(sse)
+        })
+        return(c(d, rep(0, length(cell_inds)-id1)))
+      }, mc.cores = ncores)
+      dist_cells = matrix(0, nrow = length(cell_inds), ncol = length(cell_inds))
+      for(cellid in 1:length(cell_inds)){dist_cells[cellid, ] = dist_cells_list[[cellid]]}
+      dist_cells = dist_cells + t(dist_cells)
+      return(dist_cells)
     })
-  }, mc.cores = ncores)
-  dist_cells = matrix(0, nrow = J, ncol = J)
-  for(cellid in 1:J){dist_cells[cellid, ] = dist_cells_list[[cellid]]}
-  dist_cells = dist_cells + t(dist_cells)
+    return(list(dist_list = dist_list, clust = clust))
+  }
 
-  if (labeled == FALSE){
+  if(labeled == FALSE){
+    ## dimeansion reduction
+    if(J < 5000){
+      var_thre = 0.4
+      pca = stats::prcomp(t(count_hv))
+      eigs = (pca$sdev)^2
+      var_cum = cumsum(eigs)/sum(eigs)
+      if(max(var_cum) <= var_thre){
+        npc = length(var_cum)
+      }else{
+        npc = which.max(var_cum > var_thre)
+        if (labeled == FALSE){ npc = max(npc, Kcluster) }
+      }
+    }else{
+      var_thre = 0.6
+      pca = rsvd::rpca(t(count_hv), k = 1000, center = TRUE, scale = FALSE)
+      eigs = (pca$sdev)^2
+      var_cum = cumsum(eigs)/sum(eigs)
+      if(max(var_cum) <= var_thre){
+        npc = length(var_cum)
+      }else{
+        npc = which.max(var_cum > var_thre)
+        if (labeled == FALSE){ npc = max(npc, Kcluster) }
+      }
+    }
+    if (npc < 3){ npc = 3 }
+    mat_pcs = t(pca$x[, 1:npc]) # columns are cells
+
+    ## detect outliers
+    dist_cells_list = mclapply(1:J, function(id1){
+      d = sapply(1:id1, function(id2){
+        sse = sum((mat_pcs[, id1] - mat_pcs[, id2])^2)
+        sqrt(sse)
+      })
+      return(c(d, rep(0, J-id1)))
+    }, mc.cores = ncores)
+    dist_cells = matrix(0, nrow = J, ncol = J)
+    for(cellid in 1:J){dist_cells[cellid, ] = dist_cells_list[[cellid]]}
+    dist_cells = dist_cells + t(dist_cells)
+
     min_dist = sapply(1:J, function(i){
       min(dist_cells[i, -i])
     })
@@ -61,19 +135,8 @@
     spec_res = kernlab::specc(t(mat_pcs[, non_out]), centers = Kcluster, kernel = "rbfdot")
     nbs = rep(NA, J)
     nbs[non_out] = spec_res
-    return(list(dist_cells = dist_cells, clust = nbs))
-  }
 
-  if(labeled == TRUE){
-    if(class(cell_labels) == "character"){
-      labels_uniq = unique(cell_labels)
-      labels_mth = 1:length(labels_uniq)
-      names(labels_mth) = labels_uniq
-      clust = labels_mth[cell_labels]
-    }else{
-      clust = cell_labels
-    }
-    return(list(dist_cells = dist_cells, clust = clust))
+    return(list(dist_cells = dist_cells, clust = nbs))
   }
 }
 
@@ -151,7 +214,6 @@
     parslist = parallel::mclapply(1:nrow(count), function(ii) {
       if (ii %% 2000 == 0) {
         gc()
-        print(ii)
       }
       if (ii %in% null_genes) {
         return(rep(NA, 5))
@@ -252,18 +314,52 @@
   J = ncol(count)
   count_imp = count
 
+  # find highly variable genes
+  count_hv = .find_hv_genes(count, I, J)
+
   if(Kcluster == 1){
     clust = rep(1, J)
-  }else{
-    # find highly variable genes
-    count_hv = .find_hv_genes(count, I, J)
+    if(J < 5000){
+      var_thre = 0.4
+      pca = stats::prcomp(t(count_hv))
+      eigs = (pca$sdev)^2
+      var_cum = cumsum(eigs)/sum(eigs)
+      if(max(var_cum) <= var_thre){
+        npc = length(var_cum)
+      }else{
+        npc = which.max(var_cum > var_thre)
+        if (labeled == FALSE){ npc = max(npc, Kcluster) }
+      }
+    }else{
+      var_thre = 0.6
+      pca = rsvd::rpca(t(count_hv), k = 1000, center = TRUE, scale = FALSE)
+      eigs = (pca$sdev)^2
+      var_cum = cumsum(eigs)/sum(eigs)
+      if(max(var_cum) <= var_thre){
+        npc = length(var_cum)
+      }else{
+        npc = which.max(var_cum > var_thre)
+        if (labeled == FALSE){ npc = max(npc, Kcluster) }
+      }
+    }
 
+    if (npc < 3){ npc = 3 }
+    mat_pcs = t(pca$x[, 1:npc]) # columns are cells
+
+    dist_cells_list = mclapply(1:J, function(id1){
+      d = sapply(1:id1, function(id2){
+        sse = sum((mat_pcs[, id1] - mat_pcs[, id2])^2)
+        sqrt(sse)
+      })
+      return(c(d, rep(0, J-id1)))
+    }, mc.cores = ncores)
+    dist_cells = matrix(0, nrow = J, ncol = J)
+    for(cellid in 1:J){dist_cells[cellid, ] = dist_cells_list[[cellid]]}
+    dist_cells = dist_cells + t(dist_cells)
+  }else{
     set.seed(Kcluster)
-    neighbors_res = .find_neighbors(count_hv = count_hv,
-                                   labeled = FALSE,
-                                   J = J,
-                                   Kcluster = Kcluster,
-                                   ncores = ncores)
+    neighbors_res = .find_neighbors(count_hv = count_hv, labeled = FALSE, J = J,
+                                   Kcluster = Kcluster, ncores = ncores)
     dist_cells = neighbors_res$dist_cells
     clust = neighbors_res$clust
   }
@@ -304,7 +400,6 @@
       which(droprate[, cellid] <= drop_thre)
     })
     # imputation
-    # registerDoSNOW(cl)
     subres = foreach::foreach(cellid = 1:Jc, .packages = c("penalized"),
                      .combine = cbind, .export = c(".impute_nnls")) %dopar% {
                        if (cellid %% 100 == 0) {gc()}

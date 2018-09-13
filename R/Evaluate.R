@@ -932,7 +932,7 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
 
       ## get type I error alpha (pvalue or fdr output from testing)
       if(alpha.type == "raw") {
-        if(DEmethod %in% c("edgeR-QL", "edgeR-LRT", "limma-voom", "limma-trend", "NBPSeq",
+        if(DEmethod %in% c("edgeR-QL", "edgeR-LRT", "limma-voom", "limma-trend", "NBPSeq", "T-Test",
                            "DESeq2", "ROTS", "MAST", "scde", "BPSC", "scDD", "monocle", "DECENT",
                            "edgeR-zingeR", "edgeR-ZINB-WaVE", "DESeq2-zingeR", "DESeq2-ZINB-WaVE")) {
           x = pvalue[ix.keep,j,i]
@@ -945,7 +945,7 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
         }
       }
       if(alpha.type == "adjusted") {
-        if(DEmethod %in% c("edgeR-QL", "edgeR-LRT", "limma-voom", "limma-trend", "NBPSeq",
+        if(DEmethod %in% c("edgeR-QL", "edgeR-LRT", "limma-voom", "limma-trend", "NBPSeq", "T-Test",
                            "DESeq2", "ROTS", "MAST", "scde", "BPSC", "scDD", "monocle", "DECENT",
                            "edgeR-zingeR", "edgeR-ZINB-WaVE", "DESeq2-zingeR", "DESeq2-ZINB-WaVE")) {
           pval = pvalue[ix.keep,j,i]
@@ -1144,7 +1144,7 @@ evaluateROC <- function(simRes, alpha.type=c("adjusted","raw"),
         Zg2[ix] = 1
       }
       if (alpha.type == "raw") {
-        if (DEmethod %in% c("edgeR-QL", "edgeR-LRT",
+        if (DEmethod %in% c("edgeR-QL", "edgeR-LRT", "T-Test",
                             "limma-voom", "limma-trend", "NBPSeq", "DESeq2",
                             "ROTS", "MAST", "scde", "BPSC", "scDD", "monocle",
                             "DECENT", "edgeR-zingeR", "edgeR-ZINB-WaVE",
@@ -1160,7 +1160,7 @@ evaluateROC <- function(simRes, alpha.type=c("adjusted","raw"),
         }
       }
       if (alpha.type == "adjusted") {
-        if (DEmethod %in% c("edgeR-QL", "edgeR-LRT",
+        if (DEmethod %in% c("edgeR-QL", "edgeR-LRT", "T-Test",
                             "limma-voom", "limma-trend", "NBPSeq", "DESeq2",
                             "ROTS", "MAST", "scde", "BPSC", "scDD", "monocle",
                             "DECENT", "edgeR-zingeR", "edgeR-ZINB-WaVE",
@@ -1195,12 +1195,10 @@ evaluateROC <- function(simRes, alpha.type=c("adjusted","raw"),
       }
       Truths[j, , i] = Zg2
       Predictions[j, , i] = x
-      cobradata <- iCOBRA::COBRAData(pval = data.frame(Sim = pval,
-                                                       row.names = paste0("G", 1:ngenes)), padj = data.frame(Sim = x,
-                                                                                                             row.names = paste0("G", 1:ngenes)), score = data.frame(Sim = elfc,
-                                                                                                                                                                    row.names = paste0("G", 1:ngenes)), truth = data.frame(status = Zg2,
-                                                                                                                                                                                                                           logFC = lfc, expr = meanexpr, row.names = paste0("G",
-                                                                                                                                                                                                                                                                            1:ngenes)))
+      cobradata <- iCOBRA::COBRAData(pval = data.frame(Sim = pval, row.names = paste0("G", 1:ngenes)),
+                                     padj = data.frame(Sim = x, row.names = paste0("G", 1:ngenes)),
+                                     score = data.frame(Sim = elfc, row.names = paste0("G", 1:ngenes)),
+                                     truth = data.frame(status = Zg2, logFC = lfc, expr = meanexpr, row.names = paste0("G", 1:ngenes)))
       invisible(capture.output(perfCOBRA[[j]][[i]] <- suppressMessages(iCOBRA::calculate_performance(cobradata,
                                                                                                      binary_truth = "status", cont_truth = "logFC",
                                                                                                      thrs = seq(from = 0.01, to = 0.2, by = 0.01),
@@ -1211,14 +1209,12 @@ evaluateROC <- function(simRes, alpha.type=c("adjusted","raw"),
     }
   }
   for (j in seq(along = Nreps1)) {
-    predObjs[[j]] <- ROCR::prediction(predictions = Predictions[j,
-                                                                , ], labels = Truths[j, , ], label.ordering = c(1,
-                                                                                                                0))
-    rocObjs[[j]] <- ROCR::performance(predObjs[[j]], "tpr",
-                                      "fpr")
+    predObjs[[j]] <- ROCR::prediction(predictions = Predictions[j, , ],
+                                      labels = Truths[j, , ],
+                                      label.ordering = c(1, 0))
+    rocObjs[[j]] <- ROCR::performance(predObjs[[j]], "tpr", "fpr")
     rocaucObjs[[j]] <- ROCR::performance(predObjs[[j]], "auc")
-    prcObjs[[j]] <- ROCR::performance(predObjs[[j]], "prec",
-                                      "rec")
+    prcObjs[[j]] <- ROCR::performance(predObjs[[j]], "prec", "rec")
     y.values <- lapply(1:nsims, function(i) {
       x <- prcObjs[[j]]@x.values[[i]]
       y <- prcObjs[[j]]@y.values[[i]]

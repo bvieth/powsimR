@@ -11,7 +11,7 @@
 # accounting for gene lengths
 .calculateTPM <- function(countData, Lengths) {
   rate <- countData / Lengths
-  TPM <- rate / sum(rate) * 1e6
+  TPM <- apply(rate, 2, function(x) { (x/sum(x))*1000000 })
   return(TPM)
 }
 
@@ -50,9 +50,87 @@
 }
 
 
-# LOG TRANSFORMED EXPRESSION ----------------------------------------------
+# NORMALIZED EXPRESSION ----------------------------------------------
 
-.calculateExpr <- function(countData, normData, Lengths) {
+.calculateExpr <- function(countData, normData, Lengths, MeanFragLengths) {
+  # normalized library sizes
+  sf <- normData$size.factors
+  sf[sf<0] <- min(sf[sf > 0])
+  nsf <- log(sf/colSums(countData))
+  nsf <- exp(nsf - mean(nsf, na.rm=T))
 
+  # calculate TPM / CPM
+  if (!attr(normData, 'normFramework') == 'SCnorm') {
+    if(!is.null(Lengths) & !is.null(MeanFragLengths)) {
+      # Compute effective lengths of features in each library.
+      effLen <- do.call(cbind, lapply(1:ncol(countData), function(i) {
+        tmp <- Lengths - MeanFragLengths[i] + 1
+      }))
+      # Exclude genes with length less than the mean fragment length.
+      idx <- apply(effLen, 1, function(x) min(x) > 1)
+      countData <- countData[idx,]
+      effLen <- effLen[idx,]
 
+      # TPM
+      t.vals <- countData / effLen
+      norm.lib.size <- colSums(t.vals) * nsf
+      TPM <- t(t(t.vals) / norm.lib.size) * 1e6
+    }
+    if(!is.null(Lengths) & is.null(MeanFragLengths)) {
+      # TPM
+      t.vals <- countData / Lengths
+      norm.lib.size <- colSums(t.vals) * nsf
+      TPM <- t(t(t.vals) / norm.lib.size) * 1e6
+    }
+    if(is.null(Lengths) & is.null(MeanFragLengths)) {
+      # CPM
+      norm.lib.size <- colSums(countData) * nsf
+      TPM <- t(t(countData) / norm.lib.size) * 1e6
+    }
+  }
+  if (attr(normData, 'normFramework') == 'SCnorm') {
+    # scaling factors for libs
+    sf <- normData$size.factors
+
+    # scaling factors for genes
+    gsf.mat <- matrix(ncol=ncol(countData), nrow=nrow(countData),
+                  dimnames = list(rownames(countData), colnames(countData)))
+    gsf.vals <- normData$scale.factors
+    cols <- colnames(gsf.mat)[colnames(gsf.mat) %in% colnames(gsf.vals)]
+    rows <- rownames(gsf.mat)[rownames(gsf.mat) %in% rownames(gsf.vals)]
+    gsf.mat[rows, cols] <- gsf.vals[rows, cols]
+
+    # fill in missing values with sf of libs
+    idx <- apply(gsf.mat, 1, function(rows) {
+      any(is.na(rows))
+    })
+    gsf.mat[idx,] <- sf
+    normData <- countData/gsf.mat
+
+    if(!is.null(Lengths) & !is.null(MeanFragLengths)) {
+      # Compute effective lengths of features in each library.
+      effLen <- do.call(cbind, lapply(1:ncol(normData), function(i) {
+        tmp <- Lengths - MeanFragLengths[i] + 1
+      }))
+      # Exclude genes with length less than the mean fragment length.
+      idx <- apply(effLen, 1, function(x) min(x) > 1)
+      normData <- normData[idx,]
+      effLen <- effLen[idx,]
+      # TPM
+      t.vals <- normData / effLen
+      TPM <- apply(t.vals,2, function(x) { (x/sum(x))*1000000 })
+    }
+    if(!is.null(Lengths) & is.null(MeanFragLengths)) {
+      # TPM
+      t.vals <- normData / Lengths
+      TPM <- apply(t.vals,2, function(x) { (x/sum(x))*1000000 })
+    }
+    if(is.null(Lengths) & is.null(MeanFragLengths)) {
+      # CPM
+      t.vals <- normData
+      TPM <- apply(t.vals,2, function(x) { (x/sum(x))*1000000 })
+    }
+  }
+
+  return(TPM)
 }

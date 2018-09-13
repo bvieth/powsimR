@@ -125,27 +125,6 @@ Do not use this algorithm for UMI data!}
 }
 }
 
-\section{Differential testing using raw read count matrix}{
-
-\describe{
-\item{limma-trend, limma-voom}{apply differential testing as implemented in \code{\link[limma]{lmFit}}
-followed by \code{\link[limma]{eBayes}} on counts transformed by \code{\link[limma]{voom}} or by applying mean-variance trend on log2 CPM values in \code{\link[limma]{eBayes}}.}
-\item{edgeR-LRT, edgeR-QL}{apply differential testing as implemented in \code{\link[edgeR]{glmFit}}, \code{\link[edgeR]{glmLRT}} and\code{\link[edgeR]{glmQLFit}}, \code{\link[edgeR]{glmQLFTest}}, respectively.}
-\item{DESeq2}{applies differential testing as implemented in \code{\link[DESeq2]{DESeq}}.}
-\item{ROTS}{applies differential testing as implemented in \code{\link[ROTS]{ROTS}} with 100 permutations on transformed counts (\code{\link[limma]{voom}}).}
-\item{baySeq}{applies differential testing as implemented in \code{\link[baySeq]{getLikelihoods}} based on negative binomial prior estimates (\code{\link[baySeq]{getPriors.NB}}).}
-\item{NOISeq}{applies differential testing as implemented in \code{\link[NOISeq]{noiseqbio}} based on CPM values.}
-\item{EBSeq}{applies differential testing as implemented in \code{\link[EBSeq]{EBTest}}.}
-\item{MAST}{applies differential testing as implemented in \code{\link[MAST]{zlm}} for zero-inflated model fitting followed by \code{\link[MAST]{lrTest}} on log2 CPM values.}
-\item{scde}{applies differential testing as implemented in \code{\link[scde]{scde.expression.difference}}.}
-\item{BPSC}{applies differential testing as implemented in \code{\link[BPSC]{BPglm}} on CPM values.}
-\item{scDD}{applies differential testing as implemented in \code{\link[scDD]{scDD}} on CPM values.}
-\item{DECENT}{applies differential testing as implemented in \code{\link[DECENT]{decent}}.}
-\item{edgeR-zingeR, DESeq2-zingeR}{In a first step, the posterior probabilities of the zero-inflated negative binomial component are estimated (see \code{\link[zingeR]{zeroWeightsLS}}) and used to define a weight matrix for dispersion estimation in \code{\link[edgeR]{estimateDisp}}. For the edgeR approach, the generalized model as implemented in \code{\link[edgeR]{glmFit}} is fitted. This is followed by an adapted LRT for differential testing to account for the weighting (see \code{\link[zingeR]{glmWeightedF}}). For DESeq2, the generalized linear model coefficients are estimated using \code{\link[DESeq2]{nbinomWaldTest}} and the weighting is done by setting the degrees of freedom for the T distribution.}
-\item{edgeR-ZINB-WaVE, DESeq2-ZINB-WaVE}{In a first step, a zero-inflated negative binomial regression model  is fitted (see \code{\link[zinbwave]{zinbFit}}) to estimate observational weights (see \code{\link[zinbwave]{computeObservationalWeights}}) used for dispersion estimation in \code{\link[edgeR]{estimateDisp}}. For the edgeR approach, the generalized model as implemented in \code{\link[edgeR]{glmFit}} is fitted. This is followed by an adapted LRT for differential testing to account for the weighting (see \code{\link[zinbwave]{glmWeightedF}}). For DESeq2, the generalized linear model coefficients are estimated using \code{\link[DESeq2]{nbinomWaldTest}} and the weighting is done by setting the degrees of freedom for the T distribution.}
-}
-}
-
 \examples{
 \dontrun{
 ## define DE parameters and set up simulations
