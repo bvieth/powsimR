@@ -32,7 +32,7 @@ spike_param <- estimateSpike(spikeData = scrbseq_spike_cnts,
 spikeInfo = spike_info,
 MeanFragLength = NULL,
 batchData = batch_info,
-normalisation = 'depth')
+ = 'depth')
 ## plotting
 plotSpike(estSpike = spike_param, annot=TRUE)
 }

@@ -14,7 +14,7 @@ package: powsimR
 bibliography: Bioc.bib
 self_contained: no
 abstract: |
-  This vignette describes the R package `r Githubpkg("bvieth/powsimR")` [@Vieth2017-lh]. It aims to be at once a demonstration of its features and a guide to its usage. Power analysis is essential to optimize the design of RNA-seq experiments and to assess and compare the power to detect differentially expressed genes in RNA-seq data. `r Githubpkg("bvieth/powsimR")` is a flexible tool to simulate and evaluate differential expression from bulk and especially single-cell RNA-seq data making it suitable for a priori and posterior power analyses. For our read count simulations, we (1) reliably model the mean, dispersion and dropout distributions as well as the relationship between those factors from the data. (2) Simulate read counts from the empirical mean-variance and dropout relations, while offering flexible choices of the number of differentially expressed genes, effect sizes, DE testing and normalisarion method. (3) Finally, we evaluate the power over various sample sizes and visualise the results with error rates plots.
+  This vignette describes the R package `r Githubpkg("bvieth/powsimR")` [@Vieth2017-lh]. It aims to be at once a demonstration of its features and a guide to its usage. Power analysis is essential to optimize the design of RNA-seq experiments and to assess and compare the power to detect differentially expressed genes in RNA-seq data. `r Githubpkg("bvieth/powsimR")` is a flexible tool to simulate and evaluate differential expression from bulk and especially single-cell RNA-seq data making it suitable for a priori and posterior power analyses. For our read count simulations, we (1) reliably model the mean, dispersion and dropout distributions as well as the relationship between those factors from the data. (2) Simulate read counts from the empirical mean-variance and dropout relations, while offering flexible choices of the number of differentially expressed genes, effect sizes, DE testing and normalisation method. (3) Finally, we evaluate the power over various sample sizes and visualise the results with error rates plots.
 vignette: |
   %\VignetteIndexEntry{Authoring R Markdown vignettes}
   %\VignetteEncoding{UTF-8}
@@ -64,7 +64,7 @@ cranpackages <- c("bbmle", "broom", "cluster", "cobs", "cowplot",
                   "glmnet", "grid", "gtools", "Hmisc", "kernlab", "MASS", 
                   "matrixStats", "mclust", "methods", "minpack.lm", "moments", "msir", 
                   "NBPSeq", "nonnest2", "parallel", "penalized", "plyr", "pscl",
-                  "reshape2", "ROCR", "Rtsne", "scales", "Seurat", "snow", 
+                  "reshape2", "ROCR", "rsvd", "Rtsne", "scales", "Seurat", "snow", 
                   "stats", "tibble", "tidyr", "VGAM", "ZIM")
 ipak(cranpackages, repository='CRAN')
 
@@ -120,24 +120,30 @@ The user can choose between multiple normalisation methods (see Details section 
 
 The estimates, sequencing depth and normalisation factors are plotted with `plotParam`.
 
-With the following command, we estimate and plot the parameters for the embryonic stem cells cultured in standard 2i+lif medium [@Kolodziejczyk2015-vn] (Figure \@ref(fig:paramsplot)). As expected for single cell RNA-seq, the variability (i.e. dispersion) and dropout rates are high. Furthermore, the dispersion strongly depends on the mean and does not level off with higher mean values.
+With the following command, we estimate and plot the parameters for the embryonic stem cells using the different media as batch annotation [@Kolodziejczyk2015-vn] (Figure \@ref(fig:paramsplot)). As expected for single cell RNA-seq, the variability (i.e. dispersion) and dropout rates are high. Furthermore, the dispersion strongly depends on the mean and does not level off with higher mean values.
 
 ```{r params, echo=T, eval=T, include=T}
 library("powsimR")
 data("kolodziejczk_cnts")
-kolodziejczk_cnts <- kolodziejczk_cnts[, grep('standard',
-                                              colnames(kolodziejczk_cnts))]
+kolodziejczk_grps <- data.frame(Culture = c(rep("alternative", 194),
+                                            rep("serum", 242),
+                                            rep("standard", 433)),
+                                row.names = colnames(kolodziejczk_cnts),
+                                stringsAsFactors = F)
+dim(kolodziejczk_cnts)
+dim(kolodziejczk_grps)
 TwoiLIF.params <- estimateParam(countData=kolodziejczk_cnts,
-                                batchData = NULL,
+                                batchData = kolodziejczk_grps,
                                 spikeData = NULL,
                                 spikeInfo = NULL,
                                 Lengths = NULL,
                                 MeanFragLengths = NULL,
                                 Distribution = 'ZINB',
                                 RNAseq = 'singlecell',
-                                normalisation = 'scran',
+                                Normalisation = 'scran',
                                 sigma = 1.96,
-                                NCores = NULL)
+                                NCores = NULL,
+                                verbose=TRUE)
 ```
 
 ```{r paramsplot, echo=T, eval=T, include=T, fig.height = 7, fig.width=10, fig.cap="Estimated parameters for Kolodziejczyk data set. (A) Sequencing depth per sample with median sequencing depth (grey dashed line). (B) Library size normalisation factor per sample with median size factor (grey dashed line). (C) Marginal Distribution of log2(mean), log2(dispersion) and dropout. (D) Local polynomial regression fit between log2(mean) and log2(dispersion) estimates with variability band per gene (yellow). Common dispersion estimate (grey dashed line). E) Fraction of dropouts versus estimated mean expression per gene."}
@@ -169,21 +175,24 @@ The number of molecules $Y_{j}$ for each ERCC spike-in species is the product of
 
 With the following command, we estimate the parameters for the spike-ins added to the library preparation of embryonic stem cells cultured in standard 2i+lif medium [@Ziegenhain2017-sf]. Descriptive plots of the spike-ins can be drawn with `plotSpike`  (Figure \@ref(fig:spikeplot)).
 
-```{r spikeparams, echo=T, eval=T, include=T}
+```{r spikeparams, echo=T, eval=T, include=T, warning=F}
 data("scrbseq_spike_cnts")
 data("scrbseq_spike_info")
 batch_info <- data.frame(Batch = ifelse(grepl(pattern = "SCRBseqA_", colnames(scrbseq_spike_cnts)), "A", "B"), row.names = colnames(scrbseq_spike_cnts))
 ## spike information table
 spike_info <- scrbseq_spike_info[-1,]
 ## estimation
-spike.param <- estimateSpike(spikeData = scrbseq_spike_cnts,
+invisible(capture.output(
+  spike.param <- estimateSpike(spikeData = scrbseq_spike_cnts,
                              spikeInfo = spike_info,
                              MeanFragLength = NULL,
                              batchData = batch_info,
-                             normalisation = 'depth')
+                             Normalisation = 'depth')
+))
+
 ```
 
-```{r spikeplot, fig.cap="Estimated parameters for the spike-ins added to SCRBseq libraries in Ziegenhain dataset. (A) Sequencing depth per sample with median sequencing depth (grey dashed line). (B) Library size normalisation factor per sample with median size factor (grey dashed line). (C) Calibration curve with mean expression estimates and average R squared over all cells. (D) Capture efficiency with binomial logistic regression fit over all cells.", echo=T, eval=T, include=T, fig.height = 7, fig.width=10, fig.align='centered'}
+```{r spikeplot, fig.cap="Estimated parameters for the spike-ins added to SCRBseq libraries in Ziegenhain dataset. (A) Sequencing depth per sample with median sequencing depth (grey dashed line). (B) Library size normalisation factor per sample with median size factor (grey dashed line). (C) Calibration curve with mean expression estimates and average R squared over all cells. (D) Capture efficiency with binomial logistic regression fit over all cells.", echo=T, warning=F, eval=T, include=T, fig.height = 7, fig.width=10, fig.align='centered'}
 plotSpike(spike.param, annot = F)
 ```
 
@@ -223,8 +232,8 @@ simDE = simulateDE(n1 = c(24,48,96,192,384,800),
                    n2 = c(24,48,96,192,384,800),
                    sim.settings = sim.opts,
                    DEmethod = "limma-trend",
-                   normalisation = "scran",
-                   Preclust = FALSE,
+                   Normalisation = "scran",
+                   Label = "none",
                    Prefilter = NULL,
                    Impute = NULL,
                    spikeIns = FALSE,

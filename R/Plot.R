@@ -253,7 +253,7 @@ plotParam <- function(estParamRes, annot=TRUE) {
 #' spikeInfo = spike_info,
 #' MeanFragLength = NULL,
 #' batchData = batch_info,
-#' normalisation = 'depth')
+#'  = 'depth')
 #' ## plotting
 #' plotSpike(estSpike = spike_param, annot=TRUE)
 #' }
@@ -1208,7 +1208,7 @@ plotTime <- function(simRes, Table=TRUE, annot=TRUE) {
 #' ## using example data set
 #' data(kolodziejczk_cnts)
 #' evaldist <- evaluateDist(countData = kolodziejczk_cnts,
-#' RNAseq = "singlecell", normalisation="scran",
+#' RNAseq = "singlecell", ="scran",
 #' frac.genes=1, min.meancount = 0.1,
 #' max.dropout=0.7, min.libsize=1000,
 #' verbose = TRUE)
@@ -1218,7 +1218,7 @@ plotTime <- function(simRes, Table=TRUE, annot=TRUE) {
 #' @importFrom ggplot2 ggplot aes ylab xlab theme scale_y_continuous geom_boxplot position_dodge geom_bar theme_minimal scale_x_discrete labs ggtitle coord_flip
 #' @importFrom scales percent
 #' @importFrom cowplot plot_grid add_sub ggdraw
-#' @importFrom dplyr filter group_by summarise mutate bind_rows slice select ungroup  left_join
+#' @importFrom dplyr filter group_by summarise mutate bind_rows slice select ungroup  left_join count
 #' @importFrom tidyr %>% separate gather spread
 #' @importFrom utils stack
 #' @rdname plotEvalDist
@@ -1366,7 +1366,8 @@ plotEvalDist <- function(evalDist, annot=TRUE){
   out3 <- do.call('rbind', out2)
   ModelTest <- out3 %>%
     dplyr::group_by(type) %>%
-    count() %>% mutate(Percentage=n/sum(n))
+    dplyr::count() %>%
+    mutate(Percentage=n/sum(n))
   p.modeltest <- ggplot2::ggplot(data = ModelTest, aes(x = type, y = Percentage)) +
     ggplot2::geom_bar(stat = "identity", width = 0.7) +
     ggplot2::theme_minimal() +

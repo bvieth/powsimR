@@ -12,7 +12,7 @@ Lengths = NULL,
 MeanFragLengths = NULL,
 Distribution = c('NB', 'ZINB'),
 RNAseq = c('bulk', 'singlecell'),
-normalisation = c('TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm',
+Normalisation = c('TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm',
                   'SCnorm', 'RUV', 'Census', 'depth', 'none'),
 sigma = 1.96,
 NCores = NULL,
@@ -44,7 +44,7 @@ This variable is only used for internal TPM calculations if Census normalization
 
 \item{RNAseq}{is a character value: "bulk" or "singlecell".}
 
-\item{normalisation}{is a character value: 'TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm',
+\item{Normalisation}{is a character value: 'TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm',
 'SCnorm', 'RUV', 'Census', 'depth', 'none'.
 For more information, please consult the details section.}
 
@@ -109,7 +109,7 @@ kolodziejczk_estparam <- estimateParam(countData=kolodziejczk_cnts,
                           Lengths=NULL, MeanFragLengths=NULL,
                           Distribution='ZINB',
                           RNAseq="singlecell",
-                          normalisation='scran',
+                          Normalisation='scran',
                           NCores=NULL,
                           sigma=1.96)
 ## simulating single cell RNA-seq experiment
@@ -128,7 +128,7 @@ estparam <- estimateParam(countData=cnts,
                           Lengths=NULL, MeanFragLengths=NULL,
                           Distribution='NB',
                           RNAseq="singlecell",
-                          normalisation='scran',
+                          Normalisation='scran',
                           NCores=NULL,
                           sigma=1.96)
 plotParam(estparam, annot=F)
@@ -146,7 +146,7 @@ cnts <- matrix(rnbinom(ngenes*nsamples,
 ## estimating negative binomial parameters
 estparam <- estimateParam(countData=cnts,
                           Distribution='NB', RNAseq="bulk",
-                          normalisation='MR', sigma=1.96)
+                          Normalisation='MR', sigma=1.96)
 plotParam(estparam, annot=F)
 }
 }

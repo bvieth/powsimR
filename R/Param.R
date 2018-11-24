@@ -13,7 +13,7 @@
 #' MeanFragLengths = NULL,
 #' Distribution = c('NB', 'ZINB'),
 #' RNAseq = c('bulk', 'singlecell'),
-#' normalisation = c('TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm',
+#' Normalisation = c('TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm',
 #'                   'SCnorm', 'RUV', 'Census', 'depth', 'none'),
 #' sigma = 1.96,
 #' NCores = NULL,
@@ -35,7 +35,7 @@
 #' This variable is only used for internal TPM calculations if Census normalization is specified.
 #' @param Distribution is a character value: "NB" for negative binomial or "ZINB" for zero-inflated negative binomial distribution fitting.
 #' @param RNAseq is a character value: "bulk" or "singlecell".
-#' @param normalisation is a character value: 'TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm',
+#' @param Normalisation is a character value: 'TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm',
 #' 'SCnorm', 'RUV', 'Census', 'depth', 'none'.
 #' For more information, please consult the details section.
 #' @param sigma The variability band width for mean-dispersion loess fit defining the prediction interval for read count simulation. Default is 1.96, i.e. 95\% interval. For more information see \code{\link[msir]{loess.sd}}.
@@ -90,7 +90,7 @@
 #'                           Lengths=NULL, MeanFragLengths=NULL,
 #'                           Distribution='ZINB',
 #'                           RNAseq="singlecell",
-#'                           normalisation='scran',
+#'                           Normalisation='scran',
 #'                           NCores=NULL,
 #'                           sigma=1.96)
 #' ## simulating single cell RNA-seq experiment
@@ -109,7 +109,7 @@
 #'                           Lengths=NULL, MeanFragLengths=NULL,
 #'                           Distribution='NB',
 #'                           RNAseq="singlecell",
-#'                           normalisation='scran',
+#'                           Normalisation='scran',
 #'                           NCores=NULL,
 #'                           sigma=1.96)
 #' plotParam(estparam, annot=F)
@@ -127,7 +127,7 @@
 #' ## estimating negative binomial parameters
 #' estparam <- estimateParam(countData=cnts,
 #'                           Distribution='NB', RNAseq="bulk",
-#'                           normalisation='MR', sigma=1.96)
+#'                           Normalisation='MR', sigma=1.96)
 #' plotParam(estparam, annot=F)
 #' }
 #' @author Beate Vieth
@@ -141,7 +141,7 @@ estimateParam <- function(countData,
                           MeanFragLengths = NULL,
                           Distribution = c('NB', 'ZINB'),
                           RNAseq = c('bulk', 'singlecell'),
-                          normalisation = c('TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm',
+                          Normalisation = c('TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm',
                                             'SCnorm', 'RUV', 'Census', 'depth', 'none'),
                           sigma = 1.96,
                           NCores = NULL,
@@ -152,39 +152,39 @@ estimateParam <- function(countData,
     if(verbose) {message("Zero-inflated negative binomial is not implemented for bulk data. Setting it to negative binomial.")}
     Distribution="NB"
   }
-  if (RNAseq=='singlecell' && normalisation=='MR') {
-    if(verbose) {message(paste0(normalisation, " has been developed for bulk data and it is rather likely that it will not work.
+  if (RNAseq=='singlecell' && Normalisation=='MR') {
+    if(verbose) {message(paste0(Normalisation, " has been developed for bulk data and it is rather likely that it will not work.
                                 \nPlease consider using a method that can handle single cell data, e.g. PosCounts, scran, SCnorm."))}
   }
-  if (normalisation=='Census') {
-    if(verbose) {message(paste0(normalisation, " should only be used for non-UMI methods! \nFor more information, please consult the monocle vignette."))}
-    if (normalisation=='Census' && is.null(Lengths)) {
-      if(verbose) {message(paste0(normalisation, " should be used in combination with transcript lengths.
+  if (Normalisation=='Census') {
+    if(verbose) {message(paste0(Normalisation, " should only be used for non-UMI methods! \nFor more information, please consult the monocle vignette."))}
+    if (Normalisation=='Census' && is.null(Lengths)) {
+      if(verbose) {message(paste0(Normalisation, " should be used in combination with transcript lengths.
                                    \nIf the library is paired-end, please also provide the mean fragment lengths which can be determined by e.g. Picard."))}
     }
   }
 
   # STOP if combination of options is not supported/would not work!
-  if (RNAseq=='bulk' && normalisation %in% c('BASiCS', 'Census')) {
-    stop(message(paste0(normalisation, " is only developed and implemented for single cell RNA-seq experiments.")))
+  if (RNAseq=='bulk' && Normalisation %in% c('BASiCS', 'Census')) {
+    stop(message(paste0(Normalisation, " is only developed and implemented for single cell RNA-seq experiments.")))
   }
-  if (normalisation=='BASiCS' && is.null(spikeData)) {
-    stop(message(paste0(normalisation, " needs spike-in information! \nPlease provide an additional table of spike-in read counts.")))
+  if (Normalisation=='BASiCS' && is.null(spikeData)) {
+    stop(message(paste0(Normalisation, " needs spike-in information! \nPlease provide an additional table of spike-in read counts.")))
   }
-  if (normalisation=='BASiCS' && is.null(spikeInfo)) {
-    stop(message(paste0(normalisation, " needs spike-in information! \nPlease provide an additional table of spike-in molecule counts.")))
+  if (Normalisation=='BASiCS' && is.null(spikeInfo)) {
+    stop(message(paste0(Normalisation, " needs spike-in information! \nPlease provide an additional table of spike-in molecule counts.")))
   }
-  if (normalisation == 'BASiCS' && !is.null(spikeInfo) && !is.null(colnames(spikeInfo)) && !all(colnames(spikeInfo) %in% c("SpikeID", "SpikeInput"))) {
-    stop(message(paste0(normalisation, " needs spike-in information! \nPlease provide an additional table of spike-in molecule counts with correctly named columns.")))
+  if (Normalisation == 'BASiCS' && !is.null(spikeInfo) && !is.null(colnames(spikeInfo)) && !all(colnames(spikeInfo) %in% c("SpikeID", "SpikeInput"))) {
+    stop(message(paste0(Normalisation, " needs spike-in information! \nPlease provide an additional table of spike-in molecule counts with correctly named columns.")))
   }
 
-  if (normalisation=='none' && all((countData - round(countData)) == 0)) {
+  if (Normalisation=='none' && all((countData - round(countData)) == 0)) {
     stop(message(paste0("No normalisation should only be done with pre-normalized data, eg. RSEM output, but the provided input matrix contains only integer values!")))
   }
   # c('TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm', 'SCnorm', 'RUV', 'BASiCS', 'Census', 'depth', 'none')
 
-  if (normalisation %in% c('TMM', 'MR', 'PosCounts', 'UQ', 'depth', 'none') && !is.null(spikeData)) {
-    message(paste0("The normalisation method ", normalisation, " does not utilize spike-ins."))
+  if (Normalisation %in% c('TMM', 'UQ', 'depth', 'none') && !is.null(spikeData)) {
+    message(paste0("The normalisation method ", Normalisation, " does not utilize spike-ins."))
     spikeData = NULL
     spikeInfo = NULL
   }
@@ -208,6 +208,7 @@ estimateParam <- function(countData,
   spikeInfo <- checkup$spikeInfo
   Lengths <- checkup$Lengths
   MeanFragLengths <- checkup$MeanFragLengths
+  Label <- ifelse(is.null(batchData), "none", "known")
 
   # run estimation
   res = .run.estParam(countData = countData,
@@ -218,7 +219,8 @@ estimateParam <- function(countData,
                       MeanFragLengths = MeanFragLengths,
                       Distribution = Distribution,
                       RNAseq = RNAseq,
-                      normalisation = normalisation,
+                      Normalisation = Normalisation,
+                      Label = Label,
                       sigma = sigma,
                       NCores = NCores,
                       verbose=verbose)
@@ -230,7 +232,7 @@ estimateParam <- function(countData,
 
   # make output
   res2 <- c(res, list(RNAseq = RNAseq,
-                      normFramework=normalisation,
+                      normFramework=Normalisation,
                       sigma=sigma))
   attr(res2, 'param.type') <- "estimated"
   attr(res2, 'Distribution') <- Distribution
@@ -249,7 +251,7 @@ estimateParam <- function(countData,
 #' spikeInfo,
 #' MeanFragLength = NULL,
 #' batchData = NULL,
-#' normalisation=c('depth','none'))
+#' Normalisation=c('depth','none'))
 #' @param spikeData  is a count \code{matrix}. Rows correspond to spike-ins, columns to samples.
 #' Rownames should contain the spike-in names, column names the sample names.
 #' @param spikeInfo is a molecule count \code{matrix} of spike-ins. Rows correspond to spike-ins.
@@ -262,7 +264,7 @@ estimateParam <- function(countData,
 #' The order of rows should be the same as the columns in \code{spikeData}.
 #' The rownames should be the same as the column names of spikeData.
 #' The first column should contain the batch annotation, e.g. 'a' for batch 1, 'b' for batch 2.
-#' @param normalisation is a character value: 'depth' or 'none'. For more information, please consult the details section.
+#' @param Normalisation is a character value: 'depth' or 'none'. For more information, please consult the details section.
 #' @return List object with the following entries:
 #' \item{normCounts}{The normalised spike-in read counts \code{data.frame}.}
 #' \item{normParams}{The mean and standard deviation per spike-in using normalised read counts in a \code{data.frame}.}
@@ -288,7 +290,7 @@ estimateParam <- function(countData,
 #' spikeInfo = spike_info,
 #' MeanFragLength = NULL,
 #' batchData = batch_info,
-#' normalisation = 'depth')
+#' Normalisation = 'depth')
 #' }
 #' @details
 #' Normalisation methods
@@ -307,7 +309,7 @@ estimateSpike <- function(spikeData,
                           spikeInfo,
                           MeanFragLength = NULL,
                           batchData = NULL,
-                          normalisation=c('depth','none')) {
+                          Normalisation=c('depth','none')) {
   # check provided input
   if(!is.null(batchData)) {
     if(!nrow(batchData) == ncol(spikeData)) {
@@ -326,12 +328,13 @@ estimateSpike <- function(spikeData,
   if(is.null(colnames(spikeInfo)) || !any(colnames(spikeInfo) %in% "SpikeInput")) {
     stop(message(paste0("The input data frame of spikeInfo has no column labelled SpikeInput.")))
   }
-  if (!normalisation %in% c('depth', 'none')) {
+  if (!Normalisation %in% c('depth', 'none')) {
     stop(message(paste0("For spike-in count data normalisation, only depth normalization or providing prenormalized data is implemented.")))
   }
-  if (normalisation=='none' && all((spikeData - round(spikeData)) == 0)) {
+  if (Normalisation=='none' && all((spikeData - round(spikeData)) == 0)) {
     stop(message(paste0("Skipping the normalisation should only be done with pre-normalized data, eg. RSEM output, but the provided input matrix contains only integer values!")))
   }
+
 
   if(!is.null(rownames(spikeData)) && !is.null(rownames(spikeInfo))) {
     # kick out undetected spike-ins
@@ -354,7 +357,8 @@ estimateSpike <- function(spikeData,
       # calculate normalized spike-ins per batch
       normspikeData <- sapply(unique(names(batch)), function(b){
         tmpData <- spikeData.red[,grepl(pattern = b, names(batch))]
-        normData <- .norm.calc(normalisation = normalisation,
+        normData <- .norm.calc(Normalisation = Normalisation,
+                               Label = 'none',
                                countData = tmpData,
                                batchData = NULL,
                                spikeData = NULL,
@@ -401,7 +405,8 @@ estimateSpike <- function(spikeData,
 
     if(is.null(batchData)) {
       # calculate normalized spike-ins
-      normspikeData <- .norm.calc(normalisation=normalisation,
+      normspikeData <- .norm.calc(Normalisation=Normalisation,
+                                  Label = 'none',
                                   countData=spikeData.red,
                                   batchData = NULL,
                                   spikeData=NULL,
@@ -490,7 +495,7 @@ estimateSpike <- function(spikeData,
                              "spikeInfo"=spikeInfo,
                              "batchData"=batchData,
                              "MeanFragLength"=MeanFragLength),
-              "Settings"=list("normFramework"=normalisation))
+              "Settings"=list("normFramework"=Normalisation))
   return(res)
 }
 

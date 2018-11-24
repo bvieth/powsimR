@@ -7,7 +7,7 @@
 evaluateDist(countData, batchData =NULL,
 spikeData = NULL, spikeInfo = NULL,
 Lengths = NULL, MeanFragLengths = NULL,
-RNAseq, normalisation,
+RNAseq, Normalisation,
 frac.genes=1, min.meancount = 0.1,
 max.dropout=0.7, min.libsize=1000,
 verbose = TRUE)
@@ -36,7 +36,7 @@ This variable is only used for internal TPM calculations if Census normalization
 
 \item{RNAseq}{is a character value: "bulk" or "singlecell".}
 
-\item{normalisation}{is a character value: 'TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm',
+\item{Normalisation}{is a character value: 'TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm',
 'SCnorm', 'RUV', 'Census', 'depth', 'none'.
 For more information, please consult the details section of \code{\link{estimateParam}}.}
 
@@ -50,6 +50,13 @@ For more information, please consult the details section of \code{\link{estimate
 
 \item{verbose}{Logical value to indicate whether to show progress report of simulations.}
 }
+\value{
+List object with the results of goodness of fit and estimated parameters:
+\item{edgeR}{Goodness-of-fit statistic, degrees of freedom and associated p-value using the deviance and residual degrees of freedom from \code{\link[edgeR]{glmFit}}. Furthermore, the AIC of the edgeR model fit using the residuals of \code{\link[edgeR]{zscoreNBinom}}.}
+\item{GOF}{The fitting results per distribution, including loglikelihood, goodness-of-fit statistics, AIC and predicted number of zeroes. The following distributions were considered: Poisson, negative binomial, zero-inflated poisson and negative binomial following the 'standard' (i.e. \code{\link[stats]{glm}}, \code{\link[MASS]{glm.nb}} and \code{\link[pscl]{zeroinfl}} implementation) and fitdist approach (see \code{\link[fitdistrplus]{fitdist}}) and Beta-Poisson following Marioni or Hemberg parameterisation. Furthermore, model fit comparison by LRT for nested and Vuong Test for non-nested models.}
+\item{Estimates}{The estimated parameters of distribution fitting.}
+\item{ObservedZeros}{The number of zeroes and dropout rate per gene.}
+}
 \description{
 With this function, the user can determine goodness of fit for each gene.
 }
@@ -58,7 +65,7 @@ With this function, the user can determine goodness of fit for each gene.
 ## using example data set
 data(kolodziejczk_cnts)
 evaldist <- evaluateDist(countData = kolodziejczk_cnts,
-RNAseq = "singlecell", normalisation="scran",
+RNAseq = "singlecell", Normalisation="scran",
 frac.genes=1, min.meancount = 0.1,
 max.dropout=0.7, min.libsize=1000,
 verbose = TRUE)

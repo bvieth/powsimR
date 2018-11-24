@@ -119,9 +119,9 @@ DESetup <- function(ngenes=10000, nsims=25,
 #' "equal" or "given". The default is "equal", i.e. equal size factor of 1.
 #' If the user defines it as given, the size factors are sampled from the size factors provided by the output of \code{\link{estimateParam}}.
 #' @param downsample Drawing the associated dispersions after determining effective mean expressions by size factors. Default is \code{FALSE}.
-#' @param geneset Sampling with replacement or filling count tables low magnitude Poisson
+#' @param geneset Sampling with replacement or filling count tables with low magnitude Poisson
 #' when the estimated mean expression vector is shorter than the number of genes to be simulated.
-#' Default is \code{FALSE}, i.e. sampling means with replacement.
+#' Default is \code{FALSE}, i.e. random sampling of mean expression values with replacement.
 #' @return A list with the following entries:
 #' \item{desetup}{The RNAseq simulation parameters.}
 #' \item{params}{The distributional parameters for simulations of genes.}

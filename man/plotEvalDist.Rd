@@ -22,7 +22,7 @@ This function plots the results of \code{\link{evaluateDist}} to assess goodness
 ## using example data set
 data(kolodziejczk_cnts)
 evaldist <- evaluateDist(countData = kolodziejczk_cnts,
-RNAseq = "singlecell", normalisation="scran",
+RNAseq = "singlecell", ="scran",
 frac.genes=1, min.meancount = 0.1,
 max.dropout=0.7, min.libsize=1000,
 verbose = TRUE)

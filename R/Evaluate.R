@@ -7,7 +7,7 @@
 #' @usage evaluateDist(countData, batchData =NULL,
 #' spikeData = NULL, spikeInfo = NULL,
 #' Lengths = NULL, MeanFragLengths = NULL,
-#' RNAseq, normalisation,
+#' RNAseq, Normalisation,
 #' frac.genes=1, min.meancount = 0.1,
 #' max.dropout=0.7, min.libsize=1000,
 #' verbose = TRUE)
@@ -27,7 +27,7 @@
 #' @param MeanFragLengths is a numeric vector of mean fragment lengths with the same length as columns in countData.
 #' This variable is only used for internal TPM calculations if Census normalization is specified.
 #' @param RNAseq is a character value: "bulk" or "singlecell".
-#' @param normalisation is a character value: 'TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm',
+#' @param Normalisation is a character value: 'TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm',
 #' 'SCnorm', 'RUV', 'Census', 'depth', 'none'.
 #' For more information, please consult the details section of \code{\link{estimateParam}}.
 #' @param frac.genes The fraction of genes to calculate goodness of fit statistics, default is 1, i.e. for all genes.
@@ -36,16 +36,16 @@
 #' @param min.libsize The minimum raw read counts per sample, default is \code{1000}.
 #' @param verbose Logical value to indicate whether to show progress report of simulations.
 #' @return List object with the results of goodness of fit and estimated parameters:
-#' \item{edgeR_res}{Goodness-of-fit statistic, degrees of freedom and associated p-value using the deviance and residual degrees of freedom from \code{\link[edgeR]{glmFit}}. Furthermore, the AIC of the edgeR model fit using the residuals of \code{\link[edgeR]{zscoreNBinom}}.}
-#' \item{GOF_res}{The fitting results per distribution, including loglikelihood, goodness-of-fit statistics, AIC and predicted number of zeroes. The following distributions were considered: Poisson, negative binomial, zero-inflated poisson and negative binomial following the 'standard' (i.e. \code{\link[stats]{glm}}, \code{\link[MASS]{glm.nb}} and \code{\link[pscl]{zeroinfl}} implementation) and fitdist approach (see \code{\link[fitdistrplus]{fitdist}}) and Beta-Poisson following Marioni or Hemberg parameterisation (see \url{https://doi.org/10.1186/gb-2013-14-1-r7} and \url{https://dx.doi.org/10.1186%2Fs12859-016-0944-6}, respectively). Furthermore, model fit comparison by LRT for nested and Vuong Test for non-nested models.}
-#' \item{EST_res}{The estimated parameters of distribution fitting.}
+#' \item{edgeR}{Goodness-of-fit statistic, degrees of freedom and associated p-value using the deviance and residual degrees of freedom from \code{\link[edgeR]{glmFit}}. Furthermore, the AIC of the edgeR model fit using the residuals of \code{\link[edgeR]{zscoreNBinom}}.}
+#' \item{GOF}{The fitting results per distribution, including loglikelihood, goodness-of-fit statistics, AIC and predicted number of zeroes. The following distributions were considered: Poisson, negative binomial, zero-inflated poisson and negative binomial following the 'standard' (i.e. \code{\link[stats]{glm}}, \code{\link[MASS]{glm.nb}} and \code{\link[pscl]{zeroinfl}} implementation) and fitdist approach (see \code{\link[fitdistrplus]{fitdist}}) and Beta-Poisson following Marioni or Hemberg parameterisation. Furthermore, model fit comparison by LRT for nested and Vuong Test for non-nested models.}
+#' \item{Estimates}{The estimated parameters of distribution fitting.}
 #' \item{ObservedZeros}{The number of zeroes and dropout rate per gene.}
 #' @examples
 #' \dontrun{
 #' ## using example data set
 #' data(kolodziejczk_cnts)
 #' evaldist <- evaluateDist(countData = kolodziejczk_cnts,
-#' RNAseq = "singlecell", normalisation="scran",
+#' RNAseq = "singlecell", Normalisation="scran",
 #' frac.genes=1, min.meancount = 0.1,
 #' max.dropout=0.7, min.libsize=1000,
 #' verbose = TRUE)
@@ -64,7 +64,7 @@
 evaluateDist <- function(countData, batchData =NULL,
                          spikeData = NULL, spikeInfo = NULL,
                          Lengths = NULL, MeanFragLengths = NULL,
-                         RNAseq, normalisation,
+                         RNAseq, Normalisation,
                          frac.genes=1, min.meancount = 0.1,
                          max.dropout=0.7, min.libsize=1000,
                          verbose = TRUE) {
@@ -113,7 +113,7 @@ evaluateDist <- function(countData, batchData =NULL,
                            MeanFragLengths = MeanFragLengths,
                            Distribution = 'NB',
                            RNAseq = RNAseq,
-                           normalisation = normalisation,
+                           Normalisation = Normalisation,
                            sigma = 1.96,
                            NCores = NULL,
                            verbose=verbose)
@@ -356,10 +356,10 @@ evaluateDist <- function(countData, batchData =NULL,
   # goodness of fit statistics per model
   # estimated parameters
   # observed zeros
-  return(list(edgeR_res= edgeR.res,
-              GOF_res=gof.res,
-              EST_res=estimate.res,
-              ObservedZeros=ObservedZeros))
+  return(list(edgeR = edgeR.res,
+              GOF = gof.res,
+              Estimates = estimate.res,
+              ObservedZeros = ObservedZeros))
 }
 
 # EVALUATE SETUP ----------------------------------------------------------
@@ -700,7 +700,7 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
   tmp.quantile.drop = stats::quantile(tmp.ecdf.drop, probs=strata.probs)
   strata.drop = unique(c(0,unname(tmp.quantile.drop),1))
   strata.drop = unique(round(strata.drop, digits=2))
-  tmp.ecdf.lfc = stats::ecdf(abs(unlist(tlfcs)))
+  tmp.ecdf.lfc = stats::ecdf(unique(unlist(tlfcs)))
   tmp.quantile.lfc = stats::quantile(tmp.ecdf.lfc, probs=strata.probs)
   strata.lfc = unique(c(-Inf,unname(tmp.quantile.lfc),Inf))
   strata.lfc = unique(round(strata.lfc, digits=2))
@@ -768,7 +768,7 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
       xgr.drop = cut(X.drop1[ix.keep.drop], strata.drop)
       xgrd.drop = cut(X.drop1[DEid], strata.drop)
       # lfc
-      X.lfc1 = abs(elfc[,j,1])
+      X.lfc1 = elfc[,j,1]
       ix.keep.lfc = which(!is.na(X.lfc1))
       xgr.lfc = cut(X.lfc1[ix.keep.lfc], strata.lfc)
       xgrd.lfc = cut(X.lfc1[DEid], strata.lfc)
@@ -1019,7 +1019,8 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
                  FPR.marginal=FPR.marginal, FNR.marginal=FNR.marginal,
                  FDR.marginal=FDR.marginal,
                  ## below are input parameters:
-                 alpha.type=alpha.type, MTC=ifelse(alpha.type=="adjusted", MTC, "not applicable"), alpha.nominal=alpha.nominal,
+                 alpha.type=alpha.type, MTC=ifelse(alpha.type=="adjusted", MTC, "not applicable"),
+                 alpha.nominal=alpha.nominal,
                  stratify.by=stratify.by, strata=strata, strata.levels=levels(xgr),
                  target.by=target.by, n1=Nreps1, n2=Nreps2, delta=delta)
 
@@ -1085,9 +1086,9 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
 #' @importFrom stats ecdf quantile p.adjust.methods p.adjust
 #' @importFrom qvalue qvalue
 #' @importFrom IHW ihw adj_pvalues
-#' @importFrom ROCR prediction performance
-#' @importFrom zoo rollmean
 #' @importFrom iCOBRA calculate_performance COBRAData
+#' @importFrom tidyr "%>%"
+#' @importFrom dplyr mutate select
 #' @export
 evaluateROC <- function(simRes, alpha.type=c("adjusted","raw"),
                         MTC=c('BY', 'BH', 'Storey', 'IHW',
@@ -1113,13 +1114,17 @@ evaluateROC <- function(simRes, alpha.type=c("adjusted","raw"),
   my.names = paste0(Nreps1, " vs ", Nreps2)
   Truths = Predictions = array(NA, dim = c(length(Nreps1),
                                            ngenes, nsims))
-  predObjs = rocObjs = prcObjs = rocaucObjs = prcaucObjs = matObjs = f1Objs = stats::setNames(replicate(length(Nreps1),
-                                                                                                        NULL), my.names)
-  perfCOBRA = stats::setNames(replicate(length(Nreps1), NULL),
-                              my.names)
+  perfCOBRA =  vector("list", length(my.names))
   perfCOBRA <- lapply(1:length(perfCOBRA), function(x) {
     perfCOBRA[[x]] = vector("list", nsims)
   })
+  calcCOBRA = vector("list", length(my.names))
+  calcCOBRA <- lapply(1:length(calcCOBRA), function(x) {
+    calcCOBRA[[x]] = vector("list", nsims)
+  })
+
+  TPRvsFPR_AUC = TPRvsPPV_AUC = TPRvsFDR_pAUC_lib = TPRvsFDR_pAUC_conv = MCC_lib = F1score_lib = MCC_conv = F1score_conv = vector("list", length(my.names))
+
   for (i in 1:nsims) {
     for (j in seq(along = Nreps1)) {
       Nrep1 = Nreps1[j]
@@ -1193,50 +1198,122 @@ evaluateROC <- function(simRes, alpha.type=c("adjusted","raw"),
           x[is.na(x)] = 1
         }
       }
+
       Truths[j, , i] = Zg2
       Predictions[j, , i] = x
+
       cobradata <- iCOBRA::COBRAData(pval = data.frame(Sim = pval, row.names = paste0("G", 1:ngenes)),
                                      padj = data.frame(Sim = x, row.names = paste0("G", 1:ngenes)),
                                      score = data.frame(Sim = elfc, row.names = paste0("G", 1:ngenes)),
                                      truth = data.frame(status = Zg2, logFC = lfc, expr = meanexpr, row.names = paste0("G", 1:ngenes)))
-      invisible(capture.output(perfCOBRA[[j]][[i]] <- suppressMessages(iCOBRA::calculate_performance(cobradata,
-                                                                                                     binary_truth = "status", cont_truth = "logFC",
-                                                                                                     thrs = seq(from = 0.01, to = 0.2, by = 0.01),
-                                                                                                     svalthrs = c(0.01, 0.05, 0.1), splv = "none",
-                                                                                                     maxsplit = 4, onlyshared = FALSE, thr_venn = 0.05,
-                                                                                                     type_venn = "adjp", topn_venn = 100, rank_by_abs = TRUE,
-                                                                                                     prefer_pval = TRUE))))
+      invisible(capture.output(res <- suppressMessages(
+        iCOBRA::calculate_performance(cobradata,
+                                      aspects = c("fdrtpr", "fdrtprcurve"),
+                                      binary_truth = "status", cont_truth = "logFC",
+                                      thrs = seq(from = 0.01, to = 1, by = 0.01),
+                                      splv = "none",
+                                      maxsplit = 4, onlyshared = FALSE, thr_venn = 0.05,
+                                      type_venn = "adjp", topn_venn = 100, rank_by_abs = TRUE,
+                                      prefer_pval = TRUE))
+        ))
+      calcCOBRA[[j]][[i]] <- res@fdrtprcurve %>%
+        dplyr::select(-c(method:splitval)) %>%
+        dplyr::mutate(FPR = FP / (FP + TN),
+                      TNR = TN / (TN + FP),
+                      FNR = FN / (FN + TP),
+                      PPV = TP / (TP + FP),
+                      F1score = (2*TP) / ((2*TP) +FP +FN),
+                      MCC = ( (TP * TN) - (FP*FN) ) / (sqrt((TP+FP)*(TP+FN)*(TN+FP)*(TN+FN))) )
+
+
+      # AUC calculations
+      fpr <- calcCOBRA[[j]][[i]]$FPR
+      tpr <- calcCOBRA[[j]][[i]]$TPR
+      ppv <- calcCOBRA[[j]][[i]]$PPV
+
+      # TPR versus FPR
+      fpr1 <- fpr[!is.na(fpr) & !is.na(tpr)]
+      tpr1 <- tpr[!is.na(fpr) & !is.na(tpr)]
+      id <- order(fpr1)
+      TPRvsFPR_AUC[[j]][i] <- sum(diff(fpr1[id]) * zoo::rollmean(tpr1[id], 2))
+
+      # TPR versus PPV
+      ppv1 <- ppv[!is.na(ppv) & !is.na(tpr)]
+      tpr1 <- tpr[!is.na(ppv) & !is.na(tpr)]
+      id <- order(ppv1)
+      TPRvsPPV_AUC[[j]][i] <- sum(diff(ppv1[id]) * zoo::rollmean(tpr1[id], 2))
+
+
+      obs.fdr = as.vector(res@fdrtpr[,c("FDR")])
+      tmp.nom = as.vector(res@fdrtpr[,c("thr")])
+      nom.fdr = as.numeric(gsub("thr", "", tmp.nom))
+      dat.fdr =  data.frame(obs.fdr, nom.fdr)
+      # TPR vs FDR (liberal); MCC (liberal); F1 score (liberal)
+      a.fdr = tail(dat.fdr[dat.fdr$obs.fdr <=alpha.nominal & dat.fdr$nom.fdr <= alpha.nominal, "obs.fdr"], 1)
+      if (all(c(!length(a.fdr) == 0, !a.fdr == 0))) {
+        if(a.fdr <= alpha.nominal) {
+          a.fdr = tail(dat.fdr[dat.fdr$obs.fdr <= alpha.nominal, "obs.fdr"], 1)
+        }
+        x <- as.vector(res@fdrtprcurve[,c("FDR")])[-1]
+        y <- as.vector(res@fdrtprcurve[,c("TPR")])[-1]
+        y <- y[x<a.fdr]
+        x <- x[x<a.fdr]
+        x1 <- x[!is.na(x) & !is.na(y)]
+        y1 <- y[!is.na(x) & !is.na(y)]
+        id <- order(x1)
+        pauc_lib <- sum(diff(x1[id]) * zoo::rollmean(y1[id], 2)) / alpha.nominal
+        mcc <- as.vector(calcCOBRA[[j]][[i]][,c("MCC")])[-1]
+        mcc_lib <- tail(mcc[as.vector(res@fdrtprcurve[,c("FDR")])[-1] < a.fdr], 1)
+        f1 <- as.vector(calcCOBRA[[j]][[i]][,c("F1score")])[-1]
+        f1_lib <- tail(f1[as.vector(res@fdrtprcurve[,c("FDR")])[-1] < a.fdr], 1)
+      }
+      if (any(c(length(a.fdr) == 0, a.fdr == 0))) {
+        pauc_lib <- f1_lib <- 0
+        mcc_lib <- NA
+      }
+      TPRvsFDR_pAUC_lib[[j]][i] <- pauc_lib
+      MCC_lib[[j]][i] <- mcc_lib
+      F1score_lib[[j]][i] <- f1_lib
+
+      # TPR vs FDR (conservative); MCC (conversative); F1 score (conservative)
+      a.fdr = tail(dat.fdr[dat.fdr$obs.fdr <=alpha.nominal & dat.fdr$nom.fdr <= alpha.nominal, "obs.fdr"], 1)
+      if (all(c(!length(a.fdr) == 0, !a.fdr == 0))) {
+        x <- as.vector(res@fdrtprcurve[,c("FDR")])[-1]
+        y <- as.vector(res@fdrtprcurve[,c("TPR")])[-1]
+        y <- y[x<a.fdr]
+        x <- x[x<a.fdr]
+        x1 <- x[!is.na(x) & !is.na(y)]
+        y1 <- y[!is.na(x) & !is.na(y)]
+        id <- order(x1)
+        pauc_conv <- sum(diff(x1[id]) * zoo::rollmean(y1[id], 2)) / alpha.nominal
+        mcc <- as.vector(calcCOBRA[[j]][[i]][,c("MCC")])[-1]
+        mcc_conv <- tail(mcc[as.vector(res@fdrtprcurve[,c("FDR")])[-1] < a.fdr], 1)
+        f1 <- as.vector(calcCOBRA[[j]][[i]][,c("F1score")])[-1]
+        f1_conv <- tail(f1[as.vector(res@fdrtprcurve[,c("FDR")])[-1] < a.fdr], 1)
+      }
+      if (any(c(length(a.fdr) == 0, a.fdr == 0))) {
+        pauc_conv <- f1_conv <- 0
+        mcc_conv <- NA
+      }
+      TPRvsFDR_pAUC_conv[[j]][i] <- pauc_conv
+      MCC_conv[[j]][i] <- mcc_conv
+      F1score_conv[[j]][i] <- f1_conv
+
+      perfCOBRA[[j]][[i]] <- res@fdrtpr
     }
   }
-  for (j in seq(along = Nreps1)) {
-    predObjs[[j]] <- ROCR::prediction(predictions = Predictions[j, , ],
-                                      labels = Truths[j, , ],
-                                      label.ordering = c(1, 0))
-    rocObjs[[j]] <- ROCR::performance(predObjs[[j]], "tpr", "fpr")
-    rocaucObjs[[j]] <- ROCR::performance(predObjs[[j]], "auc")
-    prcObjs[[j]] <- ROCR::performance(predObjs[[j]], "prec", "rec")
-    y.values <- lapply(1:nsims, function(i) {
-      x <- prcObjs[[j]]@x.values[[i]]
-      y <- prcObjs[[j]]@y.values[[i]]
-      x1 <- x[!is.na(x) & !is.na(y)]
-      y1 <- y[!is.na(x) & !is.na(y)]
-      id <- order(x1)
-      sum(diff(x1[id]) * zoo::rollmean(y1[id], 2))
-    })
-    prcaucObjs[[j]] <- rocaucObjs[[j]]
-    prcaucObjs[[j]]@y.values <- y.values
-    prcaucObjs[[j]]@y.name <- c("Area under the Precision-Recall ROC curve")
-    matObjs[[j]] <- ROCR::performance(predObjs[[j]], "mat")
-    f1Objs[[j]] <- ROCR::performance(predObjs[[j]], "f")
-  }
-  output <- list(`ROCR-Prediction` = predObjs,
-                 `ROCR-TPRvsFPR` = rocObjs,
-                 `ROCR-PrecvsRec` = prcObjs,
-                 `ROCR-MAT` = matObjs,
-                 `ROCR-AUC` = rocaucObjs,
-                 `PRC-AUC` = prcaucObjs,
-                 `PRC-Fscore` = f1Objs,
-                 `iCOBRA-Performance` = perfCOBRA,
+  names(perfCOBRA) <- names(calcCOBRA) <- names(TPRvsPPV_AUC) <- names(TPRvsFPR_AUC) <- names(TPRvsFDR_pAUC_conv) <- names(TPRvsFDR_pAUC_lib)  <- names(MCC_conv) <- names(F1score_conv) <- names(F1score_lib) <- names(MCC_lib) <- names(MCC_conv) <- my.names
+
+  output <- list(Performance = calcCOBRA,
+                 FDR_TPR_Thres = perfCOBRA,
+                 TPRvsPPV_AUC = TPRvsPPV_AUC,
+                 TPRvsFPR_AUC = TPRvsFPR_AUC,
+                 TPRvsFDR_pAUC_conv =TPRvsFDR_pAUC_conv,
+                 TPRvsFDR_pAUC_lib = TPRvsFDR_pAUC_lib,
+                 MCC_conv = MCC_conv,
+                 MCC_lib = MCC_lib,
+                 F1score_conv = F1score_conv,
+                 F1score_lib = F1score_lib,
                  alpha.type = alpha.type,
                  MTC = ifelse(alpha.type == "adjusted", MTC, "not applicable"),
                  target.by = target.by,

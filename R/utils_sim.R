@@ -1701,7 +1701,7 @@
         stop(message(paste0("You chose to draw from the given size factors,
                             however the sf vector is empty!")))
       }
-      }
+    }
 
     # effective means
     effective.means <- outer(true.means, all.facs, "*")

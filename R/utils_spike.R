@@ -19,12 +19,19 @@
   if (initialTheta==0 | is.na(initialTheta)) {
     initialTheta = 0.01
   }
-  fit2 <- minpack.lm::nlsLM(Y ~ 1 - (1 - Theta + Theta*exp(-(gammaTheta/Theta)*Ai))^Xi,
-                            data=fitData, start=list(Theta=initialTheta),
-                            lower=0, upper=1, control=stats::nls.control(warnOnly=TRUE))
+  invisible(capture.output(
+    fit2 <- suppressMessages(
+      minpack.lm::nlsLM(Y ~ 1 - (1 - Theta + Theta*exp(-(gammaTheta/Theta)*Ai))^Xi,
+                        data=fitData, start=list(Theta=initialTheta),
+                        lower=0, upper=1, control=stats::nls.control(warnOnly=TRUE))
+    )
+  ))
+  invisible(capture.output(
+    Theta <- suppressMessages(
+      stats::coefficients(fit2)
+    )
+  ))
 
-
-  Theta = stats::coefficients(fit2)
   list(gammaTheta=gammaTheta, Theta=Theta)
 }
 
@@ -38,14 +45,27 @@
   options(warn=FALSE)
   gammaThetaSample = plyr::aaply(1:ncol(nCountSpikes), 1, function(x) {
     fitData = data.frame(Xi=numberSpikes[,1], Ki=nCountSpikes[,x])
-    fit1 <- stats::lm(Ki ~ 0 + Xi, data=fitData)
-    gammaTheta = stats::coefficients(fit1)
+    invisible(capture.output(
+      fit1 <- suppressMessages(
+        stats::lm(Ki ~ 0 + Xi, data=fitData)
+      )
+    ))
+    invisible(capture.output(
+      gammaTheta <- suppressMessages(
+        stats::coefficients(fit1)
+      )
+    ))
 
-    fitData = data.frame(Xi=numberSpikes[,1], Y=nCountSpikes[,x]>0, Ai=sizeFactorMatrix[,x])
-
-    fit2 <- minpack.lm::nlsLM(Y ~ 1 - (1 - Theta + Theta*exp(-(gammaTheta/Theta)*Ai))^Xi,
-                              data=fitData, start=list(Theta=0.4),
-                              lower=0, upper=1, control=stats::nls.control(warnOnly=TRUE))
+    fitData = data.frame(Xi=numberSpikes[,1],
+                         Y=nCountSpikes[,x]>0,
+                         Ai=sizeFactorMatrix[,x])
+    invisible(capture.output(
+      fit2 <- suppressMessages(
+        minpack.lm::nlsLM(Y ~ 1 - (1 - Theta + Theta*exp(-(gammaTheta/Theta)*Ai))^Xi,
+                          data=fitData, start=list(Theta=0.4),
+                          lower=0, upper=1, control=stats::nls.control(warnOnly=TRUE))
+      )
+    ))
     c(coefficients(fit2), gammaTheta/coefficients(fit2))}, .expand=FALSE)
   gammaThetaSample[gammaThetaSample[,1]==1,1] = 0.9999
 
@@ -82,17 +102,26 @@
   VGamma = varianceGammaThetaEstimate[1]
   VTheta = varianceGammaThetaEstimate[2]
 
-  fitData = data.frame(Xi=numberSpikes[,1], Y=apply(nCountSpikes,1,stats::var)/rowMeans(nCountSpikes), Bi=rowMeans(1/sizeFactorMatrix))
-
-  fit <- minpack.lm::nlsLM(Y ~ Bi + (VGamma+E2Gamma)/EGamma*(1-(E2Theta+VTheta)/ETheta) +
-                 (VGamma+E2Gamma)*VTheta*Xi/(EGamma*ETheta) + (ETheta*VGamma)*Xi/EGamma, data=fitData,
-               start=list(VGamma=VGamma, VTheta=VTheta), lower=c(0,0))
+  fitData = data.frame(Xi=numberSpikes[,1],
+                       Y=apply(nCountSpikes,1,stats::var)/rowMeans(nCountSpikes),
+                       Bi=rowMeans(1/sizeFactorMatrix))
+  invisible(capture.output(
+    fit <- suppressMessages(
+      minpack.lm::nlsLM(Y ~ Bi + (VGamma+E2Gamma)/EGamma*(1-(E2Theta+VTheta)/ETheta) +
+                          (VGamma+E2Gamma)*VTheta*Xi/(EGamma*ETheta) + (ETheta*VGamma)*Xi/EGamma, data=fitData,
+                        start=list(VGamma=VGamma, VTheta=VTheta), lower=c(0,0))
+    )
+  ))
   VGamma=coefficients(fit)[[1]]
   VTheta=coefficients(fit)[[2]]
   # second optimization for robust estimates
-  fit <- minpack.lm::nlsLM(Y ~ Bi + (VGamma+E2Gamma)/EGamma*(1-(E2Theta+VTheta)/ETheta) +
-                 (VGamma+E2Gamma)*VTheta*Xi/(EGamma*ETheta) + (ETheta*VGamma)*Xi/EGamma, data=fitData,
-               start=list(VGamma=VGamma, VTheta=VTheta), lower=c(0,0))
+  invisible(capture.output(
+    fit <- suppressMessages(
+      minpack.lm::nlsLM(Y ~ Bi + (VGamma+E2Gamma)/EGamma*(1-(E2Theta+VTheta)/ETheta) +
+                          (VGamma+E2Gamma)*VTheta*Xi/(EGamma*ETheta) + (ETheta*VGamma)*Xi/EGamma, data=fitData,
+                        start=list(VGamma=VGamma, VTheta=VTheta), lower=c(0,0))
+    )
+  ))
   VGamma=coefficients(fit)[[1]]
   VTheta=coefficients(fit)[[2]]
   list(EGamma=EGamma, ETheta=ETheta, E2Gamma=E2Gamma, E2Theta=E2Theta, VGamma=VGamma, VTheta=VTheta)

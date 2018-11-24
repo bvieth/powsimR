@@ -8,7 +8,7 @@ estimateSpike(spikeData,
 spikeInfo,
 MeanFragLength = NULL,
 batchData = NULL,
-normalisation=c('depth','none'))
+Normalisation=c('depth','none'))
 }
 \arguments{
 \item{spikeData}{is a count \code{matrix}. Rows correspond to spike-ins, columns to samples.
@@ -27,7 +27,7 @@ The order of rows should be the same as the columns in \code{spikeData}.
 The rownames should be the same as the column names of spikeData.
 The first column should contain the batch annotation, e.g. 'a' for batch 1, 'b' for batch 2.}
 
-\item{normalisation}{is a character value: 'depth' or 'none'. For more information, please consult the details section.}
+\item{Normalisation}{is a character value: 'depth' or 'none'. For more information, please consult the details section.}
 }
 \value{
 List object with the following entries:
@@ -66,7 +66,7 @@ spike_param <- estimateSpike(spikeData = scrbseq_spike_cnts,
 spikeInfo = spike_info,
 MeanFragLength = NULL,
 batchData = batch_info,
-normalisation = 'depth')
+Normalisation = 'depth')
 }
 }
 \author{

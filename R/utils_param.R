@@ -24,18 +24,18 @@
   lfc = log2(fc)
 
   res = data.frame(geneIndex=rownames(countData),
-                    means=means,
-                    dispersion=dispersion,
-                    dropout=dropout,
-                    lfcs=lfc,
-                    stringsAsFactors = F)
+                   means=means,
+                   dispersion=dispersion,
+                   dropout=dropout,
+                   lfcs=lfc,
+                   stringsAsFactors = F)
   return(res)
 }
 
 # checkup -----------------------------------------------------------------
 
 #' @importFrom SingleCellExperiment SingleCellExperiment
-#' @importFrom scater calculateQCMetrics isOutlier calcAverage
+#' @importFrom scater isOutlier calcAverage
 #' @importFrom BiocGenerics counts
 .run.checkup <- function(countData,
                          batchData,
@@ -44,20 +44,36 @@
                          Lengths,
                          MeanFragLengths,
                          RNAseq,
-                         verbose) {
+                         verbose){
+  if (!is.null(batchData) && !is.null(countData)){
+    if(!ncol(countData) == nrow(batchData)) {
+      stop(message(paste0("The batch information data frame and the count matrix have not the same number of samples.")))
+    }
+    if(ncol(countData) == nrow(batchData)){
+      if (!is.null(batchData) && is.null(rownames(batchData)) && is.null(colnames(countData)) ) {
+        rownames(batchData) <- paste0("S", 1:nrow(batchData))
+        colnames(countData) <- paste0("S", 1:ncol(countData))
+        message(paste0("No samples names were provided so that pseudo sample names are assigned."))
+      }
+      if (!is.null(batchData) && is.null(rownames(batchData)) && !is.null(colnames(countData)) ) {
+        rownames(batchData) <- colnames(countData)
+        message(paste0("No samples names were provided for batch information but countData has sample names, so that these names are assigned."))
+      }
+      if (!is.null(batchData) && !is.null(rownames(batchData)) && !is.null(colnames(countData)) ) {
+        if (!all(rownames(batchData) %in% colnames(countData))){
+          stop(message(paste0("The batch information data frame and the count matrix have not the same sample names.")))
+        }
+      }
+    }
+  }
 
-  if (!is.null(batchData) && is.null(rownames(batchData)) && is.null(colnames(countData)) ) {
-    rownames(batchData) <- paste0("S", 1:nrow(batchData))
-    message(paste0("No samples names were provided for batch information so that pseudo sample names are assigned."))
-  }
-  if (!is.null(batchData) && is.null(rownames(batchData)) && !is.null(colnames(countData)) ) {
-    rownames(batchData) <- colnames(countData)
-    message(paste0("No samples names were provided for batch information so that pseudo sample names are assigned."))
-  }
   if (!is.null(Lengths) && is.null(names(Lengths)) && is.null(rownames(countData)) ) {
     stop(message(paste0("The gene lengths vector and the count data have no names so that correct matching is not possible. Please provide names in both input objects.")))
   }
   if (!is.null(Lengths) && !is.null(names(Lengths)) && !is.null(rownames(countData)) ) {
+    if( any(duplicated(Lengths), duplicated(rownames(countData))) ) {
+      stop(message(paste0("The gene lengths vector and/or the count data have duplicated gene ID entries. Please provide objects with unique names only.")))
+    }
     if (length(setdiff(rownames(countData), names(Lengths))) > 0) {
       stop(message(paste0("The gene lengths vector and the count data have nonoverlapping gene ID entries. Please provide matching objects.")))
     }
@@ -120,14 +136,30 @@
   if(RNAseq == 'singlecell') {
     # create SingleCellExperiment
     sce <- SingleCellExperiment::SingleCellExperiment(assays = list(counts = as.matrix(countData)))
-    # apply quality filters
+    # apply quality filters: these metrics have constantly changing names, depending on scater version; i just now calculate the two myself
     sce <- scater::calculateQCMetrics(sce)
-    # define outlier cells
-    libsize.drop <- scater::isOutlier(sce$total_counts, nmads=3, type="both", log=TRUE)
-    feature.drop <- scater::isOutlier(sce$total_features, nmads=3, type="both", log=TRUE)
+
+    if(!is.null(batchData)){
+      bData <- as.vector(batchData[, 1])
+    }
+    if(is.null(batchData)){
+      bData <- NULL
+    }
+    # define outlier cells using sequencing depth and detected features
+    totCounts <- colSums(countData)
+    libsize.drop <- scater::isOutlier(totCounts, nmads=3, type="both",
+                                      log=TRUE, batch = bData)
+    totFeatures <- colSums(countData>0)
+    feature.drop <- scater::isOutlier(totFeatures, nmads=3, type="both",
+                                      log=TRUE, batch = bData)
     # kick out lowly expressed genes
     ave.counts <- scater::calcAverage(sce)
-    keep <- ave.counts >= 0.2
+    keep <- ave.counts >= 0.1
+    if(verbose) {
+      message(paste0(sum(c(libsize.drop | feature.drop)), " cells out of ", length(libsize.drop), " were determined to be outliers and removed prior to parameter estimation."))
+      message(paste0(sum(!keep), " genes out of ", length(keep), " are very lowly expressed and removed prior to parameter estimation."))
+    }
+
     # kick out features / cells that do not pass thresholds
     sce <- sce[keep,!(libsize.drop | feature.drop)]
 
@@ -176,7 +208,8 @@
                           MeanFragLengths,
                           Distribution,
                           RNAseq,
-                          normalisation,
+                          Normalisation,
+                          Label,
                           NCores,
                           sigma,
                           verbose) {
@@ -199,7 +232,7 @@
 
   if(!is.null(spikeData) && !is.null(spikeInfo)) {
     # kick out undetected spike-ins
-    spikeData <- spikeData[rowSums(spikeData)>0, colSums(spikeData)>100]
+    spikeData <- spikeData[rowSums(spikeData)>0, fullS]
     if(verbose) {message(paste0(nrow(spikeData), " spike-ins have been detected in ", ncol(spikeData), " samples."))}
     # sort them if needed
     spikeInfo <- spikeInfo[rownames(spikeInfo) %in% rownames(spikeData), , drop = FALSE]
@@ -211,7 +244,7 @@
 
   if(!is.null(spikeData) && is.null(spikeInfo)) {
     # kick out undetected spike-ins
-    spikeData <- spikeData[rowSums(spikeData)>0, colSums(spikeData)>100]
+    spikeData <- spikeData[rowSums(spikeData)>0, fullS]
     if(verbose) { message(paste0(nrow(spikeData), " spike-ins have been detected in ", ncol(spikeData), " samples."))}
     if(nrow(spikeData)<10) {
       stop(message(paste0("Not enough spike-ins detected to allow reliable normalusation. Please proceed with spike-in indepdent methods, e.g. TMM, scran, SCnorm etc.")))
@@ -222,7 +255,8 @@
   grand.dropout <- sum(countData0)/(nrow(countData)*ncol(countData))
 
   # normalisation
-  NormData <- .norm.calc(normalisation=normalisation,
+  NormData <- .norm.calc(Normalisation=Normalisation,
+                         Label=Label,
                          countData=countData,
                          spikeData=spikeData,
                          spikeInfo=spikeInfo,

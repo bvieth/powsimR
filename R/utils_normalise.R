@@ -1,7 +1,7 @@
 
 # Normalisation Wrapper ---------------------------------------------------
 
-.norm.calc <- function(normalisation,
+.norm.calc <- function(Normalisation,
                        sf,
                        countData,
                        spikeData,
@@ -10,40 +10,48 @@
                        Lengths,
                        MeanFragLengths,
                        PreclustNumber,
+                       Label,
                        NCores,
                        verbose) {
-  if(normalisation=='TMM') {NormData <- .TMM.calc(countData = countData,
+  if(Normalisation=='TMM') {NormData <- .TMM.calc(countData = countData,
                                                   verbose = verbose)}
-  if(normalisation=='UQ') {NormData <- .UQ.calc(countData = countData,
+  if(Normalisation=='UQ') {NormData <- .UQ.calc(countData = countData,
                                                 verbose = verbose)}
-  if(normalisation=='MR') {NormData <- .MR.calc(countData = countData,
+  if(Normalisation=='MR') {NormData <- .MR.calc(countData = countData,
                                                 spikeData = spikeData,
                                                 verbose = verbose)}
-  if(normalisation=='PosCounts') {NormData <- .PosCounts.calc(countData = countData,
+  if(Normalisation=='PosCounts') {NormData <- .PosCounts.calc(countData = countData,
                                                               spikeData = spikeData,
                                                               verbose = verbose)}
-  if(normalisation=='Linnorm') {NormData <- .linnormnorm.calc(countData = countData,
-                                                          spikeData = spikeData,
-                                                          verbose = verbose)}
-  if(normalisation=='scran' && is.null(PreclustNumber)) {NormData <- .scran.calc(countData = countData,
-                                                      spikeData = spikeData,
-                                                      verbose = verbose)}
-  if(normalisation=='scran' && !is.null(PreclustNumber)) {NormData <- suppressWarnings(
+  if(Normalisation=='Linnorm') {NormData <- .linnormnorm.calc(countData = countData,
+                                                              spikeData = spikeData,
+                                                              verbose = verbose)}
+  if(Normalisation=='scran' && Label == "none") {NormData <- .scran.calc(countData = countData,
+                                                                         spikeData = spikeData,
+                                                                         verbose = verbose)}
+  if(Normalisation=='scran' && Label == "known") {NormData <- .scrangroups.calc(countData = countData,
+                                                                                batchData = batchData,
+                                                                                verbose = verbose)}
+  if(Normalisation=='scran' && Label == "clustering") {NormData <- suppressWarnings(
     .scranclust.calc(countData = countData,
                      PreclustNumber = PreclustNumber,
                      verbose = verbose))}
-  if(normalisation=='SCnorm' && is.null(PreclustNumber)) {NormData <- .SCnorm.calc(countData = countData,
-                                                        spikeData = spikeData,
-                                                        batchData = batchData,
-                                                        NCores = NCores,
-                                                        verbose = verbose)}
-  if(normalisation=='SCnorm' && !is.null(PreclustNumber)) {NormData <- .SCnormclust.calc(countData = countData,
-                                                        spikeData = spikeData,
-                                                        batchData = batchData,
-                                                        PreclustNumber=PreclustNumber,
-                                                        NCores = NCores,
-                                                        verbose = verbose)}
-  if(normalisation=='Census') {NormData <- .Census.calc(countData=countData,
+  if(Normalisation=='SCnorm' && Label == "none") {NormData <- .SCnorm.calc(countData = countData,
+                                                                           spikeData = spikeData,
+                                                                           batchData = NULL,
+                                                                           NCores = NCores,
+                                                                           verbose = verbose)}
+  if(Normalisation=='SCnorm' && Label == "known") {NormData <- .SCnorm.calc(countData = countData,
+                                                                           spikeData = spikeData,
+                                                                           batchData = batchData,
+                                                                           NCores = NCores,
+                                                                           verbose = verbose)}
+  if(Normalisation=='SCnorm' && Label == "clustering") {NormData <- .SCnormclust.calc(countData = countData,
+                                                                                      spikeData = spikeData,
+                                                                                      PreclustNumber=PreclustNumber,
+                                                                                      NCores = NCores,
+                                                                                      verbose = verbose)}
+  if(Normalisation=='Census') {NormData <- .Census.calc(countData=countData,
                                                         batchData=batchData,
                                                         Lengths=Lengths,
                                                         MeanFragLengths=MeanFragLengths,
@@ -51,21 +59,21 @@
                                                         spikeInfo = spikeInfo,
                                                         NCores=NCores,
                                                         verbose=verbose)}
-  if(normalisation=='RUV') {NormData <- .RUV.calc(countData = countData,
+  if(Normalisation=='RUV') {NormData <- .RUV.calc(countData = countData,
                                                   spikeData = spikeData,
                                                   batchData = batchData,
                                                   verbose = verbose)}
-  # if(normalisation=='BASiCS') {NormData <- .BASiCS.calc(countData = countData,
+  # if(Normalisation=='BASiCS') {NormData <- .BASiCS.calc(countData = countData,
   #                                                       spikeData = spikeData,
   #                                                       spikeInfo = spikeInfo,
   #                                                       batchData = batchData,
   #                                                       verbose = verbose)}
-  if(normalisation=='depth') {NormData <- .depth.calc(countData = countData,
+  if(Normalisation=='depth') {NormData <- .depth.calc(countData = countData,
                                                       verbose = verbose)}
-  if(normalisation=='SF') {NormData <- .sf.calc(countData = countData,
+  if(Normalisation=='SF') {NormData <- .sf.calc(countData = countData,
                                                   sf=sf,
                                                   verbose = verbose)}
-  if(normalisation=='none') {NormData <- .none.calc(countData = countData,
+  if(Normalisation=='none') {NormData <- .none.calc(countData = countData,
                                                     verbose = verbose)}
   return(NormData)
 }
@@ -190,32 +198,55 @@
     cnts = countData
     spikeID = NULL
   }
-  invisible(utils::capture.output(
-    linnorm.out <- suppressMessages(Linnorm::Linnorm.Norm(datamatrix=cnts, # matrix/data.frame of raw counts
-                                                          RowSamples = FALSE, # if I would switch gene and samples position in input
-                                                          spikein = spikeID, # names of the spike-ins
-                                                          spikein_log2FC = NULL,  # LFC of spike-ins, assume mix 1, so no
-                                                          showinfo = TRUE, # verbosity, I needed to set it to TRUE otherwise this error occured: Error in MeanSDSkew[2, ] : incorrect number of dimensions
-                                                          output = "Raw", # type of output: raw, ie  total count output will  be equal to median of input counts
-                                                          minNonZeroPortion = 0.75, # minimum porportion of nonzero values per gene
-                                                          BE_F_p = 0.3173, # p-value cutoff for standard deviation and skewness testing of batch effect normalisation
-                                                          BE_F_LC_Genes = "Auto", # porportion of lowly expressed genes to filter before batch effect normalisation
-                                                          BE_F_HC_Genes = 0.01, # proportion of highly expressed genes to filter before batch effect normalisation
-                                                          BE_strength = 0.5, # strength of batch effect normalisation
-                                                          max_F_LC = 0.75) # maximum threshold for filtering of low and high expression
-    )
-  ))
 
+  if(isTRUE(verbose)) {
+    message(paste0("Linnorm messages:"))
+    linnorm.out <- Linnorm::Linnorm.Norm(datamatrix = cnts, # matrix/data.frame of raw counts
+                                         RowSamples = FALSE, # if I would switch gene and samples position in input
+                                         spikein = spikeID, # names of the spike-ins
+                                         spikein_log2FC = NULL,  # LFC of spike-ins, assume mix 1, so no
+                                         showinfo = TRUE, # verbosity
+                                         output = "Raw", # type of output: raw, ie  total count output will  be equal to median of input counts
+                                         minNonZeroPortion = 0.5, # minimum porportion of nonzero values per gene, needed to put this to lower value otherwise 0 and NA normalized count matrix!
+                                         BE_F_p = 0.3173, # p-value cutoff for standard deviation and skewness testing of batch effect normalisation
+                                         BE_F_LC_Genes = "Auto", # porportion of lowly expressed genes to filter before batch effect normalisation
+                                         BE_F_HC_Genes = 0.01, # proportion of highly expressed genes to filter before batch effect normalisation
+                                         BE_strength = 0.5, # strength of batch effect normalisation
+                                         max_F_LC = 0.75) # maximum threshold for filtering of low and high expression
+  }
 
+  if(!isTRUE(verbose)) {
+    invisible(utils::capture.output(
+      linnorm.out <- suppressMessages(Linnorm::Linnorm.Norm(datamatrix = cnts, # matrix/data.frame of raw counts
+                                                            RowSamples = FALSE, # if I would switch gene and samples position in input
+                                                            spikein = spikeID, # names of the spike-ins
+                                                            spikein_log2FC = NULL,  # LFC of spike-ins, assume mix 1, so no
+                                                            showinfo = TRUE, # verbosity
+                                                            output = "Raw", # type of output: raw, ie  total count output will  be equal to median of input counts
+                                                            minNonZeroPortion = 0.5, # minimum porportion of nonzero values per gene
+                                                            BE_F_p = 0.3173, # p-value cutoff for standard deviation and skewness testing of batch effect normalisation
+                                                            BE_F_LC_Genes = "Auto", # porportion of lowly expressed genes to filter before batch effect normalisation
+                                                            BE_F_HC_Genes = 0.01, # proportion of highly expressed genes to filter before batch effect normalisation
+                                                            BE_strength = 0.5, # strength of batch effect normalisation
+                                                            max_F_LC = 0.75) # maximum threshold for filtering of low and high expression
+      )
+    ))
+
+  }
 
   norm.counts <- linnorm.out[!grepl(pattern="ERCC", rownames(linnorm.out)),]
-  gsf <-  t(t(countData)/t(norm.counts))
-  sf <- apply(gsf, 2, stats::median, na.rm=T)
-  sf <- sf*length(sf)/sum(sf)
+  gsf <-  countData / norm.counts
+  wmu <- rowMeans(norm.counts, na.rm = TRUE)
+  sf <- apply(gsf, 2, function(x) {
+    stats::weighted.mean(x = x, w = wmu, na.rm = TRUE)
+  })
+  sf[is.infinite(sf)] <- mean(sf[is.finite(sf)])
   names(sf) <- colnames(countData)
+
   res <- list(NormCounts=norm.counts,
               RoundNormCounts=round(norm.counts),
-              size.factors=sf)
+              size.factors=sf,
+              scale.factors=gsf)
   attr(res, 'normFramework') <- "Linnorm"
   return(res)
 }
@@ -274,15 +305,69 @@
   return(res)
 }
 
+#' @importFrom scran computeSumFactors
+#' @importFrom SingleCellExperiment SingleCellExperiment
+.scrangroups.calc <- function(countData, batchData, verbose) {
+  if (verbose) { message(paste0("Deconvolution within groups.")) }
+
+  sce <- SingleCellExperiment::SingleCellExperiment(assays = list(counts = as.matrix(countData)))
+
+  if(is.vector(batchData)) {
+    clusters <- as.factor(batchData)
+  }
+  if(!is.vector(batchData)) {
+    clusters <- as.factor(batchData[,1])
+  }
+
+  if(ncol(countData)<=14) {
+    sizes <- unique(c(round(seq(from=2, to=min(table(clusters))-1, by = 1))))
+    sf <- scran::computeSumFactors(sce,
+                                   sizes=sizes,
+                                   clusters = clusters,
+                                   positive=FALSE, sf.out=TRUE)
+  }
+  if(ncol(countData)>14 & ncol(countData)<=50) {
+    sizes <- unique(c(round(seq(from=2, to=min(table(clusters))-1, length.out=6))))
+    sf <- scran::computeSumFactors(sce,
+                                   sizes=sizes,
+                                   clusters = clusters,
+                                   positive=FALSE, sf.out=TRUE)
+  }
+  if(ncol(countData)>50 & ncol(countData)<=1000) {
+    sizes <- unique(c(round(seq(from=10, to=min(table(clusters))-1, length.out=6))))
+    sf <- scran::computeSumFactors(sce,
+                                   sizes=sizes,
+                                   clusters = clusters,
+                                   positive=FALSE, sf.out=TRUE)
+  }
+  if(trunc(ncol(countData))>1000) {
+    sizes <- unique(c(round(seq(from=20, to=min(table(clusters))-1, length.out=6))))
+    sf <- scran::computeSumFactors(sce,
+                                   sizes = sizes,
+                                   clusters = clusters,
+                                   positive=FALSE,
+                                   sf.out=TRUE)
+  }
+
+  names(sf) <- colnames(countData)
+  norm.counts <- t(t(countData)/sf)
+  res <- list(NormCounts=norm.counts,
+              RoundNormCounts=round(norm.counts),
+              size.factors=sf)
+  attr(res, 'normFramework') <- "scran"
+  return(res)
+}
+
+
 #' @importFrom scran computeSumFactors quickCluster
 #' @importFrom SingleCellExperiment SingleCellExperiment
 .scranclust.calc <- function(countData, PreclustNumber, verbose) {
-  sce <- SingleCellExperiment::SingleCellExperiment(assays = list(counts = as.matrix(countData)))
-
   if (verbose) { message(paste0("Deconvolution within clusters.")) }
 
+  sce <- SingleCellExperiment::SingleCellExperiment(assays = list(counts = as.matrix(countData)))
+
   if(ncol(countData)<=14) {
-    clusters <- scran::quickCluster(sce, method="hclust", min.size=floor(PreclustNumber/2))
+    clusters <- scran::quickCluster(sce, method="hclust", min.size=floor(PreclustNumber*0.75))
     sizes <- unique(c(round(seq(from=2, to=min(table(clusters))-1, by = 1))))
     sf <- scran::computeSumFactors(sce,
                                    sizes=sizes,
@@ -290,7 +375,7 @@
                                    positive=FALSE, sf.out=TRUE)
   }
   if(ncol(countData)>14 & ncol(countData)<=50) {
-    clusters <- scran::quickCluster(sce, method="hclust", min.size=floor(PreclustNumber/2))
+    clusters <- scran::quickCluster(sce, method="hclust", min.size=floor(PreclustNumber*0.75))
     sizes <- unique(c(round(seq(from=2, to=min(table(clusters))-1, length.out=6))))
     sf <- scran::computeSumFactors(sce,
                                    sizes=sizes,
@@ -298,7 +383,7 @@
                                    positive=FALSE, sf.out=TRUE)
   }
   if(ncol(countData)>50 & ncol(countData)<=1000) {
-    clusters <- scran::quickCluster(sce, method="hclust", min.size=floor(PreclustNumber/2))
+    clusters <- scran::quickCluster(sce, method="hclust", min.size=floor(PreclustNumber*0.75))
     sizes <- unique(c(round(seq(from=10, to=min(table(clusters))-1, length.out=6))))
     sf <- scran::computeSumFactors(sce,
                                    sizes=sizes,
@@ -306,7 +391,7 @@
                                    positive=FALSE, sf.out=TRUE)
   }
   if(ncol(countData)>1000 & ncol(countData)<=5000) {
-    clusters <- scran::quickCluster(sce, method="hclust", min.size=floor(PreclustNumber/2))
+    clusters <- scran::quickCluster(sce, method="hclust", min.size=floor(PreclustNumber*0.75))
     sizes <- unique(c(round(seq(from=20, to=min(table(clusters))-1, length.out=6))))
     sf <- scran::computeSumFactors(sce,
                                    sizes=sizes,
@@ -314,21 +399,25 @@
                                    positive=FALSE, sf.out=TRUE)
   }
   if(ncol(countData)>5000) {
-    clusters <- scran::quickCluster(sce, method="igraph", min.size=floor(PreclustNumber/2))
+    clusters <- scran::quickCluster(sce, method="igraph", min.size=floor(PreclustNumber*0.75))
     sizes <- unique(c(round(seq(from=20, to=min(table(clusters))-1, length.out=6))))
     sf <- scran::computeSumFactors(sce,
                                    sizes=sizes,
                                    cluster=clusters,
                                    positive=FALSE, sf.out=TRUE)
   }
+
   names(sf) <- colnames(countData)
   norm.counts <- t(t(countData)/sf)
   res <- list(NormCounts=norm.counts,
               RoundNormCounts=round(norm.counts),
               size.factors=sf)
-  attr(res, 'normFramework') <- "scranCLUST"
+  attr(res, 'normFramework') <- "scran"
   return(res)
 }
+
+
+
 
 # SCnorm -----------------------------------------------------
 
@@ -358,9 +447,15 @@
     cond <- rep('a', ncol(cnts))
   }
 
-  if (verbose) { message(paste0("Using DE-group annotation.")) }
+  if (verbose) {
+    if(is.null(batchData)) {
+      message(paste0("No group annotation considered."))
+    }
+    if(!is.null(batchData)) {
+      message(paste0("Using group annotation."))
+    }
 
-  NCores = NULL # that is for the servers
+    }
 
   ncores = ifelse(is.null(NCores), 1, NCores)
 
@@ -411,24 +506,37 @@
     ))
   }
 
-  norm.counts <- scnorm.out@metadata$NormalizedData[!grepl(pattern="ERCC",
-                                                           rownames(scnorm.out@metadata$NormalizedData)),]
-  scale.facts <- scnorm.out@metadata$ScaleFactors[!grepl(pattern="ERCC",
-                                                         rownames(scnorm.out@metadata$ScaleFactors)),]
+  if(class(scnorm.out) == "SingleCellExperiment") {
+    norm.counts <- scnorm.out@assays$data$normcounts[!grepl(pattern="ERCC",
+                                                             rownames(scnorm.out@assays$data$normcounts)),]
+    scale.facts <- scnorm.out@metadata$ScaleFactors[!grepl(pattern="ERCC",
+                                                           rownames(scnorm.out@metadata$ScaleFactors)),]
+    gsf <- scale.facts
+  }
+  if(class(scnorm.out) == "SummarizedExperiment") {
+    norm.counts <- scnorm.out@metadata$NormalizedData[!grepl(pattern="ERCC",
+                                                             rownames(scnorm.out@metadata$NormalizedData)),]
+    scale.facts <- scnorm.out@metadata$ScaleFactors[!grepl(pattern="ERCC",
+                                                           rownames(scnorm.out@metadata$ScaleFactors)),]
+    gsf <- scnorm.out@metadata$ScaleFactors
+    rownames(gsf) <- rownames(cnts)
+    colnames(gsf) <- colnames(cnts)
+    gsf <- gsf[!grepl(pattern="ERCC", rownames(gsf)),]
+  }
+
   wmu <- rowMeans(norm.counts, na.rm = TRUE)
   sf <- apply(scale.facts, 2, function(x) {
     stats::weighted.mean(x = x, w = wmu, na.rm = TRUE)
     })
   sf[is.infinite(sf)] <- mean(sf[is.finite(sf)])
   names(sf) <- colnames(cnts)
-  gsf <- scnorm.out@metadata$ScaleFactors
-  rownames(gsf) <- rownames(cnts)
-  colnames(gsf) <- colnames(cnts)
-  gsf <- gsf[!grepl(pattern="ERCC", rownames(gsf)),]
+
   res <- list(NormCounts=norm.counts,
               RoundNormCounts=round(norm.counts),
               size.factors=sf,
               scale.factors=gsf)
+
+
   attr(res, 'normFramework') <- "SCnorm"
 
   invisible(gc()) # hopefully this helps with the resource issue
@@ -439,7 +547,8 @@
 #' @importFrom SCnorm SCnorm
 #' @importFrom parallel detectCores
 #' @importFrom stats weighted.mean
-.SCnormclust.calc <- function(countData, spikeData, batchData, PreclustNumber, NCores, verbose) {
+#' @importFrom scran quickCluster
+.SCnormclust.calc <- function(countData, spikeData, PreclustNumber, NCores, verbose) {
 
   spike = ifelse(is.null(spikeData), FALSE, TRUE)
   if(spike==TRUE) {
@@ -451,16 +560,14 @@
   }
 
   if(ncol(countData)<=5000) {
-    clusters <- scran::quickCluster(cnts, method="hclust", min.size=floor(PreclustNumber/2))
+    clusters <- scran::quickCluster(cnts, method="hclust", min.size=floor(PreclustNumber*0.75))
   }
   if(ncol(countData)>5000) {
-    clusters <- scran::quickCluster(cnts, method="igraph", min.size=floor(PreclustNumber/2))
+    clusters <- scran::quickCluster(cnts, method="igraph", min.size=floor(PreclustNumber*0.75))
   }
   cond <- as.character(clusters)
 
-  if (verbose) { message(paste0("SCnorm with preclustering.")) }
-
-  NCores = NULL # that is for the servers
+  if (verbose) { message(paste0("SCnorm with preclustering to define groups.")) }
 
   ncores = ifelse(is.null(NCores), 1, NCores)
 
@@ -490,17 +597,33 @@
                                useSpikes = spike,
                                useZerosToScale = FALSE)
 
-  wmu <- rowMeans(scnorm.out@metadata$NormalizedData)
-  sf <- apply(scnorm.out@metadata$ScaleFactors, 2, function(x) {
+  if(class(scnorm.out) == "SingleCellExperiment") {
+    norm.counts <- scnorm.out@assays$data$normcounts[!grepl(pattern="ERCC",
+                                                            rownames(scnorm.out@assays$data$normcounts)),]
+    scale.facts <- scnorm.out@metadata$ScaleFactors[!grepl(pattern="ERCC",
+                                                           rownames(scnorm.out@metadata$ScaleFactors)),]
+    gsf <- scale.facts
+  }
+  if(class(scnorm.out) == "SummarizedExperiment") {
+    norm.counts <- scnorm.out@metadata$NormalizedData[!grepl(pattern="ERCC",
+                                                             rownames(scnorm.out@metadata$NormalizedData)),]
+    scale.facts <- scnorm.out@metadata$ScaleFactors[!grepl(pattern="ERCC",
+                                                           rownames(scnorm.out@metadata$ScaleFactors)),]
+    gsf <- scnorm.out@metadata$ScaleFactors
+    rownames(gsf) <- rownames(cnts)
+    colnames(gsf) <- colnames(cnts)
+    gsf <- gsf[!grepl(pattern="ERCC", rownames(gsf)),]
+  }
+
+  wmu <- rowMeans(norm.counts, na.rm = TRUE)
+  sf <- apply(scale.facts, 2, function(x) {
     stats::weighted.mean(x = x, w = wmu, na.rm = TRUE)
   })
+  sf[is.infinite(sf)] <- mean(sf[is.finite(sf)])
   names(sf) <- colnames(cnts)
-  gsf <- scnorm.out@metadata$ScaleFactors
-  rownames(gsf) <- rownames(cnts)
-  colnames(gsf) <- colnames(cnts)
-  gsf <- gsf[!grepl(pattern="ERCC", rownames(gsf)),]
-  res <- list(NormCounts=scnorm.out@metadata$NormalizedData,
-              RoundNormCounts=round(scnorm.out@metadata$NormalizedData),
+
+  res <- list(NormCounts=norm.counts,
+              RoundNormCounts=round(norm.counts),
               size.factors=sf,
               scale.factors=gsf)
   attr(res, 'normFramework') <- "SCnorm"

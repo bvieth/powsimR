@@ -27,9 +27,9 @@ If the user defines it as given, the size factors are sampled from the size fact
 
 \item{downsample}{Drawing the associated dispersions after determining effective mean expressions by size factors. Default is \code{FALSE}.}
 
-\item{geneset}{Sampling with replacement or filling count tables low magnitude Poisson
+\item{geneset}{Sampling with replacement or filling count tables with low magnitude Poisson
 when the estimated mean expression vector is shorter than the number of genes to be simulated.
-Default is \code{FALSE}, i.e. sampling means with replacement.}
+Default is \code{FALSE}, i.e. random sampling of mean expression values with replacement.}
 }
 \value{
 A list with the following entries:

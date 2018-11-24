@@ -7,8 +7,8 @@
 simulateDE(n1=c(20,50,100), n2=c(30,60,120),
 sim.settings,
 DEmethod,
-normalisation,
-Preclust = FALSE,
+Normalisation,
+Label = "none",
 Prefilter = NULL,
 Impute = NULL,
 DEFilter = FALSE,
@@ -17,19 +17,19 @@ NCores = NULL,
 verbose = TRUE)
 }
 \arguments{
-\item{n1, n2}{Integer vectors specifying the number of biological replicates in each group. Default values are n1=c(20,50,100) and n2=c(30,60,120).}
+\item{n1, n2}{Integer vectors specifying the number of biological replicates in each group.
+Default values are n1=c(20,50,100) and n2=c(30,60,120).}
 
 \item{sim.settings}{This object specifies the simulation setup. This must be the return object from \code{\link{SimSetup}}.}
 
 \item{DEmethod}{A character vector specifying the DE detection method to be used.
 Please consult the Details section for available options.}
 
-\item{normalisation}{Normalisation method to use.
+\item{Normalisation}{Normalisation method to use.
 Please consult the Details section for available options.}
 
-\item{Preclust}{A logical vector indicating whether to run a hierarchical clustering prior to normalisation.
-This is implemented for scran only. Default is \code{FALSE}.
-For details, see \code{\link[scran]{quickCluster}}.}
+\item{Label}{A character vector to define whether information about group labels should be used for normalisation.
+This is only implemented for scran and SCnorm. Possible options include the default \code{"none"} which means that no sample group information is considered for normalisation; \code{"known"} means that the simulated group labels are used and \code{"clustering"} which applies an unsupervised hierarchical clustering to determine the group labels (for details, see \code{\link[scran]{quickCluster}}).}
 
 \item{Prefilter}{A character vector specifying the gene expression filtering method
 to be used prior to normalisation (and possibly imputation).
@@ -59,10 +59,11 @@ A list with the following fields:
 Note that FDR values will be empty and the calculation will be done by \code{\link{evaluateDE}} whenever applicable.}
 \item{mu,disp,dropout}{3D (ngenes * N * nsims) array for mean, dispersion and dropout of library size factor normalized read counts.}
 \item{true.mu,true.disp,true.dropout}{3D (ngenes * N * nsims) array for true mean, dispersion and dropout of simulated read counts.}
+\item{true.depth}{True simulated sequencing depth per sample.}
+\item{est.sf}{Global library size factor estimates per sample.}
+\item{est.gsf}{3D array (ngenes * N * nsims) for size factor estimates. These are gene- and sample-wise estimates and only for SCnorm and Linnorm normalisation.}
 \item{elfc,rlfc}{3D array (ngenes * N * nsims) for log2 fold changes (LFC):
 elfc is for the DE tool estimated LFC; rlfc is for the LFC estimated from the normalised read counts.}
-\item{sf.values,gsf.values}{3D array (ngenes * N * nsims) for size factor estimates.
-Global estimates per sample in sf.values; Gene- and sample-wise estimates in gsf.values only for SCnorm normalisation.}
 \item{sim.settings}{The input sim.settings to which the specifications of \code{simulateDE} is added.}
 \item{time.taken}{The time taken for each simulation, given for preprocessing, normalisation, differential expression testing and moment estimation.}
 }
@@ -89,8 +90,7 @@ Here you can find detailed information about preprocessing, imputation, normalis
 \section{Imputation prior to normalisation}{
 
 \describe{
-\item{scImpute}{employs scImpute method of imputing dropouts as implemented
-in \code{\link[scImpute]{scimpute}}. Imputation is only carried out for genes with more than 50 percent dropout. Please consider multiple cores to speed up computation.}
+\item{scImpute}{employs scImpute method of imputing dropouts. Imputation is only carried out for genes with more than 50 percent dropout. Please consider multiple cores to speed up computation.}
 \item{DrImpute}{employs DrImpute method of imputing dropouts as implemented
 in \code{\link[DrImpute]{DrImpute}}.}
 \item{SAVER}{employs SAVER method of imputing dropouts as implemented
@@ -125,6 +125,28 @@ Do not use this algorithm for UMI data!}
 }
 }
 
+\section{Differential testing using raw read count matrix}{
+
+\describe{
+\item{T-Test}{A T-Test per gene is applied using log2 transformed and normalized expression values (i.e. CPM or TPM).}
+\item{limma-trend, limma-voom}{apply differential testing as implemented in \code{\link[limma]{lmFit}}
+followed by \code{\link[limma]{eBayes}} on counts transformed by \code{\link[limma]{voom}} or by applying mean-variance trend on log2 CPM values in \code{\link[limma]{eBayes}}.}
+\item{edgeR-LRT, edgeR-QL}{apply differential testing as implemented in \code{\link[edgeR]{glmFit}}, \code{\link[edgeR]{glmLRT}} and\code{\link[edgeR]{glmQLFit}}, \code{\link[edgeR]{glmQLFTest}}, respectively.}
+\item{DESeq2}{applies differential testing as implemented in \code{\link[DESeq2]{DESeq}}.}
+\item{ROTS}{applies differential testing as implemented in \code{\link[ROTS]{ROTS}} with 100 permutations on transformed counts (\code{\link[limma]{voom}}).}
+\item{baySeq}{applies differential testing as implemented in \code{\link[baySeq]{getLikelihoods}} based on negative binomial prior estimates (\code{\link[baySeq]{getPriors.NB}}).}
+\item{NOISeq}{applies differential testing as implemented in \code{\link[NOISeq]{noiseqbio}} based on CPM values.}
+\item{EBSeq}{applies differential testing as implemented in \code{\link[EBSeq]{EBTest}}.}
+\item{MAST}{applies differential testing as implemented in \code{\link[MAST]{zlm}} for zero-inflated model fitting followed by \code{\link[MAST]{lrTest}} on log2 CPM values.}
+\item{scde}{applies differential testing as implemented in \code{\link[scde]{scde.expression.difference}}.}
+\item{BPSC}{applies differential testing as implemented in \code{\link[BPSC]{BPglm}} on CPM values.}
+\item{scDD}{applies differential testing as implemented in \code{\link[scDD]{scDD}} on CPM values.}
+\item{DECENT}{applies differential testing as implemented in \code{\link[DECENT]{decent}}.}
+\item{edgeR-zingeR, DESeq2-zingeR}{In a first step, the posterior probabilities of the zero-inflated negative binomial component are estimated (see \code{\link[zingeR]{zeroWeightsLS}}) and used to define a weight matrix for dispersion estimation in \code{\link[edgeR]{estimateDisp}}. For the edgeR approach, the generalized model as implemented in \code{\link[edgeR]{glmFit}} is fitted. This is followed by an adapted LRT for differential testing to account for the weighting (see \code{\link[zingeR]{glmWeightedF}}). For DESeq2, the generalized linear model coefficients are estimated using \code{\link[DESeq2]{nbinomWaldTest}} and the weighting is done by setting the degrees of freedom for the T distribution.}
+\item{edgeR-ZINB-WaVE, DESeq2-ZINB-WaVE}{In a first step, a zero-inflated negative binomial regression model  is fitted (see \code{\link[zinbwave]{zinbFit}}) to estimate observational weights (see \code{\link[zinbwave]{computeObservationalWeights}}) used for dispersion estimation in \code{\link[edgeR]{estimateDisp}}. For the edgeR approach, the generalized model as implemented in \code{\link[edgeR]{glmFit}} is fitted. This is followed by an adapted LRT for differential testing to account for the weighting (see \code{\link[zinbwave]{glmWeightedF}}). For DESeq2, the generalized linear model coefficients are estimated using \code{\link[DESeq2]{nbinomWaldTest}} and the weighting is done by setting the degrees of freedom for the T distribution.}
+}
+}
+
 \examples{
 \dontrun{
 ## define DE parameters and set up simulations
@@ -140,7 +162,7 @@ downsample = FALSE, geneset = FALSE)
 sim.res <- simulateDE(n1=c(50,96,384), n2=c(80,96,384),
 sim.settings = sim.opts,
 DEmethod = 'limma-trend',
-normalisation = 'scran',
+Normalisation = 'scran',
 Preclust = FALSE,
 Prefilter = "FreqFilter",
 Impute = NULL,

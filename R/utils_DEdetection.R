@@ -154,7 +154,7 @@
   # run DE testing
   design.mat <- stats::model.matrix( ~ DEOpts$designs)
   dge <- edgeR::estimateGLMRobustDisp(y=dge, design = design.mat)
-  if (attr(normData, 'normFramework') == 'SCnorm') {
+  if (attr(normData, 'normFramework')  %in% c('SCnorm', 'Linnorm')) {
     scale.facts <- normData$scale.factors
     ixx.valid <- rownames(countData) %in% rownames(scale.facts)
     wgenes <- countData
@@ -162,7 +162,7 @@
     wgenes[ixx.valid, ] <- scale.facts
     fit.edgeR <- edgeR::glmFit(dge, design = design.mat, weights = wgenes)
   }
-  if (!attr(normData, 'normFramework') == 'SCnorm') {
+  if (!attr(normData, 'normFramework') %in% c('SCnorm', 'Linnorm')) {
     fit.edgeR <- edgeR::glmFit(dge, design = design.mat)
   }
   lrt.edgeR <- edgeR::glmLRT(fit.edgeR)
@@ -373,7 +373,7 @@
   # run DE testing
   p.DE <- DEOpts$p.DE
   design.mat <- stats::model.matrix( ~ DEOpts$designs)
-  if (attr(normData, 'normFramework') == 'SCnorm') {
+  if (attr(normData, 'normFramework') %in% c('SCnorm', "Linnorm")) {
     scale.facts <- normData$scale.factors
     ixx.valid <- rownames(countData) %in% rownames(scale.facts)
     wgenes <- countData
@@ -381,7 +381,7 @@
     wgenes[ixx.valid, ] <- scale.facts
     v <- limma::voom(dge, design.mat, plot=FALSE, weights = wgenes)
   }
-  if (!attr(normData, 'normFramework') == 'SCnorm') {
+  if (!attr(normData, 'normFramework')  %in% c('SCnorm', "Linnorm")) {
     v <- limma::voom(dge, design.mat, plot=FALSE)
   }
   fit <- limma::lmFit(object = v, design = design.mat)
@@ -419,7 +419,7 @@
   y <- new("EList")
   y$E <- edgeR::cpm(dge, log = TRUE, prior.count = 3)
 
-  if (attr(normData, 'normFramework') == 'SCnorm') {
+  if (attr(normData, 'normFramework') %in% c('SCnorm', 'Linnorm')) {
     scale.facts <- normData$scale.factors
     ixx.valid <- rownames(countData) %in% rownames(scale.facts)
     wgenes <- countData
@@ -427,7 +427,7 @@
     wgenes[ixx.valid, ] <- scale.facts
     fit <- limma::lmFit(object = y, design = design.mat, weights = wgenes)
   }
-  if (!attr(normData, 'normFramework') == 'SCnorm') {
+  if (!attr(normData, 'normFramework') %in% c('SCnorm', 'Linnorm')) {
     fit <- limma::lmFit(object = y, design = design.mat)
   }
 
@@ -462,7 +462,7 @@
                                                          ignoreRank = FALSE))
   DESeq2::sizeFactors(dds) <- sf
 
-  if (attr(normData, 'normFramework') == 'SCnorm') {
+  if (attr(normData, 'normFramework') %in% c('SCnorm', 'Linnorm')) {
     scale.facts <- normData$scale.factors
     ixx.valid <- rownames(countData) %in% rownames(scale.facts)
     wgenes <- countData
@@ -1331,7 +1331,7 @@
 
   # Fit no-DE model
   invisible(utils::capture.output(
-  out.noDE <- suppressMessages(DECENT:::fitNoDE(data.obs,
+  out.noDE <- suppressMessages(DECENT::fitNoDE(data.obs,
                                spikes, spike.conc, use.spikes,
                                CE.range, tau.init, tau.global, tau.est,
                                normalize, GQ.approx, maxit, parallel))
@@ -1339,7 +1339,7 @@
 
   # Likelihood-ratio test
   invisible(utils::capture.output(
-  out <- suppressMessages(DECENT:::lrTest(data.obs, out = out.noDE,
+  out <- suppressMessages(DECENT::lrTest(data.obs, out = out.noDE,
                          X=X, W=W, tau= cbind(out.noDE$tau0, out.noDE$tau1),
                          parallel))
   ))

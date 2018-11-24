@@ -60,7 +60,7 @@
   nsf <- exp(nsf - mean(nsf, na.rm=T))
 
   # calculate TPM / CPM
-  if (!attr(normData, 'normFramework') == 'SCnorm') {
+  if (!attr(normData, 'normFramework') %in% c('SCnorm', 'Linnorm')) {
     if(!is.null(Lengths) & !is.null(MeanFragLengths)) {
       # Compute effective lengths of features in each library.
       effLen <- do.call(cbind, lapply(1:ncol(countData), function(i) {
@@ -88,7 +88,7 @@
       TPM <- t(t(countData) / norm.lib.size) * 1e6
     }
   }
-  if (attr(normData, 'normFramework') == 'SCnorm') {
+  if (attr(normData, 'normFramework') %in% c('SCnorm', 'Linnorm')) {
     # scaling factors for libs
     sf <- normData$size.factors
 
