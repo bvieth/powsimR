@@ -1,137 +1,69 @@
 # TODO
-# change behaviour of minus mean values
-# change the poisson filling?
-
+# change behaviour of minus mean values ?
 
 # Simulate DE between 2 groups (DE of mean) -------------------------------
 
 #' @importFrom stats model.matrix coef poisson sd
 .simRNAseq.2grp <- function(simOptions, n1, n2, verbose) {
 
-  if(is.null(simOptions$bLFC)) {
+  if(is.null(simOptions$DESetup$bLFC)) {
     ## make group labels for phenotype LFC
     phenotype <- c(rep(-1, n1), rep(1, n2))
     batch <- NULL
     ## make model matrix
-    mod = stats::model.matrix(~-1 + phenotype)
-    coeffs = cbind(simOptions$pLFC)
+    modelmatrix = stats::model.matrix(~-1 + phenotype)
+    coef.dat = cbind(simOptions$DESetup$pLFC)
   }
 
-  if(!is.null(simOptions$bLFC)) {
-    if(simOptions$bPattern=="uncorrelated") {
+  if(!is.null(simOptions$DESetup$bLFC)) {
+    if(simOptions$DESetup$bPattern=="uncorrelated") {
       # make group labels for phenotype LFC
       phenotype <- c(rep(-1, n1), rep(1, n2))
       # make batch labels for batch LFC
       batch <- rep_len(c(-1,1), n1+n2)
       # make model matrix
-      mod = stats::model.matrix(~-1 + phenotype + batch)
-      coeffs = cbind(simOptions$pLFC, simOptions$bLFC)
+      modelmatrix = stats::model.matrix(~-1 + phenotype + batch)
+      coef.dat = cbind(simOptions$DESetup$pLFC, simOptions$DESetup$bLFC)
     }
-    if(simOptions$bPattern=="orthogonal") {
+    if(simOptions$DESetup$bPattern=="orthogonal") {
       # make group labels for phenotype LFC
       phenotype <- c(rep(-1, n1), rep(1, n2))
       # make batch labels for batch LFC
       batch <-  1 - 2*rbinom(n1+n2, size=1, prob=0.5)
       # make model matrix
-      mod = stats::model.matrix(~-1 + phenotype + batch)
-      coeffs = cbind(simOptions$pLFC, simOptions$bLFC)
+      modelmatrix = stats::model.matrix(~-1 + phenotype + batch)
+      coef.dat = cbind(simOptions$DESetup$pLFC, simOptions$DESetup$bLFC)
     }
-    if(simOptions$bPattern=="correlated") {
+    if(simOptions$DESetup$bPattern=="correlated") {
       # make group labels for phenotype LFC
       phenotype <- c(rep(-1, n1), rep(1, n2))
       # make batch labels for batch LFC
       flip <- rbinom(n1+n2, size = 1, prob = 0.9)
       batch <- phenotype*flip + -phenotype*(1-flip)
       # make model matrix
-      mod = stats::model.matrix(~-1 + phenotype + batch)
-      coeffs = cbind(simOptions$pLFC, simOptions$bLFC)
+      modelmatrix = stats::model.matrix(~-1 + phenotype + batch)
+      coef.dat = cbind(simOptions$DESetup$pLFC, simOptions$DESetup$bLFC)
     }
   }
 
   # generate read counts
-  if (simOptions$RNAseq == "singlecell") {
-    # take mean dispersion relationship as is
-    if (!isTRUE(simOptions$downsample)) {
-      if (verbose) {message(paste0("Predict dispersion based on true mean values.")) }
-      if (attr(simOptions, 'Distribution') == 'NB') {
-        if (!isTRUE(simOptions$geneset)) {
-          if (verbose) {message(paste0("Sampling with replace.")) }
-          sim.data = .sc.NB.SampleWReplace_counts(sim.options = simOptions,
-                                                  phenotype = phenotype,
-                                                  modelmatrix = mod,
-                                                  coef.dat=coeffs)
-        }
-        if (isTRUE(simOptions$geneset)) {
-          if (verbose) {message(paste0("Fill in with low magnitude Poisson.")) }
-          sim.data = .sc.NB.FillIn_counts(sim.options = simOptions,
-                                          phenotype = phenotype,
-                                          modelmatrix = mod,
-                                          coef.dat=coeffs)
-        }
-      }
-      if (attr(simOptions, 'Distribution') == 'ZINB') {
-        if (!isTRUE(simOptions$geneset)) {
-          if (verbose) {message(paste0("Sampling with replace.")) }
-          sim.data = .sc.ZINB.SampleWReplace_counts(sim.options = simOptions,
-                                                    phenotype = phenotype,
-                                                    modelmatrix = mod,
-                                                    coef.dat=coeffs)
-        }
-        if (isTRUE(simOptions$geneset)) {
-          if (verbose) {message(paste0("Fill in with low magnitude Poisson.")) }
-          sim.data = .sc.ZINB.FillIn_counts(sim.options = simOptions,
-                                            phenotype = phenotype,
-                                            modelmatrix = mod,
-                                            coef.dat=coeffs)
-        }
-      }
-    }
-
-    # downsample mean and then draw dispersion
-    if (isTRUE(simOptions$downsample)) {
-      if (verbose) {message(paste0("Predict dispersion based on effective mean values.")) }
-      if (attr(simOptions, 'Distribution') == 'NB') {
-        if (!isTRUE(simOptions$geneset)) {
-          if (verbose) {message(paste0("Sampling with replace.")) }
-          sim.data = .sc.NB.SampleWReplace_downsample_counts(sim.options = simOptions,
-                                                             phenotype = phenotype,
-                                                             modelmatrix = mod,
-                                                             coef.dat=coeffs)
-        }
-        if (isTRUE(simOptions$geneset)) {
-          if (verbose) {message(paste0("Fill in with low magnitude Poisson.")) }
-          sim.data = .sc.NB.FillIn_downsample_counts(sim.options = simOptions,
-                                                     phenotype = phenotype,
-                                                     modelmatrix = mod,
-                                                     coef.dat=coeffs)
-        }
-      }
-      if (attr(simOptions, 'Distribution') == 'ZINB') {
-        if (!isTRUE(simOptions$geneset)) {
-          if (verbose) {message(paste0("Sampling with replace.")) }
-          sim.data = .sc.ZINB.SampleWReplace_downsample_counts(sim.options = simOptions,
-                                                               phenotype = phenotype,
-                                                               modelmatrix = mod,
-                                                               coef.dat=coeffs)
-        }
-        if (isTRUE(simOptions$geneset)) {
-          if (verbose) {message(paste0("Fill in with low magnitude Poisson.")) }
-          sim.data = .sc.ZINB.FillIn_downsample_counts(sim.options = simOptions,
-                                                       phenotype = phenotype,
-                                                       modelmatrix = mod,
-                                                       coef.dat=coeffs)
-        }
-      }
-    }
+  # NB distribution
+  if (attr(simOptions$estParamRes, 'Distribution') == 'NB'){
+    sim.data <- .sc.NB_counts(simOptions = simOptions,
+                              phenotype = phenotype,
+                              modelmatrix = modelmatrix,
+                              coef.dat = coef.dat)
   }
 
-  if (simOptions$RNAseq == "bulk") {
-    sim.data = .bulk.NB.RNAseq_counts(sim.options = simOptions,
-                                      phenotype = phenotype,
-                                      modelmatrix = mod,
-                                      coef.dat=coeffs)
+  # ZINB distribution
+  if (attr(simOptions$estParamRes, 'Distribution') == 'ZINB'){
+    sim.data <- .sc.ZINB_counts(simOptions = simOptions,
+                                phenotype = phenotype,
+                                modelmatrix = modelmatrix,
+                                coef.dat = coef.dat)
   }
 
+  # retrieve output
   sim.counts = sim.data$counts
   sf.value = sim.data$sf
   mus = sim.data$mus
@@ -158,6 +90,8 @@
     }
   }
 
+  invisible(gc())
+
   ## return
   list(counts = sim.counts,
        mus=mus,
@@ -168,11 +102,441 @@
        simOptions = simOptions)
 }
 
+# Simulate NB -------------------------------------------------------------
+
+#' @importFrom stats rnorm rnbinom
+.sc.NB_counts <- function(simOptions,
+                          phenotype,
+                          modelmatrix,
+                          coef.dat) {
+
+  set.seed(simOptions$DESetup$sim.seed)
+
+  nsamples = nrow(modelmatrix)
+  ngenes = simOptions$DESetup$ngenes
+
+  # define NB params
+  means = simOptions$estParamRes$Parameters[[simOptions$DESetup$Draw$MoM]]$means
+  sizes = simOptions$estParamRes$Parameters[[simOptions$DESetup$Draw$MoM]]$size
+  meansizefit = simOptions$estParamRes$Fit[[simOptions$DESetup$Draw$Fit]]$meansizefit
+
+  # sample from the mean parameter observed
+  if(ngenes <= length(means)){
+    index = sample(1:length(means), size = ngenes,
+                   replace = simOptions$DESetup$SwReplace)
+  }
+  if(ngenes > length(means)){
+    index = sample(1:length(means), size = ngenes, replace = T)
+  }
+  true.means = means[index]
+
+  # estimate size parameter associated with true mean values
+  lmu = log1p(true.means)
+  predsize.mean = suppressWarnings(approx(meansizefit$x,
+                                          meansizefit$y,
+                                          xout = lmu, rule=2)$y)
+  predsize.sd = suppressWarnings(approx(meansizefit$x,
+                                        meansizefit$sd,
+                                        xout = lmu, rule=2)$y)
+  sizevec = rnorm(n = length(lmu),
+                  mean = predsize.mean,
+                  sd = predsize.sd)
+
+  # size factor
+  if (simOptions$SimSetup$LibSize == "equal") {
+    all.facs <- rep(1, nsamples)
+  }
+  if (simOptions$SimSetup$LibSize == "given") {
+    if (is.function(simOptions$estParamRes$sf)) {
+      all.facs <- simOptions$estParamRes$sf(nsamples)
+    }
+    if (is.vector(simOptions$estParamRes$sf)) {
+      all.facs <- sample(simOptions$estParamRes$sf, nsamples, replace = TRUE)
+    }
+    if (is.null(simOptions$estParamRes$sf)) {
+      stop(message(paste0("You chose to draw from the given size factors,
+                            however the sf vector is empty!")))
+    }
+  }
+
+  # effective means
+  effective.means <- outer(true.means, all.facs, "*")
+
+  # make mean expression with beta coefficients added as defined by model matrix
+  ind = !apply(modelmatrix, 2, function(x) { all(x == 1) })
+  mod = cbind(modelmatrix[, ind])
+  beta = cbind(coef.dat[, ind])
+  mumat = log1p(effective.means) + beta %*% t(mod)
+  mumat[mumat < 0] = min(log1p(effective.means))
+
+  # result count matrix
+  counts = matrix(
+    stats::rnbinom(nsamples * ngenes,
+                   mu = 2 ^ mumat - 1,
+                   size = 2 ^ sizevec),
+    ncol = nsamples,
+    nrow = ngenes,
+    dimnames = list(paste0(rownames(mumat),"_", seq_len(ngenes)),
+                    NULL))
+
+  counts0 = counts == 0
+  nn0 = rowSums(!counts0)
+  dropout = (nsamples - nn0)/nsamples
+
+  return(list(counts=counts,
+              sf=all.facs,
+              mus=true.means,
+              disps=sizevec,
+              drops=dropout))
+}
+
+# Simulate ZINB -----------------------------------------------------------
+
+#' @importFrom stats rnorm rnbinom runif approx
+#' @importFrom truncnorm rtruncnorm
+.sc.ZINB_counts <- function(simOptions,
+                            phenotype,
+                            modelmatrix,
+                            coef.dat) {
+
+  set.seed(simOptions$DESetup$sim.seed)
+
+  nsamples = nrow(modelmatrix)
+  ngenes = simOptions$DESetup$ngenes
+
+  # define ZINB params
+  pos.means = simOptions$estParamRes$Parameters[[simOptions$DESetup$Draw$MoM]]$pos.means
+  pos.sizes = simOptions$estParamRes$Parameters[[simOptions$DESetup$Draw$MoM]]$pos.size
+  meansizefit = simOptions$estParamRes$Fit[[simOptions$DESetup$Draw$Fit]]$meansizefit
+
+  # sample from the positive mean parameter observed
+  if(ngenes <= length(pos.means)){
+    index = sample(1:length(pos.means), size = ngenes,
+                   replace = simOptions$DESetup$SwReplace)
+  }
+  if(ngenes > length(pos.means)){
+    index = sample(1:length(pos.means), size = ngenes, replace = T)
+  }
+  true.means = pos.means[index]
+
+  # estimate size parameter associated with true mean values
+  lmu = log1p(true.means)
+  predsize.mean = suppressWarnings(approx(meansizefit$x,
+                                          meansizefit$y,
+                                          xout = lmu, rule=2)$y)
+  predsize.sd = suppressWarnings(approx(meansizefit$x,
+                                        meansizefit$sd,
+                                        xout = lmu, rule=2)$y)
+  sizevec = rnorm(n = length(lmu),
+                  mean = predsize.mean,
+                  sd = predsize.sd)
+
+  # size factor
+  if (simOptions$SimSetup$LibSize == "equal") {
+    all.facs <- rep(1, nsamples)
+  }
+  if (simOptions$SimSetup$LibSize == "given") {
+    if (is.function(simOptions$estParamRes$sf)) {
+      all.facs <- simOptions$estParamRes$sf(nsamples)
+    }
+    if (is.vector(simOptions$estParamRes$sf)) {
+      all.facs <- sample(simOptions$estParamRes$sf, nsamples, replace = TRUE)
+    }
+    if (is.null(simOptions$estParamRes$sf)) {
+      stop(message(paste0("You chose to draw from the given size factors,
+                            however the sf vector is empty!")))
+    }
+  }
+
+  # effective means
+  effective.means <- outer(true.means, all.facs, "*")
+
+  # make mean expression with beta coefficients added as defined by model matrix
+  ind = !apply(modelmatrix, 2, function(x) { all(x == 1) })
+  mod = cbind(modelmatrix[, ind])
+  beta = cbind(coef.dat[, ind])
+  mumat = log1p(effective.means) + beta %*% t(mod)
+  mumat[mumat < 0] = min(log1p(effective.means))
+
+  meang0fit.nonamplified = simOptions$estParamRes$Fit[[simOptions$DESetup$Draw$Fit]]$meang0fit.nonamplified
+  meang0fit.amplified = simOptions$estParamRes$Fit[[simOptions$DESetup$Draw$Fit]]$meang0fit.amplified
+  meang0fit = simOptions$estParamRes$Fit[[simOptions$DESetup$Draw$Fit]]$meang0fit
+  nonamplified = simOptions$estParamRes$Fit[[simOptions$DESetup$Draw$Fit]]$nonamplified
+
+  if(!is.null(meang0fit.nonamplified) && !is.null(meang0fit.amplified)) {
+    # predict the dropout probabilities associated with sampled mean
+    p0.split = rbinom(length(lmu), prob = nonamplified, size = 1)
+    muvec.dat.nonamplified = lmu[p0.split==1]
+    muvec.dat.amplified = lmu[p0.split==0]
+
+    predp0.amplified.mean = approx(meang0fit.amplified$x,
+                                   meang0fit.amplified$y,
+                                   xout=muvec.dat.amplified,
+                                   rule = 2:1)$y
+    predp0.amplified.sd = approx(meang0fit.amplified$x,
+                                 meang0fit.amplified$sd,
+                                 xout=muvec.dat.amplified,
+                                 rule=2:1)$y
+    predp0.nonamplified.mean = approx(meang0fit.nonamplified$x,
+                                      meang0fit.nonamplified$y,
+                                      xout=muvec.dat.nonamplified,
+                                      rule=2:1)$y
+    predp0.nonamplified.sd = approx(meang0fit.nonamplified$x,
+                                    meang0fit.nonamplified$sd,
+                                    xout=muvec.dat.nonamplified,
+                                    rule=2)$y
+
+    p0vec = rep(NA, length(lmu))
+    p0vec[p0.split==0] = truncnorm::rtruncnorm(n=length(which(p0.split==0)),
+                                               a = 0, b = 1,
+                                               mean=predp0.amplified.mean,
+                                               sd=predp0.amplified.sd)
+    p0vec[p0.split==1] = truncnorm::rtruncnorm(n=length(which(p0.split==1)),
+                                               a = 0, b = 1,
+                                               mean=predp0.nonamplified.mean,
+                                               sd=predp0.nonamplified.sd)
+
+    p0vec[is.na(p0vec)] = runif(n= length(p0vec[is.na(p0vec)]),
+                                min = 0, max = 0.05)
+
+    zero.mark = sapply(p0vec, function(x) {
+      rbinom(nsamples,  prob = 1-x, size = 1)
+    }, simplify = T)
+
+    p0mat = matrix(t(zero.mark),
+                   nrow = ngenes,
+                   ncol = nsamples)
+
+  }
+
+  if(any(is.null(meang0fit.nonamplified), is.null(meang0fit.amplified)) &&
+     !is.null(meang0fit)) {
+    # predict the dropout probabilities associated with sampled mean
+    p0.split = rbinom(length(lmu), prob = nonamplified, size = 1)
+    muvec.dat = abs(lmu)
+
+    predp0.mean = approx(meang0fit$x,
+                         meang0fit$y,
+                         xout=muvec.dat,
+                         rule = 2:1)$y
+    predp0.sd = approx(meang0fit$x,
+                       meang0fit$sd,
+                       xout=muvec.dat,
+                       rule=2:1)$y
+
+    p0vec = truncnorm::rtruncnorm(n=length(muvec.dat),
+                                  a = 0, b = 1,
+                                  mean=predp0.mean,
+                                  sd=predp0.sd)
+    p0vec[is.na(p0vec)] = runif(n= length(p0vec[is.na(p0vec)]),
+                                min = 0, max = 0.05)
+
+    zero.mark = sapply(p0vec, function(x) {
+      rbinom(nsamples,  prob = (1 - x), size = 1)
+    }, simplify = T)
+
+    p0mat = matrix(t(zero.mark),
+                   nrow = ngenes,
+                   ncol = nsamples)
+  }
+
+  if(is.null(meang0fit.nonamplified) &&
+     is.null(meang0fit.amplified) &&
+     is.null(meang0fit)) {
+# at the moment this is not implemented, maybe throw an error in estimateParam ?
+    p0mat <- NULL
+
+  }
+
+  # make the count matrix
+    counts.nb = matrix(
+      stats::rnbinom(nsamples * ngenes,
+                     mu = 2 ^ mumat - 1,
+                     size = 2 ^ sizevec),
+      ncol = nsamples,
+      nrow = ngenes)
+
+    if(!is.null(p0mat)){
+
+      # check that the overall number of zeroes is correct
+      nb0 = counts.nb == 0
+      nn0 = rowSums(!nb0)
+      dropout.nb = (nsamples - nn0)/nsamples
+      p0mat0 = p0mat == 0
+      nn0 = rowSums(!p0mat0)
+      dropout.p0 = (nsamples - nn0)/nsamples
+      change.nb = dropout.nb < dropout.p0
+
+      p0mat.nb = p0mat[change.nb, ]
+      p0mat.nb[counts.nb[change.nb, ] == 0 & p0mat[change.nb, ] == 0] = 1
+      p0mat[change.nb, ] = p0mat.nb
+      counts = counts.nb * p0mat
+    }
+    if(is.null(p0mat)){
+      counts = counts.nb
+    }
+
+  dimnames(counts) <- list(paste0(rownames(mumat),"_", seq_len(ngenes)), NULL)
+
+  counts0 = counts == 0
+  nn0 = rowSums(!counts0)
+  dropout = (nsamples - nn0)/nsamples
+
+  #return object
+  return(list(counts=counts,
+              sf=all.facs,
+              mus=true.means,
+              disps=sizevec,
+              drops=dropout))
+
+}
+
+# Simulate spike-in reads -------------------------------------------------
+
+.simSpike <- function(SpikeOptions, n1, n2, sf = NULL) {
+  # sample mean expression values of spike-ins
+  predictedMean = rowMeans(SpikeOptions$normCounts) /
+    (SpikeOptions$EVGammaThetaEstimates$EGamma * SpikeOptions$EVGammaThetaEstimates$ETheta)
+
+  # create size factor matrix
+  if(is.null(sf)) {
+    sf =  rep(1, n1+n2)
+    sizefactors.mat = .repmat(t(as.matrix(sf)), length(predictedMean), 1)
+  }
+  if(!is.null(sf)) {
+    sizefactors.mat = .repmat(t(as.matrix(sf)), length(predictedMean), 1)
+  }
+
+
+  # simulate spike-ins assuming no biological variance contribution
+  spike.cnts <- .simulateCountGenes(Xi = predictedMean,
+                                    ETheta = SpikeOptions$EVGammaThetaEstimates$ETheta,
+                                    VTheta = SpikeOptions$EVGammaThetaEstimates$VTheta,
+                                    EGamma = SpikeOptions$EVGammaThetaEstimates$EGamma,
+                                    VGamma = SpikeOptions$EVGammaThetaEstimates$VGamma,
+                                    Aij = sizefactors.mat,
+                                    nCell = n1+n2,
+                                    BV = 0*(n1+n2))
+
+  return(list(counts=spike.cnts, sf=sf))
+}
+
+
+# Introduce dropout genes -------------------------------------------------
+
+.dropGene <- function(simOptions, simData){
+
+  set.seed(simOptions$DESetup$sim.seed)
+
+  nsamples = ncol(simData$counts)
+  ngenes = simOptions$DESetup$ngenes
+  ndrop = floor(ngenes * simOptions$SimSetup$DropRate)
+  all.facs = simData$sf
+
+  # define NB params
+  means = simOptions$estParamRes$Parameters$DropGene$means
+  sizes = simOptions$estParamRes$Parameters$DropGene$size
+  meansizefit = simOptions$estParamRes$Fit$DropGene$meansizefit
+
+  # sample from the mean parameter observed
+  index = sample(1:length(means), size = ndrop, replace = T)
+  true.means = means[index]
+
+  # estimate size parameter associated with true mean values
+  lmu = log1p(true.means)
+  predsize.mean = suppressWarnings(approx(meansizefit$x,
+                                          meansizefit$y,
+                                          xout = lmu, rule=2)$y)
+  predsize.sd = suppressWarnings(approx(meansizefit$x,
+                                        meansizefit$sd,
+                                        xout = lmu, rule=2)$y)
+  sizevec = rnorm(n = length(lmu),
+                  mean = predsize.mean,
+                  sd = predsize.sd)
+
+  # effective means
+  effective.means <- outer(true.means, all.facs, "*")
+
+  d.index = sample(1:ngenes, size = ndrop, replace = F)
+
+  # replace counts with dropouts
+  dcounts = simData$counts
+  dcounts[d.index,] = matrix(stats::rnbinom(nsamples * ndrop,
+                                           mu = 2 ^ effective.means - 1,
+                                           size = 2 ^ sizevec),
+                            ncol = nsamples,
+                            nrow = ndrop)
+
+  dcounts <- apply(dcounts, 2, function(x) {storage.mode(x) <- 'integer'; x})
+
+  simData$counts <- dcounts
+
+  return(simData)
+}
+
+
+# Binomial Thinning -------------------------------------------------------
+
+#' @importFrom edgeR thinCounts
+.run.thin <- function(countData,
+                      Thin,
+                      simOptions){
+
+  # convert UMI data to Read data
+  if(attr(simOptions$estParamRes, 'Protocol') == "UMI"){
+    umireadfit = simOptions$estParamRes$Fit$UmiRead$Fit
+    lUMI <- as.vector(log10(countData+1))
+
+    predratio.mean = suppressWarnings(approx(x = umireadfit$x,
+                                             y = umireadfit$y,
+                                             xout = lUMI,
+                                             rule=2)$y)
+    predratio.sd = suppressWarnings(approx(x = umireadfit$x,
+                                           y = umireadfit$sd,
+                                           xout = lUMI,
+                                           rule=2)$y)
+    predratio.vec = truncnorm::rtruncnorm(n = length(lUMI),
+                                          mean = predratio.mean,
+                                          sd = predratio.sd,
+                                          a = 1)
+    predratio.dat <- matrix(predratio.vec,
+                            nrow = nrow(countData),
+                            ncol = ncol(countData),
+                            dimnames = list(rownames(countData), colnames(countData)),
+                            byrow = F)
+
+    predread.dat <- log10(countData+1) * predratio.dat
+    readData <- floor(10^predread.dat-1)
+
+    # apply binomial thinning
+    thinCounts <- edgeR::thinCounts(x = readData, prob = rep(Thin, ncol(readData)))
+    DropUMI <- thinCounts - countData < 0
+    thinData <- countData
+    thinData[DropUMI] <- 0
+
+  }
+  if(attr(simOptions$estParamRes, 'Protocol') == "Read"){
+    readData <- countData
+    thinCounts <- edgeR::thinCounts(x = readData, prob = rep(Thin, ncol(readData)))
+    thinData <- thinCounts
+  }
+
+  thinData <- apply(thinData, 2, function(x) {storage.mode(x) <- 'integer'; x})
+
+  # return object
+  return(thinData)
+}
 
 # Simulate multiple groups ------------------------------------------------
 
 #' @importFrom stats model.matrix coef poisson sd rbinom
 .simRNAseq.multi <- function(simOptions, n, verbose) {
+
+  # warn if estimated number of genes is larger than ngenes so that fillin will not work!
+  if(isTRUE(simOptions$FillUp) &&
+     c(simOptions$ngenes < length(simOptions$means))){
+    stop(message(paste0(simOptions$ngenes, " genes are to be simulated with filling up, but there are ", length(simOptions$means), " to sample mean expression values from. Please consider to thin the means parameter provided or set FillUp to FALSE.")))
+  }
 
   if(is.null(simOptions$bLFC)) {
     ## make group labels for phenotype LFC
@@ -200,7 +564,7 @@
       # make batch labels for batch LFC
       batch <- as.factor(unlist(sapply(names(n), function(i) {
         1 - 2*stats::rbinom(n[i],size=1,prob=0.5)
-        }, simplify = F)))
+      }, simplify = F)))
       # make model matrix
       mod = stats::model.matrix(~-1 + phenotype + batch)
       coeffs = cbind(simOptions$pLFC, simOptions$bLFC)
@@ -220,19 +584,19 @@
   }
 
   # generate read counts
-  if (simOptions$RNAseq == "singlecell") {
+  if (attr(simOptions, 'RNAseq') == 'singlecell') {
     # take mean dispersion relationship as is
-    if (!isTRUE(simOptions$downsample)) {
+    if (!isTRUE(simOptions$ActualMeans)) {
       if (verbose) {message(paste0("Predict dispersion based on true mean values.")) }
       if (attr(simOptions, 'Distribution') == 'NB') {
-        if (!isTRUE(simOptions$geneset)) {
+        if (!isTRUE(simOptions$FillUp)) {
           if (verbose) {message(paste0("Sampling with replace.")) }
           sim.data = .sc.NB.SampleWReplace_counts(sim.options = simOptions,
                                                   phenotype = phenotype,
                                                   modelmatrix = mod,
                                                   coef.dat=coeffs)
         }
-        if (isTRUE(simOptions$geneset)) {
+        if (isTRUE(simOptions$FillUp)) {
           if (verbose) {message(paste0("Fill in with low magnitude Poisson.")) }
           sim.data = .sc.NB.FillIn_counts(sim.options = simOptions,
                                           phenotype = phenotype,
@@ -241,14 +605,14 @@
         }
       }
       if (attr(simOptions, 'Distribution') == 'ZINB') {
-        if (!isTRUE(simOptions$geneset)) {
+        if (!isTRUE(simOptions$FillUp)) {
           if (verbose) {message(paste0("Sampling with replace.")) }
           sim.data = .sc.ZINB.SampleWReplace_counts(sim.options = simOptions,
                                                     phenotype = phenotype,
                                                     modelmatrix = mod,
                                                     coef.dat=coeffs)
         }
-        if (isTRUE(simOptions$geneset)) {
+        if (isTRUE(simOptions$FillUp)) {
           if (verbose) {message(paste0("Fill in with low magnitude Poisson.")) }
           sim.data = .sc.ZINB.FillIn_counts(sim.options = simOptions,
                                             phenotype = phenotype,
@@ -258,45 +622,45 @@
       }
     }
 
-    # downsample mean and then draw dispersion
-    if (isTRUE(simOptions$downsample)) {
+    # determine actual mean and then draw dispersion
+    if (isTRUE(simOptions$ActualMeans)) {
       if (verbose) {message(paste0("Predict dispersion based on effective mean values.")) }
       if (attr(simOptions, 'Distribution') == 'NB') {
-        if (!isTRUE(simOptions$geneset)) {
+        if (!isTRUE(simOptions$FillUp)) {
           if (verbose) {message(paste0("Sampling with replace.")) }
-          sim.data = .sc.NB.SampleWReplace_downsample_counts(sim.options = simOptions,
-                                                             phenotype = phenotype,
-                                                             modelmatrix = mod,
-                                                             coef.dat=coeffs)
+          sim.data = .sc.NB.SampleWReplace_ActualMeans_counts(sim.options = simOptions,
+                                                              phenotype = phenotype,
+                                                              modelmatrix = mod,
+                                                              coef.dat=coeffs)
         }
-        if (isTRUE(simOptions$geneset)) {
+        if (isTRUE(simOptions$FillUp)) {
           if (verbose) {message(paste0("Fill in with low magnitude Poisson.")) }
-          sim.data = .sc.NB.FillIn_downsample_counts(sim.options = simOptions,
-                                                     phenotype = phenotype,
-                                                     modelmatrix = mod,
-                                                     coef.dat=coeffs)
+          sim.data = .sc.NB.FillIn_ActualMeans_counts(sim.options = simOptions,
+                                                      phenotype = phenotype,
+                                                      modelmatrix = mod,
+                                                      coef.dat=coeffs)
         }
       }
       if (attr(simOptions, 'Distribution') == 'ZINB') {
-        if (!isTRUE(simOptions$geneset)) {
+        if (!isTRUE(simOptions$FillUp)) {
           if (verbose) {message(paste0("Sampling with replace.")) }
-          sim.data = .sc.ZINB.SampleWReplace_downsample_counts(sim.options = simOptions,
-                                                               phenotype = phenotype,
-                                                               modelmatrix = mod,
-                                                               coef.dat=coeffs)
+          sim.data = .sc.ZINB.SampleWReplace_ActualMeans_counts(sim.options = simOptions,
+                                                                phenotype = phenotype,
+                                                                modelmatrix = mod,
+                                                                coef.dat=coeffs)
         }
-        if (isTRUE(simOptions$geneset)) {
+        if (isTRUE(simOptions$FillUp)) {
           if (verbose) {message(paste0("Fill in with low magnitude Poisson.")) }
-          sim.data = .sc.ZINB.FillIn_downsample_counts(sim.options = simOptions,
-                                                       phenotype = phenotype,
-                                                       modelmatrix = mod,
-                                                       coef.dat=coeffs)
+          sim.data = .sc.ZINB.FillIn_ActualMeans_counts(sim.options = simOptions,
+                                                        phenotype = phenotype,
+                                                        modelmatrix = mod,
+                                                        coef.dat=coeffs)
         }
       }
     }
   }
 
-  if (simOptions$RNAseq == "bulk") {
+  if (attr(simOptions, 'RNAseq') == 'bulk')  {
     sim.data = .bulk.NB.RNAseq_counts(sim.options = simOptions,
                                       phenotype = phenotype,
                                       modelmatrix = mod,
@@ -329,6 +693,8 @@
     }
   }
 
+  invisible(gc())
+
   ## return
   list(counts = sim.counts,
        phenotypes = phenotype,
@@ -341,1492 +707,3 @@
 }
 
 
-# SINGLE CELL -------------------------------------------------------------
-
-# MEAN-VARIANCE RELATIONSHIP AS IS
-
-#' @importFrom stats rnorm rnbinom
-.sc.NB.SampleWReplace_counts <- function(sim.options,
-                                         phenotype,
-                                         modelmatrix,
-                                         coef.dat) {
-
-  set.seed(sim.options$sim.seed)
-
-  nsamples = nrow(modelmatrix)
-  ngenes = sim.options$ngenes
-  mod = modelmatrix
-  beta = coef.dat
-
-  if (attr(sim.options, 'param.type') == 'estimated') {
-    # define NB params
-    mu = sim.options$means
-    meansizefit = sim.options$meansizefit
-
-    # sample from the mean parameter observed
-    index = sample(1:length(mu), size = ngenes, replace = T)
-    true.means = mu[index]
-
-    # estimate size parameter associated with true mean values
-    lmu = log2(true.means + 1)
-    predsize.mean = approx(meansizefit$x, meansizefit$y, xout = lmu, rule=2)$y
-    predsize.sd = approx(meansizefit$x, meansizefit$sd, xout = lmu, rule=2)$y
-    sizevec = rnorm(n = length(lmu), mean = predsize.mean, sd = predsize.sd)
-
-    # size factor
-    if(is.list(sim.options$size.factors)) {
-      all.facs <- c(sim.options$size.factors$n1(length(which(phenotype==-1))),
-                    sim.options$size.factors$n2(length(which(phenotype==1))))
-    }
-    if (sim.options$size.factors == "equal") {
-      all.facs <- rep(1, nsamples)
-    }
-    if (sim.options$size.factors == "given") {
-      if (is.function(sim.options$sf)) {
-        all.facs <- sim.options$sf(nsamples)
-      }
-      if (is.vector(sim.options$sf)) {
-        all.facs <- sample(sim.options$sf, nsamples, replace = TRUE)
-      }
-      if (is.null(sim.options$sf)) {
-        stop(message(paste0("You chose to draw from the given size factors,
-                            however the sf vector is empty!")))
-      }
-      }
-
-    # effective means
-    effective.means <- outer(true.means, all.facs, "*")
-
-    # make mean expression with beta coefficients added as defined by model matrix
-    ind = !apply(mod, 2, function(x) { all(x == 1) })
-    mod = cbind(mod[, ind])
-    beta = cbind(beta[, ind])
-    mumat = log2(effective.means + 1) + beta %*% t(mod)
-    mumat[mumat < 0] = min(log2(effective.means + 1))
-
-    # result count matrix
-    counts = matrix(
-      stats::rnbinom(nsamples * ngenes, mu = 2 ^ mumat - 1, size = 2 ^ sizevec),
-      ncol = nsamples,
-      nrow = ngenes,
-      dimnames = list(paste0(rownames(mumat),"_", seq_len(ngenes)),
-                      NULL))
-    counts0 = counts == 0
-    nn0 = rowSums(!counts0)
-    dropout = (nsamples - nn0)/nsamples
-    }
-
-  if (attr(sim.options, 'param.type') == 'insilico') {
-
-    # sample from the mean function provided
-    true.means = sim.options$means(ngenes)
-
-    # associate with dispersion parameter
-    if (length(sim.options$dispersion) == 1) {
-      disp = sim.options$dispersion
-    }
-    if (is.function(sim.options$dispersion)) {
-      disp = sim.options$dispersion(true.means)
-    }
-
-    # size factor
-    if(is.list(sim.options$size.factors)) {
-      all.facs <- c(sim.options$size.factors$n1(length(which(phenotype==-1))),
-                    sim.options$size.factors$n2(length(which(phenotype==1))))
-    }
-    if (sim.options$size.factors == "equal") {
-      all.facs <- rep(1, nsamples)
-    }
-    if (sim.options$size.factors == "given") {
-      if (is.function(sim.options$sf)) {
-        all.facs <- sim.options$sf(nsamples)
-      }
-      if (is.vector(sim.options$sf)) {
-        all.facs <- sample(sim.options$sf, nsamples, replace = TRUE)
-      }
-      if (is.null(sim.options$sf)) {
-        stop(message(paste0("You chose to draw from the given size factors,
-                            however the sf vector is empty!")))
-      }
-      }
-
-    # effective means
-    effective.means <- outer(true.means, all.facs, "*")
-
-    # effective dispersions
-    if(length(disp) == 1) {
-      sizevec <- rep(1/disp, ngenes)
-    }
-    if(length(disp) > 1) {
-      sizevec <- disp
-    }
-
-    # make mean expression with beta coefficients added as defined by model matrix
-    ind = !apply(mod, 2, function(x) { all(x == 1) })
-    mod = cbind(mod[, ind])
-    beta = cbind(beta[, ind])
-    mumat = log2(effective.means + 1) + beta %*% t(mod)
-    mumat[mumat < 0] = min(log2(effective.means + 1))
-
-    # result count matrix
-    counts = matrix(stats::rnbinom(nsamples * ngenes,
-                                   mu = 2 ^ mumat - 1, size = 1/disp),
-                    ncol = nsamples, nrow = ngenes)
-    counts0 = counts == 0
-    nn0 = rowSums(!counts0)
-    dropout = (nsamples - nn0)/nsamples
-    }
-
-  return(list(counts=counts, sf=all.facs, mus=true.means, disps=sizevec, drops=dropout))
-}
-
-#' @importFrom stats rnorm rnbinom rpois
-.sc.NB.FillIn_counts <- function(sim.options, phenotype, modelmatrix, coef.dat) {
-
-  set.seed(sim.options$sim.seed)
-
-  nsamples = nrow(modelmatrix)
-  ngenes = sim.options$ngenes
-  mod = modelmatrix
-  beta = coef.dat
-
-  if (attr(sim.options, 'param.type') == 'estimated') {
-
-    # # make a low magnitude poisson count table
-    # zerocounts = matrix(stats::rpois(ngenes*nsamples, lambda=0.1),
-    #                     nrow=ngenes, ncol=nsamples)
-    # # estimate nb parameters of this zero count table
-    # zero_mus = rowMeans(zerocounts)
-    # true.means = ifelse(is.na(zero_mus), 0, zero_mus)
-
-    # define NB params
-    mu = sim.options$means
-    meansizefit = sim.options$meansizefit
-
-    # sample from the mean parameter observed
-    true.means = vector(mode = "numeric", length = ngenes)
-    index = sample(1:length(mu), size = length(mu), replace = F)
-    true.means[index] = mu[index]
-    names(true.means)[index] = names(mu)[index]
-    fillnames = sample(x = names(mu), size = ngenes - length(mu), replace = T)
-    names(true.means)[-index] = fillnames
-    true.means[-index] = min(mu)/2
-
-    # estimate size parameter associated with true mean values
-    lmu = log2(true.means + 1)
-    predsize.mean = approx(meansizefit$x, meansizefit$y, xout = lmu, rule=2)$y
-    predsize.sd = approx(meansizefit$x, meansizefit$sd, xout = lmu, rule=2)$y
-    sizevec = rnorm(n = length(lmu), mean = predsize.mean, sd = predsize.sd)
-
-    # size factor
-    if(is.list(sim.options$size.factors)) {
-      all.facs <- c(sim.options$size.factors$n1(length(which(phenotype==-1))),
-                    sim.options$size.factors$n2(length(which(phenotype==1))))
-    }
-    if (sim.options$size.factors == "equal") {
-      all.facs <- rep(1, nsamples)
-    }
-    if (sim.options$size.factors == "given") {
-      if (is.function(sim.options$sf)) {
-        all.facs <- sim.options$sf(nsamples)
-      }
-      if (is.vector(sim.options$sf)) {
-        all.facs <- sample(sim.options$sf, nsamples, replace = TRUE)
-      }
-      if (is.null(sim.options$sf)) {
-        stop(message(paste0("You chose to draw from the given size factors,
-                            however the library size factor vector is empty!")))
-      }
-      }
-
-    # effective means
-    effective.means <- outer(true.means, all.facs, "*")
-
-    # make mean expression with beta coefficients added as defined by model matrix
-    ind = !apply(mod, 2, function(x) { all(x == 1) })
-    mod = cbind(mod[, ind])
-    beta = cbind(beta[, ind])
-    mumat = log2(effective.means + 1) + beta %*% t(mod)
-    mumat[-index,] = min(mu)/2
-    mumat[mumat < 0] = min(log2(effective.means + 1))
-
-    # result count matrix
-    counts = matrix(
-      stats::rnbinom(nsamples * ngenes, mu = 2 ^ mumat - 1, size = 2 ^ sizevec),
-      ncol = nsamples,
-      nrow = ngenes,
-      dimnames = list(paste0(rownames(mumat),"_", seq_len(ngenes)),
-                      NULL))
-
-    counts0 = counts == 0
-    nn0 = rowSums(!counts0)
-    dropout = (nsamples - nn0)/nsamples
-    }
-
-  if (attr(sim.options, 'param.type') == 'insilico') {
-
-    # sample from the mean function provided
-    true.means = sim.options$means(ngenes)
-
-    # associate with dispersion parameter
-    if (length(sim.options$dispersion) == 1) {
-      disp = sim.options$dispersion
-    }
-    if (is.function(sim.options$dispersion)) {
-      disp = sim.options$dispersion(true.means)
-    }
-
-    # size factor
-    if(is.list(sim.options$size.factors)) {
-      all.facs <- c(sim.options$size.factors$n1(length(which(phenotype==-1))),
-                    sim.options$size.factors$n2(length(which(phenotype==1))))
-    }
-    if (sim.options$size.factors == "equal") {
-      all.facs <- rep(1, nsamples)
-    }
-    if (sim.options$size.factors == "given") {
-      if (is.function(sim.options$sf)) {
-        all.facs <- sim.options$sf(nsamples)
-      }
-      if (is.vector(sim.options$sf)) {
-        all.facs <- sample(sim.options$sf, nsamples, replace = TRUE)
-      }
-      if (is.null(sim.options$sf)) {
-        stop(message(paste0("You chose to draw from the given size factors,
-                            however the sf vector is empty!")))
-      }
-      }
-
-    # effective means
-    effective.means <- outer(true.means, all.facs, "*")
-
-    # effective dispersions
-    if(length(disp) == 1) {
-      sizevec <- rep(1/disp, ngenes)
-    }
-    if(length(disp) > 1) {
-      sizevec <- disp
-    }
-
-    # make mean expression with beta coefficients added as defined by model matrix
-    ind = !apply(mod, 2, function(x) { all(x == 1) })
-    mod = cbind(mod[, ind])
-    beta = cbind(beta[, ind])
-    mumat = log2(effective.means + 1) + beta %*% t(mod)
-    mumat[mumat < 0] = min(log2(effective.means + 1))
-
-    # result count matrix
-    counts = matrix(stats::rnbinom(nsamples * ngenes,
-                                   mu = 2 ^ mumat - 1,
-                                   size = 1/disp),
-                    ncol = nsamples, nrow = ngenes)
-    counts0 = counts == 0
-    nn0 = rowSums(!counts0)
-    dropout = (nsamples - nn0)/nsamples
-    }
-
-  return(list(counts=counts, sf=all.facs, mus=true.means, disps=sizevec, drops=dropout))
-}
-
-#' @importFrom stats rnorm rnbinom runif approx
-.sc.ZINB.SampleWReplace_counts <- function(sim.options, phenotype, modelmatrix, coef.dat) {
-
-  set.seed(sim.options$sim.seed)
-
-  nsamples = nrow(modelmatrix)
-  ngenes = sim.options$ngenes
-  mod = modelmatrix
-  beta = coef.dat
-
-  if (attr(sim.options, 'param.type') == 'estimated') {
-    # define NB params
-    mu = sim.options$means
-    meansizefit = sim.options$meansizefit
-
-    # sample from the mean parameter observed
-    index = sample(1:length(mu), size = ngenes, replace = T)
-    true.means = mu[index]
-
-    # estimate size parameter associated with true mean values
-    lmu = log2(true.means + 1)
-    predsize.mean = approx(meansizefit$x, meansizefit$y, xout = lmu, rule=2)$y
-    predsize.sd = approx(meansizefit$x, meansizefit$sd, xout = lmu, rule=2)$y
-    sizevec = rnorm(n = length(lmu), mean = predsize.mean, sd = predsize.sd)
-
-    # size factor
-    if(is.list(sim.options$size.factors)) {
-      all.facs <- c(sim.options$size.factors$n1(length(which(phenotype==-1))),
-                    sim.options$size.factors$n2(length(which(phenotype==1))))
-    }
-    if (sim.options$size.factors == "equal") {
-      all.facs <- rep(1, nsamples)
-    }
-    if (sim.options$size.factors == "given") {
-      if (is.function(sim.options$sf)) {
-        all.facs <- sim.options$sf(nsamples)
-      }
-      if (is.vector(sim.options$sf)) {
-        all.facs <- sample(sim.options$sf, nsamples, replace = TRUE)
-      }
-      if (is.null(sim.options$sf)) {
-        stop(message(paste0("You chose to draw from the given size factors,
-                            however the sf vector is empty!")))
-      }
-      }
-
-    # effective means
-    effective.means <- outer(true.means, all.facs, "*")
-
-    # make mean expression with beta coefficients added as defined by model matrix
-    ind = !apply(mod, 2, function(x) { all(x == 1) })
-    mod = cbind(mod[, ind])
-    beta = cbind(beta[, ind])
-    mumat = log2(effective.means + 1) + beta %*% t(mod)
-    mumat[mumat < 0] = min(log2(effective.means + 1))
-    muvec = as.vector(mumat)
-
-    meanp0fit.nonamplified = sim.options$meanp0fit.nonamplified
-    meanp0fit.amplified = sim.options$meanp0fit.amplified
-    meanp0fit = sim.options$meanp0fit
-    nonamplified = sim.options$nonamplified
-
-    if(!is.null(meanp0fit.nonamplified) && !is.null(meanp0fit.amplified)) {
-      # predict the dropout probabilities associated with sampled mean
-      p0.split = rbinom(length(lmu), prob = nonamplified, size = 1)
-      muvec.dat.nonamplified = abs(lmu)[p0.split==1]
-      muvec.dat.amplified = abs(lmu)[p0.split==0]
-
-      predp0.amplified.mean = approx(meanp0fit.amplified$x,
-                                     meanp0fit.amplified$y,
-                                     xout=muvec.dat.amplified,
-                                     rule = 2:1)$y
-      predp0.amplified.mean[is.na(predp0.amplified.mean)] = 0
-      predp0.amplified.sd = approx(meanp0fit.amplified$x,
-                                   meanp0fit.amplified$sd,
-                                   xout=muvec.dat.amplified,
-                                   rule=2:1)$y
-      predp0.amplified.sd[is.na(predp0.amplified.sd)] = min(meanp0fit.amplified$sd)/2
-      predp0.nonamplified.mean = approx(meanp0fit.nonamplified$x,
-                                        meanp0fit.nonamplified$y,
-                                        xout=muvec.dat.nonamplified,
-                                        rule=2:1)$y
-      predp0.nonamplified.mean[is.na(predp0.nonamplified.mean)] = 0
-      predp0.nonamplified.sd = approx(meanp0fit.nonamplified$x,
-                                      meanp0fit.nonamplified$sd,
-                                      xout=muvec.dat.nonamplified,
-                                      rule=2:1)$y
-      predp0.nonamplified.sd[is.na(predp0.nonamplified.sd)] = min(meanp0fit.amplified$sd)/2
-
-      p0vec = rep(NA, length(lmu))
-      p0vec[p0.split==0] = rnorm(n=length(which(p0.split==0)),
-                                 mean=predp0.amplified.mean,
-                                 sd=predp0.amplified.sd)
-      p0vec[p0.split==1] = rnorm(n=length(which(p0.split==1)),
-                                 mean=predp0.nonamplified.mean,
-                                 sd=predp0.nonamplified.sd)
-
-      p0vec[p0vec<0] = runif(length(which(p0vec<0)),0,0.05)
-      p0vec[p0vec>1] = runif(length(which(p0vec>1)),0.85,1)
-
-      zero.mark = sapply(p0vec, function(x) {
-        rbinom(nsamples,  prob = (1 - x), size = 1)
-      }, simplify = T)
-
-      p0mat = matrix(t(zero.mark), nrow = ngenes, ncol = nsamples)
-
-      counts0 = p0mat == 0
-      nn0 = rowSums(!counts0)
-      dropout = (nsamples - nn0)/nsamples
-
-      # result count matrix
-      counts.nb = matrix(stats::rnbinom(nsamples * ngenes,
-                                        mu = 2 ^ mumat - 1,
-                                        size = 2 ^ sizevec),
-                         ncol = nsamples, nrow = ngenes)
-      counts = counts.nb * p0mat
-    }
-
-    if(any(is.null(meanp0fit.nonamplified), is.null(meanp0fit.amplified)) && !is.null(meanp0fit)) {
-      # predict the dropout probabilities associated with sampled mean
-      p0.split = rbinom(length(lmu), prob = nonamplified, size = 1)
-      muvec.dat = abs(lmu)
-
-      predp0.mean = approx(meanp0fit$x,
-                           meanp0fit$y,
-                           xout=muvec.dat,
-                           rule = 2:1)$y
-      predp0.mean[is.na(predp0.mean)] = 0
-      predp0.sd = approx(meanp0fit$x,
-                         meanp0fit$sd,
-                         xout=muvec.dat,
-                         rule=2:1)$y
-      predp0.sd[is.na(predp0.sd)] = min(meanp0fit$sd)/2
-
-      p0vec = rnorm(n=length(muvec.dat),
-                    mean=predp0.mean,
-                    sd=predp0.sd)
-
-      p0vec[p0vec<0] = runif(length(which(p0vec<0)),0,0.05)
-      p0vec[p0vec>1] = runif(length(which(p0vec>1)),0.85,1)
-
-      zero.mark = sapply(p0vec, function(x) {
-        rbinom(nsamples,  prob = (1 - x), size = 1)
-      }, simplify = T)
-
-      p0mat = matrix(t(zero.mark), nrow = ngenes, ncol = nsamples)
-
-      counts0 = p0mat == 0
-      nn0 = rowSums(!counts0)
-      dropout = (nsamples - nn0)/nsamples
-
-      # result count matrix
-      counts.nb = matrix(stats::rnbinom(nsamples * ngenes,
-                                        mu = 2 ^ mumat - 1,
-                                        size = 2 ^ sizevec),
-                         ncol = nsamples, nrow = ngenes)
-      counts = counts.nb * p0mat
-    }
-
-    if(is.null(meanp0fit.nonamplified) && is.null(meanp0fit.amplified) && is.null(meanp0fit)) {
-      # result count matrix
-      counts = matrix(stats::rnbinom(nsamples * ngenes,
-                                     mu = 2 ^ mumat - 1,
-                                     size = 2 ^ sizevec),
-                      ncol = nsamples, nrow = ngenes)
-      counts0 = counts == 0
-      nn0 = rowSums(!counts0)
-      dropout = (nsamples - nn0)/nsamples
-    }
-    }
-
-  dimnames(counts) <- list(paste0(rownames(mumat),"_", seq_len(ngenes)), NULL)
-
-  return(list(counts=counts, sf=all.facs, mus=true.means, disps=sizevec, drops=dropout))
-}
-
-#' @importFrom stats rnorm rnbinom runif approx rpois
-.sc.ZINB.FillIn_counts <- function(sim.options, phenotype, modelmatrix, coef.dat) {
-
-  set.seed(sim.options$sim.seed)
-
-  nsamples = nrow(modelmatrix)
-  ngenes = sim.options$ngenes
-  mod = modelmatrix
-  beta = coef.dat
-
-  if (attr(sim.options, 'param.type') == 'estimated') {
-
-    # define NB params
-    mu = sim.options$means
-    meansizefit = sim.options$meansizefit
-
-    # sample from the mean parameter observed
-    true.means = vector(mode = "numeric", length = ngenes)
-    index = sample(1:length(mu), size = length(mu), replace = F)
-    true.means[index] = mu[index]
-    names(true.means)[index] = names(mu)[index]
-    fillnames = sample(x = names(mu), size = ngenes - length(mu), replace = T)
-    names(true.means)[-index] = fillnames
-    true.means[-index] = min(mu)/2
-
-    # estimate size parameter associated with true mean values
-    lmu = log2(true.means + 1)
-    predsize.mean = approx(meansizefit$x, meansizefit$y, xout = lmu, rule=2)$y
-    predsize.sd = approx(meansizefit$x, meansizefit$sd, xout = lmu, rule=2)$y
-    sizevec = rnorm(n = length(lmu), mean = predsize.mean, sd = predsize.sd)
-
-    # size factor
-    if(is.list(sim.options$size.factors)) {
-      all.facs <- c(sim.options$size.factors$n1(length(which(phenotype==-1))),
-                    sim.options$size.factors$n2(length(which(phenotype==1))))
-    }
-    if (sim.options$size.factors == "equal") {
-      all.facs <- rep(1, nsamples)
-    }
-    if (sim.options$size.factors == "given") {
-      if (is.function(sim.options$sf)) {
-        all.facs <- sim.options$sf(nsamples)
-      }
-      if (is.vector(sim.options$sf)) {
-        all.facs <- sample(sim.options$sf, nsamples, replace = TRUE)
-      }
-      if (is.null(sim.options$sf)) {
-        stop(message(paste0("You chose to draw from the given size factors,
-                            however the sf vector is empty!")))
-      }
-      }
-
-    # effective means
-    effective.means <- outer(true.means, all.facs, "*")
-
-    # make mean expression with beta coefficients added as defined by model matrix
-    ind = !apply(mod, 2, function(x) { all(x == 1) })
-    mod = cbind(mod[, ind])
-    beta = cbind(beta[, ind])
-    mumat = log2(effective.means + 1) + beta %*% t(mod)
-    mumat[-index,] = min(mu)/2
-    mumat[mumat < 0] = min(log2(effective.means + 1))
-    muvec = as.vector(mumat)
-
-    meanp0fit.nonamplified = sim.options$meanp0fit.nonamplified
-    meanp0fit.amplified = sim.options$meanp0fit.amplified
-    meanp0fit = sim.options$meanp0fit
-    nonamplified = sim.options$nonamplified
-
-    if(!is.null(meanp0fit.nonamplified) && !is.null(meanp0fit.amplified)) {
-      # predict the dropout probabilities associated with sampled mean
-      p0.split = rbinom(length(lmu), prob = nonamplified, size = 1)
-      muvec.dat.nonamplified = abs(lmu)[p0.split==1]
-      muvec.dat.amplified = abs(lmu)[p0.split==0]
-
-      predp0.amplified.mean = approx(meanp0fit.amplified$x,
-                                     meanp0fit.amplified$y,
-                                     xout=muvec.dat.amplified,
-                                     rule = 2:1)$y
-      predp0.amplified.mean[is.na(predp0.amplified.mean)] = 0
-      predp0.amplified.sd = approx(meanp0fit.amplified$x,
-                                   meanp0fit.amplified$sd,
-                                   xout=muvec.dat.amplified,
-                                   rule=2:1)$y
-      predp0.amplified.sd[is.na(predp0.amplified.sd)] = min(meanp0fit.amplified$sd)/2
-      predp0.nonamplified.mean = approx(meanp0fit.nonamplified$x,
-                                        meanp0fit.nonamplified$y,
-                                        xout=muvec.dat.nonamplified,
-                                        rule=2:1)$y
-      predp0.nonamplified.mean[is.na(predp0.nonamplified.mean)] = 0
-      predp0.nonamplified.sd = approx(meanp0fit.nonamplified$x,
-                                      meanp0fit.nonamplified$sd,
-                                      xout=muvec.dat.nonamplified,
-                                      rule=2:1)$y
-      predp0.nonamplified.sd[is.na(predp0.nonamplified.sd)] = min(meanp0fit.amplified$sd)/2
-
-      p0vec = rep(NA, length(lmu))
-      p0vec[p0.split==0] = rnorm(n=length(which(p0.split==0)),
-                                 mean=predp0.amplified.mean,
-                                 sd=predp0.amplified.sd)
-      p0vec[p0.split==1] = rnorm(n=length(which(p0.split==1)),
-                                 mean=predp0.nonamplified.mean,
-                                 sd=predp0.nonamplified.sd)
-
-      p0vec[p0vec<0] = runif(length(which(p0vec<0)),0,0.05)
-      p0vec[p0vec>1] = runif(length(which(p0vec>1)),0.85,1)
-
-      zero.mark = sapply(p0vec, function(x) {
-        rbinom(nsamples,  prob = (1 - x), size = 1)
-      }, simplify = T)
-
-      p0mat = matrix(t(zero.mark), nrow = ngenes, ncol = nsamples)
-
-      counts0 = p0mat == 0
-      nn0 = rowSums(!counts0)
-      dropout = (nsamples - nn0)/nsamples
-
-      # result count matrix
-      counts.nb = matrix(stats::rnbinom(nsamples * ngenes,
-                                        mu = 2 ^ mumat - 1,
-                                        size = 2 ^ sizevec),
-                         ncol = nsamples, nrow = ngenes)
-      counts = counts.nb * p0mat
-    }
-
-    if(any(is.null(meanp0fit.nonamplified), is.null(meanp0fit.amplified)) && !is.null(meanp0fit)) {
-      # predict the dropout probabilities associated with sampled mean
-      p0.split = rbinom(length(lmu), prob = nonamplified, size = 1)
-      muvec.dat = abs(lmu)
-
-      predp0.mean = approx(meanp0fit$x,
-                           meanp0fit$y,
-                           xout=muvec.dat,
-                           rule = 2:1)$y
-      predp0.mean[is.na(predp0.mean)] = 0
-      predp0.sd = approx(meanp0fit$x,
-                         meanp0fit$sd,
-                         xout=muvec.dat,
-                         rule=2:1)$y
-      predp0.sd[is.na(predp0.sd)] = min(meanp0fit$sd)/2
-
-      p0vec = rnorm(n=length(muvec.dat),
-                    mean=predp0.mean,
-                    sd=predp0.sd)
-
-      p0vec[p0vec<0] = runif(length(which(p0vec<0)),0,0.05)
-      p0vec[p0vec>1] = runif(length(which(p0vec>1)),0.85,1)
-
-      zero.mark = sapply(p0vec, function(x) {
-        rbinom(nsamples,  prob = (1 - x), size = 1)
-      }, simplify = T)
-
-      p0mat = matrix(t(zero.mark), nrow = ngenes, ncol = nsamples)
-
-      counts0 = p0mat == 0
-      nn0 = rowSums(!counts0)
-      dropout = (nsamples - nn0)/nsamples
-
-      # result count matrix
-      counts.nb = matrix(stats::rnbinom(nsamples * ngenes,
-                                        mu = 2 ^ mumat - 1,
-                                        size = 2 ^ sizevec),
-                         ncol = nsamples, nrow = ngenes)
-      counts = counts.nb * p0mat
-    }
-
-    if(is.null(meanp0fit.nonamplified) && is.null(meanp0fit.amplified) && is.null(meanp0fit)) {
-      # result count matrix
-      counts = matrix(stats::rnbinom(nsamples * ngenes,
-                                     mu = 2 ^ mumat - 1,
-                                     size = 2 ^ sizevec),
-                      ncol = nsamples, nrow = ngenes)
-      counts0 = counts == 0
-      nn0 = rowSums(!counts0)
-      dropout = (nsamples - nn0)/nsamples
-    }
-    }
-
-  dimnames(counts) <- list(paste0(rownames(mumat),"_", seq_len(ngenes)),
-                           NULL)
-
-  return(list(counts=counts, sf=all.facs, mus=true.means, disps=sizevec, drops=dropout))
-}
-
-# MEAN-VARIANCE RELATIONSHIP AFTER MEAN DRAW
-
-#' @importFrom stats rnorm rnbinom
-.sc.NB.SampleWReplace_downsample_counts <- function(sim.options, phenotype, modelmatrix, coef.dat) {
-
-  set.seed(sim.options$sim.seed)
-
-  nsamples = nrow(modelmatrix)
-  ngenes = sim.options$ngenes
-  mod = modelmatrix
-  beta = coef.dat
-
-  if (attr(sim.options, 'param.type') == 'estimated') {
-    # define NB params
-    mu = sim.options$means
-    meansizefit = sim.options$meansizefit
-
-    # sample from the mean parameter observed
-    index = sample(1:length(mu), size = ngenes, replace = T)
-    true.means = mu[index]
-
-    # estimate size parameter associated with true mean values
-    lmu = log2(true.means + 1)
-    predsize.mean = approx(meansizefit$x, meansizefit$y, xout = lmu)$y
-    predsize.sd = approx(meansizefit$x, meansizefit$sd, xout = lmu)$y
-    sizevec = rnorm(n = length(lmu), mean = predsize.mean, sd = predsize.sd)
-
-
-    # size factor
-    if(is.list(sim.options$size.factors)) {
-      all.facs <- c(sim.options$size.factors$n1(length(which(phenotype==-1))),
-                    sim.options$size.factors$n2(length(which(phenotype==1))))
-    }
-    if (sim.options$size.factors == "equal") {
-      all.facs <- rep(1, nsamples)
-    }
-    if (sim.options$size.factors == "given") {
-      if (is.function(sim.options$sf)) {
-        all.facs <- sim.options$sf(nsamples)
-      }
-      if (is.vector(sim.options$sf)) {
-        all.facs <- sample(sim.options$sf, nsamples, replace = TRUE)
-      }
-      if (is.null(sim.options$sf)) {
-        stop(message(paste0("You chose to draw from the given size factors,
-                            however the sf vector is empty!")))
-      }
-      }
-
-    # effective means
-    effective.means <- outer(true.means, all.facs, "*")
-
-    # estimate size parameter associated with effective mean values
-    lmu = log2(effective.means + 1)
-    predsize.mean = approx(meansizefit$x, meansizefit$y, xout = lmu, rule=2)$y
-    predsize.sd = approx(meansizefit$x, meansizefit$sd, xout = lmu, rule=2)$y
-    sizevec = rnorm(n = length(lmu), mean = predsize.mean, sd = predsize.sd)
-
-    # make mean expression with beta coefficients added as defined by model matrix
-    ind = !apply(mod, 2, function(x) { all(x == 1) })
-    mod = cbind(mod[, ind])
-    beta = cbind(beta[, ind])
-    mumat = log2(effective.means + 1) + beta %*% t(mod)
-    mumat[mumat < 0] = min(log2(effective.means + 1))
-
-    # result count matrix
-    counts = matrix(
-      stats::rnbinom(nsamples * ngenes, mu = 2 ^ mumat - 1, size = 2 ^ sizevec),
-      ncol = nsamples,
-      nrow = ngenes,
-      dimnames = list(paste0(rownames(mumat),"_", seq_len(ngenes)),
-                      NULL))
-    counts0 = counts == 0
-    nn0 = rowSums(!counts0)
-    dropout = (nsamples - nn0)/nsamples
-    }
-
-  if (attr(sim.options, 'param.type') == 'insilico') {
-
-    # sample from the mean function provided
-    true.means = sim.options$means(ngenes)
-
-    # associate with dispersion parameter
-    if (length(sim.options$dispersion) == 1) {
-      disp = sim.options$dispersion
-    }
-    if (is.function(sim.options$dispersion)) {
-      disp = sim.options$dispersion(true.means)
-    }
-
-    # size factor
-    if(is.list(sim.options$size.factors)) {
-      all.facs <- c(sim.options$size.factors$n1(length(which(phenotype==-1))),
-                    sim.options$size.factors$n2(length(which(phenotype==1))))
-    }
-    if (sim.options$size.factors == "equal") {
-      all.facs <- rep(1, nsamples)
-    }
-    if (sim.options$size.factors == "given") {
-      if (is.function(sim.options$sf)) {
-        all.facs <- sim.options$sf(nsamples)
-      }
-      if (is.vector(sim.options$sf)) {
-        all.facs <- sample(sim.options$sf, nsamples, replace = TRUE)
-      }
-      if (is.null(sim.options$sf)) {
-        stop(message(paste0("You chose to draw from the given size factors,
-                            however the sf vector is empty!")))
-      }
-      }
-
-    # effective means
-    effective.means <- outer(true.means, all.facs, "*")
-
-    # effective dispersions
-    if(length(disp) == 1) {
-      sizevec <- rep(1/disp, ngenes)
-    }
-    if(length(disp) > 1) {
-      sizevec <- disp
-    }
-
-    # make mean expression with beta coefficients added as defined by model matrix
-    ind = !apply(mod, 2, function(x) { all(x == 1) })
-    mod = cbind(mod[, ind])
-    beta = cbind(beta[, ind])
-    mumat = log2(effective.means + 1) + beta %*% t(mod)
-    mumat[mumat < 0] = min(log2(effective.means + 1))
-
-    # result count matrix
-    counts = matrix(stats::rnbinom(nsamples * ngenes,
-                                   mu = 2 ^ mumat - 1, size = 1/disp),
-                    ncol = nsamples, nrow = ngenes)
-    }
-
-  return(list(counts=counts, sf=all.facs, mus=true.means, disps=sizevec, drops=dropout))
-}
-
-#' @importFrom stats rnorm rnbinom rpois
-.sc.NB.FillIn_downsample_counts <- function(sim.options, phenotype, modelmatrix, coef.dat) {
-
-  set.seed(sim.options$sim.seed)
-
-  nsamples = nrow(modelmatrix)
-  ngenes = sim.options$ngenes
-  mod = modelmatrix
-  beta = coef.dat
-
-  if (attr(sim.options, 'param.type') == 'estimated') {
-
-    # # make a low magnitude poisson count table
-    # zerocounts = matrix(stats::rpois(ngenes*nsamples, lambda=0.1),
-    #                     nrow=ngenes, ncol=nsamples)
-    # # estimate nb parameters of this zero count table
-    # zero_mus = rowMeans(zerocounts)
-    # true.means = ifelse(is.na(zero_mus), 0, zero_mus)
-
-    # define NB params
-    mu = sim.options$means
-    meansizefit = sim.options$meansizefit
-
-    # sample from the mean parameter observed
-    true.means = vector(mode = "numeric", length = ngenes)
-    index = sample(1:length(mu), size = length(mu), replace = F)
-    true.means[index] = mu[index]
-    names(true.means)[index] = names(mu)[index]
-    fillnames = sample(x = names(mu), size = ngenes - length(mu), replace = T)
-    names(true.means)[-index] = fillnames
-    true.means[-index] = min(mu)/2
-
-    # size factor
-    if(is.list(sim.options$size.factors)) {
-      all.facs <- c(sim.options$size.factors$n1(length(which(phenotype==-1))),
-                    sim.options$size.factors$n2(length(which(phenotype==1))))
-    }
-    if (sim.options$size.factors == "equal") {
-      all.facs <- rep(1, nsamples)
-    }
-    if (sim.options$size.factors == "given") {
-      if (is.function(sim.options$sf)) {
-        all.facs <- sim.options$sf(nsamples)
-      }
-      if (is.vector(sim.options$sf)) {
-        all.facs <- sample(sim.options$sf, nsamples, replace = TRUE)
-      }
-      if (is.null(sim.options$sf)) {
-        stop(message(paste0("You chose to draw from the given size factors,
-                            however the library size factor vector is empty!")))
-      }
-      }
-
-    # effective means
-    effective.means <- outer(true.means, all.facs, "*")
-
-    # estimate size parameter associated with effective mean values
-    lmu = log2(effective.means + 1)
-    predsize.mean = approx(meansizefit$x, meansizefit$y, xout = lmu, rule=2)$y
-    predsize.sd = approx(meansizefit$x, meansizefit$sd, xout = lmu, rule=2)$y
-    sizevec = rnorm(n = length(lmu), mean = predsize.mean, sd = predsize.sd)
-
-    # make mean expression with beta coefficients added as defined by model matrix
-    ind = !apply(mod, 2, function(x) { all(x == 1) })
-    mod = cbind(mod[, ind])
-    beta = cbind(beta[, ind])
-    mumat = log2(effective.means + 1) + beta %*% t(mod)
-    mumat[-index,] = min(mu)/2
-    mumat[mumat < 0] = min(log2(effective.means + 1))
-
-    # result count matrix
-    counts = matrix(
-      stats::rnbinom(nsamples * ngenes, mu = 2 ^ mumat - 1, size = 2 ^ sizevec),
-      ncol = nsamples,
-      nrow = ngenes,
-      dimnames = list(paste0(rownames(mumat),"_", seq_len(ngenes)),
-                      NULL))
-    counts0 = counts == 0
-    nn0 = rowSums(!counts0)
-    dropout = (nsamples - nn0)/nsamples
-    }
-
-  if (attr(sim.options, 'param.type') == 'insilico') {
-
-    # sample from the mean function provided
-    true.means = sim.options$means(ngenes)
-
-    # associate with dispersion parameter
-    if (length(sim.options$dispersion) == 1) {
-      disp = sim.options$dispersion
-    }
-    if (is.function(sim.options$dispersion)) {
-      disp = sim.options$dispersion(true.means)
-    }
-
-    # size factor
-    if(is.list(sim.options$size.factors)) {
-      all.facs <- c(sim.options$size.factors$n1(length(which(phenotype==-1))),
-                    sim.options$size.factors$n2(length(which(phenotype==1))))
-    }
-    if (sim.options$size.factors == "equal") {
-      all.facs <- rep(1, nsamples)
-    }
-    if (sim.options$size.factors == "given") {
-      if (is.function(sim.options$sf)) {
-        all.facs <- sim.options$sf(nsamples)
-      }
-      if (is.vector(sim.options$sf)) {
-        all.facs <- sample(sim.options$sf, nsamples, replace = TRUE)
-      }
-      if (is.null(sim.options$sf)) {
-        stop(message(paste0("You chose to draw from the given size factors,
-                            however the sf vector is empty!")))
-      }
-      }
-
-    # effective means
-    effective.means <- outer(true.means, all.facs, "*")
-
-    # effective dispersions
-    if(length(disp) == 1) {
-      sizevec <- rep(1/disp, ngenes)
-    }
-    if(length(disp) > 1) {
-      sizevec <- disp
-    }
-
-    # make mean expression with beta coefficients added as defined by model matrix
-    ind = !apply(mod, 2, function(x) { all(x == 1) })
-    mod = cbind(mod[, ind])
-    beta = cbind(beta[, ind])
-    mumat = log2(effective.means + 1) + beta %*% t(mod)
-    mumat[mumat < 0] = min(log2(effective.means + 1))
-
-    # result count matrix
-    counts = matrix(stats::rnbinom(nsamples * ngenes,
-                                   mu = 2 ^ mumat - 1, size = 1/disp),
-                    ncol = nsamples, nrow = ngenes)
-    counts0 = counts == 0
-    nn0 = rowSums(!counts0)
-    dropout = (nsamples - nn0)/nsamples
-    }
-
-  return(list(counts=counts, sf=all.facs, mus=true.means, disps=sizevec, drops=dropout))
-}
-
-#' @importFrom stats rnorm rnbinom runif approx
-.sc.ZINB.SampleWReplace_downsample_counts <- function(sim.options, phenotype, modelmatrix, coef.dat) {
-
-  set.seed(sim.options$sim.seed)
-
-  nsamples = nrow(modelmatrix)
-  ngenes = sim.options$ngenes
-  mod = modelmatrix
-  beta = coef.dat
-
-  if (attr(sim.options, 'param.type') == 'estimated') {
-    # define NB params
-    mu = sim.options$means
-    meansizefit = sim.options$meansizefit
-
-    # sample from the mean parameter observed
-    index = sample(1:length(mu), size = ngenes, replace = T)
-    true.means = mu[index]
-
-    # size factor
-    if(is.list(sim.options$size.factors)) {
-      all.facs <- c(sim.options$size.factors$n1(length(which(phenotype==-1))),
-                    sim.options$size.factors$n2(length(which(phenotype==1))))
-    }
-    if (sim.options$size.factors == "equal") {
-      all.facs <- rep(1, nsamples)
-    }
-    if (sim.options$size.factors == "given") {
-      if (is.function(sim.options$sf)) {
-        all.facs <- sim.options$sf(nsamples)
-      }
-      if (is.vector(sim.options$sf)) {
-        all.facs <- sample(sim.options$sf, nsamples, replace = TRUE)
-      }
-      if (is.null(sim.options$sf)) {
-        stop(message(paste0("You chose to draw from the given size factors,
-                            however the sf vector is empty!")))
-      }
-      }
-
-    # effective means
-    effective.means <- outer(true.means, all.facs, "*")
-
-    # estimate size parameter associated with effective mean values
-    lmu = log2(effective.means + 1)
-    predsize.mean = approx(meansizefit$x, meansizefit$y, xout = lmu, rule=2)$y
-    predsize.sd = approx(meansizefit$x, meansizefit$sd, xout = lmu, rule=2)$y
-    sizevec = rnorm(n = length(lmu), mean = predsize.mean, sd = predsize.sd)
-
-    # make mean expression with beta coefficients added as defined by model matrix
-    ind = !apply(mod, 2, function(x) { all(x == 1) })
-    mod = cbind(mod[, ind])
-    beta = cbind(beta[, ind])
-    mumat = log2(effective.means + 1) + beta %*% t(mod)
-    mumat[mumat < 0] = min(log2(effective.means + 1))
-    muvec = as.vector(mumat)
-
-    meanp0fit.nonamplified = sim.options$meanp0fit.nonamplified
-    meanp0fit.amplified = sim.options$meanp0fit.amplified
-    meanp0fit = sim.options$meanp0fit
-    nonamplified = sim.options$nonamplified
-
-    if(!is.null(meanp0fit.nonamplified) && !is.null(meanp0fit.amplified)) {
-      # predict the dropout probabilities associated with sampled mean
-      p0.split = rbinom(length(lmu), prob = nonamplified, size = 1)
-      muvec.dat.nonamplified = abs(lmu)[p0.split==1]
-      muvec.dat.amplified = abs(lmu)[p0.split==0]
-
-      predp0.amplified.mean = approx(meanp0fit.amplified$x,
-                                     meanp0fit.amplified$y,
-                                     xout=muvec.dat.amplified,
-                                     rule = 2:1)$y
-      predp0.amplified.mean[is.na(predp0.amplified.mean)] = 0
-      predp0.amplified.sd = approx(meanp0fit.amplified$x,
-                                   meanp0fit.amplified$sd,
-                                   xout=muvec.dat.amplified,
-                                   rule=2:1)$y
-      predp0.amplified.sd[is.na(predp0.amplified.sd)] = min(meanp0fit.amplified$sd)/2
-      predp0.nonamplified.mean = approx(meanp0fit.nonamplified$x,
-                                        meanp0fit.nonamplified$y,
-                                        xout=muvec.dat.nonamplified,
-                                        rule=2:1)$y
-      predp0.nonamplified.mean[is.na(predp0.nonamplified.mean)] = 0
-      predp0.nonamplified.sd = approx(meanp0fit.nonamplified$x,
-                                      meanp0fit.nonamplified$sd,
-                                      xout=muvec.dat.nonamplified,
-                                      rule=2:1)$y
-      predp0.nonamplified.sd[is.na(predp0.nonamplified.sd)] = min(meanp0fit.amplified$sd)/2
-
-      p0vec = rep(NA, length(lmu))
-      p0vec[p0.split==0] = rnorm(n=length(which(p0.split==0)),
-                                 mean=predp0.amplified.mean,
-                                 sd=predp0.amplified.sd)
-      p0vec[p0.split==1] = rnorm(n=length(which(p0.split==1)),
-                                 mean=predp0.nonamplified.mean,
-                                 sd=predp0.nonamplified.sd)
-
-      p0vec[p0vec<0] = runif(length(which(p0vec<0)),0,0.05)
-      p0vec[p0vec>1] = runif(length(which(p0vec>1)),0.85,1)
-
-      zero.mark = sapply(p0vec, function(x) {
-        rbinom(nsamples,  prob = (1 - x), size = 1)
-      }, simplify = T)
-
-      p0mat = matrix(t(zero.mark), nrow = ngenes, ncol = nsamples)
-
-      counts0 = p0mat == 0
-      nn0 = rowSums(!counts0)
-      dropout = (nsamples - nn0)/nsamples
-
-      # result count matrix
-      counts.nb = matrix(stats::rnbinom(nsamples * ngenes,
-                                        mu = 2 ^ mumat - 1,
-                                        size = 2 ^ sizevec),
-                         ncol = nsamples, nrow = ngenes)
-      counts = counts.nb * p0mat
-    }
-
-    if(any(is.null(meanp0fit.nonamplified), is.null(meanp0fit.amplified)) && !is.null(meanp0fit)) {
-      # predict the dropout probabilities associated with sampled mean
-      p0.split = rbinom(length(lmu), prob = nonamplified, size = 1)
-      muvec.dat = abs(lmu)
-
-      predp0.mean = approx(meanp0fit$x,
-                           meanp0fit$y,
-                           xout=muvec.dat,
-                           rule = 2:1)$y
-      predp0.mean[is.na(predp0.mean)] = 0
-      predp0.sd = approx(meanp0fit$x,
-                         meanp0fit$sd,
-                         xout=muvec.dat,
-                         rule=2:1)$y
-      predp0.sd[is.na(predp0.sd)] = min(meanp0fit$sd)/2
-
-      p0vec = rnorm(n=length(muvec.dat),
-                    mean=predp0.mean,
-                    sd=predp0.sd)
-
-      p0vec[p0vec<0] = runif(length(which(p0vec<0)),0,0.05)
-      p0vec[p0vec>1] = runif(length(which(p0vec>1)),0.85,1)
-
-      zero.mark = sapply(p0vec, function(x) {
-        rbinom(nsamples,  prob = (1 - x), size = 1)
-      }, simplify = T)
-
-      p0mat = matrix(t(zero.mark), nrow = ngenes, ncol = nsamples)
-
-      counts0 = p0mat == 0
-      nn0 = rowSums(!counts0)
-      dropout = (nsamples - nn0)/nsamples
-
-      # result count matrix
-      counts.nb = matrix(stats::rnbinom(nsamples * ngenes,
-                                        mu = 2 ^ mumat - 1,
-                                        size = 2 ^ sizevec),
-                         ncol = nsamples, nrow = ngenes)
-      counts = counts.nb * p0mat
-    }
-
-    if(is.null(meanp0fit.nonamplified) && is.null(meanp0fit.amplified) && is.null(meanp0fit)) {
-      # result count matrix
-      counts = matrix(stats::rnbinom(nsamples * ngenes,
-                                     mu = 2 ^ mumat - 1,
-                                     size = 2 ^ sizevec),
-                      ncol = nsamples, nrow = ngenes)
-
-      counts0 = counts == 0
-      nn0 = rowSums(!counts0)
-      dropout = (nsamples - nn0)/nsamples
-    }
-    }
-
-  dimnames(counts) <- list(paste0(rownames(mumat),"_", seq_len(ngenes)),
-                           NULL)
-
-  return(list(counts=counts, sf=all.facs, mus=true.means, disps=sizevec, drops=dropout))
-}
-
-#' @importFrom stats rnorm rnbinom runif approx rpois
-.sc.ZINB.FillIn_downsample_counts <- function(sim.options, phenotype, modelmatrix, coef.dat) {
-
-  set.seed(sim.options$sim.seed)
-
-  nsamples = nrow(modelmatrix)
-  ngenes = sim.options$ngenes
-  mod = modelmatrix
-  beta = coef.dat
-
-  if (attr(sim.options, 'param.type') == 'estimated') {
-
-    # # make a low magnitude poisson count table
-    # zerocounts = matrix(stats::rpois(ngenes*nsamples, lambda=0.1),
-    #                     nrow=ngenes, ncol=nsamples)
-    # # estimate nb parameters of this zero count table
-    # zero_mus = rowMeans(zerocounts)
-    # true.means = ifelse(is.na(zero_mus), 0, zero_mus)
-
-    # define NB params
-    mu = sim.options$means
-    meansizefit = sim.options$meansizefit
-
-    # sample from the mean parameter observed
-    true.means = vector(mode = "numeric", length = ngenes)
-    index = sample(1:length(mu), size = length(mu), replace = F)
-    true.means[index] = mu[index]
-    names(true.means)[index] = names(mu)[index]
-    fillnames = sample(x = names(mu), size = ngenes - length(mu), replace = T)
-    names(true.means)[-index] = fillnames
-    true.means[-index] = min(mu)/2
-
-
-
-    # size factor
-    if(is.list(sim.options$size.factors)) {
-      all.facs <- c(sim.options$size.factors$n1(length(which(phenotype==-1))),
-                    sim.options$size.factors$n2(length(which(phenotype==1))))
-    }
-    if (sim.options$size.factors == "equal") {
-      all.facs <- rep(1, nsamples)
-    }
-    if (sim.options$size.factors == "given") {
-      if (is.function(sim.options$sf)) {
-        all.facs <- sim.options$sf(nsamples)
-      }
-      if (is.vector(sim.options$sf)) {
-        all.facs <- sample(sim.options$sf, nsamples, replace = TRUE)
-      }
-      if (is.null(sim.options$sf)) {
-        stop(message(paste0("You chose to draw from the given size factors,
-                            however the sf vector is empty!")))
-      }
-      }
-
-    # effective means
-    effective.means <- outer(true.means, all.facs, "*")
-
-    # estimate size parameter associated with effective mean values
-    lmu = log2(effective.means + 1)
-    predsize.mean = approx(meansizefit$x, meansizefit$y, xout = lmu, rule=2)$y
-    predsize.sd = approx(meansizefit$x, meansizefit$sd, xout = lmu, rule=2)$y
-    sizevec = rnorm(n = length(lmu), mean = predsize.mean, sd = predsize.sd)
-
-    # make mean expression with beta coefficients added as defined by model matrix
-    ind = !apply(mod, 2, function(x) { all(x == 1) })
-    mod = cbind(mod[, ind])
-    beta = cbind(beta[, ind])
-    mumat = log2(effective.means + 1) + beta %*% t(mod)
-    mumat[-index,] = min(mu)/2
-    mumat[mumat < 0] = min(log2(effective.means + 1))
-    muvec = as.vector(mumat)
-
-    meanp0fit.nonamplified = sim.options$meanp0fit.nonamplified
-    meanp0fit.amplified = sim.options$meanp0fit.amplified
-    meanp0fit = sim.options$meanp0fit
-    nonamplified = sim.options$nonamplified
-
-    if(!is.null(meanp0fit.nonamplified) && !is.null(meanp0fit.amplified)) {
-      # predict the dropout probabilities associated with sampled mean
-      p0.split = rbinom(length(lmu), prob = nonamplified, size = 1)
-      muvec.dat.nonamplified = abs(lmu)[p0.split==1]
-      muvec.dat.amplified = abs(lmu)[p0.split==0]
-
-      predp0.amplified.mean = approx(meanp0fit.amplified$x,
-                                     meanp0fit.amplified$y,
-                                     xout=muvec.dat.amplified,
-                                     rule = 2:1)$y
-      predp0.amplified.mean[is.na(predp0.amplified.mean)] = 0
-      predp0.amplified.sd = approx(meanp0fit.amplified$x,
-                                   meanp0fit.amplified$sd,
-                                   xout=muvec.dat.amplified,
-                                   rule=2:1)$y
-      predp0.amplified.sd[is.na(predp0.amplified.sd)] = min(meanp0fit.amplified$sd)/2
-      predp0.nonamplified.mean = approx(meanp0fit.nonamplified$x,
-                                        meanp0fit.nonamplified$y,
-                                        xout=muvec.dat.nonamplified,
-                                        rule=2:1)$y
-      predp0.nonamplified.mean[is.na(predp0.nonamplified.mean)] = 0
-      predp0.nonamplified.sd = approx(meanp0fit.nonamplified$x,
-                                      meanp0fit.nonamplified$sd,
-                                      xout=muvec.dat.nonamplified,
-                                      rule=2:1)$y
-      predp0.nonamplified.sd[is.na(predp0.nonamplified.sd)] = min(meanp0fit.amplified$sd)/2
-
-      p0vec = rep(NA, length(lmu))
-      p0vec[p0.split==0] = rnorm(n=length(which(p0.split==0)),
-                                 mean=predp0.amplified.mean,
-                                 sd=predp0.amplified.sd)
-      p0vec[p0.split==1] = rnorm(n=length(which(p0.split==1)),
-                                 mean=predp0.nonamplified.mean,
-                                 sd=predp0.nonamplified.sd)
-
-      p0vec[p0vec<0] = runif(length(which(p0vec<0)),0,0.05)
-      p0vec[p0vec>1] = runif(length(which(p0vec>1)),0.85,1)
-
-      zero.mark = sapply(p0vec, function(x) {
-        rbinom(nsamples,  prob = (1 - x), size = 1)
-      }, simplify = T)
-
-      p0mat = matrix(t(zero.mark), nrow = ngenes, ncol = nsamples)
-
-      counts0 = p0mat == 0
-      nn0 = rowSums(!counts0)
-      dropout = (nsamples - nn0)/nsamples
-
-      # result count matrix
-      counts.nb = matrix(stats::rnbinom(nsamples * ngenes,
-                                        mu = 2 ^ mumat - 1,
-                                        size = 2 ^ sizevec),
-                         ncol = nsamples, nrow = ngenes)
-      counts = counts.nb * p0mat
-    }
-
-    if(any(is.null(meanp0fit.nonamplified), is.null(meanp0fit.amplified)) && !is.null(meanp0fit)) {
-      # predict the dropout probabilities associated with sampled mean
-      p0.split = rbinom(length(lmu), prob = nonamplified, size = 1)
-      muvec.dat = abs(lmu)
-
-      predp0.mean = approx(meanp0fit$x,
-                           meanp0fit$y,
-                           xout=muvec.dat,
-                           rule = 2:1)$y
-      predp0.mean[is.na(predp0.mean)] = 0
-      predp0.sd = approx(meanp0fit$x,
-                         meanp0fit$sd,
-                         xout=muvec.dat,
-                         rule=2:1)$y
-      predp0.sd[is.na(predp0.sd)] = min(meanp0fit$sd)/2
-
-      p0vec = rnorm(n=length(muvec.dat),
-                    mean=predp0.mean,
-                    sd=predp0.sd)
-
-      p0vec[p0vec<0] = runif(length(which(p0vec<0)),0,0.05)
-      p0vec[p0vec>1] = runif(length(which(p0vec>1)),0.85,1)
-
-      zero.mark = sapply(p0vec, function(x) {
-        rbinom(nsamples,  prob = (1 - x), size = 1)
-      }, simplify = T)
-
-      p0mat = matrix(t(zero.mark), nrow = ngenes, ncol = nsamples)
-
-      counts0 = p0mat == 0
-      nn0 = rowSums(!counts0)
-      dropout = (nsamples - nn0)/nsamples
-
-      # result count matrix
-      counts.nb = matrix(stats::rnbinom(nsamples * ngenes,
-                                        mu = 2 ^ mumat - 1,
-                                        size = 2 ^ sizevec),
-                         ncol = nsamples, nrow = ngenes)
-      counts = counts.nb * p0mat
-    }
-
-    if(is.null(meanp0fit.nonamplified) && is.null(meanp0fit.amplified) && is.null(meanp0fit)) {
-      # result count matrix
-      counts = matrix(stats::rnbinom(nsamples * ngenes,
-                                     mu = 2 ^ mumat - 1,
-                                     size = 2 ^ sizevec),
-                      ncol = nsamples, nrow = ngenes)
-      counts0 = counts == 0
-      nn0 = rowSums(!counts0)
-      dropout = (nsamples - nn0)/nsamples
-    }
-    }
-
-  dimnames(counts) <- list(paste0(rownames(mumat),"_", seq_len(ngenes)),
-                           NULL)
-
-  return(list(counts=counts, sf=all.facs, mus=true.means, disps=sizevec, drops=dropout))
-}
-
-
-# BULK --------------------------------------------------------------------
-
-#' @importFrom stats rnorm rbinom rnbinom approx
-.bulk.NB.RNAseq_counts <- function(sim.options, phenotype, modelmatrix, coef.dat) {
-
-  set.seed(sim.options$sim.seed)
-
-  nsamples = nrow(modelmatrix)
-  ngenes = sim.options$ngenes
-  mod = modelmatrix
-  beta = coef.dat
-
-  if (attr(sim.options, 'param.type') == 'estimated') {
-    # define NB params
-    mu = sim.options$means
-    meansizefit = sim.options$meansizefit
-
-    # sample from the mean parameter observed
-    index = sample(1:length(mu), size = ngenes, replace = T)
-    true.means = mu[index]
-
-    # estimate size parameter associated with mean values
-    lmu = log2(true.means + 1)
-    predsize.mean = stats::approx(meansizefit$x, meansizefit$y, xout = lmu)$y
-    predsize.sd = stats::approx(meansizefit$x, meansizefit$sd, xout = lmu)$y
-    sizevec = stats::rnorm(n = length(lmu), mean = predsize.mean, sd = predsize.sd)
-
-    # associate dropout probability with mean parameter
-    p0vec = rep(0, ngenes)
-    p0s = ifelse(lmu < sim.options$p0.cut, sample(x = sim.options$p0,size = 1), p0vec)
-    p0mat = t(sapply(p0s, function(x) {
-      stats::rbinom(nsamples, prob = 1 - x, size = 1)
-    }, simplify = T))
-
-    counts0 = p0mat == 0
-    nn0 = rowSums(!counts0)
-    dropout = (nsamples - nn0)/nsamples
-
-    # size factor
-    if(is.list(sim.options$size.factors)) {
-      all.facs <- c(sim.options$size.factors$n1(length(which(phenotype==-1))),
-                    sim.options$size.factors$n2(length(which(phenotype==1))))
-    }
-    if (sim.options$size.factors == "equal") {
-      all.facs <- rep(1, nsamples)
-    }
-    if (sim.options$size.factors == "given") {
-      if (is.function(sim.options$sf)) {
-        all.facs <- sim.options$sf(nsamples)
-      }
-      if (is.vector(sim.options$sf)) {
-        all.facs <- sample(sim.options$sf, nsamples, replace = TRUE)
-      }
-      if (is.null(sim.options$sf)) {
-        stop(message(paste0("You chose to draw from the given size factors,
-                            however the sf vector is empty!")))
-      }
-    }
-
-    # effective means
-    effective.means <- outer(true.means, all.facs, "*")
-
-    # make mean expression with beta coefficients added as defined by model matrix
-    ind = !apply(mod, 2, function(x) { all(x == 1) })
-    mod = cbind(mod[, ind])
-    beta = cbind(beta[, ind])
-    mumat = log2(effective.means + 1) + beta %*% t(mod)
-    mumat[mumat < 0] = min(log2(effective.means + 1))
-
-    # result count matrix
-    cnts = matrix(
-      stats::rnbinom(nsamples * ngenes, mu = 2 ^ mumat - 1, size = 2 ^ sizevec),
-      ncol = nsamples, nrow = ngenes,
-      dimnames = list(paste0(rownames(mumat),"_", seq_len(ngenes)),
-                      NULL))
-    counts = p0mat * cnts
-    }
-
-  if (attr(sim.options, 'param.type') == 'insilico') {
-
-    # sample from the mean function provided
-    true.means = sim.options$means(ngenes)
-
-    # sample dropout parameter
-    if (is.null(sim.options$p0)) {
-      p0s <- rep(0, ngenes)
-    }
-    if (is.function(sim.options$p0)) {
-      p0s <- sim.options$p0(ngenes)
-    }
-    p0mat = t(sapply(p0s, function(x) {
-      stats::rbinom(nsamples, prob = 1 - x, size = 1)
-    }, simplify = T))
-
-    counts0 = p0mat == 0
-    nn0 = rowSums(!counts0)
-    dropout = (nsamples - nn0)/nsamples
-
-    # associate with dispersion parameter
-    if (length(sim.options$dispersion) == 1) {
-      disp = sim.options$dispersion
-    }
-    if (is.function(sim.options$dispersion)) {
-      disp = sim.options$dispersion(true.means)
-    }
-
-    # size factor
-    if(is.list(sim.options$size.factors)) {
-      all.facs <- c(sim.options$size.factors$n1(length(which(phenotype==-1))),
-                    sim.options$size.factors$n2(length(which(phenotype==1))))
-    }
-    if (sim.options$size.factors == "equal") {
-      all.facs <- rep(1, nsamples)
-    }
-    if (sim.options$size.factors == "given") {
-      if (is.function(sim.options$sf)) {
-        all.facs <- sim.options$sf(nsamples)
-      }
-      if (is.vector(sim.options$sf)) {
-        all.facs <- sample(sim.options$sf, nsamples, replace = TRUE)
-      }
-      if (is.null(sim.options$sf)) {
-        stop(message(paste0("You chose to draw from the given size factors,
-                            however the sf vector is empty!")))
-      }
-      }
-
-    # effective means
-    effective.means <- outer(true.means, all.facs, "*")
-
-    # effective dispersions
-    if(length(disp) == 1) {
-      sizevec <- rep(1/disp, ngenes)
-    }
-    if(length(disp) > 1) {
-      sizevec <- disp
-    }
-
-    # make mean expression with beta coefficients added as defined by model matrix
-    ind = !apply(mod, 2, function(x) { all(x == 1) })
-    mod = cbind(mod[, ind])
-    beta = cbind(beta[, ind])
-    mumat = log2(effective.means + 1) + beta %*% t(mod)
-    mumat[mumat < 0] = min(log2(effective.means + 1))
-
-    # result count matrix
-    cnts = matrix(stats::rnbinom(nsamples * ngenes,
-                                 mu = 2 ^ mumat - 1,
-                                 size = 1/disp),
-                  ncol = nsamples, nrow = ngenes)
-    counts = p0mat * cnts
-    }
-
-  return(list(counts=counts, sf=all.facs, mus=true.means, disps=sizevec, drops=dropout))
-}
-
-
-# Simulate spike-in reads -------------------------------------------------
-
-.simSpike <- function(SpikeOptions, n1, n2, sf = NULL) {
-  # sample mean expression values of spike-ins
-  predictedMean = rowMeans(SpikeOptions$normCounts) /
-    (SpikeOptions$EVGammaThetaEstimates$EGamma * SpikeOptions$EVGammaThetaEstimates$ETheta)
-
-  # create size factor matrix
-  if(is.null(sf)) {
-    sf =  rep(1, n1+n2)
-    sizefactors.mat = .repmat(t(as.matrix(sf)), length(predictedMean), 1)
-  }
-  if(!is.null(sf)) {
-    sizefactors.mat = .repmat(t(as.matrix(sf)), length(predictedMean), 1)
-  }
-
-
-  # simulate spike-ins assuming no biological variance contribution
-  spike.cnts <- .simulateCountGenes(Xi=predictedMean,
-                                    ETheta = SpikeOptions$EVGammaThetaEstimates$ETheta,
-                                    VTheta = SpikeOptions$EVGammaThetaEstimates$VTheta,
-                                    EGamma = SpikeOptions$EVGammaThetaEstimates$EGamma,
-                                    VGamma =  SpikeOptions$EVGammaThetaEstimates$VGamma,
-                                    Aij = sizefactors.mat,
-                                    nCell = n1+n2,
-                                    BV = 0*(n1+n2))
-
-  return(list(counts=spike.cnts, sf=sf))
-}

@@ -1,59 +1,152 @@
+# Setup -----------------------------------------------------------------
 
-# DESetup -----------------------------------------------------------------
-
-#' @name DESetup
-#' @aliases DESetup
+#' @name Setup
+#' @aliases Setup
 #' @title Setup options for RNA-seq count simulations.
-#' @description This function generates a set of differential expressed gene IDs with associated fold changes for a given number of genes, simulations and fraction of DE genes.
-#' @usage DESetup(ngenes=10000, nsims=25,
-#' p.DE=0.1, pLFC,
+#' @description This function generates the settings needed for simulateDE().
+#' Firstly a set of differential expressed gene IDs with
+#' associated fold changes for a given number of genes, simulations and
+#' fraction of DE genes is generated. There are also a number of options relating
+#'  to count simulations such as downsampling.
+#'  Secondly, the estimated parameters for count simulations of genes (and spikes) are added.
+#' @usage Setup(ngenes=NULL, nsims=25,
+#' p.DE = 0.1, pLFC = 1,
 #' p.B=NULL, bLFC=NULL, bPattern="uncorrelated",
-#' sim.seed)
-#' @param ngenes The total number of genes to simulate. Default is \code{10000}.
+#' n1=c(20,50,100), n2=c(30,60,120),
+#' Thinning = NULL, LibSize='equal',
+#' estParamRes, estSpikeRes=NULL,
+#' DropGenes=FALSE,
+#' sim.seed, verbose = TRUE)
+#' @param ngenes is a numeric vector specifying the number of genes to simulate.
+#' Default is \code{NULL}, i.e. the number of genes that were deemed expressed after filtering.
+#' See \code{\link{estimateParam}} and \code{\link{plotParam}} for more information about the number of genes that were used fo estimation and fitting.
 #' @param nsims Number of simulations to run. Default is 25.
 #' @param p.DE Numeric vector between 0 and 1 representing
 #' the percentage of genes being differentially expressed due to phenotype,
 #' i.e. biological signal. Default is \code{0.1}.
 #' @param pLFC The log2 phenotypic fold change for DE genes. This can be:
 #' (1) a constant, e.g. 2;
-#' (2) a vector of values with length being number of DE genes. If the input is a vector and the length is not the number of DE genes, it will be sampled with replacement to generate log-fold change;
-#' (3) a function that takes an integer n, and generates a vector of length n, e.g. function(x) rnorm(x, mean=0, sd=1.5).
+#' (2) a vector of values with length being number of DE genes.
+#' If the input is a vector and the length is not the number of DE genes,
+#' it will be sampled with replacement to generate log2 fold changes;
+#' (3) a function that takes an integer n, and generates a vector of length n,
+#' e.g. function(x) rnorm(x, mean=0, sd=1.5).
+#' Default is \code{1}.
 #' @param p.B Numeric vector between 0 and 1 representing the percentage of genes
-#' being differentially expressed between batches. Default is \code{NULL}, i.e. no batch effect.
+#' being differentially expressed between batches.
+#' Default is \code{NULL}, i.e. no batch effect.
 #' @param bLFC The log2 batch fold change for all genes. This can be:
 #' (1) a constant, e.g. 2;
-#' (2) a vector of values with length being number of all genes. If the input is a vector and the length is not the number of total genes, it will be sampled with replacement to generate log2 fold changes;
-#' (3) a function that takes an integer n, and generates a vector of length n, e.g. function(x) rnorm(x, mean=0, sd=1.5).
-#' Note that only two batches will be simulated.
-#' @param bPattern Character vector for batch effect pattern if \code{p.B} is non-null. Possible options include:
-#' "uncorrelated", "orthogonal" and " correlated". Default is \code{"uncorrelated"}.
+#' (2) a vector of values with length being number of all genes.
+#' If the input is a vector and the length is not the number of total genes,
+#'  it will be sampled with replacement to generate log2 fold changes;
+#' (3) a function that takes an integer n, and generates a vector of length n,
+#'  e.g. function(x) rnorm(x, mean=0, sd=1.5).
+#' Note that the simulations of only two batches is implemented.
+#' Default is \code{NULL}, i.e. no batch effect.
+#' @param bPattern Character vector for batch effect pattern if \code{p.B} is non-null.
+#' Possible options include:
+#' "uncorrelated", "orthogonal" and " correlated".
+#' Default is \code{"uncorrelated"}.
+#' @param n1,n2 Integer vectors specifying the number of biological replicates in each group.
+#' Default values are n1=c(20,50,100) and n2=c(30,60,120).
+#' The vectors need to have the same number of entries, i.e. length.
+#' @param Thinning Integer vector specifying the downsampling.
+#' It has to be the same length and order as the vector \code{n1}.
+#' This is an implementation of \code{\link[edgeR]{thinCounts}}.
+#' The vector entries should be a proportion between 0 and 1,
+#' e.g. \code{0.75} means that each sample in that group
+#' will have on average 75\% sequencing depth compared
+#' to the original sequencing depth as listed in \code{\link{estimateParam}}.
+#' Note that no upsampling is possible, i.e. defining a proportion greater than 1.
+#' The default is \code{NULL}, meaning no downsampling.
+#' @param LibSize Size factors representing sample-specific differences/biases
+#'  in expected mean values of counts:
+#' \code{"equal"} or \code{"given"}. The default is \code{"equal"},
+#' i.e. equal size factor of 1.
+#' If the user defines it as \code{"given"}, the size factors are sampled from
+#' the estimated size factors of \code{\link{estimateParam}}.
+#' @param estParamRes The estimated simulation parameters for genes. This can be:
+#' (1) The output of \code{\link{estimateParam}}.
+#' (2) A string specifying the name of precalculated estimates, see details.
+#' @param estSpikeRes The spike-in simulation parameters generated by \code{\link{estimateSpike}}.
+#' These are needed for applying spike-in-dependent normalisation methods.
+#' Default is \code{NULL}, i.e. no spike-in count simulations.
+#' @param DropGenes By default, the estimated parameters and fit based on genes that
+#'  were defined as expressed are used for simulations.
+#' By setting this parameter to \code{TRUE}, a fraction of genes will be dropouts.
+#' The dropout genes are defined in \code{\link{estimateParam}} using the \code{GeneFilter} option
+#' and can be plotted with \code{\link{plotParam}}.
+#' Default is \code{FALSE}, i.e. no gene expression dropouts.
 #' @param sim.seed Simulation seed.
-#' @return A list with the following entries:
-#' \item{ngenes}{An integer for number of genes.}
-#' \item{nsims}{An integer for number of simulations.}
-#' \item{sim.seed}{The specified simulation seed.}
-#' \item{p.DE}{Percentage of DE genes.}
-#' \item{DEid}{A list (length=nsims) of vectors (length=ngenes*p.DE) for the IDs of DE genes.}
-#' \item{glfc}{A list (length=nsims) of vectors (length=ngenes) for phenotypic log fold change of all genes, ie nonDE=0 and DE=lfc.}
-#' \item{blfc}{A list (length=nsims) of vectors (length=ngenes) for batch log fold change of all genes.}
-#' \item{design}{Two group comparison}
+#' @param verbose Logical vector to indicate whether to print function information.
+#' Default is \code{TRUE}.
+#'
+#' @return A complex list with the following entries:
+#' \item{DESetup}{A list of simulation options relating to the Differential Expression Setup:
+#' number of genes simulated (ngenes); number of simulation iterations (nsims);
+#' IDs of DE genes (DEid) which is a list (length=nsims) of vectors (length=ngenes*p.DE);
+#' log fold change of genes (pLFC) which is a list (length=nsims) of vectors (length=ngenes);
+#' similarly for batch effects (Bid and bLFC); list containing simulation seeds (sim.seed).}
+#' \item{SimSetup}{A list of simulation options relating to the Simulation Setup:
+#' the number of samples per group (n1 and n2); simulating spike-ins (spikeIns);
+#' Thinning parameters (Thinning, thinSpike); Library Size Factors (LibSize);
+#'  dropout genes (DropGenes and DropRate).}
+#' \item{estParamRes}{A list object containing the gene simulation parameters provided.}
+#' \item{estSpikeRes}{A list object containing the spike-in simulation parameters provided.}
 #' @author Beate Vieth
 #' @examples
 #' \dontrun{
-#' desettings <- DESetup(ngenes = 10000, nsims = 25,
-#' p.DE = 0.2, pLFC = function(x) sample(c(-1,1), size=x,replace=TRUE)*rgamma(x, 3, 3),
-#' p.B=0.1, bLFC = function(x) rnorm(x, mean=0, sd=1.5), bPattern="uncorrelated",
-#' sim.seed = 43856)
+#' data(kolodziejczk_param)
+#' setupres <- Setup(ngenes = NULL, nsims = 25,
+#' p.DE = 0.1, pLFC = 1.25,
+#' p.B = NULL, bLFC = NULL, bPattern = 'uncorrelated',
+#' n1 = c(20,50,100), n2 = c(30,60,120),
+#' Thinning = NULL, LibSize = 'equal',
+#' estParamRes = kolodziejczk_param,
+#' estSpikeRes = NULL,
+#' DropGenes = FALSE,
+#' sim.seed = 52679, verbose = TRUE)
 #' }
-#' @rdname DESetup
+#' @rdname Setup
 #' @export
-DESetup <- function(ngenes=10000, nsims=25,
-                    p.DE=0.1, pLFC,
-                    p.B=NULL, bLFC=NULL, bPattern="uncorrelated",
-                    sim.seed) {
-  if (missing(sim.seed))
+  Setup <- function(ngenes = NULL, nsims = 25,
+                    p.DE = 0.1, pLFC = 1,
+                    p.B = NULL, bLFC = NULL, bPattern = 'uncorrelated',
+                    n1 = c(20,50,100), n2 = c(30,60,120),
+                    Thinning = NULL, LibSize = 'equal',
+                    estParamRes, estSpikeRes = NULL,
+                    DropGenes = FALSE,
+                    sim.seed, verbose = TRUE) {
+
+  ## DE Setup:
+  if(missing(sim.seed)){
     sim.seed = sample(1:1000000, size = 1)
+  }
   set.seed(sim.seed)
+  if(verbose) {message(paste0("Seed: ", sim.seed))}
+
+  nogenes <- ngenes
+  detect.genes <- estParamRes$Parameters$Filtered$ngenes
+
+  if(is.null(nogenes)){
+    ngenes <- estParamRes$Parameters$Filtered$ngenes
+    message(paste0("You have not defined the number of genes to simulate. Therefore, given that the expression of ", detect.genes, " could be estimated, that number of genes will be simulated by random draw without replacement."))
+    SwReplace = FALSE
+  }
+  if(is.numeric(nogenes)){
+    ngenes <- nogenes
+    if(ngenes <= detect.genes){
+      message(paste0("You have chosen to simulate the expression of ",
+                     ngenes, " genes, which will be randomly drawn without replacement from the observed expression of ", detect.genes, " genes."))
+      SwReplace = FALSE
+    }
+    if(ngenes > detect.genes){
+      message(paste0("You have chosen to simulate the expression of ",
+                     ngenes, " genes, which will be randomly drawn with replacement from the observed expression of ", detect.genes, " genes."))
+      SwReplace = TRUE
+    }
+  }
 
   nDE = round(ngenes*p.DE)
   if(!is.null(p.B)) { nB = round(ngenes*p.B) }
@@ -81,88 +174,85 @@ DESetup <- function(ngenes=10000, nsims=25,
 
   set.seed(NULL)
 
-  ## return
-  res <- c(list(DEid = DEids,
-                Bid = Bids,
-                pLFC = plfcs,
-                bLFC = blfcs,
-                ngenes = ngenes,
-                nsims = nsims,
-                p.DE = p.DE,
-                p.B = p.B,
-                bPattern = bPattern,
-                sim.seed.DESetting = sim.seed),
-           list(sim.seed = sim.seed), design = "2grp")
+  DESetup <- c(list(DEid = DEids,
+                    Bid = Bids,
+                    pLFC = plfcs,
+                    bLFC = blfcs,
+                    ngenes = ngenes,
+                    Draw = list(MoM='Filtered', Fit='Filtered'),
+                    SwReplace = SwReplace,
+                    nsims = nsims,
+                    p.DE = p.DE,
+                    p.B = p.B,
+                    bPattern = bPattern,
+                    sim.seed.DESetting = sim.seed),
+               list(sim.seed = sim.seed), design = "2grp")
+
+  ## Simulation Setup:
+  if (!length(n1) == length(n2)) { stop("n1 and n2 must have the same length!") }
+
+  if(isTRUE(DropGenes)){
+    if(all(is.na(estParamRes$Parameters$DropGene))){
+      message(paste0("You want to include dropout genes, but the estParamRes object does not contain dropout genes.
+                     Setting DropGenes to FALSE."))
+      DropGenes = FALSE
+    }
+    if(all(!is.na(estParamRes$Parameters$DropGene))){
+      DropRate = estParamRes$Parameters$DropGene$ngenes / estParamRes$detectG
+      message(paste0("From the simulated ",
+                     ngenes, " genes, ", round(DropRate*100), "% will be dropouts."))
+    }
+  }
+
+  if(!isTRUE(DropGenes)){
+    DropRate <- NULL
+  }
+
+  if(is.null(estSpikeRes)){
+    spikeIns = FALSE
+    thinSpike = FALSE
+  }
+  if(!is.null(estSpikeRes)){
+    spikeIns = TRUE
+  }
+  if(is.null(Thinning)){
+    thinSpike = FALSE
+  }
+  if(!is.null(Thinning)){
+    if(!is.null(Thinning) && !length(Thinning) == length(n1)) {
+      stop(message(paste0("You wish to use binomial thinning but the Thinning vector is not the same length as the sample size vectors. Aborting.")))
+    }
+    if(!is.null(Thinning) && any(c(Thinning > 1, Thinning <= 0))) {
+      stop(message(paste0("You wish to use binomial thinning but the Thinning vector contains values outside the allowed proportions. Aborting.")))
+    }
+
+    if(all(is.na(estParamRes$Fit$UmiRead)) && attr(estParamRes, 'Protocol')=='UMI'){
+      stop(message(paste0("You wish to use binomial thinning of UMI counts but there is no UMI-Read Fit in estParamRes object.
+      In order to downsample UMI counts correctly, please provide readData in estimateParam(). Aborting.")))
+    }
+    if(!is.null(estSpikeRes)){
+      thinSpike = TRUE
+    }
+  }
+
+  SimSetup <- list(n1=n1,
+                   n2=n2,
+                   Thinning=Thinning,
+                   spikeIns=spikeIns,
+                   thinSpike=thinSpike,
+                   LibSize=LibSize,
+                   DropGenes=DropGenes,
+                   DropRate=DropRate)
+
+  # return object
+  res <- c(DESetup=list(DESetup),
+           SimSetup=list(SimSetup),
+           estParamRes=list(estParamRes),
+           estSpikeRes=list(estSpikeRes))
+
+  attr(res, 'RNAseq') <- attr(estParamRes, 'RNAseq')
+  attr(res, 'Distribution') <- attr(estParamRes, 'Distribution')
+  attr(res, 'Protocol') <- attr(estParamRes, 'Protocol')
+
   return(res)
-
 }
-
-# SimSetup ----------------------------------------------------------------
-
-#' @name SimSetup
-#' @aliases SimSetup
-#' @title DEA options for RNA-seq count simulations in two-group comparison.
-#' @description This function adds user provided options for simulating RNA-seq data to RNAseq.SimSetup object. The resulting output list object is the input for \code{\link{simulateDE}} function.
-#' @usage SimSetup(desetup,
-#' params,
-#' spike=NULL,
-#' size.factors='equal',
-#' downsample=FALSE,
-#' geneset=FALSE)
-#' @param desetup The RNAseq simulation parameters created by \code{\link{DESetup}}.
-#' @param params The negative binomial parameters for simulations. This can be:
-#' (1) The output of \code{\link{estimateParam}}.
-#' (2) A string specifying the name of precalculated estimates, see details.
-#' @param spike The spike-in simulation parameters created by \code{\link{estimateSpike}}. Default is \code{NULL}.
-#' These are needed for applying spike-in-dependent normalisation methods, i.e. 'RUV' and 'BASiCS'.
-#' @param size.factors Size factors representing sample-specific differences/biases in expected mean values of the NB distribution:
-#' "equal" or "given". The default is "equal", i.e. equal size factor of 1.
-#' If the user defines it as given, the size factors are sampled from the size factors provided by the output of \code{\link{estimateParam}}.
-#' @param downsample Drawing the associated dispersions after determining effective mean expressions by size factors. Default is \code{FALSE}.
-#' @param geneset Sampling with replacement or filling count tables with low magnitude Poisson
-#' when the estimated mean expression vector is shorter than the number of genes to be simulated.
-#' Default is \code{FALSE}, i.e. random sampling of mean expression values with replacement.
-#' @return A list with the following entries:
-#' \item{desetup}{The RNAseq simulation parameters.}
-#' \item{params}{The distributional parameters for simulations of genes.}
-#' \item{spike}{The distributional parameters for simulations of spike-ins.}
-#' \item{size.factors}{Size factor definition: "equal" means no difference in size factors between samples.
-#' "given" means that the size factors will be randomly drawn from the size factors provided by \code{params}.
-#' The user can also provide a list object containing sampling distributions per group (n1 and n2).
-#' Defaul is \code{"equal"}.}
-#' @author Beate Vieth
-#' @examples
-#' \dontrun{
-#' ## Setting DE options
-#' de.opts <- DESetup(ngenes = 10000, nsims = 25,
-#' p.DE = 0.2, pLFC = function(x) sample(c(-1,1), size=x,replace=TRUE)*rgamma(x, 3, 3),
-#' p.B=0.1, bLFC = function(x) rnorm(x, mean=0, sd=1.5), bPattern="uncorrelated",
-#' sim.seed = 43856)
-#' ## Combining DE options with parameters
-#' sim.opts <- SimSetup(desetup = de.opts,
-#' params = kolodziejczk_param,
-#' spike=NULL, size.factors = "equal",
-#' downsample = FALSE, geneset = FALSE)
-#' }
-#' @rdname SimSetup
-#' @export
-SimSetup <- function(desetup,
-                     params,
-                     spike=NULL,
-                     size.factors='equal',
-                     downsample=FALSE,
-                     geneset=FALSE) {
-
-  ## return
-  res <- c(desetup,
-           params,
-           list(spike=spike),
-           size.factors=list(size.factors),
-           downsample=list(downsample),
-           geneset=list(geneset))
-  attr(res, 'param.type') <- attr(params, 'param.type')
-  attr(res, 'Distribution') <- attr(params, 'Distribution')
-  return(res)
-
-}
-

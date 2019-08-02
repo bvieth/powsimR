@@ -2,7 +2,7 @@
 % Please edit documentation in R/Evaluate.R
 \name{evaluateROC}
 \alias{evaluateROC}
-\title{Receiver operator characteristics from simulation results}
+\title{Receiver operator characteristics of simulation results}
 \usage{
 evaluateROC(simRes,
 alpha.type=c("adjusted","raw"),
@@ -40,17 +40,14 @@ If \code{delta=0} then no threshold is applied. See "Details" for more descripti
 }
 \value{
 A list with the following entries:
-\item{ROCR-Prediction}{The output of \code{\link[ROCR]{prediction}} split up by group comparisons into lists.}
-\item{ROCR-Performance}{The output of \code{\link[ROCR]{performance}} calculating TPR and FPR for ROC curve.
-This is also split up by group comparisons into lists.}
-\item{ROCR-AUC}{The output of \code{\link[ROCR]{performance}} calculating AUC of ROC curve.
-split up by group comparisons into lists.}
-\item{n1,n2}{Sample sizes per group.
-This is taken from the simulation options.}
-\item{target.by}{The input method to define "biologically important" DE genes,
-either by log fold change or effect size.}
-\item{delta}{The input delta for biologically important genes.
-If delta=0, all target.by will be considered.}
+\item{Performance}{The output of \code{\link[iCOBRA]{calculate_performance}} of aspect "fdrtprcurve" calculating the proportions of TN, FN, TP and FP and related rates which uses \code{\link[ROCR]{prediction}} and \code{\link[ROCR]{performance}} internally.}
+\item{FDR_TPR_Thres}{The output of \code{\link[iCOBRA]{calculate_performance}} of aspect "fdrtpr" calculating the proportions of TN, FN, TP and FP and associated TPR and FDR for each nominal level from 0.01 to 1 in steps of 0.01.}
+\item{TPRvsPPV_AUC}{The area under the curve for TPR versus PPV. This is also split up by group comparisons into lists with length equal to number of simulations.}
+\item{TPRvsFPR_AUC}{The area under the curve for TPR versus FPR, i.e. classical ROC-curve. This is also split up by group comparisons into lists with length equal to number of simulations.}
+\item{TPRvsFDR_pAUC_conv,TPRvsFDR_pAUC_lib}{The partial area under the curve for TPR versus FDR, once for conservative and once for liberal nominal FDR level (see Details section). This is also split up by group comparisons into lists with length equal to number of simulations.}
+\item{MCC_conv,MCC_lib}{The Matthews Correlation Coefficient, once for conservative and once for liberal nominal FDR level (see Details section). This is also split up by group comparisons into lists with length equal to number of simulations.}
+\item{F1score_conv,F1score_lib}{The precision-recall F measure, once for conservative and once for liberal nominal FDR level (see Details section). This is also split up by group comparisons into lists with length equal to number of simulations.}
+\item{alpha.type - .. - delta}{Reiterating chosen evaluation parameters.}
 }
 \description{
 This function takes the simulation output from \code{\link{simulateDE}}
@@ -63,9 +60,8 @@ eval.roc <- evaluateROC(simRes = kolodziejczk_simDE)
 }
 }
 \seealso{
-\code{\link{estimateParam}} for negative binomial parameters,
-\code{\link{SimSetup}} and
-\code{\link{DESetup}} for setting up simulation parameters and
+\code{\link{estimateParam}} for parameter estimation needed for simulations,
+\code{\link{Setup}} for setting up simulation parameters and
 \code{\link{simulateDE}} for simulating differential expression.
 }
 \author{

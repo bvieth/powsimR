@@ -31,6 +31,11 @@
 #' @source \url{https://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-2600/}.
 "kolodziejczk_simDE"
 
+#' Ziegenhain et al. 2017: Gene Lengths
+#'
+#' ENSEMBL gene length annotation for SCRBseq and Smartseq2 library preparation.
+#' @source \url{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE75790}.
+"gene_lengths"
 
 #' Ziegenhain et al. 2017: Smartseq2 Gene Counts
 #'
@@ -49,12 +54,6 @@
 #' The read count matrix was downsampled to 10000 genes.
 #' @source \url{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE75790}.
 "scrbseq_gene_cnts"
-
-#' Ziegenhain et al. 2017: Gene Lengths
-#'
-#' ENSEMBL gene length annotation for SCRBseq and Smartseq2 library preparation.
-#' @source \url{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE75790}.
-"gene_lengths"
 
 #' Ziegenhain et al. 2017: SCRBseq Spike-Ins Counts
 #'

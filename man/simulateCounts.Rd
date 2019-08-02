@@ -4,17 +4,20 @@
 \alias{simulateCounts}
 \title{Simulate Read Counts}
 \usage{
-simulateCounts(n=c(20,100,30,25,500), ngenes=10000,
+simulateCounts(n=c(20,100,30,25,500), Thinning = NULL,
+ngenes=10000,
 p.DE=0.1, pLFC,
 p.B=NULL, bLFC=NULL, bPattern="uncorrelated",
 p.M=NULL, mLFC=NULL,
-params, size.factors='equal',
-spike=NULL, spikeIns=FALSE,
-downsample=FALSE, geneset=FALSE,
+params, LibSize='equal',
+spikeIns = FALSE, spike = NULL, thinSpike = FALSE,
+ActualMeans=FALSE, FillUp=FALSE,
 sim.seed=NULL, verbose=TRUE)
 }
 \arguments{
 \item{n}{The vector of sample groups with n samples, \code{e.g c(10,50,20,16)}.}
+
+\item{Thinning}{Integer vector specifying the downsampling if desired. It has to be the same length and order as the vectors n1 and n2. This is an implementation of \code{\link[edgeR]{thinCounts}}. The vector entries should be a proportion between 0 and 1, e.g. \code{0.75} means that each sample in that group will have on average 75\% sequencing depth compared to the original sequencing depth as listed in \code{\link{estimateParam}} if and only if approximately the same number of genes are simulated. Note that no upsampling is possible, i.e. defining a proportion greater than 1.}
 
 \item{ngenes}{The total number of genes to simulate. Default is \code{10000}.}
 
@@ -22,7 +25,7 @@ sim.seed=NULL, verbose=TRUE)
 the percentage of genes being differentially expressed due to phenotype,
 i.e. biological signal. Default is \code{0.1}.}
 
-\item{pLFC}{The log2 phenotypic fold changes for DE genes. (1) For two group simulations, this can be:
+\item{pLFC}{The log2 phenotypic fold changes of DE genes. (1) For two group simulations, this can be:
 (a) a constant, e.g. 2;
 (b) a vector of values with length being number of DE genes.
 If the input is a vector and the length is not the number of DE genes,
@@ -66,20 +69,22 @@ e.g. function(x) rnorm(x, mean=0, sd=1.5).}
 \item{params}{The distributional parameters for simulations of genes,
 i.e. the output of \code{\link{estimateParam}}.}
 
-\item{size.factors}{Size factors representing sample-specific differences/biases in expected mean values of the NB distribution:
+\item{LibSize}{Size factors representing sample-specific differences/biases in expected mean values of the (ZI)NB distribution:
 "equal" or "given". The default is \code{"equal"}, i.e. equal size factor of 1.
 If the user defines it as given, the size factors are sampled from the size factors ("sf") provided by the output of \code{\link{estimateParam}}.}
-
-\item{spike}{The distributional parameters for simulations of spike-ins,
-i.e. the output of \code{\link{estimateSpike}}.}
 
 \item{spikeIns}{Logical value to indicate whether to simulate spike-ins.
 Default is \code{FALSE}.}
 
-\item{downsample}{Drawing the associated dispersions after determining effective mean expressions by size factors.
+\item{spike}{The distributional parameters for simulations of spike-ins,
+i.e. the output of \code{\link{estimateSpike}}.}
+
+\item{thinSpike}{Logical vector to indicate whether simulated spike-ins read counts should be downsampled as defined by 'Thinning'. Default is \code{FALSE}, i.e. no downsampling of spike-in counts.}
+
+\item{ActualMeans}{Drawing the associated dispersions after determining effective mean expressions by size factors.
 Default is \code{FALSE}, i.e. using the true mean expression values.}
 
-\item{geneset}{Sampling with replacement or filling count tables with low magnitude Poisson
+\item{FillUp}{Sampling with replacement or filling count tables with low magnitude Poisson
 when the estimated mean expression vector is shorter than the number of genes to be simulated.
 Default is \code{FALSE}, i.e. random sampling of mean expression values with replacement.}
 
@@ -95,10 +100,11 @@ List with the following vectors:
 \item{DEid}{A vector (length=ngenes*p.DE) for the IDs of phenotypic DE genes.}
 \item{Bid}{A vector (length=ngenes*p.B) for the IDs of batch DE genes.}
 \item{Mid}{A vector (length=ngenes*p.M) for the IDs of marker genes.}
-\item{pLFC}{A vector / matrix (columns = length(n); rows = ngenes) for phenotypic log fold change of all genes, ie nonDE=0 and DE=plfc.}
-\item{bLFC}{A vector / matrix (columns = length(n); rows = ngenes) for phenotypic log fold change of all genes, ie nonDE=0 and DE=plfc.}
-\item{mLFC}{A vector / matrix (columns = length(n); rows = ngenes) for phenotypic log fold change of all genes, ie nonDE=0 and DE=plfc.}
-\item{ngenes, nsims, p.DE, p.B, p.M, sim.seed, n, k}{Input parameters.}
+\item{pLFC}{A vector / matrix (columns = length(n); rows = ngenes) for phenotypic log fold change of all genes, i.e. nonDE=0 and DE=plfc.}
+\item{bLFC}{A vector / matrix (columns = length(n); rows = ngenes) for phenotypic log fold change of all genes, i.e. nonDE=0 and DE=plfc.}
+\item{mLFC}{A vector / matrix (columns = length(n); rows = ngenes) for phenotypic log fold change of all genes, i.e. nonDE=0 and DE=plfc.}
+\item{sf}{A vector of library size factors with length equal to the total number of samples simulated.}
+\item{ngenes, nsims, p.DE, p.B, p.M, sim.seed, n, k, Thinning, LibSize, thinSpike, ActualMeans, FillUp}{Input parameters.}
 }
 \description{
 With this function, the user can simulate realistic read counts for genes and spike-ins across two and multiple groups of samples (cells).
@@ -110,15 +116,16 @@ p.foo <- function(x) mvtnorm::rmvnorm(x, mean=c(4,2,1),
 sigma = matrix(c(4,2,2,2,3,2, 2, 2, 5), ncol=3))
 b.foo <- function(x) rnorm(x, mean=0, sd=1.5)
 ## simulate 3 groups of cells
-simcounts <- simulateCounts(n=c(100,110,90), ngenes=10000,
+simcounts <- simulateCounts(n=c(100,110,90), Thinning = NULL,
+ngenes=10000,
 p.DE=0.05, pLFC = p.foo,
 p.B=0.1, bLFC=b.foo, bPattern="uncorrelated",
 p.M=NULL, mLFC=NULL,
 params=kolodziejczk_param,
-size.factors="equal",
-spike=NULL, spikeIns=FALSE,
- downsample=FALSE, geneset=FALSE,
- sim.seed=34628, verbose=TRUE)
+LibSize="equal",
+spike=NULL, spikeIns=FALSE, thinSpike = FALSE,
+ActualMeans=FALSE, FillUp=FALSE,
+sim.seed=34628, verbose=TRUE)
 }
 }
 \author{

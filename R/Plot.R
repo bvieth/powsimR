@@ -13,7 +13,11 @@
 #' plotParam(estParamRes = kolodziejczk_param, annot=TRUE)
 #' }
 #' @author Beate Vieth
-#' @importFrom ggplot2 ggplot aes geom_bar geom_line theme geom_hline labs coord_flip scale_y_continuous geom_point scale_fill_gradientn stat_density2d labs theme_minimal theme_classic element_text ylim
+#' @importFrom ggplot2 ggplot aes geom_boxplot geom_point position_jitterdodge scale_fill_manual labs theme element_text element_blank element_rect geom_violin geom_dotplot stat_summary scale_y_continuous theme_classic theme_light scale_y_log10 geom_hline geom_bar facet_grid as_labeller scale_x_discrete stat_density2d scale_fill_gradientn geom_line
+#' @importFrom scales trans_breaks trans_format math_format
+#' @importFrom grid unit
+#' @importFrom dplyr bind_rows
+#' @importFrom ggpubr ggtexttable ttheme
 #' @importFrom grDevices blues9 colorRampPalette
 #' @importFrom reshape2 melt
 #' @importFrom cowplot plot_grid add_sub ggdraw
@@ -21,207 +25,564 @@
 #' @rdname plotParam
 #' @export
 plotParam <- function(estParamRes, annot=TRUE) {
+  ## QC plot
+  if(attr(estParamRes, "RNAseq")=="singlecell" | estParamRes$detectS>12) {
+    ## QC plot
+    # sequencing depth with marker for dropout samples
+    lib.size.dat <- data.frame(Seqdepth=estParamRes$Parameters$Raw$seqDepth,
+                               Sample=names(estParamRes$Parameters$Raw$seqDepth),
+                               Dropout=estParamRes$DropOuts$Sample$totCounts,
+                               stringsAsFactors = F)
 
-  if(estParamRes$RNAseq=="bulk" | estParamRes$estS<15) {
-    # library size
-    lib.size.dat <- data.frame(Seqdepth=estParamRes$seqDepth,
-                               Sample=names(estParamRes$seqDepth))
-    libsize.plot <- ggplot2::ggplot(data=lib.size.dat, ggplot2::aes(reorder(Sample, Seqdepth),Seqdepth)) +
-      ggplot2::theme_minimal() +
-      ggplot2::geom_bar(stat="identity",width=.5) +
-      ggplot2::geom_hline(yintercept = median(lib.size.dat$Seqdepth), linetype = 2, colour="grey40") +
-      ggplot2::theme(axis.text=ggplot2::element_text(size=12),
-                     axis.title=ggplot2::element_text(size=14, face="bold")) +
-      ggplot2::labs(x=NULL, y="Sequencing depth") +
-      ggplot2::scale_y_continuous(labels=.plain) +
-      ggplot2::coord_flip()
-    # size factor plot
+    libsize.plot <- ggplot2::ggplot(lib.size.dat, ggplot2::aes(x = "", y = Seqdepth)) +
+      ggplot2::geom_point(ggplot2::aes(fill=Dropout), pch = 21,
+                          position = ggplot2::position_jitterdodge()) +
+      ggplot2::geom_boxplot(outlier.shape = NA, width = 0.5, alpha=0.5) +
+      ggplot2::theme_light() +
+      ggplot2::scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
+                             labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+      ggplot2::scale_fill_manual(values = c("grey75", "red"),
+                                 labels = c("Included", "Outlier")) +
+      ggplot2::labs(x = NULL,
+                    y = NULL,
+                    title = "Sequencing Depth") +
+      ggplot2::theme(legend.text = ggplot2::element_text(size=10, color='black'),
+                     legend.position = "none",
+                     legend.title = ggplot2::element_blank(),
+                     legend.key.size = grid::unit(1.5, "lines"),
+                     axis.text.x=ggplot2::element_text(size=10, color='black'),
+                     axis.text.y=ggplot2::element_text(size=10, color='black'),
+                     axis.title=ggplot2::element_text(size=10, face="bold", color='black'),
+                     plot.title=ggplot2::element_text(size=10, face="bold", color='black'),
+                     strip.text = ggplot2::element_text(size=10, face="bold", color='black'),
+                     strip.background = ggplot2::element_rect(fill="white"))
+
+    # library size factor plot
     sf.dat <- data.frame(SizeFactor=estParamRes$sf,
-                         Sample=names(estParamRes$sf))
-    sf.plot <- ggplot2::ggplot(data=sf.dat, ggplot2::aes(reorder(Sample, SizeFactor),SizeFactor)) +
-      ggplot2::theme_minimal() +
-      ggplot2::geom_bar(stat="identity",width=.5) +
-      ggplot2::geom_hline(yintercept = median(sf.dat$SizeFactor), linetype = 2, colour="grey40") +
-      ggplot2::theme(axis.text=ggplot2::element_text(size=12),
-                     axis.title=ggplot2::element_text(size=14, face="bold")) +
-      ggplot2::labs(x=NULL, y="Library Size Factor") +
-      ggplot2::scale_y_continuous(labels=.plain) +
+                         Sample=names(estParamRes$sf),
+                         stringsAsFactors = FALSE)
+    sf.max <- max(sf.dat$SizeFactor)*1.05
+    sf.plot <- ggplot2::ggplot(sf.dat, ggplot2::aes(x = "", y=SizeFactor)) +
+      ggplot2::geom_violin(fill = "grey90", width=0.8, color = "black") +
+      ggplot2::stat_summary(fun.y = median,
+                            fun.ymin = median,
+                            fun.ymax = median,
+                            color = "black",
+                            width = 0.5,
+                            geom = "crossbar") +
+      ggplot2::scale_y_continuous(limits = c(0, sf.max)) +
+      ggplot2::theme_light() +
+      ggplot2::labs(x = NULL,
+                    y = NULL,
+                    title = paste0("Library Size Factors (", estParamRes$normFramework, ")")) +
+      ggplot2::theme(legend.text = ggplot2::element_text(size=10, color='black'),
+                     legend.position = "none",
+                     legend.title = ggplot2::element_blank(),
+                     legend.key.size = grid::unit(1.5, "lines"),
+                     axis.text.x=ggplot2::element_text(size=10, color='black'),
+                     axis.text.y=ggplot2::element_text(size=10, color='black'),
+                     axis.title=ggplot2::element_text(size=10, face="bold", color='black'),
+                     plot.title=ggplot2::element_text(size=10, face="bold", color='black'),
+                     strip.text = ggplot2::element_text(size=10, face="bold", color='black'),
+                     strip.background = ggplot2::element_rect(fill="white"))
+
+    # total features
+    totfeatures.dat <- data.frame(TotFeatures=estParamRes$Parameters$Raw$totFeatures,
+                               Sample=names(estParamRes$Parameters$Raw$totFeatures),
+                               Dropout=estParamRes$DropOuts$Sample$totFeatures,
+                               stringsAsFactors = F)
+
+    totfeatures.plot <- ggplot2::ggplot(totfeatures.dat, ggplot2::aes(x = "", y = TotFeatures)) +
+      ggplot2::geom_point(ggplot2::aes(fill=Dropout), pch = 21,
+                          position = ggplot2::position_jitterdodge()) +
+      ggplot2::geom_boxplot(outlier.shape = NA, width = 0.5, alpha=0.5) +
+      ggplot2::theme_light() +
+      ggplot2::scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
+                             labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+      ggplot2::scale_fill_manual(values = c("grey75", "red"),
+                                 labels = c("Included", "Outlier")) +
+      ggplot2::labs(x = NULL,
+                    y = NULL,
+                    title = "Detected Genes") +
+      ggplot2::theme(legend.text = ggplot2::element_text(size=10, color='black'),
+                     legend.position = "none",
+                     legend.title = ggplot2::element_blank(),
+                     legend.key.size = grid::unit(1.5, "lines"),
+                     axis.text.x=ggplot2::element_text(size=10, color='black'),
+                     axis.text.y=ggplot2::element_text(size=10, color='black'),
+                     axis.title=ggplot2::element_text(size=10, face="bold", color='black'),
+                     plot.title=ggplot2::element_text(size=10, face="bold", color='black'),
+                     strip.text = ggplot2::element_text(size=10, face="bold", color='black'),
+                     strip.background = ggplot2::element_rect(fill="white"))
+
+    # gene spike ratio
+    if(all(!is.na(estParamRes$DropOuts$Sample$GeneSpikeRatio))){
+      genespike.dat <- data.frame(Ratio=estParamRes$DropOuts$Sample$GeneSpikeRatio/100,
+                                  Sample=names(estParamRes$Parameters$Raw$totFeatures),
+                                  Dropout=estParamRes$DropOuts$Sample$GeneSpike,
+                                  stringsAsFactors = F)
+      gs.max <- max(genespike.dat$Ratio)*1.05
+      genespike.plot <- ggplot2::ggplot(genespike.dat, ggplot2::aes(x = "", y=Ratio)) +
+        ggplot2::geom_point(ggplot2::aes(fill=Dropout), pch = 21,
+                            position = ggplot2::position_jitterdodge()) +
+        ggplot2::geom_boxplot(outlier.shape = NA, width = 0.5, alpha=0.5) +
+        ggplot2::theme_light() +
+        ggplot2::scale_fill_manual(values = c("grey75", "red"),
+                                   labels = c("Included", "Outlier")) +
+        ggplot2::scale_y_continuous(limits = c(0, gs.max),
+                                    labels = scales::percent_format()) +
+        ggplot2::labs(x = NULL,
+                      y = NULL,
+                      title = "Gene Spike Count Ratio") +
+        ggplot2::theme(legend.text = ggplot2::element_text(size=10, color='black'),
+                       legend.position = "none",
+                       legend.title = ggplot2::element_blank(),
+                       legend.key.size = grid::unit(1.5, "lines"),
+                       axis.text.x=ggplot2::element_text(size=10, color='black'),
+                       axis.text.y=ggplot2::element_text(size=10, color='black'),
+                       axis.title=ggplot2::element_text(size=10, face="bold", color='black'),
+                       plot.title=ggplot2::element_text(size=10, face="bold", color='black'),
+                       strip.text = ggplot2::element_text(size=10, face="bold", color='black'),
+                       strip.background = ggplot2::element_rect(fill="white"))
+    }
+  }
+
+  if(attr(estParamRes, "RNAseq")=="bulk" | estParamRes$detectS<12) {
+
+    # sequencing depth with marker for dropout samples
+    lib.size.dat <- data.frame(Seqdepth=estParamRes$Parameters$Raw$seqDepth,
+                               Sample=names(estParamRes$Parameters$Raw$seqDepth),
+                               Dropout=estParamRes$DropOuts$Sample$totCounts,
+                               stringsAsFactors = F)
+    libsize.plot <- ggplot2::ggplot(lib.size.dat,
+                                    ggplot2::aes(reorder(Sample, Seqdepth),Seqdepth)) +
+      ggplot2::geom_bar(stat="identity", width=.5, ggplot2::aes(fill=Dropout)) +
+      ggplot2::geom_hline(yintercept = median(lib.size.dat$Seqdepth), linetype = 2, colour="grey40") +
+      ggplot2::theme_light() +
+      ggplot2::scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
+                             labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+      ggplot2::scale_fill_manual(values = c("grey75", "red"),
+                                 labels = c("Included", "Outlier")) +
+      ggplot2::labs(x = NULL,
+                    y = NULL,
+                    title = "Sequencing Depth") +
+      ggplot2::theme(legend.text = ggplot2::element_text(size=10, color='black'),
+                     legend.position = "none",
+                     legend.title = ggplot2::element_blank(),
+                     legend.key.size = grid::unit(1.5, "lines"),
+                     axis.text.x=ggplot2::element_text(size=10, color='black'),
+                     axis.text.y=ggplot2::element_text(size=10, color='black'),
+                     axis.title=ggplot2::element_text(size=10, face="bold", color='black'),
+                     plot.title=ggplot2::element_text(size=10, face="bold", color='black'),
+                     strip.text = ggplot2::element_text(size=10, face="bold", color='black'),
+                     strip.background = ggplot2::element_rect(fill="white")) +
       ggplot2::coord_flip()
-    # marginal distributions
-    margs.dat <- data.frame(Mean=log2(estParamRes$means+1),
-                            Dispersion=log2(estParamRes$dispersion),
-                            Dropout=estParamRes$p0)
-    margs.dat <- suppressMessages(reshape2::melt(margs.dat))
-    margs.plot <- ggplot2::ggplot(margs.dat, ggplot2::aes(value)) +
-      ggplot2::theme_minimal() +
-      ggplot2::geom_density() +
-      ggplot2::theme(axis.text=ggplot2::element_text(size=12),
-                     axis.title=ggplot2::element_text(size=12, face="bold"),
-                     strip.text = ggplot2::element_text(size=12, face="bold")) +
-      ggplot2::labs(x=NULL, y="Density") +
-      ggplot2::facet_wrap(~variable, scales = 'free')
-    # mean vs dispersion plot
-    meanvsdisp.dat <- data.frame(Means=log2(estParamRes$means+1),
-                                 Dispersion=log2(estParamRes$dispersion))
-    meanvsdisp.plot <- ggplot2::ggplot(data=meanvsdisp.dat, ggplot2::aes(x=Means, y=Dispersion)) +
-      ggplot2::theme_classic() +
-      ggplot2::stat_density2d(geom="tile", ggplot2::aes(fill=..density..^0.25, alpha=1), contour=FALSE) +
-      ggplot2::geom_point(size=0.5) +
-      ggplot2::stat_density2d(geom="tile", ggplot2::aes(fill=..density..^0.25, alpha=ifelse(..density..^0.15<0.4,0,1)), contour=FALSE) +
-      ggplot2::scale_fill_gradientn(colours = grDevices::colorRampPalette(c("white", grDevices::blues9))(256)) +
-      ggplot2::geom_hline(yintercept = log2(estParamRes$common.dispersion), linetype = 2, colour="grey40") +
-      ggplot2::geom_line(ggplot2::aes(x=estParamRes$meandispfit$x, y=estParamRes$meandispfit$y),
-                         linetype=1, size=1.5, colour="orange") +
-      ggplot2::geom_line(ggplot2::aes(x=estParamRes$meandispfit$x, y=estParamRes$meandispfit$upper),
-                         linetype=2, size=1, colour="orange") +
-      ggplot2::geom_line(ggplot2::aes(x=estParamRes$meandispfit$x, y=estParamRes$meandispfit$lower),
-                         linetype=2, size=1, colour="orange") +
-      ggplot2::labs(y=expression(bold(paste(Log[2], " Dispersion", sep=""))),
-                    x=expression(bold(paste(Log[2], " (Mean)")))) +
-      ggplot2::theme(legend.position='none', axis.text=ggplot2::element_text(size=12),
-                     axis.title=ggplot2::element_text(size=14, face="bold"))
-    # mean vs p0 plot
-    meanvsp0.dat <- data.frame(Means=log2(estParamRes$means+1),
-                               Dropout=estParamRes$p0)
-    meanvsp0.plot <- ggplot2::ggplot(data=meanvsp0.dat, ggplot2::aes(x=Means, y=Dropout)) +
-      ggplot2::theme_classic() +
-      ggplot2::stat_density2d(geom="tile", ggplot2::aes(fill=..density..^0.25, alpha=1), contour=FALSE) +
-      ggplot2::geom_point(size=0.5) +
-      ggplot2::stat_density2d(geom="tile", ggplot2::aes(fill=..density..^0.25,
-                                               alpha=ifelse(..density..^0.15<0.4,0,1)), contour=FALSE) +
-      ggplot2::scale_fill_gradientn(colours = grDevices::colorRampPalette(c("white", grDevices::blues9))(256))+
-      ggplot2::ylim(c(0,1)) +
-      ggplot2::labs(y="Dropout Fraction", x=expression(bold(paste(Log[2], " (Mean)")))) +
-      ggplot2::theme(legend.position='none', axis.text=ggplot2::element_text(size=12),
-                     axis.title=ggplot2::element_text(size=14, face="bold"))
-    if(estParamRes$RNAseq=="bulk" && !is.null(estParamRes$p0.cut)) {
-      meanvsp0.plot <- meanvsp0.plot + ggplot2::annotate("rect", xmin=0, ymax=1,
-                                                         ymin=0, xmax=estParamRes$p0.cut+1,
-                                                         fill="red", alpha=0.2)
-    }
 
-    top_row <- suppressWarnings(cowplot::plot_grid(libsize.plot,sf.plot,
-                                                   labels=c('A', 'B'),
-                                                   ncol=2, nrow=1))
-    bottom_row <- suppressWarnings(cowplot::plot_grid(meanvsdisp.plot,
-                                                      meanvsp0.plot,
-                                                      labels=c('D', 'E'),
-                                                      ncol=2, nrow=1))
-    middle_row <- suppressWarnings(cowplot::plot_grid(margs.plot, labels=c('C'),
-                                                      ncol=1, nrow=1))
-    p.final <- suppressWarnings(cowplot::plot_grid(top_row, middle_row,
-                                                   bottom_row,
-                                                   rel_heights = c(1, 1, 1.5),
-                                                   ncol=1, nrow=3))
-    # annotation under plot
-    if (annot) {
-      p.final <- cowplot::add_sub(p.final, "A) Sequencing depth per sample with median sequencing depth (grey dashed line).
-                                  \nB) Library size normalisation factor per sample with median size factor (grey dashed line).
-                                  \nC) Marginal Distribution of mean, dispersion and dropout.
-                                  \nD) Local polynomial regression fit between mean and dispersion estimates with variability band per gene (yellow). \nCommon dispersion estimate (grey dashed line).
-                                  \nE) Fraction of dropouts versus estimated mean expression per gene.", size=8)
-    }
-    }
+    # library size factor plot
+    sf.dat <- data.frame(SizeFactor=estParamRes$sf,
+                         Sample=names(estParamRes$sf),
+                         stringsAsFactors = FALSE)
+    sf.max <- max(sf.dat$SizeFactor)*1.05
+    sf.plot <- ggplot2::ggplot(sf.dat, ggplot2::aes(x = "", y=SizeFactor)) +
+      ggplot2::geom_dotplot(binaxis='y', stackdir='center', dotsize=1, fill = "grey75") +
+      ggplot2::stat_summary(fun.y = median,
+                            fun.ymin = median,
+                            fun.ymax = median,
+                            color = "black",
+                            width = 0.5,
+                            geom = "crossbar") +
+      ggplot2::scale_y_continuous(limits = c(0, sf.max)) +
+      ggplot2::theme_light() +
+      ggplot2::labs(x = NULL,
+                    y = NULL,
+                    title = paste0("Library Size Factors (", estParamRes$normFramework, ")")) +
+      ggplot2::theme(legend.text = ggplot2::element_text(size=10, color='black'),
+                     legend.position = "none",
+                     legend.title = ggplot2::element_blank(),
+                     legend.key.size = grid::unit(1.5, "lines"),
+                     axis.text.x=ggplot2::element_text(size=10, color='black'),
+                     axis.text.y=ggplot2::element_text(size=10, color='black'),
+                     axis.title=ggplot2::element_text(size=10, face="bold", color='black'),
+                     plot.title=ggplot2::element_text(size=10, face="bold", color='black'),
+                     strip.text = ggplot2::element_text(size=10, face="bold", color='black'),
+                     strip.background = ggplot2::element_rect(fill="white"))
 
-  if(estParamRes$RNAseq=="singlecell" | estParamRes$estS>15) {
-    # library size
-    lib.size.dat <- data.frame(Seqdepth=estParamRes$seqDepth,
-                               Sample=names(estParamRes$seqDepth))
-    libsize.plot <- ggplot2::ggplot(lib.size.dat, ggplot2::aes(Seqdepth)) +
-      ggplot2::theme_minimal() +
-      ggplot2::geom_density() +
-      ggplot2::geom_vline(xintercept = median(lib.size.dat$Seqdepth), linetype = 2, colour="grey40") +
-      ggplot2::theme(axis.text=ggplot2::element_text(size=12),
-                     axis.title=ggplot2::element_text(size=14, face="bold")) +
-      ggplot2::labs(x="Sequencing Depth", y="Density") +
-      ggplot2::scale_x_continuous(labels=.plain)
-    # size factor plot
-    sf.dat <- data.frame(SizeFactor=estParamRes$sf, Sample=names(estParamRes$sf))
-    sf.plot <- ggplot2::ggplot(sf.dat, ggplot2::aes(SizeFactor)) +
-      ggplot2::theme_minimal() +
-      ggplot2::geom_density() +
-      ggplot2::geom_vline(xintercept = median(sf.dat$SizeFactor), linetype = 2, colour="grey40") +
-      ggplot2::theme(axis.text=ggplot2::element_text(size=12),
-                     axis.title=ggplot2::element_text(size=14, face="bold")) +
-      ggplot2::labs(x="Library Size Factor", y="Density") +
-      ggplot2::scale_x_continuous(labels=.plain)
-    # marginal distributions
-    margs.dat <- data.frame(Mean=log2(estParamRes$means+1),
-                            Dispersion=log2(estParamRes$dispersion),
-                            Dropout=estParamRes$p0)
-    margs.dat <- suppressMessages(reshape2::melt(margs.dat))
-    margs.plot <- ggplot2::ggplot(margs.dat, ggplot2::aes(value)) +
-      ggplot2::theme_minimal() +
-      ggplot2::geom_density() +
-      ggplot2::theme(axis.text=ggplot2::element_text(size=12),
-                     axis.title=ggplot2::element_text(size=12, face="bold"),
-                     strip.text = ggplot2::element_text(size=12, face="bold")) +
-      ggplot2::labs(x=NULL, y="Density") +
-      ggplot2::facet_wrap(~variable, scales = 'free')
-    # mean vs dispersion plot
-    meanvsdisp.dat <- data.frame(Means=log2(estParamRes$means+1),
-                                 Dispersion=log2(estParamRes$dispersion))
-    meanvsdisp.plot <- ggplot2::ggplot(data=meanvsdisp.dat, ggplot2::aes(x=Means, y=Dispersion)) +
-      ggplot2::theme_classic() +
-      ggplot2::stat_density2d(geom="tile", ggplot2::aes(fill=..density..^0.25, alpha=1), contour=FALSE) +
-      ggplot2::geom_point(size=0.5) +
-      ggplot2::stat_density2d(geom="tile", ggplot2::aes(fill=..density..^0.25,
-                                               alpha=ifelse(..density..^0.15<0.4,0,1)),
-                              contour=FALSE) +
-      ggplot2::scale_fill_gradientn(colours = grDevices::colorRampPalette(c("white", grDevices::blues9))(256)) +
-      ggplot2::geom_hline(yintercept = log2(estParamRes$common.dispersion),
+    # total features
+    totfeatures.dat <- data.frame(TotFeatures=estParamRes$Parameters$Raw$totFeatures,
+                                  Sample=names(estParamRes$Parameters$Raw$totFeatures),
+                                  Dropout=estParamRes$DropOuts$Sample$totFeatures,
+                                  stringsAsFactors = F)
+
+    totfeatures.plot <- ggplot2::ggplot(totfeatures.dat,
+                                    ggplot2::aes(reorder(Sample, TotFeatures),TotFeatures)) +
+      ggplot2::geom_bar(stat="identity", width=.5, ggplot2::aes(fill=Dropout)) +
+      ggplot2::geom_hline(yintercept = median(totfeatures.dat$TotFeatures),
                           linetype = 2, colour="grey40") +
-      ggplot2::geom_line(ggplot2::aes(x=estParamRes$meandispfit$x, y=estParamRes$meandispfit$y),
-                         linetype=1, size=1.5, colour="orange") +
-      ggplot2::geom_line(ggplot2::aes(x=estParamRes$meandispfit$x, y=estParamRes$meandispfit$upper),
-                         linetype=2, size=1, colour="orange") +
-      ggplot2::geom_line(ggplot2::aes(x=estParamRes$meandispfit$x, y=estParamRes$meandispfit$lower),
-                         linetype=2, size=1, colour="orange") +
-      ggplot2::labs(y=expression(bold(paste(Log[2], " Dispersion", sep=""))),
-                    x=expression(bold(paste(Log[2], " (Mean)")))) +
-      ggplot2::theme(legend.position='none', axis.text=ggplot2::element_text(size=12),
-                     axis.title=ggplot2::element_text(size=14, face="bold"))
-    # mean vs p0 plot
-    meanvsp0.dat <- data.frame(Means=log2(estParamRes$means+1),
-                               Dropout=estParamRes$p0)
-    meanvsp0.plot <- ggplot2::ggplot(data=meanvsp0.dat, ggplot2::aes(x=Means, y=Dropout)) +
-      ggplot2::theme_classic() +
-      ggplot2::stat_density2d(geom="tile", ggplot2::aes(fill=..density..^0.25, alpha=1), contour=FALSE) +
-      ggplot2::geom_point(size=0.5) +
-      ggplot2::stat_density2d(geom="tile", ggplot2::aes(fill=..density..^0.25,
-                                               alpha=ifelse(..density..^0.15<0.4,0,1)),
-                              contour=FALSE) +
-      ggplot2::scale_fill_gradientn(colours = grDevices::colorRampPalette(c("white", grDevices::blues9))(256)) +
-      ggplot2::ylim(c(0,1)) +
-      ggplot2::labs(y="Dropout Fraction", x=expression(bold(paste(Log[2], " (Mean)")))) +
-      ggplot2::theme(legend.position='none',
-                     axis.text=ggplot2::element_text(size=12),
-                     axis.title=ggplot2::element_text(size=14, face="bold"))
+      ggplot2::theme_light() +
+      ggplot2::scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
+                             labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+      ggplot2::scale_fill_manual(values = c("grey75", "red"),
+                                 labels = c("Included", "Outlier")) +
+      ggplot2::labs(x = NULL,
+                    y = NULL,
+                    title = "Detected Genes") +
+      ggplot2::theme(legend.text = ggplot2::element_text(size=10, color='black'),
+                     legend.position = "none",
+                     legend.title = ggplot2::element_blank(),
+                     legend.key.size = grid::unit(1.5, "lines"),
+                     axis.text.x=ggplot2::element_text(size=10, color='black'),
+                     axis.text.y=ggplot2::element_text(size=10, color='black'),
+                     axis.title=ggplot2::element_text(size=10, face="bold", color='black'),
+                     plot.title=ggplot2::element_text(size=10, face="bold", color='black'),
+                     strip.text = ggplot2::element_text(size=10, face="bold", color='black'),
+                     strip.background = ggplot2::element_rect(fill="white")) +
+      ggplot2::coord_flip()
 
-    top_row <- suppressWarnings(cowplot::plot_grid(libsize.plot,
-                                                   sf.plot,
-                                                   labels=c('A', 'B'),
-                                                   ncol=2, nrow=1))
+    # gene spike ratio
+    if(all(!is.na(estParamRes$DropOuts$Sample$GeneSpikeRatio))){
+      genespike.dat <- data.frame(Ratio=estParamRes$DropOuts$Sample$GeneSpikeRatio/100,
+                                  Sample=names(estParamRes$Parameters$Raw$totFeatures),
+                                  Dropout=estParamRes$DropOuts$Sample$GeneSpike,
+                                  stringsAsFactors = F)
+      gs.max <- max(genespike.dat$Ratio)*1.05
+      genespike.plot <- ggplot2::ggplot(genespike.dat, ggplot2::aes(x = "", y=Ratio)) +
+        ggplot2::geom_dotplot(binaxis='y', stackdir='center', dotsize=0.75,
+                              ggplot2::aes(fill=Dropout)) +
+        ggplot2::stat_summary(fun.y = median,
+                              fun.ymin = median,
+                              fun.ymax = median,
+                              color = "black",
+                              width = 0.5,
+                              geom = "crossbar") +
+        ggplot2::scale_y_continuous(limits = c(0, gs.max),
+                                    labels = scales::percent_format()) +
+        ggplot2::theme_light() +
+        ggplot2::scale_fill_manual(values = c("grey75", "red"),
+                                   labels = c("Included", "Outlier")) +
+        ggplot2::labs(x = NULL,
+                      y = NULL,
+                      title = "Gene Spike Count Ratio") +
+        ggplot2::theme(legend.text = ggplot2::element_text(size=10, color='black'),
+                       legend.position = "none",
+                       legend.title = ggplot2::element_blank(),
+                       legend.key.size = grid::unit(1.5, "lines"),
+                       axis.text.x=ggplot2::element_text(size=10, color='black'),
+                       axis.text.y=ggplot2::element_text(size=10, color='black'),
+                       axis.title=ggplot2::element_text(size=10, face="bold", color='black'),
+                       plot.title=ggplot2::element_text(size=10, face="bold", color='black'),
+                       strip.text = ggplot2::element_text(size=10, face="bold", color='black'),
+                       strip.background = ggplot2::element_rect(fill="white"))
+    }
+  }
+
+  ## Marginal Distributions
+  if(attr(estParamRes, "Distribution") == "NB"){
+    param.names <- names(estParamRes$Parameters)[!is.na(estParamRes$Parameters)]
+    set.relabels <- c(`Raw` = "Provided",
+                      `Full` = "All Genes",
+                      `Filtered`="Filtered Genes",
+                      `DropGene` = "Dropout Genes",
+                      `DropSample` = ifelse(attr(estParamRes, "RNAseq")=="singlecell",
+                                            "Cell Outliers", "Sample Outliers"))
+    param.relabels <- c(`Mean` = "Log Mean",
+                        `Dispersion` = "Log Dispersion",
+                        `Dropout` = "Gene Dropout Rate")
+    margs.L <- sapply(param.names, function(i){
+      tmp <- estParamRes$Parameters[[i]]
+      data.frame(Mean=log2(tmp$means+1),
+                 Dispersion=log2(tmp$dispersion),
+                 Dropout=tmp$gene.dropout)
+    }, simplify = F, USE.NAMES = T)
+    margs.dat <- dplyr::bind_rows(margs.L, .id = "Set")
+    margs.dat <- suppressMessages(reshape2::melt(margs.dat))
+    margs.plot <- ggplot2::ggplot(margs.dat, ggplot2::aes(x=Set, y=value)) +
+      ggplot2::geom_violin(fill = "#597EB5", alpha = 0.5) +
+      ggplot2::stat_summary(fun.y = median,
+                            fun.ymin = median,
+                            fun.ymax = median,
+                            color = "black",
+                            width = 0.5,
+                            geom = "crossbar") +
+      ggplot2::facet_grid(~variable, scales = "free_x", labeller = ggplot2::as_labeller(param.relabels)) +
+      ggplot2::scale_x_discrete(labels = set.relabels) +
+      ggplot2::labs(x = NULL,
+                    y = NULL) +
+      ggplot2::theme_light() +
+      ggplot2::theme(legend.text = ggplot2::element_text(size=10, color='black'),
+                     legend.position = "none",
+                     legend.title = ggplot2::element_blank(),
+                     legend.key.size = grid::unit(1.5, "lines"),
+                     axis.text.x=ggplot2::element_text(size=10, color='black'),
+                     axis.text.y=ggplot2::element_text(size=10, color='black'),
+                     axis.title=ggplot2::element_text(size=10, face="bold", color='black'),
+                     plot.title=ggplot2::element_text(size=10, face="bold", color='black'),
+                     strip.text = ggplot2::element_text(size=10, face="bold", color='black'),
+                     strip.background = ggplot2::element_rect(fill="white")) +
+      ggplot2::coord_flip()
+  }
+
+  if(attr(estParamRes, "Distribution") == "ZINB"){
+    param.names <- names(estParamRes$Parameters)[!is.na(estParamRes$Parameters)]
+    set.relabels <- c(`Raw` = "Provided",
+                      `Full` = "All Genes",
+                      `Filtered`="Filtered Genes",
+                      `DropGene` = "Dropout Genes",
+                      `DropSample` = ifelse(attr(estParamRes, "RNAseq")=="singlecell",
+                                            "Cell Outliers", "Sample Outliers"))
+    param.relabels <- c(`Mean` = "Log Positive Mean",
+                        `Dispersion` = "Log Positive Dispersion",
+                        `Dropout` = "Gene Dropout Rate")
+    margs.L <- sapply(param.names, function(i){
+      tmp <- estParamRes$Parameters[[i]]
+      data.frame(Mean=log2(tmp$pos.means+1),
+                 Dispersion=log2(tmp$pos.dispersion),
+                 Dropout=tmp$gene.dropout)
+    }, simplify = F, USE.NAMES = T)
+    margs.dat <- dplyr::bind_rows(margs.L, .id = "Set")
+    margs.dat <- suppressMessages(reshape2::melt(margs.dat))
+    margs.plot <- ggplot2::ggplot(margs.dat, ggplot2::aes(x=Set, y=value)) +
+      ggplot2::geom_violin(fill = "#597EB5", alpha = 0.5) +
+      ggplot2::stat_summary(fun.y = median,
+                            fun.ymin = median,
+                            fun.ymax = median,
+                            color = "black",
+                            width = 0.5,
+                            geom = "crossbar") +
+      ggplot2::facet_grid(~variable, scales = "free_x",
+                          labeller = ggplot2::as_labeller(param.relabels)) +
+      ggplot2::scale_x_discrete(labels = set.relabels) +
+      ggplot2::labs(x = NULL,
+                    y = NULL) +
+      ggplot2::theme_light() +
+      ggplot2::theme(legend.text = ggplot2::element_text(size=10, color='black'),
+                     legend.position = "none",
+                     legend.title = ggplot2::element_blank(),
+                     legend.key.size = grid::unit(1.5, "lines"),
+                     axis.text.x=ggplot2::element_text(size=10, color='black'),
+                     axis.text.y=ggplot2::element_text(size=10, color='black'),
+                     axis.title=ggplot2::element_text(size=10, face="bold", color='black'),
+                     plot.title=ggplot2::element_text(size=10, face="bold", color='black'),
+                     strip.text = ggplot2::element_text(size=10, face="bold", color='black'),
+                     strip.background = ggplot2::element_rect(fill="white")) +
+      ggplot2::coord_flip()
+  }
+
+  # Table with numbers of genes / samples
+  sample.out = ifelse(attr(estParamRes, "RNAseq")=="singlecell", "Cell Outliers", "Sample Outliers")
+  sample.names = ifelse(attr(estParamRes, "RNAseq")=="singlecell", "Single Cells", "Bulk Samples")
+  no.dat <- data.frame(c("Provided", "Detected", "All Genes", "Filtered Genes", "Dropout Genes", sample.out),
+                       c(estParamRes$totalG,
+                         estParamRes$detectG,
+                         estParamRes$Parameters$Full$ngenes,
+                         estParamRes$Parameters$Filtered$ngenes,
+                         ifelse(all(!is.na(estParamRes$Parameters$DropGene)), estParamRes$Parameters$DropGene$ngenes, 0),
+                         ifelse(all(!is.na(estParamRes$Parameters$DropSample)), estParamRes$Parameters$DropSample$ngenes, 0)),
+                       c(NA,
+                         NA,
+                         estParamRes$Fit$Full$estG,
+                         estParamRes$Fit$Filtered$estG,
+                         ifelse(all(!is.na(estParamRes$Fit$DropGene)), estParamRes$Fit$DropGene$estG, 0),
+                         NA),
+                       c(estParamRes$totalS,
+                         estParamRes$detectS,
+                         estParamRes$Parameters$Full$nsamples,
+                         estParamRes$Parameters$Filtered$nsamples,
+                         ifelse(all(!is.na(estParamRes$Parameters$DropGene)), estParamRes$Parameters$DropGene$nsamples, 0),
+                         ifelse(all(!is.na(estParamRes$Parameters$DropSample)), estParamRes$Parameters$DropSample$nsamples, 0)),
+                       stringsAsFactors = F )
+ colnames(no.dat) <- c("Set", "# Genes", "# Genes for Fit", paste0("# ", sample.names))
+ no.table <- ggpubr::ggtexttable(no.dat,
+                                 rows = NULL,
+                                 theme = ggpubr::ttheme("mOrange"))
+
+ ## Fitting Lines
+ # mean-disp and mean-p0
+ if(attr(estParamRes, "Distribution") == "NB"){
+   # mean vs dispersion plot
+   meanvsdisp.dat <- data.frame(Mean=estParamRes$Fit$Filtered$meandispfit$model$x[,"x"],
+                                Dispersion=estParamRes$Fit$Filtered$meandispfit$model$y)
+   meanvsdisp.plot <- ggplot2::ggplot(data=meanvsdisp.dat,
+                                      ggplot2::aes(x=Mean, y=Dispersion)) +
+     ggplot2::theme_classic() +
+     ggplot2::geom_point(size=0.5) +
+     ggplot2::stat_density2d(geom="tile", ggplot2::aes(fill=..density..^0.25,
+                                                       alpha=ifelse(..density..^0.15<0.4,0,1)),
+                             contour=FALSE) +
+     ggplot2::scale_fill_gradientn(colours = grDevices::colorRampPalette(c("white", grDevices::blues9))(256)) +
+     ggplot2::geom_hline(yintercept = log1p(estParamRes$Parameters$Filtered$common.dispersion),
+                         linetype = 2, colour="grey40") +
+     ggplot2::geom_line(ggplot2::aes(x=estParamRes$Fit$Filtered$meandispfit$x,
+                                     y=estParamRes$Fit$Filtered$meandispfit$y),
+                        linetype=1, size=1.5, colour="orange") +
+     ggplot2::geom_line(ggplot2::aes(x=estParamRes$Fit$Filtered$meandispfit$x,
+                                     y=estParamRes$Fit$Filtered$meandispfit$upper),
+                        linetype=2, size=1, colour="orange") +
+     ggplot2::geom_line(ggplot2::aes(x=estParamRes$Fit$Filtered$meandispfit$x,
+                                     y=estParamRes$Fit$Filtered$meandispfit$lower),
+                        linetype=2, size=1, colour="orange") +
+     ggplot2::labs(y=expression(bold(paste(Log, " Dispersion", sep=""))),
+                   x=expression(bold(paste(Log, " Mean")))) +
+     ggplot2::theme(legend.position='none',
+                    axis.text=ggplot2::element_text(size=12),
+                    axis.title=ggplot2::element_text(size=14, face="bold"))
+   # mean vs p0 plot
+   meanvsp0.dat <- data.frame(Mean=log1p(estParamRes$Parameters$Filtered$means),
+                              Dropout=estParamRes$Parameters$Filtered$gene.dropout)
+   meanvsp0.plot <- ggplot2::ggplot(data=meanvsp0.dat, ggplot2::aes(x=Mean, y=Dropout)) +
+     ggplot2::theme_classic() +
+     ggplot2::geom_point(size=0.5) +
+     ggplot2::stat_density2d(geom="tile", ggplot2::aes(fill=..density..^0.25,
+                                                       alpha=ifelse(..density..^0.15<0.4,0,1)),
+                             contour=FALSE) +
+     ggplot2::scale_fill_gradientn(colours = grDevices::colorRampPalette(c("white", grDevices::blues9))(256)) +
+     ggplot2::ylim(c(0,1)) +
+     ggplot2::labs(y="Gene Dropout Rate",
+                   x=expression(bold(paste(Log, " Mean")))) +
+     ggplot2::theme(legend.position='none',
+                    axis.text=ggplot2::element_text(size=10),
+                    axis.title=ggplot2::element_text(size=10, face="bold"))
+
+   if(attr(estParamRes, 'RNAseq') == 'bulk'){
+     meanvsp0.plot <- meanvsp0.plot +
+       ggplot2::geom_vline(xintercept = estParamRes$Fit$Filtered$g0.cut,
+                         linetype = 2, colour="grey40")
+   }
+
+ }
+
+ if(attr(estParamRes, "Distribution") == "ZINB"){
+   # mean vs dispersion plot
+   meanvsdisp.dat <- data.frame(Mean=estParamRes$Fit$Filtered$meandispfit$model$x[,"x"],
+                                Dispersion=estParamRes$Fit$Filtered$meandispfit$model$y)
+   meanvsdisp.plot <- ggplot2::ggplot(data=meanvsdisp.dat,
+                                      ggplot2::aes(x=Mean, y=Dispersion)) +
+     ggplot2::theme_classic() +
+     ggplot2::geom_point(size=0.5) +
+     ggplot2::stat_density2d(geom="tile", ggplot2::aes(fill=..density..^0.25,
+                                                       alpha=ifelse(..density..^0.15<0.4,0,1)),
+                             contour=FALSE) +
+     ggplot2::scale_fill_gradientn(colours = grDevices::colorRampPalette(c("white", grDevices::blues9))(256)) +
+     ggplot2::geom_hline(yintercept = log2(estParamRes$Parameters$Filtered$common.dispersion),
+                         linetype = 2, colour="grey40") +
+     ggplot2::geom_line(ggplot2::aes(x=estParamRes$Fit$Filtered$meandispfit$x,
+                                     y=estParamRes$Fit$Filtered$meandispfit$y),
+                        linetype=1, size=1.5, colour="orange") +
+     ggplot2::geom_line(ggplot2::aes(x=estParamRes$Fit$Filtered$meandispfit$x,
+                                     y=estParamRes$Fit$Filtered$meandispfit$upper),
+                        linetype=2, size=1, colour="orange") +
+     ggplot2::geom_line(ggplot2::aes(x=estParamRes$Fit$Filtered$meandispfit$x,
+                                     y=estParamRes$Fit$Filtered$meandispfit$lower),
+                        linetype=2, size=1, colour="orange") +
+     ggplot2::labs(y=expression(bold(paste(Log, " Positive Dispersion", sep=""))),
+                   x=expression(bold(paste(Log, " Positive Mean")))) +
+     ggplot2::theme(legend.position='none', 
+                    axis.text=ggplot2::element_text(size=10),
+                    axis.title=ggplot2::element_text(size=10, face="bold"))
+   # mean vs p0 plot
+   meanvsp0fit.dat <- data.frame(Mean=estParamRes$Fit$Filtered$meang0fit$x,
+                              Dropout=estParamRes$Fit$Filtered$meang0fit$y)
+   meanvsp0.dat <- data.frame(Mean=log2(estParamRes$Parameters$Filtered$pos.means+1),
+                              Dropout=estParamRes$Parameters$Filtered$gene.dropout)
+   meanvsp0.plot <- ggplot2::ggplot(data=meanvsp0.dat, ggplot2::aes(x=Mean, y=Dropout)) +
+     ggplot2::theme_classic() +
+     ggplot2::geom_point(size=0.5) +
+     ggplot2::stat_density2d(geom="tile", ggplot2::aes(fill=..density..^0.25,
+                                                       alpha=ifelse(..density..^0.15<0.4,0,1)),
+                             contour=FALSE) +
+     ggplot2::scale_fill_gradientn(colours = grDevices::colorRampPalette(c("white", grDevices::blues9))(256)) +
+     ggplot2::geom_vline(xintercept = estParamRes$Fit$Filtered$g0.cut,
+                         linetype = 2, colour="grey40") +
+     ggplot2::geom_line(data = meanvsp0fit.dat,
+                        ggplot2::aes(x=Mean,
+                                     y=Dropout),
+                        linetype=1,
+                        size=1.5,
+                        colour="orange") +
+     ggplot2::ylim(c(0,1)) +
+     ggplot2::labs(y="Gene Dropout Rate",
+                   x=expression(bold(paste(Log, " (Positive Mean)")))) +
+     ggplot2::theme(legend.position='none',
+                    axis.text=ggplot2::element_text(size=10),
+                    axis.title=ggplot2::element_text(size=10, face="bold"))
+ }
+
+ # read-umi
+ if(all(!is.na(estParamRes$Fit$UmiRead))) {
+   readvsumifit.dat <- data.frame(UMI=estParamRes$Fit$UmiRead$Fit$model$x[,"x"],
+                               Ratio=estParamRes$Fit$UmiRead$Fit$model$y)
+   readvsumi.dat <- data.frame(UMI=estParamRes$Fit$UmiRead$lUMI,
+                               Ratio=estParamRes$Fit$UmiRead$lRatio)
+   readvsumi.plot <- ggplot2::ggplot(data=readvsumi.dat,
+                                     ggplot2::aes(x=UMI, y=Ratio)) +
+     ggplot2::theme_classic() +
+     ggplot2::geom_point(size=0.5) +
+     ggplot2::stat_density2d(geom="tile", ggplot2::aes(fill=..density..^0.25,
+                                                       alpha=ifelse(..density..^0.15<0.4,0,1)),
+                             contour=FALSE) +
+     ggplot2::scale_fill_gradientn(colours = grDevices::colorRampPalette(c("white", grDevices::blues9))(256)) +
+     ggplot2::geom_line(data = readvsumifit.dat,
+                        ggplot2::aes(x=estParamRes$Fit$UmiRead$Fit$x,
+                                     y=estParamRes$Fit$UmiRead$Fit$y),
+                        linetype=1, size=1.5, colour="orange") +
+     ggplot2::geom_line(data = readvsumifit.dat,
+                        ggplot2::aes(x=estParamRes$Fit$UmiRead$Fit$x,
+                                     y=estParamRes$Fit$UmiRead$Fit$upper),
+                        linetype=2, size=1, colour="orange") +
+     ggplot2::geom_line(data = readvsumifit.dat,
+                        ggplot2::aes(x=estParamRes$Fit$UmiRead$Fit$x,
+                                     y=estParamRes$Fit$UmiRead$Fit$lower),
+                        linetype=2, size=1, colour="orange") +
+     ggplot2::labs(y=expression(bold(paste("Amplification Rate"))),
+                   x=expression(bold(paste(Log[10], " UMI")))) +
+     ggplot2::theme(legend.position='none',
+                    axis.text=ggplot2::element_text(size=10),
+                    axis.title=ggplot2::element_text(size=10, face="bold"))
+ }
+
+ # combine the plots into one output
+ if(all(!is.na(estParamRes$DropOuts$Sample$GeneSpikeRatio))){
+   top_row <- suppressWarnings(cowplot::plot_grid(libsize.plot,
+                                                  sf.plot,
+                                                  totfeatures.plot,
+                                                  genespike.plot,
+                                                  ncol=4, nrow=1))
+ }
+ if(all(is.na(estParamRes$DropOuts$Sample$GeneSpikeRatio))){
+   top_row <- suppressWarnings(cowplot::plot_grid(libsize.plot,
+                                                  sf.plot,
+                                                  totfeatures.plot,
+                                                  ncol=3, nrow=1))
+ }
+
+  middle_row <- suppressWarnings(cowplot::plot_grid(margs.plot,
+                                                    no.table,
+                                                    labels=c('B', 'C'),
+                                                    rel_widths = c(0.7,0.3),
+                                                    ncol=2,
+                                                    nrow=1))
+  if(all(!is.na(estParamRes$Fit$UmiRead))){
+    bottom_row <- suppressWarnings(cowplot::plot_grid(meanvsdisp.plot,
+                                                      meanvsp0.plot,
+                                                      readvsumi.plot,
+                                                      labels=c('D', 'E', 'F'),
+                                                      ncol=3, nrow=1))
+  }
+  if(all(is.na(estParamRes$Fit$UmiRead))){
     bottom_row <- suppressWarnings(cowplot::plot_grid(meanvsdisp.plot,
                                                       meanvsp0.plot,
                                                       labels=c('D', 'E'),
                                                       ncol=2, nrow=1))
-    middle_row <- suppressWarnings(cowplot::plot_grid(margs.plot,
-                                                      labels=c('C'),
-                                                      ncol=1, nrow=1))
-    p.final <- suppressWarnings(cowplot::plot_grid(top_row,
-                                                   middle_row,
-                                                   bottom_row,
-                                                   rel_heights = c(1, 1, 1.5),
-                                                   ncol=1, nrow=3))
-    # annotation under plot
-    if (annot) {
-      p.final <- cowplot::add_sub(p.final, "A) Sequencing depth per sample with median sequencing depth (grey dashed line).
-                                  \nB) Library size normalisation factor per sample with median size factor (grey dashed line).
-                                  \nC) Marginal Distribution of mean, dispersion and dropout.
-                                  \nD) Local polynomial regression fit between mean and dispersion estimates with variability band per gene (yellow). \nCommon dispersion estimate (grey dashed line).
-                                  \nE) Fraction of dropouts versus estimated mean expression per gene.", size=8)
-    }
+  }
+
+
+  p.final <- suppressWarnings(cowplot::plot_grid(top_row,
+                                                 middle_row,
+                                                 bottom_row,
+                                                 labels=c('A', NULL, NULL),
+                                                 ncol=1, nrow=3))
+  # annotation under plot
+  if (annot) {
+    p.final <- cowplot::add_sub(p.final, x = 0, hjust = 0, "A) Quality Control Metrics: Sequencing depth. Outliers are marked in red; Library size factors with median (black line) for the filtered data set.; Detected genes. Outliers are marked in red; Ratio of gene to spike-in counts (if spike-ins were provided). Outliers are marked in red. \nB) Marginal Distribution of mean, dispersion and dropout per estimation set. \nC) Number of genes and samples per estimation set. Provided by the user; Detected = number of genes and samples with at least one count; Full = number of genes for which mean, dispersion and dropout could be estimated using non-outlying samples. \nFiltered = number of genes above filter threshold for which mean, dispersion and dropout could be estimated using non-outlying samples. Dropout Genes = number of genes filtered out due to dropout rate. \nD) Local polynomial regression fit between mean and dispersion estimates with variability band per gene (yellow). Common dispersion estimate (grey dashed line). \nE) Fraction of dropouts versus estimated mean expression per gene. \nF) Local polynomial regression fit between UMI and read counts with variability band per gene (yellow). Only present when read count matrix of UMI data was provided.", size=8)
   }
 
   # draw the plot
@@ -259,7 +620,7 @@ plotParam <- function(estParamRes, annot=TRUE) {
 #' }
 #' @author Beate Vieth
 #' @importFrom ggplot2 ggplot aes theme_minimal geom_bar geom_density geom_hline theme labs scale_y_continuous coord_flip geom_pointrange geom_point geom_smooth annotate scale_x_log10 scale_y_log10 annotation_logticks
-#' @importFrom dplyr left_join group_by mutate ungroup do summarise
+#' @importFrom dplyr left_join group_by mutate ungroup do summarise n
 #' @importFrom tidyr "%>%"
 #' @importFrom broom glance
 #' @importFrom reshape2 melt
@@ -269,7 +630,7 @@ plotParam <- function(estParamRes, annot=TRUE) {
 #' @export
 plotSpike <- function(estSpike, annot=TRUE) {
 
-  if(length(estSpike$seqDepth<15)) {
+  if(length(estSpike$seqDepth)<15) {
     # library size plot
     lib.size.dat <- data.frame(Seqdepth=estSpike$seqDepth,
                                Sample=names(estSpike$seqDepth))
@@ -295,7 +656,7 @@ plotSpike <- function(estSpike, annot=TRUE) {
       ggplot2::scale_y_continuous(labels=.plain) +
       ggplot2::coord_flip()
   }
-  if(length(estSpike$seqDepth>=15)) {
+  if(length(estSpike$seqDepth)>=15) {
     # library size plot
     lib.size.dat <- data.frame(Seqdepth=estSpike$seqDepth,
                                Sample=names(estSpike$seqDepth))
@@ -324,16 +685,16 @@ plotSpike <- function(estSpike, annot=TRUE) {
   cal.dat <- reshape2::melt(estSpike$normCounts)
   names(cal.dat) <- c("SpikeID", "SampleID", "normCounts")
   cal.info.dat <- cal.dat %>%
-    dplyr::left_join(estSpike$Input$spikeInfo, by="SpikeID") %>%
+    dplyr::left_join(estSpike$FilteredInput$spikeInfo, by="SpikeID") %>%
     dplyr::group_by(factor(SpikeInput)) %>%
     dplyr::mutate(Expectation=mean(normCounts),
                   Deviation=sd(normCounts),
-                  Error=sd(normCounts)/sqrt(n())) %>%
+                  Error=sd(normCounts)/sqrt(dplyr::n())) %>%
     dplyr::ungroup()
   limits <- ggplot2::aes(ymax = log10(Expectation) + log10(Error),
                          ymin= log10(Expectation) - log10(Error))
   Calibration = cal.dat %>%
-    dplyr::left_join(estSpike$Input$spikeInfo, by="SpikeID") %>%
+    dplyr::left_join(estSpike$FilteredInput$spikeInfo, by="SpikeID") %>%
     dplyr::group_by(SampleID) %>%
     dplyr::do(LmFit = lm(log10(normCounts+1) ~ log10(SpikeInput+1), data = .)) %>%
     broom::glance(LmFit) %>%
@@ -364,16 +725,14 @@ plotSpike <- function(estSpike, annot=TRUE) {
                    axis.line.y = ggplot2::element_line(colour = "black"))
 
   # capture efficiency data
-  capture.dat <- estSpike$CaptureEfficiency %>%
+  capture.dat <- estSpike$CaptureEfficiency$`Spike-In` %>%
     tibble::rownames_to_column(var = "SpikeID") %>%
-    dplyr::select(SpikeID, p_success, hat_p_success, hat_p_success_cilower, hat_p_success_ciupper) %>%
-    dplyr::mutate(hat_p_success = ifelse(is.na(hat_p_success), p_success, hat_p_success)) %>%
-    dplyr::select( -p_success) %>%
-    dplyr::left_join(estSpike$Input$spikeInfo, by="SpikeID")
+    dplyr::select(SpikeID, p_success, hat_p_success_cilower, hat_p_success_ciupper) %>%
+    dplyr::left_join(estSpike$FilteredInput$spikeInfo, by="SpikeID")
 
   capture.plot <- ggplot2::ggplot(data = capture.dat,
                                   ggplot2::aes(x=log10(SpikeInput+1),
-                                               y=hat_p_success)) +
+                                               y=p_success)) +
     ggplot2::geom_point() +
     ggplot2::geom_smooth(method="glm",  method.args = list(family = "binomial"), se=T) +
     ggplot2::theme_minimal() +
@@ -573,7 +932,7 @@ plotCounts <- function(simCounts, Distance, Scale, DimReduce, verbose = T) {
 #' @importFrom grid unit
 #' @importFrom scales percent
 #' @importFrom cowplot plot_grid add_sub ggdraw
-#' @importFrom dplyr group_by summarise ungroup
+#' @importFrom dplyr group_by summarise ungroup n
 #' @importFrom tidyr %>%
 #' @rdname plotEvalDE
 #' @export
@@ -590,7 +949,7 @@ plotEvalDE <- function(evalRes, rate=c('marginal', 'stratified'), quick=TRUE, an
       dat.marginal.long <- reshape2::melt(dat.marginal)
       refval <- data.frame(L1 = c("FDR", "TPR"), ref = c(evalRes$alpha.nominal, 0.8))
       dat.marginal.calc <- dat.marginal.long %>% dplyr::group_by(Var1, L1) %>%
-        dplyr::summarise(Expectation=mean(value), Deviation=sd(value), Error=sd(value)/sqrt(n())) %>%
+        dplyr::summarise(Expectation=mean(value), Deviation=sd(value), Error=sd(value)/sqrt(dplyr::n())) %>%
         dplyr::ungroup()
       limits <- ggplot2::aes(ymax = Expectation + Deviation, ymin= Expectation - Deviation)
       # marginal in one
@@ -642,7 +1001,7 @@ plotEvalDE <- function(evalRes, rate=c('marginal', 'stratified'), quick=TRUE, an
       refval <- data.frame(L1 = c("FDR", "TPR"), ref = c(evalRes$alpha.nominal, 0.8))
       dat.marginal.calc <- dat.marginal.long %>%
         dplyr::group_by(Var1, L1) %>%
-        dplyr::summarise(Expectation=mean(value), Deviation=sd(value), Error=sd(value)/sqrt(n())) %>%
+        dplyr::summarise(Expectation=mean(value), Deviation=sd(value), Error=sd(value)/sqrt(dplyr::n())) %>%
         dplyr::ungroup()
       limits <- ggplot2::aes(ymax = Expectation + Deviation, ymin= Expectation - Deviation)
       # marginal in one
@@ -696,7 +1055,7 @@ plotEvalDE <- function(evalRes, rate=c('marginal', 'stratified'), quick=TRUE, an
       dat.stratified.long <- reshape2::melt(dat.stratified)
       dat.stratified.calc <- dat.stratified.long %>%
         dplyr::group_by(Var1, Var2, L1) %>%
-        dplyr::summarise(Expectation=mean(value), Deviation=sd(value), Error=sd(value)/sqrt(n())) %>%
+        dplyr::summarise(Expectation=mean(value), Deviation=sd(value), Error=sd(value)/sqrt(dplyr::n())) %>%
         dplyr::ungroup()
       limits <- ggplot2::aes(ymax = Expectation + Deviation, ymin= Expectation - Deviation)
       refval <- data.frame(L1 = c("FDR", "TPR"), ref = c(evalRes$alpha.nominal, 0.8))
@@ -723,7 +1082,7 @@ plotEvalDE <- function(evalRes, rate=c('marginal', 'stratified'), quick=TRUE, an
       dat.genes <- lapply(dat.genes, "rownames<-", strata)
       dat.genes.long <- reshape2::melt(dat.genes)
       dat.genes.calc <- dat.genes.long %>% dplyr::group_by(Var1, L1) %>%
-        dplyr::summarise(Expectation=mean(value), Deviation=sd(value), Error=sd(value)/sqrt(n())) %>%
+        dplyr::summarise(Expectation=mean(value), Deviation=sd(value), Error=sd(value)/sqrt(dplyr::n())) %>%
         dplyr::ungroup()
       dodge <- ggplot2::position_dodge(width=0.9)
       strataplot <- ggplot2::ggplot(data = dat.genes.calc, ggplot2::aes(x=Var1, y=Expectation, fill=L1)) +
@@ -758,7 +1117,7 @@ plotEvalDE <- function(evalRes, rate=c('marginal', 'stratified'), quick=TRUE, an
       dat.stratified.long <- reshape2::melt(dat.stratified)
       dat.stratified.calc <- dat.stratified.long %>%
         dplyr::group_by(Var1, Var2, L1) %>%
-        dplyr::summarise(Expectation=mean(value), Deviation=sd(value), Error=sd(value)/sqrt(n())) %>%
+        dplyr::summarise(Expectation=mean(value), Deviation=sd(value), Error=sd(value)/sqrt(dplyr::n())) %>%
         dplyr::ungroup()
       limits <- ggplot2::aes(ymax = Expectation + Deviation, ymin= Expectation - Deviation)
       refval <- data.frame(L1 = c("FDR", "TPR"), ref = c(evalRes$alpha.nominal, 0.8))
@@ -786,7 +1145,7 @@ plotEvalDE <- function(evalRes, rate=c('marginal', 'stratified'), quick=TRUE, an
       dat.genes.long <- reshape2::melt(dat.genes)
       dat.genes.calc <- dat.genes.long %>%
         dplyr::group_by(Var1, L1) %>%
-        dplyr::summarise(Expectation=mean(value), Deviation=sd(value), Error=sd(value)/sqrt(n())) %>%
+        dplyr::summarise(Expectation=mean(value), Deviation=sd(value), Error=sd(value)/sqrt(dplyr::n())) %>%
         dplyr::ungroup()
       dodge <-  ggplot2::position_dodge(width=0.9)
       strataplot <-  ggplot2::ggplot(data = dat.genes.calc, ggplot2::aes(x=Var1, y=Expectation, fill=L1)) +
@@ -842,13 +1201,12 @@ plotEvalDE <- function(evalRes, rate=c('marginal', 'stratified'), quick=TRUE, an
 #' @importFrom grid unit
 #' @importFrom scales percent
 #' @importFrom cowplot plot_grid add_sub ggdraw
-#' @importFrom dplyr group_by summarise ungroup
+#' @importFrom dplyr group_by summarise ungroup n
 #' @importFrom tidyr "%>%"
 #' @rdname plotEvalSim
 #' @export
 plotEvalSim <- function(evalRes, annot=TRUE) {
 
-  if (attr(evalRes, 'Simulation') == 'Flow') {
     # log fold changes
     lfc <- reshape2::melt(evalRes$Log2FoldChange)
     colnames(lfc) <- c("SimNo", "Metric", "Value", "Samples")
@@ -858,125 +1216,7 @@ plotEvalSim <- function(evalRes, annot=TRUE) {
       dplyr::group_by(Samples, `DE-Group`, Metric) %>%
       dplyr::summarise(Expectation=mean(Value, na.rm=T),
                        Deviation=sd(Value, na.rm=T),
-                       Error=sd(Value, na.rm=T)/sqrt(n())) %>%
-      dplyr::ungroup() %>%
-      tidyr::separate(Samples, c('n1', 'n2'), " vs ", remove=FALSE) %>%
-      dplyr::mutate(SumN = as.numeric(n1)+as.numeric(n2)) %>%
-      dplyr::arrange(SumN)
-    # to label the x axis from smallest to largest n group!
-    lfc.dat$Samples <- factor(lfc.dat$Samples,
-                              levels=unique(lfc.dat$Samples[order(lfc.dat$SumN,decreasing = F)]))
-
-    limits <- ggplot2::aes(ymax = Expectation + Deviation, ymin= Expectation - Deviation)
-    dodge <- ggplot2::position_dodge(width=0.7)
-    lfc.plot <- ggplot2::ggplot(data = lfc.dat, ggplot2::aes(x=Samples,
-                                                    y=Expectation,
-                                                    fill=`DE-Group`,
-                                                    colour=`DE-Group`)) +
-      ggplot2::geom_point(position = dodge) +
-      # ggplot2::geom_line(ggplot2::aes(group=Metric),position = dodge) +
-      ggplot2::geom_pointrange(limits, position = dodge) +
-      ggplot2::theme_minimal() +
-      ggplot2::labs(x="Samples", y="Value") +
-      ggplot2::facet_wrap(~Metric, ncol=3, scales="free") +
-      ggplot2::theme(legend.position='right', legend.title = ggplot2::element_blank(),
-                     axis.text.x=ggplot2::element_text(size=10, angle=45, hjust=1),
-                     axis.text.y=ggplot2::element_text(size=10),
-                     axis.title=ggplot2::element_text(size=10, face="bold"),
-                     legend.text = ggplot2::element_text(size=10),
-                     legend.key.size = grid::unit(0.5, "cm"),
-                     strip.text = ggplot2::element_text(size=10, face="bold"))
-
-    # size factors
-    sf <- reshape2::melt(evalRes$SizeFactors)
-    colnames(sf) <- c("SimNo", "Metric", "Value", "Samples")
-    sf.stats <- sf %>%
-      dplyr::filter(Metric %in% c("MAD", "rRMSE")) %>%
-      dplyr::group_by(Samples, Metric) %>%
-      dplyr::summarise(Expectation=mean(Value, na.rm=T),
-                       Deviation=sd(Value, na.rm=T),
-                       Error=sd(Value, na.rm=T)/sqrt(n())) %>%
-      dplyr::ungroup() %>%
-      tidyr::separate(Samples, c('n1', 'n2'), " vs ", remove=FALSE) %>%
-      dplyr::mutate(SumN = as.numeric(n1)+as.numeric(n2)) %>%
-      dplyr::arrange(SumN)
-    # to label the x axis from smallest to largest n group!
-    sf.stats$Samples <- factor(sf.stats$Samples,
-                               levels=unique(sf.stats$Samples[order(sf.stats$SumN,decreasing = F)]))
-    limits <- ggplot2::aes(ymax = Expectation + Deviation, ymin= Expectation - Deviation)
-    dodge <- ggplot2::position_dodge(width=0.7)
-    sfstats.plot <- ggplot2::ggplot(data = sf.stats, ggplot2::aes(x=Samples,
-                                                         y=Expectation)) +
-      ggplot2::geom_point(position = dodge) +
-      # ggplot2::geom_line(ggplot2::aes(group=Metric),position = dodge) +
-      ggplot2::facet_wrap(~Metric, ncol=2, scales="free") +
-      ggplot2::geom_pointrange(limits, position = dodge) +
-      ggplot2::theme_minimal() +
-      ggplot2::labs(x="Samples", y="Value") +
-      ggplot2::theme(legend.position='right', legend.title = ggplot2::element_blank(),
-                     axis.text.x=ggplot2::element_text(size=10, angle=45, hjust=1),
-                     axis.text.y=ggplot2::element_text(size=10),
-                     axis.title=ggplot2::element_text(size=10, face="bold"),
-                     legend.text = ggplot2::element_text(size=10),
-                     legend.key.size = grid::unit(0.5, "cm"),
-                     strip.text = ggplot2::element_text(size=10, face="bold"))
-    # ratio of size factors per group
-    ratio.dat <-  sf %>%
-      dplyr::filter(grepl("Group", Metric)) %>%
-      tidyr::separate(Samples, c('n1', 'n2'), " vs ", remove=FALSE) %>%
-      dplyr::mutate(SumN = as.numeric(n1)+as.numeric(n2)) %>%
-      dplyr::arrange(SumN)
-    ratio.dat$Samples <- factor(ratio.dat$Samples,
-                                levels=unique(ratio.dat$Samples[order(ratio.dat$SumN,decreasing = F)]))
-
-    ratio.plot <- ggplot2::ggplot(data = ratio.dat, ggplot2::aes(x=Samples,
-                                                        y=Value,
-                                                        color=Metric)) +
-      ggplot2::geom_boxplot() +
-      ggplot2::theme_minimal() +
-      ggplot2::labs(x="Samples", y="Value") +
-      ggplot2::geom_hline(yintercept=1,linetype="dashed", color='darkgrey') +
-      ggplot2::theme(legend.position='right', legend.title = ggplot2::element_blank(),
-                     axis.text.x=ggplot2::element_text(size=10, angle=45, hjust=1),
-                     axis.text.y=ggplot2::element_text(size=10),
-                     axis.title=ggplot2::element_text(size=10, face="bold"),
-                     legend.text = ggplot2::element_text(size=10),
-                     legend.key.size = grid::unit(0.5, "cm"),
-                     strip.text = ggplot2::element_text(size=10, face="bold"))
-
-    # clustering
-    bottom_row <- suppressWarnings(cowplot::plot_grid(sfstats.plot,
-                                                      ratio.plot,
-                                                      labels = c('B', 'C'),
-                                                      align = 'hv',
-                                                      ncol=2,
-                                                      nrow=1,
-                                                      rel_widths = c(1.3, 1)))
-    p.final <- suppressWarnings(cowplot::plot_grid(lfc.plot,
-                                                   bottom_row,
-                                                   labels=c('A', ''),
-                                                   rel_heights = c(1.3,1),
-                                                   ncol=1, nrow=2))
-    # annotation under plot
-    if(annot) {
-      p.final <- cowplot::add_sub(p.final, "A) Mean Absolute Error (MAE), Root Mean Squared Error (RMSE) and robust Root Mean Squared Error (rRMSE) \n for the estimated log2 fold changes of all (ALL), differentially expressed (DE) and equally expressed (EE) genes compared to the true log2 fold changes.
-                                  \nB) Median absolute deviation (MAD) and robust Root Mean Squared Error (rRMSE) between estimated and true size factors.
-                                  \nC) The average ratio between simulated and true size factors in the two groups of samples.", size=8)
-    }
-
-  }
-
-  if (attr(evalRes, 'Simulation') == 'DE') {
-    # log fold changes
-    lfc <- reshape2::melt(evalRes$Log2FoldChange)
-    colnames(lfc) <- c("SimNo", "Metric", "Value", "Samples")
-    lfc.dat <- lfc %>%
-      tidyr::separate(Metric, c("DE-Group", "Metric", "Type"), "_") %>%
-      dplyr::filter(!Type=="NAFraction") %>%
-      dplyr::group_by(Samples, `DE-Group`, Metric) %>%
-      dplyr::summarise(Expectation=mean(Value, na.rm=T),
-                       Deviation=sd(Value, na.rm=T),
-                       Error=sd(Value, na.rm=T)/sqrt(n())) %>%
+                       Error=sd(Value, na.rm=T)/sqrt(dplyr::n())) %>%
       dplyr::ungroup() %>%
       tidyr::separate(Samples, c('n1', 'n2'), " vs ", remove=FALSE) %>%
       dplyr::mutate(SumN = as.numeric(n1)+as.numeric(n2)) %>%
@@ -1013,7 +1253,7 @@ plotEvalSim <- function(evalRes, annot=TRUE) {
       dplyr::group_by(Samples, Metric) %>%
       dplyr::summarise(Expectation=mean(Value, na.rm=T),
                        Deviation=sd(Value, na.rm=T),
-                       Error=sd(Value, na.rm=T)/sqrt(n())) %>%
+                       Error=sd(Value, na.rm=T)/sqrt(dplyr::n())) %>%
       dplyr::ungroup() %>%
       tidyr::separate(Samples, c('n1', 'n2'), " vs ", remove=FALSE) %>%
       dplyr::mutate(SumN = as.numeric(n1)+as.numeric(n2)) %>%
@@ -1080,8 +1320,6 @@ plotEvalSim <- function(evalRes, annot=TRUE) {
                                   \nB) Median absolute deviation (MAD) and robust Root Mean Squared Error (rRMSE) between estimated and true size factors.
                                   \nC) The average ratio between simulated and true size factors in the two groups of samples.", size=8)
     }
-
-  }
 
   # draw final plot
   cowplot::ggdraw(p.final)

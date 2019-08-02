@@ -2,49 +2,49 @@
 % Please edit documentation in R/Simulate.R
 \name{simulateDE}
 \alias{simulateDE}
-\title{Simulate Differential Expression}
+\title{Simulate Differential Expression Pipeline}
 \usage{
-simulateDE(n1=c(20,50,100), n2=c(30,60,120),
-sim.settings,
-DEmethod,
+simulateDE(SetupRes,
+Prefilter = NULL,
+Imputation = NULL,
 Normalisation,
 Label = "none",
-Prefilter = NULL,
-Impute = NULL,
+DEmethod,
 DEFilter = FALSE,
-spikeIns = FALSE,
 NCores = NULL,
 verbose = TRUE)
 }
 \arguments{
-\item{n1, n2}{Integer vectors specifying the number of biological replicates in each group.
-Default values are n1=c(20,50,100) and n2=c(30,60,120).}
-
-\item{sim.settings}{This object specifies the simulation setup. This must be the return object from \code{\link{SimSetup}}.}
-
-\item{DEmethod}{A character vector specifying the DE detection method to be used.
-Please consult the Details section for available options.}
-
-\item{Normalisation}{Normalisation method to use.
-Please consult the Details section for available options.}
-
-\item{Label}{A character vector to define whether information about group labels should be used for normalisation.
-This is only implemented for scran and SCnorm. Possible options include the default \code{"none"} which means that no sample group information is considered for normalisation; \code{"known"} means that the simulated group labels are used and \code{"clustering"} which applies an unsupervised hierarchical clustering to determine the group labels (for details, see \code{\link[scran]{quickCluster}}).}
+\item{SetupRes}{This object specifies the simulation setup.
+This must be the return object from \code{\link{Setup}}.}
 
 \item{Prefilter}{A character vector specifying the gene expression filtering method
 to be used prior to normalisation (and possibly imputation).
 Default is \code{NULL}, i.e. no filtering.
 Please consult the Details section for available options.}
 
-\item{Impute}{A character vector specifying the gene expression imputation method
+\item{Imputation}{A character vector specifying the gene expression imputation method
 to be used prior to normalisation.
 Default is \code{NULL}, i.e. no imputation.
 Please consult the Details section for available options.}
 
-\item{DEFilter}{A logical vector indicating whether to run DE testing on filtered and/or imputed count data.
-Default is \code{FALSE}.}
+\item{Normalisation}{Normalisation method to use.
+Please consult the Details section for available options.}
 
-\item{spikeIns}{Logical vector to indicate whether to simulate spike-ins.
+\item{Label}{A character vector to define whether information about
+group labels should be used for normalisation.
+This is only implemented for scran and SCnorm.
+Possible options include the default \code{"none"}
+which means that no sample group information is considered for normalisation;
+\code{"known"} means that the simulated group labels are used and \code{"clustering"}
+which applies an unsupervised hierarchical clustering to determine the group labels.
+For details, see \code{\link[scran]{quickCluster}}).}
+
+\item{DEmethod}{A character vector specifying the DE detection method to be used.
+Please consult the Details section for available options.}
+
+\item{DEFilter}{A logical vector indicating whether to run DE testing on
+filtered and/or imputed count data.
 Default is \code{FALSE}.}
 
 \item{NCores}{integer positive number of cores for parallel processing.
@@ -54,25 +54,26 @@ Default is \code{NULL}, i.e. 1 core.}
 Default is \code{TRUE}.}
 }
 \value{
-A list with the following fields:
+A list of list objects complex list where the list named "SimulateRes" contains the results of simulations:
+\strong{SimulateRes: Results of DE simulations}
+\describe{
 \item{pvalue, fdr}{3D array (ngenes * N * nsims) for p-values and FDR from each simulation.
 Note that FDR values will be empty and the calculation will be done by \code{\link{evaluateDE}} whenever applicable.}
 \item{mu,disp,dropout}{3D (ngenes * N * nsims) array for mean, dispersion and dropout of library size factor normalized read counts.}
 \item{true.mu,true.disp,true.dropout}{3D (ngenes * N * nsims) array for true mean, dispersion and dropout of simulated read counts.}
-\item{true.depth}{True simulated sequencing depth per sample.}
+\item{true.depth,est.depth}{True simulated and processed (after prefiltering and/or imputation if defined) sequencing depth per sample.}
 \item{est.sf}{Global library size factor estimates per sample.}
 \item{est.gsf}{3D array (ngenes * N * nsims) for size factor estimates. These are gene- and sample-wise estimates and only for SCnorm and Linnorm normalisation.}
 \item{elfc,rlfc}{3D array (ngenes * N * nsims) for log2 fold changes (LFC):
 elfc is for the DE tool estimated LFC; rlfc is for the LFC estimated from the normalised read counts.}
-\item{sim.settings}{The input sim.settings to which the specifications of \code{simulateDE} is added.}
-\item{time.taken}{The time taken for each simulation, given for preprocessing, normalisation, differential expression testing and moment estimation.}
+\item{time.taken}{The time taken given by \code{\link[base]{proc.time}} for each simulation, given for preprocessing, normalisation, differential expression testing and moment estimation.}
+}
+\strong{SetupRes: Simulation specifications}
 }
 \description{
 simulateDE is the main function to simulate differential expression for RNA-seq experiments.
-The simulation parameters are specified with \code{\link{SimSetup}}.
-The user needs to specify furthermore
-the number of samples per group, preprocessing, normalisation and differential testing method.
-There is also the option to consider spike-ins. \cr
+The simulation parameters are specified with \code{\link{Setup}}.
+The user now needs to specify the RNA-seq Analysis Pipeline including preprocessing, normalisation and differential testing method.
 The return object contains DE test results from all simulations as well as descriptive statistics.
 The error matrix calculations will be conducted with \code{\link{evaluateDE}}.\cr
 }
@@ -95,14 +96,12 @@ Here you can find detailed information about preprocessing, imputation, normalis
 in \code{\link[DrImpute]{DrImpute}}.}
 \item{SAVER}{employs SAVER method of imputing dropouts as implemented
 in \code{\link[SAVER]{saver}}. Imputation is only carried out for genes with more than 50 percent dropout.}
-\item{Seurat}{employs Seurat method of imputing dropouts as implemented
-in \code{\link[Seurat]{AddImputedScore}} using variable genes identified with \code{\link[Seurat]{FindVariableGenes}}. Imputation is only carried out for genes with more than 50 percent dropout.}
 \item{scone}{employs scone method of imputing dropouts as implemented
 in \code{\link[scone]{scone}} using estimated dropout probabilities of \code{\link[scone]{estimate_ziber}}.}
 }
 }
 
-\section{Normalisation applied to (imputed) read count matrix}{
+\section{Normalisation applied to (prefiltered/imputed/raw) gene count matrix}{
 
 \describe{
 \item{TMM, UQ}{employ the edgeR style normalization of weighted trimmed mean of M-values and upperquartile
@@ -149,31 +148,30 @@ followed by \code{\link[limma]{eBayes}} on counts transformed by \code{\link[lim
 
 \examples{
 \dontrun{
-## define DE parameters and set up simulations
-de.opts <- DESetup(ngenes = 10000, nsims = 25,
-p.DE = 0.2, pLFC = function(x) sample(c(-1,1), size=x,replace=TRUE)*rgamma(x, 3, 3),
-p.B=0.1, bLFC = function(x) rnorm(x, mean=0, sd=1.5), bPattern="uncorrelated",
-sim.seed = 43856)
-sim.opts <- SimSetup(desetup = de.opts,
-params = kolodziejczk_param,
-spike=NULL, size.factors = "equal",
-downsample = FALSE, geneset = FALSE)
-## run simulations
-sim.res <- simulateDE(n1=c(50,96,384), n2=c(80,96,384),
-sim.settings = sim.opts,
-DEmethod = 'limma-trend',
-Normalisation = 'scran',
-Preclust = FALSE,
-Prefilter = "FreqFilter",
-Impute = NULL,
-spikeIns = FALSE,
+# estimated parameters
+data(kolodziejczk_param)
+# set up simulation
+setupres <- Setup(ngenes = NULL, nsims = 25,
+p.DE = 0.1, pLFC = 1.25,
+p.B = NULL, bLFC = NULL, bPattern = 'uncorrelated',
+n1 = c(20,50,100), n2 = c(30,60,120),
+Thinning = NULL, LibSize = 'equal',
+estParamRes = kolodziejczk_param,
+estSpikeRes = NULL,
+DropGenes = FALSE,
+sim.seed = 52679, verbose = TRUE)
+# run simulation
+simres <- simulateDE(SetupRes,
+Prefilter = NULL, Imputation = NULL,
+Normalisation = "scran", Label = "none",
+DEmethod = "limma-trend", DEFilter = FALSE,
 NCores = NULL,
 verbose = TRUE)
 }
 }
 \seealso{
-\code{\link{estimateParam}},  \code{\link{insilicoNBParam}} for negative binomial parameter specifications;\cr
- \code{\link{DESetup}}, \code{\link{SimSetup}} for simulation setup;\cr
+\code{\link{estimateParam}},  for parameter specifications;\cr
+ \code{\link{Setup}} for simulation setup;\cr
  \code{\link{evaluateDE}} for DE evaluation.
 }
 \author{

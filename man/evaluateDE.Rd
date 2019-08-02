@@ -26,7 +26,7 @@ Available options are \code{"adjusted"} i.e. applying multiple testing correctio
 3) Independent Hypothesis Weighting considering mean expression as covariate (see \link[IHW]{ihw}).
 Default is \code{BY}, i.e. Benjamini-Yekutieli FDR correction method.}
 
-\item{alpha.nominal}{The nomial value of significance. Default is 0.1.}
+\item{alpha.nominal}{The nomial level of significance. Default is 0.1.}
 
 \item{stratify.by}{A string to represent the way to stratify genes.
 Available options are \code{"mean"}, \code{"dispersion"}, \code{"dropout"} and \code{"lfc"},
@@ -110,8 +110,7 @@ eval.de <- evaluateDE(simRes = kolodziejczk_simDE)
 }
 \seealso{
 \code{\link{estimateParam}} for negative binomial parameters,
-\code{\link{SimSetup}} and
-\code{\link{DESetup}} for setting up simulation parameters and
+\code{\link{Setup}} for setting up simulation parameters and
 \code{\link{simulateDE}} for simulating differential expression and
 \code{\link{plotEvalDE}} for visualisation.
 }

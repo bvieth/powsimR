@@ -1,7 +1,7 @@
 
 # IMPUTATION WRAPPER ------------------------------------------------------
 
-.impute.calc <- function(Impute,
+.impute.calc <- function(Imputation,
                          countData,
                          spikeData,
                          batchData,
@@ -10,24 +10,24 @@
                          MeanFragLengths,
                          NCores,
                          verbose) {
-  if(Impute=='scImpute') {invisible(capture.output(
+  if(Imputation=='scImpute') {invisible(capture.output(
     FilterData <- suppressMessages(.scimpute.impute(countData = countData,
                                                     clustNumber = clustNumber,
                                                     NCores = NCores,
                                                     verbose = verbose))
   ))}
-  if(Impute=='DrImpute') {FilterData <- .drimpute.impute(countData = countData,
+  if(Imputation=='DrImpute') {FilterData <- .drimpute.impute(countData = countData,
                                                          verbose = verbose)}
 
-  if(Impute=='SAVER') {FilterData <- .saver.impute(countData = countData,
+  if(Imputation=='SAVER') {FilterData <- .saver.impute(countData = countData,
                                                    NCores = NCores,
                                                    verbose = verbose)}
 
 
-  if(Impute=='Seurat') {FilterData <- .seurat.impute(countData = countData,
-                                                     verbose = verbose)}
+  # if(Imputation=='Seurat') {FilterData <- .seurat.impute(countData = countData,
+  #                                                    verbose = verbose)}
 
-  if(Impute=='scone') {FilterData <- .scone.impute(countData = countData,
+  if(Imputation=='scone') {FilterData <- .scone.impute(countData = countData,
                                                    spikeData = spikeData,
                                                    batchData = batchData,
                                                    Lengths = Lengths,
@@ -35,7 +35,7 @@
                                                    NCores = NCores,
                                                    verbose = verbose)}
 
-  # if(Impute=='BISCUIT') {FilterData <- .biscuit.impute(countData = countData,
+  # if(Imputation=='BISCUIT') {FilterData <- .biscuit.impute(countData = countData,
   #                                                      verbose = verbose)}
 
   ## CIDR: no easy way of extracting cidr imputed values, C++ function call, asked authors on github
@@ -45,7 +45,7 @@
 
   # the current R implementation has a lot of coding errors,
   # and also the imputation gives weird results (all of the expr values turned into miniscule tiny values)
-  # if(Impute=='MAGIC') {FilterData <- .magic.impute(countData = countData)}
+  if(Imputation=='MAGIC') {FilterData <- .magic.impute(countData = countData)}
 
   return(FilterData)
 }
@@ -186,7 +186,6 @@
   max.g <- 2500
   x <- seq_along(d)
   d1 <- split(d, ceiling(x/max.g))
-  str(d1)
   saver.outs <- sapply(1:length(d1), function(s) {
     genes <- d1[[s]]
     genes.ind <- which(rownames(countData) %in% genes)
@@ -224,10 +223,6 @@
   # round to integer counts
   ImputeData = as.matrix(round(ImputeData))
 
-  dim(ImputeData)
-  dim(countData)
-  table(rownames(countData) == rownames(ImputeData))
-
   # combine ImputeData with countData since imputation
   # was only done for the genes with higher dropouts
   ImputeData <- ImputeData[order(match(rownames(ImputeData), rownames(countData))),]
@@ -244,75 +239,75 @@
 }
 
 # Seurat
-#' @importFrom Seurat CreateSeuratObject ExpMean LogVMR
-.seurat.impute <- function(countData, NCores, verbose) {
-
-  # the original function returned Inf values for high expression genes,
-  # so that I changed the function and added the variable genes to the seurat object
-
-  # create input object
-  seurat.obj <- Seurat::CreateSeuratObject(raw.data = countData,
-                                           project = "SeuratProject",
-                                           min.cells = 0,
-                                           min.genes = 0,
-                                           is.expr = 0,
-                                           normalization.method = NULL,
-                                           scale.factor = 10000,
-                                           do.scale = FALSE,
-                                           do.center = FALSE)
-
-  # find genes with at least 50 % dropout and only do imputation for those
-  nsamples = ncol(countData)
-  counts0 = countData == 0
-  nn0 = rowSums(!counts0)
-  p0 = (nsamples - nn0)/nsamples
-  highDrop <- p0 > 0.5
-
-  # find variable genes
-  seurat.obj <- .FindVarGenes(object = seurat.obj,
-                              mean.function = Seurat::ExpMean,
-                              dispersion.function = Seurat::LogVMR,
-                              set.var.genes = TRUE,
-                              x.low.cutoff = 0.1,
-                              x.high.cutoff = Inf,
-                              y.cutoff = 1,
-                              y.high.cutoff = Inf,
-                              num.bin = 20,
-                              sort.results = TRUE)
-
-  print(length(seurat.obj@var.genes))
-  print(table(highDrop))
-
-  # imputation
-  seurat.obj <- .AddImputedScore(object = seurat.obj,
-                                 genes.use = seurat.obj@var.genes,
-                                 genes.fit = rownames(x = seurat.obj@data)[highDrop],
-                                 gram = ifelse(length(seurat.obj@var.genes)<500, TRUE, FALSE))
-
-  # Seurat uses a lasso fit and subsequent preidciton for imputation
-  # resulting in negative estimates.
-  # i changed these to zero.
-
-  ImputeData = seurat.obj@imputed
-  ImputeData[ImputeData<0] = 0
-  # round to integer counts
-  ImputeData = as.matrix(round(ImputeData))
-
-  # combine ImputeData with countData since imputation
-  # was only done for the genes with higher dropouts
-  countData <- as.matrix(seurat.obj@raw.data)
-  ImputeData <- ImputeData[order(match(rownames(ImputeData), rownames(countData))),]
-  CombineData <- countData
-  CombineData[rownames(countData) %in% rownames(ImputeData),] <- ImputeData
-
-  rownames(CombineData) = rownames(countData)
-  colnames(CombineData) = colnames(countData)
-
-  invisible(gc())
-
-  # return object
-  return(CombineData)
-}
+# #' @importFrom Seurat CreateSeuratObject ExpMean LogVMR
+# .seurat.impute <- function(countData, NCores, verbose) {
+#
+#   # the original function returned Inf values for high expression genes,
+#   # so that I changed the function and added the variable genes to the seurat object
+#
+#   # create input object
+#   seurat.obj <- Seurat::CreateSeuratObject(raw.data = countData,
+#                                            project = "SeuratProject",
+#                                            min.cells = 0,
+#                                            min.genes = 0,
+#                                            is.expr = 0,
+#                                            normalization.method = NULL,
+#                                            scale.factor = 10000,
+#                                            do.scale = FALSE,
+#                                            do.center = FALSE)
+#
+#   # find genes with at least 50 % dropout and only do imputation for those
+#   nsamples = ncol(countData)
+#   counts0 = countData == 0
+#   nn0 = rowSums(!counts0)
+#   p0 = (nsamples - nn0)/nsamples
+#   highDrop <- p0 > 0.5
+#
+#   # find variable genes
+#   seurat.obj <- .FindVarGenes(object = seurat.obj,
+#                               mean.function = Seurat::ExpMean,
+#                               dispersion.function = Seurat::LogVMR,
+#                               set.var.genes = TRUE,
+#                               x.low.cutoff = 0.1,
+#                               x.high.cutoff = Inf,
+#                               y.cutoff = 1,
+#                               y.high.cutoff = Inf,
+#                               num.bin = 20,
+#                               sort.results = TRUE)
+#
+#   print(length(seurat.obj@var.genes))
+#   print(table(highDrop))
+#
+#   # imputation
+#   seurat.obj <- .AddImputedScore(object = seurat.obj,
+#                                  genes.use = seurat.obj@var.genes,
+#                                  genes.fit = rownames(x = seurat.obj@data)[highDrop],
+#                                  gram = ifelse(length(seurat.obj@var.genes)<500, TRUE, FALSE))
+#
+#   # Seurat uses a lasso fit and subsequent prediction for imputation
+#   # resulting in negative estimates.
+#   # i changed these to zero.
+#
+#   ImputeData = seurat.obj@imputed
+#   ImputeData[ImputeData<0] = 0
+#   # round to integer counts
+#   ImputeData = as.matrix(round(ImputeData))
+#
+#   # combine ImputeData with countData since imputation
+#   # was only done for the genes with higher dropouts
+#   countData <- as.matrix(seurat.obj@raw.data)
+#   ImputeData <- ImputeData[order(match(rownames(ImputeData), rownames(countData))),]
+#   CombineData <- countData
+#   CombineData[rownames(countData) %in% rownames(ImputeData),] <- ImputeData
+#
+#   rownames(CombineData) = rownames(countData)
+#   colnames(CombineData) = colnames(countData)
+#
+#   invisible(gc())
+#
+#   # return object
+#   return(CombineData)
+# }
 
 # scone
 #' @importFrom scone SconeExperiment estimate_ziber scone impute_expectation
@@ -450,13 +445,73 @@
   return(ImputeData)
 }
 
+# MAGIC
+# Rmagic is actually a wrapper around the python implementation
+#' @importFrom Rmagic magic library.size.normalize
+#' @importFrom stats median
+.magic.impute <- function(countData, NCores, verbose) {
+
+  if(is.null(NCores)) {
+    ncores = 1
+  }
+  if(!is.null(NCores)) {
+    ncores = NCores
+  }
+
+  # filtering
+  nsamples = ncol(countData)
+  counts0 = countData == 0
+  nn0 = rowSums(!counts0)
+  p0 = (nsamples - nn0)/nsamples
+  highDrop <- p0 < 0.95
+  cnts.filt <- t(countData[highDrop,])
+
+  # normalize and transform
+  library_size <- rowSums(cnts.filt)
+  median_transcript_count <- stats::median(library_size)
+  cnts.norm <- Rmagic::library.size.normalize(data = cnts.filt, verbose = verbose)
+  cnts.sqrt <- sqrt(cnts.norm)
+
+  magic.out <- Rmagic::magic(data = cnts.sqrt,
+                             genes = NULL,
+                             k = 10,
+                             alpha = 15,
+                             t = "auto",
+                             npca = 100,
+                             init = NULL,
+                             t.max = 20,
+                             knn.dist.method = "euclidean",
+                             verbose = verbose,
+                             n.jobs = ncores,
+                             seed = NULL)
+  # backtransformation
+  magic.backtransform <- magic.out^2
+  magic.denorm <- magic.backtransform * library_size / median_transcript_count
+  # round to integer counts
+  ImputeData <- as.matrix(round(t(magic.denorm)))
+
+  # combine ImputeData with countData since imputation
+  # was only done for the genes/ samples that passed filtering
+  ImputeData <- ImputeData[order(match(rownames(ImputeData), rownames(countData))),]
+  CombineData <- countData
+  CombineData[rownames(countData) %in% rownames(ImputeData),] <- ImputeData
+
+  rownames(CombineData) = rownames(countData)
+  colnames(CombineData) = colnames(countData)
+
+  invisible(gc())
+
+  # return object
+  return(CombineData)
+}
+
 # PREFILTER WRAPPER ---------------------------------------------------
 
 .prefilter.calc <- function(Prefilter,
                             countData,
                             NCores) {
   if(Prefilter=='CountFilter') {FilterData <- .count.filter(countData = countData)}
-  if(Prefilter=='FreqFilter') {FilterData <- .freq.filter(countData = countData)}
+    if(Prefilter=='FreqFilter') {FilterData <- .freq.filter(countData = countData)}
 
   return(FilterData)
 }

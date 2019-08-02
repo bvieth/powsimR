@@ -11,70 +11,141 @@
                        MeanFragLengths,
                        PreclustNumber,
                        Label,
+                       Step,
+                       Protocol,
                        NCores,
                        verbose) {
-  if(Normalisation=='TMM') {NormData <- .TMM.calc(countData = countData,
-                                                  verbose = verbose)}
-  if(Normalisation=='UQ') {NormData <- .UQ.calc(countData = countData,
-                                                verbose = verbose)}
-  if(Normalisation=='MR') {NormData <- .MR.calc(countData = countData,
-                                                spikeData = spikeData,
-                                                verbose = verbose)}
-  if(Normalisation=='PosCounts') {NormData <- .PosCounts.calc(countData = countData,
-                                                              spikeData = spikeData,
-                                                              verbose = verbose)}
-  if(Normalisation=='Linnorm') {NormData <- .linnormnorm.calc(countData = countData,
-                                                              spikeData = spikeData,
-                                                              verbose = verbose)}
-  if(Normalisation=='scran' && Label == "none") {NormData <- .scran.calc(countData = countData,
-                                                                         spikeData = spikeData,
-                                                                         verbose = verbose)}
-  if(Normalisation=='scran' && Label == "known") {NormData <- .scrangroups.calc(countData = countData,
-                                                                                batchData = batchData,
-                                                                                verbose = verbose)}
-  if(Normalisation=='scran' && Label == "clustering") {NormData <- suppressWarnings(
+  if(Normalisation=='TMM') {
+    NormData <- .TMM.calc(countData = countData,
+                          verbose = verbose)
+  }
+  if(Normalisation=='UQ') {
+    NormData <- .UQ.calc(countData = countData,
+                         verbose = verbose)
+  }
+  if(Normalisation=='MR') {
+    NormData <- .MR.calc(countData = countData,
+                         spikeData = spikeData,
+                         verbose = verbose)
+  }
+  if(Normalisation=='PosCounts') {
+    NormData <- .PosCounts.calc(countData = countData,
+                                spikeData = spikeData,
+                                verbose = verbose)
+  }
+  if(Normalisation=='Linnorm') {
+    NormData <- .linnormnorm.calc(countData = countData,
+                                  spikeData = spikeData,
+                                  verbose = verbose)
+  }
+  if(Normalisation=='scran' && Label == "none") {
+    NormData <- .scran.calc(countData = countData,
+                            spikeData = spikeData,
+                            verbose = verbose)
+  }
+  if(Normalisation=='scran' && Label == "known") {
+    if(Step=="Estimation"){
+    NormData <- .scran.calc(countData = countData,
+                            spikeData = spikeData,
+                            verbose = verbose)}
+    if(Step=="Simulation"){
+      NormData <- .scrangroups.calc(countData = countData,
+                                    batchData = batchData,
+                                    verbose = verbose)}
+  }
+  if(Normalisation=='scran' && Label == "clustering") {
+    NormData <- suppressWarnings(
     .scranclust.calc(countData = countData,
                      PreclustNumber = PreclustNumber,
-                     verbose = verbose))}
-  if(Normalisation=='SCnorm' && Label == "none") {NormData <- .SCnorm.calc(countData = countData,
-                                                                           spikeData = spikeData,
-                                                                           batchData = NULL,
-                                                                           NCores = NCores,
-                                                                           verbose = verbose)}
-  if(Normalisation=='SCnorm' && Label == "known") {NormData <- .SCnorm.calc(countData = countData,
-                                                                           spikeData = spikeData,
-                                                                           batchData = batchData,
-                                                                           NCores = NCores,
-                                                                           verbose = verbose)}
-  if(Normalisation=='SCnorm' && Label == "clustering") {NormData <- .SCnormclust.calc(countData = countData,
-                                                                                      spikeData = spikeData,
-                                                                                      PreclustNumber=PreclustNumber,
-                                                                                      NCores = NCores,
-                                                                                      verbose = verbose)}
-  if(Normalisation=='Census') {NormData <- .Census.calc(countData=countData,
-                                                        batchData=batchData,
-                                                        Lengths=Lengths,
-                                                        MeanFragLengths=MeanFragLengths,
-                                                        spikeData=spikeData,
-                                                        spikeInfo = spikeInfo,
-                                                        NCores=NCores,
-                                                        verbose=verbose)}
-  if(Normalisation=='RUV') {NormData <- .RUV.calc(countData = countData,
-                                                  spikeData = spikeData,
-                                                  batchData = batchData,
-                                                  verbose = verbose)}
-  # if(Normalisation=='BASiCS') {NormData <- .BASiCS.calc(countData = countData,
-  #                                                       spikeData = spikeData,
-  #                                                       spikeInfo = spikeInfo,
-  #                                                       batchData = batchData,
-  #                                                       verbose = verbose)}
-  if(Normalisation=='depth') {NormData <- .depth.calc(countData = countData,
-                                                      verbose = verbose)}
-  if(Normalisation=='SF') {NormData <- .sf.calc(countData = countData,
-                                                  sf=sf,
-                                                  verbose = verbose)}
-  if(Normalisation=='none') {NormData <- .none.calc(countData = countData,
-                                                    verbose = verbose)}
+                     verbose = verbose))
+  }
+  if(Normalisation=='SCnorm' && Step == "Estimation"){
+    NormData <- .SCnorm.calc(countData = countData,
+                             spikeData = spikeData,
+                             batchData = NULL,
+                             NCores = NCores,
+                             verbose = verbose)
+  }
+  if(Normalisation=='SCnorm' && Label == "none" && Step == "Simulation"){
+    NormData <- .SCnorm.calc(countData = countData,
+                             spikeData = spikeData,
+                             batchData = NULL,
+                             NCores = NCores,
+                             verbose = verbose)
+  }
+
+  if(Normalisation=='SCnorm' && Label == "known" && Step == "Simulation"){
+    NormData <- .SCnorm.calc(countData = countData,
+                             spikeData = spikeData,
+                             batchData = batchData,
+                             NCores = NCores,
+                             verbose = verbose)
+    }
+  if(Normalisation=='SCnorm' && Label == "clustering" && Step == "Simulation"){
+    NormData <- .SCnormclust.calc(countData = countData,
+                                  spikeData = spikeData,
+                                  PreclustNumber=PreclustNumber,
+                                  NCores = NCores,
+                                  verbose = verbose)
+    }
+  if(Normalisation=='sctransform') {
+    NormData <- .sctransform.calc(countData = countData,
+                                  batchData = batchData,
+                                  Step = Step,
+                                  verbose = verbose)
+  }
+  if(Normalisation=="bayNorm") {
+    NormData <- .baynorm.calc(countData = countData,
+                              batchData = batchData,
+                              spikeData = spikeData,
+                              spikeInfo = spikeInfo,
+                              NCores  = NCores,
+                              Step = Step,
+                              Protocol = Protocol,
+                              verbose = verbose)
+  }
+  if(Normalisation=='Census') {
+    NormData <- .Census.calc(countData = countData,
+                             Lengths = Lengths,
+                             MeanFragLengths = MeanFragLengths,
+                             spikeData = spikeData,
+                             spikeInfo = spikeInfo,
+                             Protocol = Protocol,
+                             NCores = NCores,
+                             verbose = verbose)
+  }
+  if(Normalisation=='RUV' && Step == "Estimation") {
+    NormData <- .RUV.calc(countData = countData,
+                          spikeData = spikeData,
+                          batchData = batchData,
+                          verbose = verbose)
+  }
+  if(Normalisation=='RUV' && Step == "Simulation") {
+    stop(message(paste0("RUV should only be used for batch-aware normalisation during estimation.")))
+  }
+
+  if(Normalisation=='depth') {
+    NormData <- .depth.calc(countData = countData,
+                            verbose = verbose)
+  }
+  if(Normalisation=='SF') {
+    NormData <- .sf.calc(countData = countData,
+                         sf=sf,
+                         verbose = verbose)
+  }
+  if(Normalisation=='none') {
+    NormData <- .none.calc(countData = countData,
+                           verbose = verbose)
+  }
+
+
+  # inform the user of unusual / problematic normalisation results
+
+  if(attr(NormData, "normFramework")=="scran" && any(NormData$size.factors<0)){
+    if (verbose) { message(paste0("Negative size factors estimated.
+                                  Apply stronger gene and sample filtering for parameter estimation.")) }
+  }
+
   return(NormData)
 }
 
@@ -241,6 +312,7 @@
     stats::weighted.mean(x = x, w = wmu, na.rm = TRUE)
   })
   sf[is.infinite(sf)] <- mean(sf[is.finite(sf)])
+  sf <- sf/exp(mean(log(sf)))
   names(sf) <- colnames(countData)
 
   res <- list(NormCounts=norm.counts,
@@ -417,7 +489,91 @@
 }
 
 
+# sctransform -------------------------------------------------------------
 
+
+
+#' @importFrom sctransform vst
+.sctransform.calc <- function(countData, batchData, Step, verbose) {
+
+  if(Step == "Estimation") {
+    if(!is.null(batchData)) {
+      if(is.vector(batchData)) {
+        cond <- data.frame(batch = batchData, stringsAsFactors = FALSE)
+        batch_var <- 'batch'
+      }
+      if(!is.vector(batchData)) {
+        cond <- data.frame(batch = batchData[,1], stringsAsFactors = FALSE)
+        batch_var <- 'batch'
+      }
+    }
+    if(is.null(batchData)) {
+      cond <- NULL
+      batch_var <- NULL
+    }
+  }
+
+  if(Step == "Simulation") {
+    cond <- NULL
+    batch_var <- NULL
+  }
+
+  if(!is.null(cond)){
+    if (verbose) {
+      message(paste0("Correcting for nuisance factors defined by batchData."))
+      }
+  }
+
+  sctransform_out <- sctransform::vst(countData,
+                                      cell_attr = cond,
+                                      latent_var = c("log_umi"),
+                                      batch_var = batch_var,
+                                      latent_var_nonreg = NULL,
+                                      n_genes = 2000,
+                                      n_cells = NULL,
+                                      method = "poisson",
+                                      do_regularize = TRUE,
+                                      res_clip_range = c(-sqrt(ncol(countData)), sqrt(ncol(countData))),
+                                      bin_size = 256,
+                                      min_cells = 5,
+                                      return_cell_attr = TRUE,
+                                      return_gene_attr = TRUE,
+                                      return_dev_residuals = TRUE,
+                                      return_corrected_umi = TRUE,
+                                      bw_adjust = 3,
+                                      gmean_eps = 1,
+                                      theta_given = NULL,
+                                      show_progress = verbose)
+
+
+  norm.counts <- as.matrix(sctransform_out$umi_corrected)
+
+  ixx.valid <- rownames(countData)  %in% rownames(norm.counts)
+  NormCounts <- countData
+  NormCounts[ixx.valid, ] <- norm.counts
+
+  gsf <-  countData / NormCounts
+  gsf[is.infinite(gsf)] <- NA
+  wmu <- sctransform_out$gene_attr$mean
+  sf <- apply(gsf[ixx.valid,], 2, function(x) {
+    stats::weighted.mean(x = x, w = wmu, na.rm = TRUE)
+  })
+  sf[is.infinite(sf)] <- mean(sf[is.finite(sf)])
+  sf <- sf/exp(mean(log(sf))) # needed ? CHECK!!!
+  names(sf) <- colnames(countData)
+
+  res <- list(NormCounts=NormCounts,
+              RoundNormCounts=round(NormCounts),
+              size.factors=sf,
+              scale.factors=gsf,
+              vst_out=sctransform_out)
+  attr(res, 'normFramework') <- "sctransform"
+
+  invisible(gc())
+
+  return(res)
+
+}
 
 # SCnorm -----------------------------------------------------
 
@@ -454,8 +610,7 @@
     if(!is.null(batchData)) {
       message(paste0("Using group annotation."))
     }
-
-    }
+  }
 
   ncores = ifelse(is.null(NCores), 1, NCores)
 
@@ -512,13 +667,16 @@
     scale.facts <- scnorm.out@metadata$ScaleFactors[!grepl(pattern="ERCC",
                                                            rownames(scnorm.out@metadata$ScaleFactors)),]
     gsf <- scale.facts
+    rownames(gsf) <- rownames(cnts)
+    colnames(gsf) <- colnames(cnts)
+    gsf <- gsf[!grepl(pattern="ERCC", rownames(gsf)),]
   }
   if(class(scnorm.out) == "SummarizedExperiment") {
     norm.counts <- scnorm.out@metadata$NormalizedData[!grepl(pattern="ERCC",
                                                              rownames(scnorm.out@metadata$NormalizedData)),]
     scale.facts <- scnorm.out@metadata$ScaleFactors[!grepl(pattern="ERCC",
                                                            rownames(scnorm.out@metadata$ScaleFactors)),]
-    gsf <- scnorm.out@metadata$ScaleFactors
+    gsf <- scale.facts
     rownames(gsf) <- rownames(cnts)
     colnames(gsf) <- colnames(cnts)
     gsf <- gsf[!grepl(pattern="ERCC", rownames(gsf)),]
@@ -634,160 +792,212 @@
 }
 
 
+
+# bayNorm -----------------------------------------------------------------
+
+#' @importFrom bayNorm bayNorm BetaFun
+.baynorm.calc <- function(countData,
+                          batchData,
+                          spikeData,
+                          spikeInfo,
+                          NCores,
+                          Step,
+                          Protocol,
+                          verbose){
+  # define parallel computation
+  if(is.null(NCores)) {
+    parallel = FALSE
+    ncores = 1
+  }
+  if(!is.null(NCores)) {
+    parallel = TRUE
+    ncores = NCores
+  }
+
+  if(!is.null(batchData)) {
+    if(is.vector(batchData)){
+      cond <- batchData
+    }
+    if(!is.vector(batchData)) {
+      cond <- batchData[,1]
+    }
+  }
+  if(is.null(batchData)) {
+    cond <- NULL
+    ptype <- NULL
+  }
+  if(!is.null(cond)){
+    ptype <- ifelse(Step == "Simulation", "LL", "GG")
+  }
+
+  if(Protocol == "Read"){
+    norm.tmp <- .depth.calc(countData = countData, verbose = verbose)
+    sffl <- norm.tmp$size.factors
+  }
+
+  if(Protocol == "UMI"){
+    sffl <- NULL
+  }
+
+  if (verbose) {
+    if(Protocol == "Read") {
+      message(paste0("Since the provided count matrix is read-based, bayNorm needs scaling factors.
+                     Using depth normalisation for calculation."))
+    }
+    if(is.null(cond)) {
+      message(paste0("No condition annotation considered."))
+    }
+    if(!is.null(cond)) {
+      message(paste0("Using condition annotation."))
+    }
+    if(any(is.null(spikeInfo), is.null(spikeData))) {
+      message(paste0("No spike-in information provided to estimate capture efficiency beta needed for baynorm normalisation.
+                     Be advised that the normalisation continues with default settings of bayNorm!"))
+      beta_vec <- NULL
+    }
+    if(!is.null(spikeInfo) && !is.null(spikeData)) {
+      message(paste0("Using spike-in information provided to estimate capture efficiency beta needed for baynorm normalisation."))
+      ## cell capture efficiency
+      total_ercc_molecules <- sum(spikeInfo$SpikeInput)
+      cellcapture <- apply(spikeData, 2, function(i) {
+        sum(i) / sum(spikeInfo$SpikeInput)
+      })
+      beta_vec <- bayNorm::BetaFun(Data = countData, MeanBETA = mean(cellcapture))$BETA
+    }
+  }
+
+  norm_out <- bayNorm::bayNorm(Data = countData,
+                               BETA_vec = beta_vec,
+                               Conditions = cond,
+                               UMI_sffl = sffl,
+                               Prior_type = ptype,
+                               mode_version = TRUE,
+                               mean_version = FALSE,
+                               S = 20,
+                               parallel = parallel,
+                               NCores = ncores,
+                               FIX_MU = TRUE,
+                               GR = FALSE,
+                               BB_SIZE = TRUE,
+                               verbose = verbose)
+
+  if(is.null(cond)) {
+    norm.counts <- norm_out$Bay_out
+    gsf <- (countData/res) +1
+  }
+  if(!is.null(cond)) {
+    res <- do.call("cbind", norm_out$Bay_out_list)
+    norm.counts <- res[, match(colnames(countData), colnames(res))]
+    gsf <- (countData/norm.counts) +1
+  }
+
+  wmu <- rowMeans(norm.counts, na.rm = TRUE)
+  sf <- apply(gsf, 2, function(x) {
+    stats::weighted.mean(x = x, w = wmu, na.rm = TRUE)
+  })
+  sf[is.infinite(sf)] <- mean(sf[is.finite(sf)])
+  names(sf) <- colnames(norm.counts)
+
+  res <- list(NormCounts=norm.counts,
+              RoundNormCounts=round(norm.counts),
+              size.factors=sf,
+              scale.factors=gsf)
+
+}
+
 # Census ----------------------------------------------------
 
-#' @importFrom monocle newCellDataSet relative2abs
-#' @importFrom Biobase exprs
-#' @importFrom VGAM tobit negbinomial.size
 #' @importFrom parallel detectCores
 .Census.calc <- function(countData,
-                         batchData,
-                         spikeData,
-                         spikeInfo,
                          Lengths,
                          MeanFragLengths,
+                         spikeData,
+                         spikeInfo,
+                         Protocol,
                          NCores,
                          verbose) {
 
+  # house keeping settings
   ncores = ifelse(is.null(NCores), 1, NCores)
 
-  # calculate TPM / CPM of genes
-  if(!is.null(Lengths) && !is.null(MeanFragLengths)) {
-    if(verbose) {message(paste0("Calculating TPM using Lengths and MeanFragLengths."))}
-    ed <- .counts_to_tpm(countData=countData,
-                         Lengths=Lengths,
-                         MeanFragLengths=MeanFragLengths)
-  }
-  if(!is.null(Lengths) && is.null(MeanFragLengths)) {
-    if(verbose) {message(paste0("Calculating TPM using Lengths."))}
-    ed <- .calculateTPM(countData = countData, Lengths=Lengths)
-  }
-  if(is.null(Lengths) && is.null(MeanFragLengths)) { # if Length and MeanFragLengths is NULL, assume UMI method (3' / 5' prime counting)
-    if(verbose) {message(paste0("Using counts for UMI data set."))}
-    ed <- countData
-  }
+  # 1. depending on protocol calculate relative expression values (CPM, TPM, FPKM)
 
-  # make annotated dataframes for monocle
-  # for genes
-  gene.dat <- data.frame(row.names = rownames(countData),
-                         gene_short_name = rownames(countData),
-                         biotype=rep("protein_coding", nrow(countData)),
-                         num_cells_expressed=rowSums(countData>0))
-  # for cells
-  if(!is.null(batchData)) {
-    if(!is.vector(batchData)) {
-      cell.dat <- data.frame(row.names=colnames(countData),
-                             Group=batchData[,1])
-      ModelFormula <- "~Group"
+  if(Protocol == "UMI") {
+    if(verbose) {message(paste0("Census relative2abs normalisation should not be used in conjunction with UMI data!"))}
+    if(verbose) {message(paste0("Calculating CPM as gene expression data."))}
+    ed <- .calculateCPM(countData = countData)
+
+    if(!is.null(spikeData) && !is.null(spikeInfo)) {
+      if(verbose) {message(paste0("Transform relative expression values into absolute transcript counts
+                                  using spike-ins provided."))}
+      ed.spike <- .calculateCPM(countData = spikeData)
     }
-    if(is.vector(batchData)) {
-      cell.dat <- data.frame(row.names=colnames(countData),
-                             Group=batchData)
-      ModelFormula <- "~Group"
+    if(is.null(spikeInfo)) {
+      if(verbose) {message(paste0("Transform relative expression values into absolute transcript counts."))}
+      ed.spike <- NULL
     }
-
-
-  }
-  if(is.null(batchData)) {
-    cell.dat <- data.frame(row.names=colnames(countData),
-                           Group=rep("A", ncol(countData)))
-    ModelFormula <- "~1"
   }
 
-  fd <- new("AnnotatedDataFrame", data = gene.dat)
-  pd <- new("AnnotatedDataFrame", data = cell.dat)
-
-
-  if(!is.null(Lengths)) {
-    # construct cell data set with expression values
-    if(verbose) {message(paste0("Using tobit expression distribution."))}
-    cds <- monocle::newCellDataSet(cellData = as.matrix(ed),
-                                   phenoData = pd,
-                                   featureData = fd,
-                                   lowerDetectionLimit=0.1,
-                                   expressionFamily=VGAM::tobit(Lower=0.1))
-    # estimate RNA counts
-    est_t <- .estimate_t(relative_expr_matrix=Biobase::exprs(cds),
-                         relative_expr_thresh=0)
-
-    if(is.null(spikeData) && is.null(spikeInfo)) {
-      if(verbose) {message(paste0("Running monocle relative2abs."))}
-      rpc_matrix <- monocle::relative2abs(relative_cds = cds,
-                                          t_estimate = est_t,
-                                          modelFormulaStr = ModelFormula,
-                                          method = "num_genes",
-                                          cores = ncores,
-                                          verbose = verbose)
-
-      # create cell data set wih RPC
-      eds <- monocle::newCellDataSet(cellData = as.matrix(rpc_matrix),
-                                     phenoData = pd,
-                                     featureData = fd,
-                                     lowerDetectionLimit=0.5,
-                                     expressionFamily=VGAM::negbinomial.size())
-      # apply normalisation
-      sf <- .estimateSizeFactorsForDenseMatrix(counts=Biobase::exprs(eds),
-                                               locfunc=median,
-                                               round_exprs = T,
-                                               method = "mean-geometric-mean-total")
-      names(sf) <- colnames(Biobase::exprs(eds))
-
-      norm.counts <- t(t(countData)/sf)
+  if(Protocol == "Read") {
+    if(!is.null(Lengths) && !is.null(MeanFragLengths)) {
+      if(verbose) {message(paste0("Calculating TPM Gene Expression using Lengths and MeanFragLengths."))}
+      ed <- .counts_to_tpm(countData=countData,
+                           Lengths=Lengths,
+                           MeanFragLengths=MeanFragLengths)
+    }
+    if(!is.null(Lengths) && is.null(MeanFragLengths)) {
+      if(verbose) {message(paste0("Calculating TPM Gene Expression using Lengths."))}
+      ed <- .calculateTPM(countData = countData, Lengths=Lengths)
+    }
+    if(is.null(Lengths) && is.null(MeanFragLengths)) {
+      if(verbose) {message(paste0("Calculating CPM Gene Expression."))}
+      ed <- .calculateCPM(countData = countData)
     }
 
     if(!is.null(spikeData) && !is.null(spikeInfo)) {
-      if(verbose) {message(paste0("Running own relative2abs."))}
+      if(verbose) {message(paste0("Transform relative expression values into absolute transcript counts
+                                  using spike-ins provided."))}
       # relative expression of spike-ins
       if(!is.null(spikeInfo$Lengths)) {
+        if(verbose) {message(paste0("Calculating TPM Spike-In Expression."))}
         ed.spike <- .calculateTPM(countData = spikeData,
                                   Lengths=spikeInfo$Lengths)
       }
       if(is.null(spikeInfo$Lengths)) {
+        if(verbose) {message(paste0("Calculating TPM Spike-In Expression."))}
         ed.spike <- .calculateCPM(countData = spikeData)
       }
+    }
 
-      rel.results <- .relative2abs(relative_cds = cds,
-                                   relative_spike = ed.spike,
-                                   spikeInfo = spikeInfo,
-                                   verbose = verbose,
-                                   cores = ncores)
-      rpc_matrix <- rel.results$norm_cds
-
-      #create cell data set wih RPC
-      eds <- monocle::newCellDataSet(cellData = as.matrix(rpc_matrix),
-                                     phenoData = pd,
-                                     featureData = fd,
-                                     lowerDetectionLimit=0.5,
-                                     expressionFamily=VGAM::negbinomial.size())
-
-      # apply normalisation
-      sf <- .estimateSizeFactorsForDenseMatrix(counts=Biobase::exprs(eds),
-                                               locfunc=median,
-                                               round_exprs = T,
-                                               method = "mean-geometric-mean-total")
-      #  It can be either "mean-geometric-mean-total" (default), "weighted-median", "median-geometric-mean", "median", "mode", "geometric-mean-total".
-      names(sf) <- colnames(Biobase::exprs(eds))
-
-      norm.counts <- t(t(countData)/sf)
+    if(is.null(spikeInfo)) {
+      if(verbose) {message(paste0("Transform relative expression values into absolute transcript counts."))}
+      ed.spike <- NULL
     }
   }
 
-  if(is.null(Lengths) && is.null(MeanFragLengths)) {
-    if(verbose) {message(paste0("Using negbinomial.size expression distribution."))}
-    # construct cell data set with expression values
-    eds <- monocle::newCellDataSet(cellData = as.matrix(ed),
-                                   phenoData = pd,
-                                   featureData = fd,
-                                   lowerDetectionLimit=0.5,
-                                   expressionFamily=VGAM::negbinomial.size())
-    # apply normalisation
-    sf <- .estimateSizeFactorsForDenseMatrix(counts=Biobase::exprs(eds),
-                                             locfunc=median,
-                                             round_exprs = T,
-                                             method = "mean-geometric-mean-total")
-    names(sf) <- colnames(Biobase::exprs(eds))
-    norm.counts <- t(t(countData)/sf)
-    }
+  # 2. find the most commonly occuring relative expression value per cell
+  est_t <- .estimate_t(relative_expr_matrix = ed,
+                       relative_expr_thresh = 0.1)
+
+  # 3. apply relative2abs
+  rel.results <- .relative2abs(relative_expr_matrix = ed,
+                               t_estimate = est_t,
+                               relative_spike = ed.spike,
+                               spikeInfo = spikeInfo,
+                               verbose = verbose,
+                               cores = ncores)
+  # print(str(rel.results))
+  rpc_matrix <- rel.results$norm_cds
+  # print(rpc_matrix[1:5, 1:5])
+
+  # 4. apply normalisation
+  sf <- .estimateSizeFactorsForDenseMatrix(CM=rpc_matrix,
+                                           locfunc=median,
+                                           round_exprs = T,
+                                           method = "mean-geometric-mean-total")
+  #  It can be either "mean-geometric-mean-total" (default), "weighted-median", "median-geometric-mean", "median", "mode", "geometric-mean-total".
+  names(sf) <- colnames(rpc_matrix)
+  norm.counts <- t(t(countData)/sf)
 
   # return object
   res <- list(NormCounts=norm.counts,
@@ -795,152 +1005,7 @@
               size.factors=sf)
   attr(res, 'normFramework') <- "Census"
   return(res)
-}
 
-# census estimatesizefactors function
-.estimateSizeFactorsForDenseMatrix <- function(counts,
-                                               locfunc,
-                                               round_exprs,
-                                               method){
-
-  CM <- counts
-  if (round_exprs)
-    CM <- round(CM)
-  if (method == "weighted-median"){
-    log_medians <- apply(CM, 1, function(cell_expr) {
-      log(locfunc(cell_expr))
-    })
-
-    weights <- apply(CM, 1, function(cell_expr) {
-      num_pos <- sum(cell_expr > 0)
-      num_pos / length(cell_expr)
-    })
-
-    sfs <- apply( CM, 2, function(cnts) {
-      norm_cnts <-  weights * (log(cnts) -  log_medians)
-      norm_cnts <- norm_cnts[is.nan(norm_cnts) == FALSE]
-      norm_cnts <- norm_cnts[is.finite(norm_cnts)]
-      exp( mean(norm_cnts) )
-    })
-  }else if (method == "median-geometric-mean"){
-    log_geo_means <- rowMeans(log(CM))
-
-    sfs <- apply( CM, 2, function(cnts) {
-      norm_cnts <- log(cnts) -  log_geo_means
-      norm_cnts <- norm_cnts[is.nan(norm_cnts) == FALSE]
-      norm_cnts <- norm_cnts[is.finite(norm_cnts)]
-      exp( locfunc( norm_cnts ))
-    })
-  }else if(method == "median"){
-    row_median <- apply(CM, 1, median)
-    sfs <- apply(t(t(CM) - row_median), 2, median)
-  }else if(method == 'mode'){
-    sfs <- .estimate_t(CM)
-  }else if(method == 'geometric-mean-total') {
-    cell_total <- apply(CM, 2, sum)
-    sfs <- log(cell_total) / mean(log(cell_total))
-  }else if(method == 'mean-geometric-mean-total') {
-    cell_total <- apply(CM, 2, sum)
-    sfs <- cell_total / exp(mean(log(cell_total)))
-  }
-
-  sfs[is.na(sfs)] <- 1
-  return(sfs)
-}
-
-# census estimate_t function
-.estimate_t <- function(relative_expr_matrix, relative_expr_thresh) {
-  #apply each column
-  unlist(apply(relative_expr_matrix, 2, function(relative_expr)
-    10^mean(.dmode(log10(relative_expr[relative_expr > relative_expr_thresh])))))
-}
-
-# census mode function
-#' @importFrom stats density
-.dmode <- function(x, breaks="Sturges") {
-  if (length(x) < 2) return (0);
-  den <- stats::density(x, kernel=c("gaussian"), na.rm = T)
-  ( den$x[den$y==max(den$y)] )
-}
-
-#' @importFrom Biobase exprs
-#' @importFrom MASS rlm
-#' @importFrom stats predict
-#' @importFrom parallel mcmapply
-.relative2abs <- function(relative_cds,
-                          relative_spike, # relative exprs matrix of spike-ins
-                          spikeInfo, # spike input
-                          verbose,
-                          cores) {
-  FPKM <- NULL
-  # relative expression matrix of genes
-  relative_expr_matrix <- Biobase::exprs(relative_cds)
-
-  # relative expression of spike-ins
-  ERCC_controls <- relative_spike
-
-  # spike input information
-  ERCC_annotation <- spikeInfo
-  valid_ids <- which(ERCC_annotation[, "SpikeInput"] >= 0)
-
-  # robust linear regression
-  if (verbose) {message("Performing robust linear regression for each cell based
-                        on the spike-in data")}
-  molModels <- apply(ERCC_controls, 2, function(cell_exprs, input.ERCC.annotation, valid_ids) {
-    spike_df <- input.ERCC.annotation
-    spike_df <- cbind(spike_df, cell_exprs[row.names(spike_df)])
-    colnames(spike_df)[length(colnames(spike_df))] <- "FPKM"
-    spike_df$numMolecules <- spike_df$SpikeInput
-    spike_df$rounded_numMolecules <- round(spike_df$numMolecules)
-    if (is.null(valid_ids))
-      spike_df <- subset(spike_df, FPKM >= 1e-10)
-    else {
-      spike_df <- spike_df[valid_ids, ]
-      spike_df <- subset(spike_df, FPKM >= 1e-10)
-    }
-    spike_df$log_fpkm <- log10(spike_df$FPKM)
-    spike_df$log_numMolecules <- log10(spike_df$numMolecules)
-    molModel <- tryCatch({
-      molModel <- MASS::rlm(log_numMolecules ~ log_fpkm,
-                            data = spike_df)
-      molModel
-    }, error = function(e) {
-      print(e)
-      NULL
-    })
-    molModel
-  }, ERCC_annotation, valid_ids)
-
-  if (verbose) {message("Apply the fitted robust linear regression model
-                        to recover the absolute copy number for all transcripts in each cell")}
-  norm_fpkms <- parallel::mcmapply(function(cell_exprs, molModel) {
-    tryCatch({
-      norm_df <- data.frame(log_fpkm = log10(cell_exprs))
-      res <- 10^stats::predict(molModel, type = "response",
-                        newdata = norm_df)
-    }, error = function(e) {
-      rep(NA, length(cell_exprs))
-    })
-  }, split(as.matrix(relative_expr_matrix), rep(1:ncol(relative_expr_matrix),
-                                                each = nrow(relative_expr_matrix))), molModels, mc.cores = cores)
-  k_b_solution <- data.frame(b = unlist(lapply(molModels,
-                                               FUN = function(x) {
-                                                 intercept = x$coefficients[1]
-                                               })), k = unlist(lapply(molModels, FUN = function(x) {
-                                                 slope = x$coefficients[2]
-                                               })))
-  kb_model <- MASS::rlm(b ~ k, data = k_b_solution)
-  kb_slope <- kb_model$coefficients[2]
-  kb_intercept <- kb_model$coefficients[1]
-
-  rownames(norm_fpkms) <- rownames(relative_expr_matrix)
-  colnames(norm_fpkms) <- colnames(relative_expr_matrix)
-
-  # return object
-  return(list(norm_cds = norm_fpkms,
-              kb_slope = kb_slope,
-              kb_intercept = kb_intercept,
-              k_b_solution = k_b_solution))
 }
 
 # RUV ---------------------------------------------

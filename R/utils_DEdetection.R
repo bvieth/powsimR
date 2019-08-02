@@ -123,6 +123,12 @@
                                                  spikeInfo=spikeInfo,
                                                  NCores=NCores,
                                                  verbose=verbose)}
+  # if (DEmethod == "sctransformLRT") {DERes = .run.sctransform.lrt(normData=normData,
+  #                                                                 countData=countData,
+  #                                                                 DEOpts=DEOpts,
+  #                                                                 NCores=NCores,
+  #                                                                 verbose=verbose)}
+
   # if (DEmethod == "BASiCS") {DERes = .run.BASiCS(normData=normData,
   #                                                countData=countData,
   #                                                DEOpts=DEOpts,
@@ -145,6 +151,13 @@
   sf[sf<0] <- min(sf[sf > 0])
   nsf <- log(sf/colSums(countData))
   nsf <- exp(nsf - mean(nsf, na.rm=T))
+
+  if (attr(normData, 'normFramework')  %in% c('sctransform')) {
+    norm.cnts <- normData$RoundNormCounts
+    ixx.valid <- rownames(countData) %in% rownames(norm.cnts)
+    countData[ixx.valid, ] <- norm.cnts
+  }
+
   # construct input object
   dge <- edgeR::DGEList(counts = countData,
                         lib.size = colSums(countData),
@@ -186,6 +199,13 @@
   sf[sf<0] <- min(sf[sf > 0])
   nsf <- log(sf/colSums(countData))
   nsf <- exp(nsf - mean(nsf, na.rm=T))
+
+  if (attr(normData, 'normFramework')  %in% c('sctransform')) {
+    norm.cnts <- normData$RoundNormCounts
+    ixx.valid <- rownames(countData) %in% rownames(norm.cnts)
+    countData[ixx.valid, ] <- norm.cnts
+  }
+
   # construct input object
   dge <- edgeR::DGEList(counts = countData,
                         lib.size = colSums(countData),
@@ -228,6 +248,13 @@
   sf[sf<0] <- min(sf[sf > 0])
   nsf <- log(sf/colSums(countData))
   nsf <- exp(nsf - mean(nsf, na.rm=T))
+
+  if (attr(normData, 'normFramework')  %in% c('sctransform')) {
+    norm.cnts <- normData$RoundNormCounts
+    ixx.valid <- rownames(countData) %in% rownames(norm.cnts)
+    countData[ixx.valid, ] <- norm.cnts
+  }
+
   # construct input object
   dge <- edgeR::DGEList(counts = countData,
                         lib.size = colSums(countData),
@@ -297,6 +324,13 @@
   sf[sf<0] <- min(sf[sf > 0])
   nsf <- log(sf/colSums(countData))
   nsf <- exp(nsf - mean(nsf, na.rm=T))
+
+  if (attr(normData, 'normFramework')  %in% c('sctransform')) {
+    norm.cnts <- normData$RoundNormCounts
+    ixx.valid <- rownames(countData) %in% rownames(norm.cnts)
+    countData[ixx.valid, ] <- norm.cnts
+  }
+
   # construct input object
   dge <- edgeR::DGEList(counts = countData,
                         lib.size = colSums(countData),
@@ -364,6 +398,13 @@
   sf[sf<0] <- min(sf[sf > 0])
   nsf <- log(sf/colSums(countData))
   nsf <- exp(nsf - mean(nsf, na.rm=T))
+
+  if (attr(normData, 'normFramework')  %in% c('sctransform')) {
+    norm.cnts <- normData$RoundNormCounts
+    ixx.valid <- rownames(countData) %in% rownames(norm.cnts)
+    countData[ixx.valid, ] <- norm.cnts
+  }
+
   # construct input object
   dge <- edgeR::DGEList(counts = countData,
                         lib.size = colSums(countData),
@@ -407,6 +448,13 @@
   sf[sf<0] <- min(sf[sf > 0])
   nsf <- log(sf/colSums(countData))
   nsf <- exp(nsf - mean(nsf, na.rm=T))
+
+  if (attr(normData, 'normFramework')  %in% c('sctransform')) {
+    norm.cnts <- normData$RoundNormCounts
+    ixx.valid <- rownames(countData) %in% rownames(norm.cnts)
+    countData[ixx.valid, ] <- norm.cnts
+  }
+
   # construct input object
   dge <- edgeR::DGEList(counts = countData,
                         lib.size = colSums(countData),
@@ -456,6 +504,13 @@
   coldat <- data.frame(design=factor(groups))
   sf <- normData$size.factors
   sf[sf<0] <- min(sf[sf > 0])
+
+  if (attr(normData, 'normFramework')  %in% c('sctransform')) {
+    norm.cnts <- normData$RoundNormCounts
+    ixx.valid <- rownames(countData) %in% rownames(norm.cnts)
+    countData[ixx.valid, ] <- norm.cnts
+  }
+
   dds <- suppressMessages(DESeq2::DESeqDataSetFromMatrix(countData,
                                                          coldat, ~design,
                                                          tidy = FALSE,
@@ -510,6 +565,13 @@
   coldat <- data.frame(design=factor(groups))
   sf <- normData$size.factors
   sf[sf<0] <- min(sf[sf > 0])
+
+  if (attr(normData, 'normFramework')  %in% c('sctransform')) {
+    norm.cnts <- normData$RoundNormCounts
+    ixx.valid <- rownames(countData) %in% rownames(norm.cnts)
+    countData[ixx.valid, ] <- norm.cnts
+  }
+
   dds <- suppressMessages(DESeq2::DESeqDataSetFromMatrix(countData,
                                                          coldat, ~design,
                                                          tidy = FALSE,
@@ -575,6 +637,13 @@
   coldat <- data.frame(design=factor(groups))
   sf <- normData$size.factors
   sf[sf<0] <- min(sf[sf > 0])
+
+  if (attr(normData, 'normFramework')  %in% c('sctransform')) {
+    norm.cnts <- normData$RoundNormCounts
+    ixx.valid <- rownames(countData) %in% rownames(norm.cnts)
+    countData[ixx.valid, ] <- norm.cnts
+  }
+
   dds <- suppressMessages(DESeq2::DESeqDataSetFromMatrix(countData,
                                                          coldat, ~design,
                                                          tidy = FALSE,
@@ -640,6 +709,13 @@
   sf[sf<0] <- min(sf[sf > 0])
   nsf <- log(sf/colSums(countData))
   nsf <- exp(nsf - mean(nsf, na.rm=T))
+
+  if (attr(normData, 'normFramework')  %in% c('sctransform')) {
+    norm.cnts <- normData$RoundNormCounts
+    ixx.valid <- rownames(countData) %in% rownames(norm.cnts)
+    countData[ixx.valid, ] <- norm.cnts
+  }
+
   # construct input object
   dge <- edgeR::DGEList(counts = countData,
                         lib.size = colSums(countData),
@@ -686,6 +762,12 @@
   }
   if(!is.null(NCores)) {
     cl <- snow::makeCluster(NCores)
+  }
+
+  if (attr(normData, 'normFramework')  %in% c('sctransform')) {
+    norm.cnts <- normData$RoundNormCounts
+    ixx.valid <- rownames(countData) %in% rownames(norm.cnts)
+    countData[ixx.valid, ] <- norm.cnts
   }
 
   # make input data sets for baySeq
@@ -740,6 +822,13 @@
   sf[sf<0] <- min(sf[sf > 0])
   nsf <- log(sf/colSums(countData))
   nsf <- exp(nsf - mean(nsf, na.rm=T))
+
+  if (attr(normData, 'normFramework')  %in% c('sctransform')) {
+    norm.cnts <- normData$RoundNormCounts
+    ixx.valid <- rownames(countData) %in% rownames(norm.cnts)
+    countData[ixx.valid, ] <- norm.cnts
+  }
+
   # construct dge object
   dge <- edgeR::DGEList(counts = countData,
                         lib.size = colSums(countData),
@@ -803,6 +892,12 @@
   sf <- normData$size.factors
   sf[sf<0] <- min(sf[sf > 0])
 
+  if (attr(normData, 'normFramework')  %in% c('sctransform')) {
+    norm.cnts <- normData$RoundNormCounts
+    ixx.valid <- rownames(countData) %in% rownames(norm.cnts)
+    countData[ixx.valid, ] <- norm.cnts
+  }
+
   # run DE detection
   if(isTRUE(verbose)) {
     calc.ebseq <- EBSeq::EBTest(Data = countData,
@@ -854,6 +949,12 @@
   sf <- normData$size.factors
   sf[sf<0] <- min(sf[sf > 0])
 
+  if (attr(normData, 'normFramework')  %in% c('sctransform')) {
+    norm.cnts <- normData$RoundNormCounts
+    ixx.valid <- rownames(countData) %in% rownames(norm.cnts)
+    countData[ixx.valid, ] <- norm.cnts
+  }
+
   #run DE testing
   grp.ids <- ifelse(DEOpts$designs==min(DEOpts$designs), 1, 2)
   res <- NBPSeq::nbp.test(counts=countData,
@@ -883,6 +984,12 @@
 #' @importFrom reshape2 melt
 #' @importFrom parallel mclapply
 .run.MAST <- function(normData, countData, Lengths, MeanFragLengths, DEOpts, NCores, verbose) {
+
+  if (attr(normData, 'normFramework')  %in% c('sctransform')) {
+    norm.cnts <- normData$RoundNormCounts
+    ixx.valid <- rownames(countData) %in% rownames(norm.cnts)
+    countData[ixx.valid, ] <- norm.cnts
+  }
 
   # 1. calculate size factor normalised expression values (ie log2 CPM OR TPM + 1).
   out.expr <- .calculateExpr(countData=countData,
@@ -957,64 +1064,6 @@
 
 # scde --------------------------------------------------------------------
 
-#' @importFrom scde scde.error.models scde.expression.prior scde.expression.difference
-#' @importFrom stats pnorm
-.run.scde <- function(normData, countData, DEOpts, NCores, verbose) {
-
-  # make group vector
-  groups <- factor(DEOpts$designs)
-  names(groups) <- colnames(countData)
-
-  if(is.null(NCores)) {
-    ncores = 1
-  }
-  if(!is.null(NCores)) {
-    ncores = NCores
-  }
-
-  # calculate error models
-  o.ifm <- scde::scde.error.models(counts = countData,
-                                   groups = groups,
-                                   min.nonfailed = 3,
-                                   threshold.segmentation = TRUE,
-                                   min.count.threshold = 4,
-                                   zero.count.threshold = 4,
-                                   zero.lambda = 0.1,
-                                   save.crossfit.plots = FALSE,
-                                   save.model.plots = FALSE,
-                                   n.cores = ncores,
-                                   min.size.entries = ifelse(nrow(countData)<=2000, nrow(countData), 2000),
-                                   max.pairs = 5000,
-                                   min.pairs.per.cell = 10,
-                                   verbose = ifelse(isTRUE(verbose), 1, 0),
-                                   linear.fit = TRUE,
-                                   local.theta.fit = TRUE,
-                                   theta.fit.range = c(0.01, 100))
-
-  # estimate gene expression prior
-  o.prior <- scde::scde.expression.prior(models = o.ifm,
-                                         counts = countData,
-                                         length.out = 400,
-                                         show.plot = FALSE)
-  # run differential expression tests on all genes.
-  ediff <- scde::scde.expression.difference(models=o.ifm,
-                                            counts=countData,
-                                            prior=o.prior,
-                                            groups = groups,
-                                            n.cores = ncores,
-                                            n.randomizations  =  100,
-                                            verbose  =  ifelse(isTRUE(verbose), 1, 0))
-  pval <- 2 * (1 - pnorm(abs(ediff$Z)))
-
-  ## construct results
-  result = data.frame(geneIndex=rownames(ediff),
-                      pval=pval,
-                      fdr=rep(NA, nrow(countData)),
-                      lfc=ediff$ce,
-                      stringsAsFactors = F)
-  return(result)
-}
-
 
 # BPSC --------------------------------------------------------------------
 
@@ -1030,6 +1079,13 @@
   sf[sf<0] <- min(sf[sf > 0])
   nsf <- log(sf/colSums(countData))
   nsf <- exp(nsf - mean(nsf, na.rm=T))
+
+  if (attr(normData, 'normFramework')  %in% c('sctransform')) {
+    norm.cnts <- normData$RoundNormCounts
+    ixx.valid <- rownames(countData) %in% rownames(norm.cnts)
+    countData[ixx.valid, ] <- norm.cnts
+  }
+
   # construct input object
   dge <- edgeR::DGEList(counts = countData,
                         lib.size = colSums(countData),
@@ -1096,6 +1152,13 @@
   if(!attr(normData, 'normFramework') == 'Census') {
     sf <- normData$size.factors
     sf[sf<0] <- min(sf[sf > 0])
+
+    if (attr(normData, 'normFramework')  %in% c('sctransform')) {
+      norm.cnts <- normData$RoundNormCounts
+      ixx.valid <- rownames(countData) %in% rownames(norm.cnts)
+      countData[ixx.valid, ] <- norm.cnts
+    }
+
     # make annotated dataframes for monocle
     gene.dat <- data.frame(row.names = rownames(countData),
                            biotype=rep("protein_coding", nrow(countData)),
@@ -1179,6 +1242,13 @@
   sf[sf<0] <- min(sf[sf > 0])
   nsf <- log(sf/colSums(countData))
   nsf <- exp(nsf - mean(nsf, na.rm=T))
+
+  if (attr(normData, 'normFramework')  %in% c('sctransform')) {
+    norm.cnts <- normData$RoundNormCounts
+    ixx.valid <- rownames(countData) %in% rownames(norm.cnts)
+    countData[ixx.valid, ] <- norm.cnts
+  }
+
   # construct input object
   dge <- edgeR::DGEList(counts = countData,
                         lib.size = colSums(countData),
@@ -1189,7 +1259,7 @@
   out.cpm <- edgeR::cpm.DGEList(dge, normalized.lib.sizes = T, log = F)
   out.expr <- out.cpm
 
-    # create input data
+  # create input data
   exprmat <- out.cpm
   condition <- ifelse(DEOpts$designs==min(DEOpts$designs), 1, 2)
   cell.dat <- data.frame(row.names=colnames(exprmat), condition=condition)
@@ -1242,6 +1312,12 @@
 
 #' @importFrom stats t.test
 .run.TTest <- function(normData, countData, Lengths, MeanFragLengths, DEOpts) {
+
+  if (attr(normData, 'normFramework')  %in% c('sctransform')) {
+    norm.cnts <- normData$RoundNormCounts
+    ixx.valid <- rownames(countData) %in% rownames(norm.cnts)
+    countData[ixx.valid, ] <- norm.cnts
+  }
 
   # 1. calculate size factor normalised expression values (ie CPM, TPM).
   out.expr <- .calculateExpr(countData=countData,
@@ -1366,9 +1442,39 @@
   return(result)
 }
 
-# BASiCS ------------------------------------------------------------------
 
-#TODO: Implement testing for BASiCS normalized data
+
+# #' @importFrom sctransform compare_expression
+# .run.sctransform.lrt <- function(normData, countData, DEOpts) {
+#
+#   if (!attr(normData, 'normFramework')  %in% c('sctransform')) {
+#     stop(message(paste0("This DE-testing approach needs sctransform normalisation.
+#                         Please select as normalisation sctransform. Aborting!")))
+#   }
+#
+#   groups <- ifelse(DEOpts$designs==min(DEOpts$designs), 1, 2)
+#
+#   res <- sctransform::compare_expression(normData$vst_out,
+#                                          countData,
+#                                          group = groups,
+#                                          val1 = 1, val2 = 2,
+#                                          method = 'LRT', bin_size = 256,
+#                                          min_cells = 5,
+#                                          weighted = TRUE,
+#                                          randomize = FALSE,
+#                                          show_progress = verbose)
+#
+#   res_out <- res[match(rownames(countData), rownames(res)),]
+#
+#   ## construct results
+#   result <- data.frame(geneIndex=rownames(res_out),
+#                        pval=res_out[,'p_value'],
+#                        fdr=rep(NA, nrow(res_out)),
+#                        lfc=res_out[,'log_fc'],
+#                        stringsAsFactors = F)
+#   return(result)
+# }
+
 
 # monocle -----------------------------------------------------------------
 

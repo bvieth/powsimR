@@ -25,7 +25,7 @@ install.packages('devtools')
 library(devtools)
 ```
 
-I recommend to install first the dependencies manually and then powsimR: 
+I recommend to install first the dependencies manually and then powsimR. If you plan to use MAGIC for imputation, then please follow their [instruction](https://github.com/KrishnaswamyLab/MAGIC) to install the python implementation beforre installing powsimR.  
 
 ```{r, echo=T, eval=F, tidy=T}
 ipak <- function(pkg, repository=c('CRAN', 'Bioconductor', 'github')){
@@ -36,29 +36,37 @@ ipak <- function(pkg, repository=c('CRAN', 'Bioconductor', 'github')){
       install.packages(new.pkg, dependencies = TRUE)
     }
     if(repository=='Bioconductor') {
-      source("https://bioconductor.org/biocLite.R")
+      if(strsplit(version[['version.string']], ' ')[[1]][3] > "3.5.0"){
+        if (!requireNamespace("BiocManager")){
+            install.packages("BiocManager")
+        }
+            BiocManager::install(new.pkg, dependencies=TRUE, ask=FALSE)
+      }
+      if(strsplit(version[['version.string']], ' ')[[1]][3] < "3.5.0"){
+              source("https://bioconductor.org/biocLite.R")
       biocLite(new.pkg, dependencies=TRUE, ask=FALSE)
+      }
     }
     if(repository=='github') {
-      devtools::install_github(new.pkg, build_vignettes = FALSE, dependencies=TRUE)
+      devtools::install_github(new.pkg, build_vignettes = FALSE, force = FALSE, dependencies=TRUE)
     }
   }
 }
 
 # CRAN PACKAGES
-cranpackages <- c("bbmle", "broom", "cobs", "cowplot", 
+cranpackages <- c("broom", "cobs", "cowplot", 
                   "data.table", "devtools", "doParallel", "dplyr", "drc", "DrImpute", 
                   "fastICA", "fitdistrplus", "foreach", 
                   "gamlss.dist", "ggExtra", "ggplot2", "ggthemes", "grDevices",
-                  "glmnet", "grid", "gtools", "Hmisc", "kernlab", "MASS", 
+                  "glmnet", "grid", "gtools", "Hmisc", "kernlab", "MASS", "MBESS",
                   "matrixStats", "mclust", "methods", "minpack.lm", "moments", "msir", 
                   "NBPSeq", "nonnest2", "parallel", "penalized", "plyr", "pscl",
-                  "reshape2", "ROCR", "Rtsne", "scales", "Seurat", "snow", 
+                  "reshape2", "Rmagic", "rsvd", "Rtsne", "scales", "Seurat", "snow", 
                   "stats", "tibble", "tidyr", "VGAM", "ZIM")
 ipak(cranpackages, repository='CRAN')
 
 # BIOCONDUCTOR
-biocpackages <- c("AnnotationDbi", "baySeq", "Biobase", "BiocGenerics", 
+biocpackages <- c("AnnotationDbi", "bayNorm", "baySeq", "Biobase", "BiocGenerics", 
                   "BiocParallel", "DEDS", "DESeq2", "EBSeq", "edgeR", "IHW", "iCOBRA",
                   "limma", "Linnorm", "MAST", "monocle", "NOISeq", "qvalue", "ROTS", "RUVSeq", 
                   "S4Vectors", "scater", "scDD", "scde", "scone", "scran", "SCnorm", 
@@ -69,6 +77,24 @@ ipak(biocpackages, repository='Bioconductor')
 githubpackages <- c('nghiavtr/BPSC', 'cz-ye/DECENT', 
                     'mohuangx/SAVER', 'statOmics/zingeR')
 ipak(githubpackages, repository = 'github')
+
+```
+
+To check whether all dependencies are installed, you can run the following lines:
+
+```{r depcheck, echo = TRUE, eval = FALSE, tidy = FALSE}
+
+powsimRdeps <- data.frame(Package = c(cranpackages, 
+                                      biocpackages, 
+                                      sapply(strsplit(githubpackages, "/"), "[[", 2)), 
+                          stringsAsFactors = F)
+
+ip <- as.data.frame(installed.packages()[,c(1,3:4)], stringsAsFactors = F)
+
+ip.check <- cbind(powsimRdeps, 
+                  Version = ip[match(powsimRdeps$Package, rownames(ip)),"Version"]) 
+
+table(is.na(ip.check$Version))  # all should be FALSE
 
 ```
 
@@ -100,7 +126,7 @@ Some users have experienced issues installing powsimR due to vignette compilatio
 ### DLLs and ulimit
 
 Note that the error "maximal number of DLLs reached..." might occur due to the loading of many shared objects by Bioconductor packages. Restarting the R session after installing dependencies / powsimR will help.
-Starting with R version 3.4.0, one can set the environmental variable 'R_MAX_NUM_DLLS' to a higher number. See `?Startup()` for more information. I recommend to increase the maximum number of DLLs that can be loaded to at least 500. The environmental variable R\_MAX\_NUM\_DLLS can be set in R\_HOME/etc/Renviron prior to starting R. For that locate the Renviron file and add the following line: R\_MAX\_NUM\_DLLS=xy where xy is the number of DLLs.
+Starting with R version 3.4.0, one can set the environmental variable 'R_MAX_NUM_DLLS' to a higher number. See `?Startup()` for more information. I recommend to increase the maximum number of DLLs that can be loaded to 500. The environmental variable R\_MAX\_NUM\_DLLS can be set in R\_HOME/etc/Renviron prior to starting R. For that locate the Renviron file and add the following line: R\_MAX\_NUM\_DLLS=xy where xy is the number of DLLs.
 On my Ubuntu machine, the Renviron file is in /usr/lib/R/etc/ and I can set it to 500.
 
 In addition, the user limits for open files (unix: ulimit) might have to be set to a higher number to accomodate the increase in DLLs. Please check out the help pages for [MACs](https://gist.github.com/tombigel/d503800a282fcadbee14b537735d202c) and [Linux](https://glassonionblog.wordpress.com/2013/01/27/increase-ulimit-and-file-descriptors-limit/) for guidance.
@@ -120,7 +146,6 @@ A preprint paper is also on [bioRxiv](https://doi.org/10.1101/117150).
 
 Please send bug reports and feature requests by opening a new issue on 
 [this page](https://github.com/bvieth/powsimR/issues).
-
 
 
 ## R Session Info

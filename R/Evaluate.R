@@ -114,12 +114,12 @@ evaluateDist <- function(countData, batchData =NULL,
                            Distribution = 'NB',
                            RNAseq = RNAseq,
                            Normalisation = Normalisation,
+                           Label = "none",
                            sigma = 1.96,
                            NCores = NULL,
                            verbose=verbose)
 
   countData <- countData[,colnames(countData) %in% names(estParam$seqDepth)]
-
 
   # set up dge edgeR
   sf <- estParam$sf
@@ -362,195 +362,6 @@ evaluateDist <- function(countData, batchData =NULL,
               ObservedZeros = ObservedZeros))
 }
 
-# EVALUATE SETUP ----------------------------------------------------------
-#' @name evaluateSim
-#' @aliases evaluateSim
-#' @title Compute the performance related metrics from simulation results.
-#' @description This function takes the simulation output from \code{\link{simulateDE}}
-#' and computes several metrics that give an indication of the simulation setup performance.
-#' @usage evaluateSim(simRes, timing=TRUE)
-#' @param simRes The result from \code{\link{simulateDE}}.
-#' @param timing A logical vector indicating whether to summarise computational time of simulation run.
-#' Default is \code{TRUE}.
-#' @return A list with the following entries:
-#' \item{Log2FoldChange}{The absolute mean error (\code{MAE}), root mean square error (\code{RMSE})
-#' and root mean square residual error of a robust linear model (\code{rRMSE}, \code{\link[MASS]{rlm}})
-#' of log2 fold change differences between estimated LFC and simulated LFC.
-#' Furthermore, the fraction of missing entries (\code{NAFraction}) for MAE annd RMSE.}
-#' \item{SizeFactors}{The median absolute deviation (MAD) between the estimated and true size factors,
-#' the root mean square residual error of a robust linear model (rRMSE, \code{\link[MASS]{rlm}}) and
-#' the ratio between estimated and true size factors of the two groups (\code{GroupX}).}
-#' @author Beate Vieth
-#' @seealso \code{\link{estimateParam}} for negative binomial parameters,
-#' \code{\link{SimSetup}} and
-#' \code{\link{DESetup}} for setting up simulation parameters and
-#' \code{\link{simulateDE}} for simulating differential expression and
-#' @examples
-#' \dontrun{
-#' ## using example data set
-#' data(kolodziejczk_simDE)
-#' eval.sim <- evaluateSim(simRes = kolodziejczk_simDE, timing = T)
-#' }
-#' @rdname evaluateSim
-#' @importFrom stats mad
-#' @importFrom mclust adjustedRandIndex
-#' @importFrom matrixStats rowSds
-#' @export
-evaluateSim <- function(simRes, timing=TRUE) {
-
-  # simulation parameters
-  Nreps1 = simRes$sim.settings$n1
-  Nreps2 = simRes$sim.settings$n2
-  ngenes = simRes$sim.settings$ngenes
-  sim.opts = simRes$sim.settings
-  DEids = simRes$sim.settings$DEid
-  tlfcs = simRes$sim.settings$pLFC
-  nsims = simRes$sim.settings$nsims
-
-  # estimated parameters
-  elfcs = simRes$elfc
-  tsfs = simRes$true.sf
-  esfs = simRes$est.sf
-
-  t.designs = simRes$true.designs
-
-  if (attr(simRes, 'Simulation') == 'Flow') {
-    e.designs = simRes$def.designs
-  }
-  if (attr(simRes, 'Simulation') == 'DE') {
-    e.designs = NULL
-  }
-
-  # create output objects
-  my.names = paste0(Nreps1, " vs ", Nreps2)
-  # error in log2 fold changes
-  lfc.error.mat <- lapply(1:length(my.names), function(x) {
-    matrix(NA, nrow =  nsims, ncol = 15,
-           dimnames = list(c(paste0("Sim", 1:nsims)),
-                           c(paste0(rep(x=c("ALL", "DE", "EE"),each=5),"_",
-                                    c('RMSE_Value', "MAE_Value", "RMSE_NAFraction", "MAE_NAFraction", "rRMSE_Value")))))
-  })
-  names(lfc.error.mat) <- my.names
-
-  # error in size factors
-  sf.error.mat <- lapply(1:length(my.names), function(x) {
-    matrix(NA, nrow =  nsims, ncol = 4,
-           dimnames = list(c(paste0("Sim_", 1:nsims)),
-                           c("MAD", "rRMSE", "Group 1","Group 2")))
-  })
-  names(sf.error.mat) <- my.names
-
-  # error in clustering
-  if (attr(simRes, 'Simulation') == 'Flow') {
-    clust.error.mat <- lapply(1:length(my.names), function(x) {
-      matrix(NA, nrow =  nsims, ncol = 1,
-             dimnames = list(c(paste0("Sim_", 1:nsims)),
-                             c("RandIndex")))
-    })
-    names(clust.error.mat) <- my.names
-  }
-  if (attr(simRes, 'Simulation') == 'DE') {
-    clust.error.mat = NULL
-  }
-
-  ## loop over simulation and replicates
-  for(i in 1:nsims) {
-    # DE flag
-    DEid = DEids[[i]]
-    Zg = rep(0, ngenes)
-    Zg[DEid] = 1
-    # true log fold change of all genes
-    all.tlfc = tlfcs[[i]]
-    # true log fold change of DE genes
-    de.tlfc = all.tlfc[which(Zg==1)]
-    # true log fold change of EE genes
-    ee.tlfc = all.tlfc[which(Zg==0)]
-
-    for(j in seq(along=Nreps1)) {
-
-      ## LOG2 FOLD CHANGES
-      # estimated log fold change of all genes
-      all.elfc = elfcs[, j, i]
-      # estimated log fold changes of EE genes
-      ix.ee.lfc = which(Zg==0)
-      ee.lfc = all.elfc[ix.ee.lfc]
-      # estimated log fold change of DE genes
-      ix.de.lfc = which(Zg==1)
-      de.lfc = all.elfc[ix.de.lfc]
-      # estimate mean squared error and absolute error
-      all.error <- .lfc.evaluate(truth=all.tlfc, estimated=all.elfc)
-      ee.error <- .lfc.evaluate(truth=ee.tlfc, estimated=ee.lfc)
-      de.error <- .lfc.evaluate(truth=de.tlfc, estimated=de.lfc)
-      error.est <- c(all.error, de.error, ee.error)
-      lfc.error.mat[[j]][i,] = error.est
-
-      ## SIZE FACTORS
-      # true sf over all samples, center to mean=1
-      tsf = tsfs[[j]][i, ]
-      n.tsf = tsf*length(tsf)/sum(tsf)
-
-      # estimated sf over all sample, center to mean=1
-      esf = esfs[[j]][i,]
-      n.esf = esf*length(esf)/sum(esf)
-
-      # MAD of log fold change difference between estimated and true size factors
-      lfc.nsf = log2(esf) - log2(tsf)
-      mad.nsf = stats::mad(lfc.nsf)
-
-      # error of estimation
-      error.sf <- .fiterror.sf(estimated.sf = n.esf, true.sf = n.tsf)
-
-      # ratio of estimated and true size factors per true group assignment
-      t.design = t.designs[[j]][i,]
-      ratio.sf <- .ratio.sf(estimated.nsf = n.esf,
-                            true.nsf = n.tsf,
-                            group=t.design)
-      sf.res <- unlist(c(mad.nsf, error.sf, ratio.sf))
-      names(sf.res) <- NULL
-
-      sf.error.mat[[j]][i,] = sf.res
-
-      ## CLUSTERING
-      if (attr(simRes, 'Simulation') == 'Flow') {
-        e.design = e.designs[[j]][i,]
-        randindex <- mclust::adjustedRandIndex(t.design, e.design)
-        clust.error.mat[[j]][i,] = randindex
-      }
-
-    }
-  }
-
-  output <- list(Log2FoldChange=lfc.error.mat,
-                 SizeFactors=sf.error.mat,
-                 Clustering=clust.error.mat,
-                 sim.settings=simRes$sim.settings)
-
-  if(isTRUE(timing)) {
-    time.taken <- simRes$time.taken
-    # create output objects
-    time.taken.mat <- lapply(1:length(my.names), function(x) {
-      data.frame(matrix(NA, nrow = length(rownames(time.taken[,1,]))+1,
-                        ncol = 3, dimnames = list(c(rownames(time.taken[,1,]), "Total"),
-                                                  c("Mean", "SD", "SEM")))
-      )
-    })
-    names(time.taken.mat) <- my.names
-    for(j in seq(along=Nreps1)) {
-      tmp.time <- time.taken[,j,]
-      Total <- colSums(tmp.time, na.rm = T)
-      tmp.time <- rbind(tmp.time, Total)
-      time.taken.mat[[j]][,"Mean"] <- rowMeans(tmp.time)
-      time.taken.mat[[j]][,"SD"] <- matrixStats::rowSds(tmp.time)
-      time.taken.mat[[j]][,"SEM"] <- matrixStats::rowSds(tmp.time)/sqrt(nsims)
-    }
-    output <- c(output, list(Timing=time.taken.mat))
-  }
-
-  # return object
-  attr(output, 'Simulation') = attr(simRes, 'Simulation')
-  return(output)
-}
-
 # EVALUATE DIFFERENTIAL EXPRESSION ----------------------------------------
 
 #' @name evaluateDE
@@ -575,7 +386,7 @@ evaluateSim <- function(simRes, timing=TRUE) {
 #' @param alpha.type A string to represent the way to call DE genes.
 #'  Available options are \code{"adjusted"} i.e. applying multiple testing correction and
 #'  \code{"raw"} i.e. using p-values. Default is \code{"adjusted"}.
-#' @param alpha.nominal The nomial value of significance. Default is 0.1.
+#' @param alpha.nominal The nomial level of significance. Default is 0.1.
 #' @param stratify.by A string to represent the way to stratify genes.
 #' Available options are \code{"mean"}, \code{"dispersion"}, \code{"dropout"} and \code{"lfc"},
 #' for stratifying genes by average expression levels, dispersion, dropout rates or estimated log2 fold changes.
@@ -638,8 +449,7 @@ evaluateSim <- function(simRes, timing=TRUE) {
 #' }
 #' @author Beate Vieth
 #' @seealso \code{\link{estimateParam}} for negative binomial parameters,
-#' \code{\link{SimSetup}} and
-#' \code{\link{DESetup}} for setting up simulation parameters and
+#' \code{\link{Setup}} for setting up simulation parameters and
 #' \code{\link{simulateDE}} for simulating differential expression and
 #' \code{\link{plotEvalDE}} for visualisation.
 #' @examples
@@ -668,24 +478,23 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
   target.by = match.arg(target.by)
 
   ## some general parameters
-  Nreps1 = simRes$sim.settings$n1
-  Nreps2 = simRes$sim.settings$n2
-  ngenes = simRes$sim.settings$ngenes
-  sim.opts = simRes$sim.settings
-  DEids = simRes$sim.settings$DEid
-  lfcs = simRes$sim.settings$pLFC
+  Nreps1 = simRes$SimSetup$n1
+  Nreps2 = simRes$SimSetup$n2
+  ngenes = simRes$DESetup$ngenes
+  DEids =  simRes$DESetup$DEid
+  lfcs =  simRes$DESetup$pLFC
   tlfcs = lapply(1:length(lfcs), function(i) {lfcs[[i]]})
-  nsims = simRes$sim.settings$nsims
-  estmeans = simRes$sim.settings$means
-  estdisps = simRes$sim.settings$dispersion
-  estdropout = simRes$sim.settings$p0
-  mu = simRes$mu
-  disp = simRes$disp
-  dropout = simRes$dropout
-  elfc = simRes$elfc
-  DEmethod = simRes$sim.settings$DEmethod
-  pvalue = simRes$pvalue
-  fdr = simRes$fdr
+  nsims = simRes$DESetup$nsims
+  estmeans = simRes$estParamRes$Parameters[[simRes$DESetup$Draw$MoM]]$means
+  estdisps = simRes$estParamRes$Parameters[[simRes$DESetup$Draw$MoM]]$dispersion
+  estdropout = simRes$estParamRes$Parameters[[simRes$DESetup$Draw$MoM]]$gene.dropout
+  mu = simRes$SimulateRes$mu
+  disp = simRes$SimulateRes$disp
+  dropout = simRes$SimulateRes$dropout
+  elfc = simRes$SimulateRes$elfc
+  DEmethod = simRes$Pipeline$DEmethod
+  pvalue = simRes$SimulateRes$pvalue
+  fdr = simRes$SimulateRes$fdr
 
   ## calculate strata
   tmp.ecdf.mean = stats::ecdf(log2(estmeans+1))
@@ -768,7 +577,7 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
       xgr.drop = cut(X.drop1[ix.keep.drop], strata.drop)
       xgrd.drop = cut(X.drop1[DEid], strata.drop)
       # lfc
-      X.lfc1 = elfc[,j,1]
+      X.lfc1 = elfc[,j,i]
       ix.keep.lfc = which(!is.na(X.lfc1))
       xgr.lfc = cut(X.lfc1[ix.keep.lfc], strata.lfc)
       xgrd.lfc = cut(X.lfc1[DEid], strata.lfc)
@@ -1011,9 +820,11 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
     }
   }
 
-  output <- list(stratagenes=xgrl, stratadiffgenes=xgrld,
+  output <- list(stratagenes=xgrl,
+                 stratadiffgenes=xgrld,
                  TN=TN, TP=TP, FP=FP, FN=FN,
-                 TN.marginal=TN.marginal, TP.marginal=TP.marginal, FP.marginal=FP.marginal, FN.marginal=FN.marginal,
+                 TN.marginal=TN.marginal,
+                 TP.marginal=TP.marginal, FP.marginal=FP.marginal, FN.marginal=FN.marginal,
                  TNR=TNR, TPR=TPR, FPR=FPR, FNR=FNR,FDR=FDR,
                  TNR.marginal=TNR.marginal, TPR.marginal=TPR.marginal,
                  FPR.marginal=FPR.marginal, FNR.marginal=FNR.marginal,
@@ -1027,11 +838,167 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
   return(output)
 }
 
+# EVALUATE SETUP ----------------------------------------------------------
+
+#' @name evaluateSim
+#' @aliases evaluateSim
+#' @title Compute the performance related metrics from simulation results.
+#' @description This function takes the simulation output from \code{\link{simulateDE}}
+#' and computes several metrics that give an indication of the simulation setup performance.
+#' @usage evaluateSim(simRes, timing=TRUE)
+#' @param simRes The result from \code{\link{simulateDE}}.
+#' @param timing A logical vector indicating whether to summarise computational time of simulation run.
+#' Default is \code{TRUE}.
+#' @return A list with the following entries:
+#' \item{Log2FoldChange}{The absolute mean error (\code{MAE}), root mean square error (\code{RMSE})
+#' and root mean square residual error of a robust linear model (\code{rRMSE}, \code{\link[MASS]{rlm}})
+#' of log2 fold change differences between estimated LFC and simulated LFC.
+#' Furthermore, the fraction of missing entries (\code{NAFraction}) for MAE annd RMSE.}
+#' \item{SizeFactors}{The median absolute deviation (MAD) between the estimated and true size factors,
+#' the root mean square residual error of a robust linear model (rRMSE, \code{\link[MASS]{rlm}}) and
+#' the ratio between estimated and true size factors of the two groups (\code{GroupX}).}
+#' @author Beate Vieth
+#' @seealso \code{\link{estimateParam}} for negative binomial parameters,
+#' \code{\link{Setup}} for setting up simulation parameters and
+#' \code{\link{simulateDE}} for simulating differential expression and
+#' @examples
+#' \dontrun{
+#' ## using example data set
+#' data(kolodziejczk_simDE)
+#' eval.sim <- evaluateSim(simRes = kolodziejczk_simDE, timing = T)
+#' }
+#' @rdname evaluateSim
+#' @importFrom stats mad
+#' @importFrom mclust adjustedRandIndex
+#' @importFrom matrixStats rowSds
+#' @export
+evaluateSim <- function(simRes, timing=TRUE) {
+
+  # simulation parameters
+  Nreps1 = simRes$SimSetup$n1
+  Nreps2 = simRes$SimSetup$n2
+  ngenes = simRes$DESetup$ngenes
+  DEids = simRes$DESetup$DEid
+  tlfcs = simRes$DESetup$pLFC
+  nsims = simRes$DESetup$nsims
+  t.designs = simRes$SimulateRes$true.designs
+
+  # estimated parameters
+  elfcs = simRes$SimulateRes$elfc
+  tsfs = simRes$SimulateRes$true.sf
+  esfs = simRes$SimulateRes$est.sf
+
+  time.taken <- simRes$SimulateRes$time.taken
+
+  # create output objects
+  my.names = paste0(Nreps1, " vs ", Nreps2)
+  # error in log2 fold changes
+  lfc.error.mat <- lapply(1:length(my.names), function(x) {
+    matrix(NA, nrow =  nsims, ncol = 15,
+           dimnames = list(c(paste0("Sim", 1:nsims)),
+                           c(paste0(rep(x=c("ALL", "DE", "EE"),each=5),"_",
+                                    c('RMSE_Value', "MAE_Value", "RMSE_NAFraction", "MAE_NAFraction", "rRMSE_Value")))))
+  })
+  names(lfc.error.mat) <- my.names
+
+  # error in size factors
+  sf.error.mat <- lapply(1:length(my.names), function(x) {
+    matrix(NA, nrow =  nsims, ncol = 4,
+           dimnames = list(c(paste0("Sim_", 1:nsims)),
+                           c("MAD", "rRMSE", "Group 1","Group 2")))
+  })
+  names(sf.error.mat) <- my.names
+
+  ## loop over simulation and replicates
+  for(i in 1:nsims) {
+    # DE flag
+    DEid = DEids[[i]]
+    Zg = rep(0, ngenes)
+    Zg[DEid] = 1
+    # true log fold change of all genes
+    all.tlfc = tlfcs[[i]]
+    # true log fold change of DE genes
+    de.tlfc = all.tlfc[which(Zg==1)]
+    # true log fold change of EE genes
+    ee.tlfc = all.tlfc[which(Zg==0)]
+
+    for(j in seq(along=Nreps1)) {
+
+      ## LOG2 FOLD CHANGES
+      # estimated log fold change of all genes
+      all.elfc = elfcs[, j, i]
+      # estimated log fold changes of EE genes
+      ix.ee.lfc = which(Zg==0)
+      ee.lfc = all.elfc[ix.ee.lfc]
+      # estimated log fold change of DE genes
+      ix.de.lfc = which(Zg==1)
+      de.lfc = all.elfc[ix.de.lfc]
+      # estimate mean squared error and absolute error
+      all.error <- .lfc.evaluate(truth=all.tlfc, estimated=all.elfc)
+      ee.error <- .lfc.evaluate(truth=ee.tlfc, estimated=ee.lfc)
+      de.error <- .lfc.evaluate(truth=de.tlfc, estimated=de.lfc)
+      error.est <- c(all.error, de.error, ee.error)
+      lfc.error.mat[[j]][i,] = error.est
+
+      ## SIZE FACTORS
+      # true sf over all samples, center to mean=1
+      tsf = tsfs[[j]][i, ]
+      n.tsf = tsf*length(tsf)/sum(tsf)
+
+      # estimated sf over all sample, center to mean=1
+      esf = esfs[[j]][i,]
+      n.esf = esf*length(esf)/sum(esf)
+
+      # MAD of log fold change difference between estimated and true size factors
+      lfc.nsf = log2(esf) - log2(tsf)
+      mad.nsf = stats::mad(lfc.nsf)
+
+      # error of estimation
+      error.sf <- .fiterror.sf(estimated.sf = n.esf, true.sf = n.tsf)
+
+      # ratio of estimated and true size factors per true group assignment
+      t.design = t.designs[[j]][i,]
+      ratio.sf <- .ratio.sf(estimated.nsf = n.esf,
+                            true.nsf = n.tsf,
+                            group=t.design)
+      sf.res <- unlist(c(mad.nsf, error.sf, ratio.sf))
+      names(sf.res) <- NULL
+
+      sf.error.mat[[j]][i,] = sf.res
+    }
+  }
+
+  output <- list(Log2FoldChange=lfc.error.mat,
+                 SizeFactors=sf.error.mat)
+
+  if(isTRUE(timing)) {
+    # create output objects
+    time.taken.mat <- lapply(1:length(my.names), function(x) {
+      data.frame(matrix(NA, nrow = length(colnames(time.taken[[1]])),
+                        ncol = 3, dimnames = list(c(colnames(time.taken[[1]])),
+                                                  c("Mean", "SD", "SEM")))
+      )
+    })
+    names(time.taken.mat) <- my.names
+    for(j in seq(along=Nreps1)) {
+      tmp.time <- time.taken[[j]]
+      time.taken.mat[[j]][,"Mean"] <- colMeans(tmp.time)
+      time.taken.mat[[j]][,"SD"] <- matrixStats::colSds(tmp.time)
+      time.taken.mat[[j]][,"SEM"] <- matrixStats::colSds(tmp.time)/sqrt(nsims)
+    }
+    output <- c(output, list(Timing=time.taken.mat))
+  }
+
+  # return object
+  return(output)
+}
+
+
 # EVALUATE ROCR -----------------------------------------------------------
 
 #' @name evaluateROC
 #' @aliases evaluateROC
-#' @title Receiver operator characteristics from simulation results
+#' @title Receiver operator characteristics of simulation results
 #' @description This function takes the simulation output from \code{\link{simulateDE}}
 #' and computes receiver operator characteristics (ROC) and area under the curve values (AUC).
 #' @usage evaluateROC(simRes,
@@ -1061,21 +1028,17 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
 #' are deemed DE in error rates calculations.
 #' If \code{delta=0} then no threshold is applied. See "Details" for more description.
 #' @return A list with the following entries:
-#' \item{ROCR-Prediction}{The output of \code{\link[ROCR]{prediction}} split up by group comparisons into lists.}
-#' \item{ROCR-Performance}{The output of \code{\link[ROCR]{performance}} calculating TPR and FPR for ROC curve.
-#' This is also split up by group comparisons into lists.}
-#' \item{ROCR-AUC}{The output of \code{\link[ROCR]{performance}} calculating AUC of ROC curve.
-#' split up by group comparisons into lists.}
-#' \item{n1,n2}{Sample sizes per group.
-#' This is taken from the simulation options.}
-#' \item{target.by}{The input method to define "biologically important" DE genes,
-#' either by log fold change or effect size.}
-#' \item{delta}{The input delta for biologically important genes.
-#' If delta=0, all target.by will be considered.}
+#' \item{Performance}{The output of \code{\link[iCOBRA]{calculate_performance}} of aspect "fdrtprcurve" calculating the proportions of TN, FN, TP and FP and related rates which uses \code{\link[ROCR]{prediction}} and \code{\link[ROCR]{performance}} internally.}
+#' \item{FDR_TPR_Thres}{The output of \code{\link[iCOBRA]{calculate_performance}} of aspect "fdrtpr" calculating the proportions of TN, FN, TP and FP and associated TPR and FDR for each nominal level from 0.01 to 1 in steps of 0.01.}
+#' \item{TPRvsPPV_AUC}{The area under the curve for TPR versus PPV. This is also split up by group comparisons into lists with length equal to number of simulations.}
+#' \item{TPRvsFPR_AUC}{The area under the curve for TPR versus FPR, i.e. classical ROC-curve. This is also split up by group comparisons into lists with length equal to number of simulations.}
+#' \item{TPRvsFDR_pAUC_conv,TPRvsFDR_pAUC_lib}{The partial area under the curve for TPR versus FDR, once for conservative and once for liberal nominal FDR level (see Details section). This is also split up by group comparisons into lists with length equal to number of simulations.}
+#' \item{MCC_conv,MCC_lib}{The Matthews Correlation Coefficient, once for conservative and once for liberal nominal FDR level (see Details section). This is also split up by group comparisons into lists with length equal to number of simulations.}
+#' \item{F1score_conv,F1score_lib}{The precision-recall F measure, once for conservative and once for liberal nominal FDR level (see Details section). This is also split up by group comparisons into lists with length equal to number of simulations.}
+#' \item{alpha.type - .. - delta}{Reiterating chosen evaluation parameters.}
 #' @author Beate Vieth
-#' @seealso \code{\link{estimateParam}} for negative binomial parameters,
-#' \code{\link{SimSetup}} and
-#' \code{\link{DESetup}} for setting up simulation parameters and
+#' @seealso \code{\link{estimateParam}} for parameter estimation needed for simulations,
+#' \code{\link{Setup}} for setting up simulation parameters and
 #' \code{\link{simulateDE}} for simulating differential expression.
 #' @examples
 #' \dontrun{
@@ -1099,18 +1062,18 @@ evaluateROC <- function(simRes, alpha.type=c("adjusted","raw"),
   alpha.type = match.arg(alpha.type)
   MTC = match.arg(MTC)
   target.by = match.arg(target.by)
-  Nreps1 = simRes$sim.settings$n1
-  Nreps2 = simRes$sim.settings$n2
-  ngenes = simRes$sim.settings$ngenes
-  sim.opts = simRes$sim.settings
-  DEids = simRes$sim.settings$DEid
-  lfcs = simRes$sim.settings$pLFC
-  elfcs = simRes$elfc
-  nsims = simRes$sim.settings$nsims
-  DEmethod = simRes$sim.settings$DEmethod
-  pvalue = simRes$pvalue
-  fdr = simRes$fdr
-  mu = simRes$mu
+  Nreps1 = simRes$SimSetup$n1
+  Nreps2 = simRes$SimSetup$n2
+  ngenes = simRes$DESetup$ngenes
+  nsims = simRes$DESetup$nsims
+  DEids = simRes$DESetup$DEid
+  lfcs = simRes$DESetup$pLFC
+  elfcs = simRes$SimulateRes$elfc
+
+  DEmethod = simRes$Pipeline$DEmethod
+  pvalue = simRes$SimulateRes$pvalue
+  fdr = simRes$SimulateRes$fdr
+  mu = simRes$SimulateRes$mu
   my.names = paste0(Nreps1, " vs ", Nreps2)
   Truths = Predictions = array(NA, dim = c(length(Nreps1),
                                            ngenes, nsims))
@@ -1276,7 +1239,9 @@ evaluateROC <- function(simRes, alpha.type=c("adjusted","raw"),
       F1score_lib[[j]][i] <- f1_lib
 
       # TPR vs FDR (conservative); MCC (conversative); F1 score (conservative)
-      a.fdr = tail(dat.fdr[dat.fdr$obs.fdr <=alpha.nominal & dat.fdr$nom.fdr <= alpha.nominal, "obs.fdr"], 1)
+      a.fdr = tail(dat.fdr[dat.fdr$obs.fdr <= alpha.nominal &
+                           dat.fdr$nom.fdr <= alpha.nominal,
+                           "obs.fdr"], 1)
       if (all(c(!length(a.fdr) == 0, !a.fdr == 0))) {
         x <- as.vector(res@fdrtprcurve[,c("FDR")])[-1]
         y <- as.vector(res@fdrtprcurve[,c("TPR")])[-1]

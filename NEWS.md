@@ -1,3 +1,14 @@
+
+# Version 1.1.5 (2019-7-30)
+
+* Downsampling of count matrices using binomial thinning implemented in `estimateParam()` (UMI-read ratio estimation) and `simulateDE()`.
+* Setup of DE simulations now in one function (`Setup()`) instead of two.
+* `estimateParam()` with additional filtering options based on quality control checkup of scater package.
+
+# Version 1.1.3 (2018-07-10)
+
+* `simulateDE()` using SCnorm scaling factors as weights in limma-trend, limma-voom.
+
 # Version 1.1.2 (2018-06-20)
 
 * `estimateParam()` error fixed concerning expression cleanup.

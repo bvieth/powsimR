@@ -47,29 +47,37 @@ ipak <- function(pkg, repository=c('CRAN', 'Bioconductor', 'github')){
       install.packages(new.pkg, dependencies = TRUE)
     }
     if(repository=='Bioconductor') {
-      source("https://bioconductor.org/biocLite.R")
+      if(strsplit(version[['version.string']], ' ')[[1]][3] > "3.5.0"){
+        if (!requireNamespace("BiocManager")){
+            install.packages("BiocManager")
+        }
+            BiocManager::install(new.pkg, dependencies=TRUE, ask=FALSE)
+      }
+      if(strsplit(version[['version.string']], ' ')[[1]][3] < "3.5.0"){
+              source("https://bioconductor.org/biocLite.R")
       biocLite(new.pkg, dependencies=TRUE, ask=FALSE)
+      }
     }
     if(repository=='github') {
-      devtools::install_github(new.pkg, build_vignettes = FALSE, dependencies=TRUE)
+      devtools::install_github(new.pkg, build_vignettes = FALSE, force = FALSE, dependencies=TRUE)
     }
   }
 }
 
 # CRAN PACKAGES
-cranpackages <- c("bbmle", "broom", "cluster", "cobs", "cowplot", 
+cranpackages <- c("broom", "cobs", "cowplot", 
                   "data.table", "devtools", "doParallel", "dplyr", "drc", "DrImpute", 
                   "fastICA", "fitdistrplus", "foreach", 
                   "gamlss.dist", "ggExtra", "ggplot2", "ggthemes", "grDevices",
-                  "glmnet", "grid", "gtools", "Hmisc", "kernlab", "MASS", 
+                  "glmnet", "grid", "gtools", "Hmisc", "kernlab", "MASS", "MBESS",
                   "matrixStats", "mclust", "methods", "minpack.lm", "moments", "msir", 
                   "NBPSeq", "nonnest2", "parallel", "penalized", "plyr", "pscl",
-                  "reshape2", "ROCR", "rsvd", "Rtsne", "scales", "Seurat", "snow", 
+                  "reshape2", "Rmagic", "rsvd", "Rtsne", "scales", "Seurat", "snow", 
                   "stats", "tibble", "tidyr", "VGAM", "ZIM")
 ipak(cranpackages, repository='CRAN')
 
 # BIOCONDUCTOR
-biocpackages <- c("AnnotationDbi", "baySeq", "Biobase", "BiocGenerics", 
+biocpackages <- c("AnnotationDbi", "bayNorm", "baySeq", "Biobase", "BiocGenerics", 
                   "BiocParallel", "DEDS", "DESeq2", "EBSeq", "edgeR", "IHW", "iCOBRA",
                   "limma", "Linnorm", "MAST", "monocle", "NOISeq", "qvalue", "ROTS", "RUVSeq", 
                   "S4Vectors", "scater", "scDD", "scde", "scone", "scran", "SCnorm", 
@@ -77,7 +85,7 @@ biocpackages <- c("AnnotationDbi", "baySeq", "Biobase", "BiocGenerics",
 ipak(biocpackages, repository='Bioconductor')
 
 # GITHUB
-githubpackages <- c('nghiavtr/BPSC', 'VCCRI/cidr', 'cz-ye/DECENT', 
+githubpackages <- c('nghiavtr/BPSC', 'cz-ye/DECENT', 
                     'mohuangx/SAVER', 'statOmics/zingeR')
 ipak(githubpackages, repository = 'github')
 ```
@@ -87,7 +95,7 @@ After installing the dependencies, `powsimR` can be installed by using devtools 
 ```{r install, echo=TRUE, eval=FALSE, tidy=FALSE}
 devtools::install_github('bvieth/powsimR', 
                          build_vignettes = TRUE, 
-                         dependencies=FALSE)
+                         dependencies = FALSE)
 library("powsimR")
 ```
 
@@ -98,7 +106,7 @@ In this vignette, we illustrate the features of `powsimR` by assessing the power
 
 # _powsimR_ Workflow
 
-The basic workflow of `powsimR` is illustrated in Figure \@ref(fig:schematic): A) The mean-dispersion relationship is estimated from RNA-seq data, which can be either single cell or bulk data. The user can provide their own count table or a publicly available one and choose whether to fit a negative binomial or a zero-inflated negative binomial. The plot shows the mean-dispersion estimated, assuming a negative binomial for the Kolodziejczyk data, the red line is the loess fit, that we later use for the simulations. B) These distribution parameters are then used to set up the simulations. For better comparability, the parameters for the simulation of differential expression are set separately. C) Finally, the error rates are calculated. These can be either returned as marginal estimates per sample configuration (top), or stratified according to the estimates of mean expression, dispersion or dropout rate (bottom). Furthermore, the user can evaluate the analytical choices (e.g. normalisation).
+The basic workflow of `powsimR` is illustrated in Figure \@ref(fig:schematic): A) The mean-dispersion relationship is estimated from RNA-seq data, which can be either single cell or bulk data. The user can provide their own count table or a publicly available one and choose whether to fit a negative binomial or a zero-inflated negative binomial. The plot shows a representative example of the mean-dispersion relation estimated, assuming a zero-inflated negative binomial for the Kolodziejczyk data, the red line is the loess fit, that we later use for the simulations. B) These distribution parameters are then used to set up the simulations. C) Finally, the error rates are calculated. These can be either returned as marginal estimates per sample configuration (top), or stratified according to the estimates of mean expression, dispersion or dropout rate (bottom). Furthermore, the user can evaluate the analytical choices (e.g. imputation and normalisation).
 
 ```{r schematic, fig.cap="PowsimR schematic overview. (A) Estimation (B) Simulation (C) Evaluation.", echo=F, eval=T, include=T, fig.wide = T}
 knitr::include_graphics("powsimR-vignette-schematic.png")
@@ -116,14 +124,13 @@ The user can choose between two estimation frameworks:
 
 In both cases matching moments estimation of mean and dispersion are based on normalized counts.
 
-The user can choose between multiple normalisation methods (see Details section of `estimateParam`). Furthermore, a number of methods are group sensitive (e.g. batch labels can be provided in SCnorm).
+The user can choose between multiple normalisation methods (see Details section of `estimateParam`). Furthermore, a number of methods are group sensitive (e.g. batch labels can be provided in SCnorm). For single cell data, it is important to filter out genes and/or cells that are outliers or deemed undetected (see options SampleFilter and GeneFilter).
 
 The estimates, sequencing depth and normalisation factors are plotted with `plotParam`.
 
-With the following command, we estimate and plot the parameters for the embryonic stem cells using the different media as batch annotation [@Kolodziejczyk2015-vn] (Figure \@ref(fig:paramsplot)). As expected for single cell RNA-seq, the variability (i.e. dispersion) and dropout rates are high. Furthermore, the dispersion strongly depends on the mean and does not level off with higher mean values.
+With the following command, we estimate and plot the parameters for the embryonic stem cells using the different media as batch annotation [@Kolodziejczyk2015-vn] (Figure \@ref(fig:paramsplot)). As expected for single cell RNA-seq, the variability (i.e. dispersion) and dropout rates are high. Furthermore, the dispersion strongly depends on the mean and does not level off with higher mean values compared to bulk data.
 
 ```{r params, echo=T, eval=T, include=T}
-library("powsimR")
 data("kolodziejczk_cnts")
 kolodziejczk_grps <- data.frame(Culture = c(rep("alternative", 194),
                                             rep("serum", 242),
@@ -132,22 +139,25 @@ kolodziejczk_grps <- data.frame(Culture = c(rep("alternative", 194),
                                 stringsAsFactors = F)
 dim(kolodziejczk_cnts)
 dim(kolodziejczk_grps)
-TwoiLIF.params <- estimateParam(countData=kolodziejczk_cnts,
-                                batchData = kolodziejczk_grps,
+TwoiLIF.params <- estimateParam(countData = kolodziejczk_cnts,
+                                batchData = kolodziejczk_grps, 
                                 spikeData = NULL,
                                 spikeInfo = NULL,
                                 Lengths = NULL,
                                 MeanFragLengths = NULL,
                                 Distribution = 'ZINB',
                                 RNAseq = 'singlecell',
+                                Protocol = 'Read',
                                 Normalisation = 'scran',
+                                GeneFilter = 0.05,
+                                SampleFilter = 5,
                                 sigma = 1.96,
                                 NCores = NULL,
                                 verbose=TRUE)
 ```
 
-```{r paramsplot, echo=T, eval=T, include=T, fig.height = 7, fig.width=10, fig.cap="Estimated parameters for Kolodziejczyk data set. (A) Sequencing depth per sample with median sequencing depth (grey dashed line). (B) Library size normalisation factor per sample with median size factor (grey dashed line). (C) Marginal Distribution of log2(mean), log2(dispersion) and dropout. (D) Local polynomial regression fit between log2(mean) and log2(dispersion) estimates with variability band per gene (yellow). Common dispersion estimate (grey dashed line). E) Fraction of dropouts versus estimated mean expression per gene."}
-plotParam(TwoiLIF.params, annot = F)
+```{r paramsplot, echo=T, eval=T, include=T, fig.height = 7, fig.width=10, fig.cap="Estimated parameters for Kolodziejczyk data set."}
+plotParam(TwoiLIF.params, annot = T)
 ```
 
 We have implemented a read count simulation framework assuming either a negative binomial distribution or a zero-inflated negative binomial distribution.
@@ -173,7 +183,7 @@ The following formula can help the user to calculate the number of molecules of 
 
 The number of molecules $Y_{j}$ for each ERCC spike-in species is the product of the molar concentration $c_{j}$ (attomoles per microlitre), the dilution factor $1/D$, the volume $V$ (nanolitre), Avogadros' constant ($6.02214129*10^{23}$) and conversion factors between unit scales.
 
-With the following command, we estimate the parameters for the spike-ins added to the library preparation of embryonic stem cells cultured in standard 2i+lif medium [@Ziegenhain2017-sf]. Descriptive plots of the spike-ins can be drawn with `plotSpike`  (Figure \@ref(fig:spikeplot)).
+With the following command, we estimate the parameters for the spike-ins added to the library preparation of mouse embryonic stem cells cultured in standard 2i+lif medium [@Ziegenhain2017-sf]. Descriptive plots of the spike-ins can be drawn with `plotSpike`  (Figure \@ref(fig:spikeplot)).
 
 ```{r spikeparams, echo=T, eval=T, include=T, warning=F}
 data("scrbseq_spike_cnts")
@@ -355,20 +365,10 @@ plotCounts(simCounts = simcounts.3grp, Distance = "euclidean", Scale = F, DimRed
 
 ## Negative Binomial Parameters
 
-### in silico Parameter Definition
-
-We have also implemented the option to approximate the read count matrix simulation based on random distribution functions in _R_. The user then has to define the mean, dispersion, dropout and library size in `insilicoNBParam`. In the absence of suitable pilot studies, a typical single cell RNA-seq experiment could be approximated with:
-
-* mean: `function(x) rgamma(x, 4, 2)` where x is the number of genes
-* dispersion: `function(x) 2 + 100/x` where x is the mean
-* library size: `function(x) 2*rnorm(n=x, mean=0, sd=0.25)` where x is the number of samples
-
-The same functionality can also be used for bulk RNA-seq.
-
 ### Count matrices of single cell RNA-seq experiments
 
 We have uploaded read count matrices of 5 single cell RNA-seq experiments on [github](https://github.com/bvieth/powsimRData).
-The user can calculate the negative binomial parameters with `estimateParam`, view these estimates with `plotParam` and use it as an input for `SimSetup`.
+The user can calculate the negative binomial parameters with `estimateParam`, view these estimates with `plotParam` and use it as an input for simulations.
 
 ### Access to raw read counts stored in online data base
 

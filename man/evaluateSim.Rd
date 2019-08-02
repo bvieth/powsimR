@@ -35,8 +35,7 @@ eval.sim <- evaluateSim(simRes = kolodziejczk_simDE, timing = T)
 }
 \seealso{
 \code{\link{estimateParam}} for negative binomial parameters,
-\code{\link{SimSetup}} and
-\code{\link{DESetup}} for setting up simulation parameters and
+\code{\link{Setup}} for setting up simulation parameters and
 \code{\link{simulateDE}} for simulating differential expression and
 }
 \author{

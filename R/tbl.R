@@ -45,7 +45,8 @@ printEvalDE <- function(evalRes) {
   res[,4] <- alpha.mar
   res[,5] <- rowMeans(evalRes$TPR.marginal, na.rm=TRUE)
 
-  print(signif(res,2))
+  res[, c(4:5)] <- signif(res[,c(4:5)],2)
+  print(res)
   return(invisible(res))
 }
 
