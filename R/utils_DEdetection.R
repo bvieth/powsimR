@@ -978,7 +978,7 @@
 
 #' @importFrom MAST FromMatrix zlm.SingleCellAssay lrTest summary
 #' @importFrom S4Vectors mcols
-#' @importFrom AnnotationDbi as.list
+# #' @importFrom AnnotationDbi as.list
 #' @importFrom edgeR DGEList
 #' @importFrom data.table data.table
 #' @importFrom reshape2 melt
@@ -1068,7 +1068,7 @@
 # BPSC --------------------------------------------------------------------
 
 #' @importFrom BPSC BPglm
-#' @importFrom gtools mixedsort
+# #' @importFrom gtools mixedsort
 #' @importFrom edgeR DGEList cpm.DGEList
 #' @importFrom doParallel registerDoParallel stopImplicitCluster
 #' @importFrom stats model.matrix coefficients

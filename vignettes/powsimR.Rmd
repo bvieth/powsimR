@@ -156,7 +156,7 @@ TwoiLIF.params <- estimateParam(countData = kolodziejczk_cnts,
                                 verbose=TRUE)
 ```
 
-```{r paramsplot, echo=T, eval=T, include=T, fig.height = 7, fig.width=10, fig.cap="Estimated parameters for Kolodziejczyk data set."}
+```{r paramsplot, echo=T, eval=T, include=T, fig.height = 15, fig.width=20, fig.cap="Estimated parameters for Kolodziejczyk data set."}
 plotParam(TwoiLIF.params, annot = T)
 ```
 

@@ -2,7 +2,6 @@
 
 #' @importFrom SingleCellExperiment SingleCellExperiment
 #' @importFrom scater isOutlier calcAverage
-#' @importFrom BiocGenerics counts
 .run.checkup <- function(countData,
                          readData,
                          batchData,
@@ -320,11 +319,11 @@
   # parameters: mean, dispersion, dropout
 
   # raw data
-  RawData <- countData 
-  # normalize by sequencing depth and fill in scaling factors from normalisation 
-  raw.sf <- structure(colSums(RawData) / median(colSums(RawData)), names = colnames(RawData)) 
-  raw.sf[names(NormData$size.factors)] <- NormData$size.factors 
-  NormRawData <- t(t(RawData)/raw.sf) 
+  RawData <- countData
+  # normalize by sequencing depth and fill in scaling factors from normalisation
+  raw.sf <- structure(colSums(RawData) / median(colSums(RawData)), names = colnames(RawData))
+  raw.sf[names(NormData$size.factors)] <- NormData$size.factors
+  NormRawData <- t(t(RawData)/raw.sf)
   raw.params <- .run.estparams(countData = RawData,
                                 normData = NormRawData,
                                 Distribution = Distribution)
@@ -379,7 +378,7 @@
                        Distribution = Distribution,
                        RNAseq = RNAseq,
                        sigma = sigma)
-  
+
   # full data
   FullFit <- .run.fits(ParamData = full.params,
                        Distribution = Distribution,
