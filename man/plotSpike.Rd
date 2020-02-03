@@ -4,12 +4,12 @@
 \alias{plotSpike}
 \title{Visualize distributional characteristics of spike-ins}
 \usage{
-plotSpike(estSpike, annot=TRUE)
+plotSpike(estSpike, Annot = TRUE)
 }
 \arguments{
-\item{estSpike}{The output of \code{\link{estimateParam}}.}
+\item{estSpike}{The output of \code{\link{estimateSpike}}.}
 
-\item{annot}{A logical vector. If \code{TRUE}, a short figure legend is included.}
+\item{Annot}{A logical vector. If \code{TRUE}, a short figure legend is included.}
 }
 \value{
 A ggplot object.
@@ -19,22 +19,20 @@ This function plots the results of the parameter estimation for spike-ins. This 
 }
 \examples{
 \dontrun{
-#' ## batch annotation
-data(scrbseq_spike_cnts)
-data(scrbseq_spike_info)
-batch_info <- data.frame(Batch = ifelse(grepl(pattern = "SCRBseqA_",
-colnames(scrbseq_spike_cnts)), "A", "B"),
-row.names = colnames(scrbseq_spike_cnts))
-## spike information table
-spike_info <- scrbseq_spike_info[-1,]
-## estimation
-spike_param <- estimateSpike(spikeData = scrbseq_spike_cnts,
-spikeInfo = spike_info,
-MeanFragLength = NULL,
-batchData = batch_info,
- = 'depth')
-## plotting
-plotSpike(estSpike = spike_param, annot=TRUE)
+# using example data set
+data("SCRBseq_SpikeIns_Read_Counts")
+data("SCRBseq_SpikeInfo")
+Batches = data.frame(Batch = sapply(strsplit(colnames(SCRBseq_SpikeIns_Read_Counts), "_"), "[[", 1),
+                     stringsAsFactors = F,
+                     row.names = colnames(SCRBseq_SpikeIns_Read_Counts))
+# estimation
+spikeparam <- estimateSpike(spikeData = SCRBseq_SpikeIns_Read_Counts,
+                             spikeInfo = SCRBseq_SpikeInfo,
+                             MeanFragLength = NULL,
+                             batchData = Batches,
+                             Normalisation = 'depth')
+# plotting
+plotSpike(estSpike = spikeparam, Annot = TRUE)
 }
 }
 \author{

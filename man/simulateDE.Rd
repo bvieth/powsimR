@@ -7,9 +7,16 @@
 simulateDE(SetupRes,
 Prefilter = NULL,
 Imputation = NULL,
-Normalisation,
+Normalisation = c("TMM", "MR", "PosCounts", "UQ",
+"scran", "Linnorm", "sctransform",
+"SCnorm", "Census", "depth"),
 Label = "none",
-DEmethod,
+DEmethod = c("T-Test", "edgeR-LRT", "edgeR-QL",
+"edgeR-zingeR", "edgeR-ZINB-WaVE",
+"limma-voom", "limma-trend",
+"DESeq2", "DESeq2-zingeR", "DESeq2-ZINB-WaVE",
+"ROTS", "baySeq", "NOISeq", "EBSeq",
+"MAST", "BPSC", "scDD", "DECENT"),
 DEFilter = FALSE,
 NCores = NULL,
 verbose = TRUE)
@@ -64,7 +71,7 @@ Note that FDR values will be empty and the calculation will be done by \code{\li
 \item{true.depth,est.depth}{True simulated and processed (after prefiltering and/or imputation if defined) sequencing depth per sample.}
 \item{est.sf}{Global library size factor estimates per sample.}
 \item{est.gsf}{3D array (ngenes * N * nsims) for size factor estimates. These are gene- and sample-wise estimates and only for SCnorm and Linnorm normalisation.}
-\item{elfc,rlfc}{3D array (ngenes * N * nsims) for log2 fold changes (LFC):
+\item{elfc,rlfc}{3D array (ngenes * N * nsims) for log fold changes (LFC):
 elfc is for the DE tool estimated LFC; rlfc is for the LFC estimated from the normalised read counts.}
 \item{time.taken}{The time taken given by \code{\link[base]{proc.time}} for each simulation, given for preprocessing, normalisation, differential expression testing and moment estimation.}
 }
@@ -79,6 +86,8 @@ The error matrix calculations will be conducted with \code{\link{evaluateDE}}.\c
 }
 \details{
 Here you can find detailed information about preprocessing, imputation, normalisation and differential testing choices.
+For recommendations concerning single cell RNA-sequencing pipelines,
+we kindly refer the user to (\href{https://www.nature.com/articles/s41467-019-12266-7}{Vieth, et al (2019). A systematic evaluation of single cell RNA-seq analysis pipelines. Nature Communications, 10(1), 4667.}).
 }
 \section{Prefiltering prior to imputation/normalisation}{
 
@@ -91,35 +100,20 @@ Here you can find detailed information about preprocessing, imputation, normalis
 \section{Imputation prior to normalisation}{
 
 \describe{
-\item{scImpute}{employs scImpute method of imputing dropouts. Imputation is only carried out for genes with more than 50 percent dropout. Please consider multiple cores to speed up computation.}
-\item{DrImpute}{employs DrImpute method of imputing dropouts as implemented
-in \code{\link[DrImpute]{DrImpute}}.}
-\item{SAVER}{employs SAVER method of imputing dropouts as implemented
-in \code{\link[SAVER]{saver}}. Imputation is only carried out for genes with more than 50 percent dropout.}
-\item{scone}{employs scone method of imputing dropouts as implemented
-in \code{\link[scone]{scone}} using estimated dropout probabilities of \code{\link[scone]{estimate_ziber}}.}
-}
-}
-
-\section{Normalisation applied to (prefiltered/imputed/raw) gene count matrix}{
-
-\describe{
 \item{TMM, UQ}{employ the edgeR style normalization of weighted trimmed mean of M-values and upperquartile
 as implemented in \code{\link[edgeR]{calcNormFactors}}, respectively.}
 \item{MR, PosCounts}{employ the DESeq2 style normalization of median ratio method and a modified geometric mean method
-as implemented in \code{\link[DESeq2]{estimateSizeFactors}}, respectively. Spike-ins can also be supplied for both methods via \code{spikeData}.}
+as implemented in \code{\link[DESeq2]{estimateSizeFactors}}, respectively.}
 \item{scran, SCnorm}{apply the deconvolution and quantile regression normalization methods developed for sparse RNA-seq data
-as implemented in \code{\link[scran]{computeSumFactors}} and \code{\link[SCnorm]{SCnorm}}, respectively. Spike-ins can also be supplied for both methods via \code{spikeData}. Note, however that this means for scran that the normalisation as implemented in \code{\link[scran]{computeSpikeFactors}} is also applied to genes (\code{general.use=TRUE}). Please consider multiple cores to speed up computation for SCnorm.}
+as implemented in \code{\link[scran]{computeSumFactors}} and \code{\link[SCnorm]{SCnorm}}, respectively. Spike-ins can also be supplied for both methods via \code{spikeData}. Note, however that this means for scran that the normalisation as implemented in \code{\link[scran]{computeSpikeFactors}} is also applied to genes (\code{general.use=TRUE}).}
 \item{Linnorm}{apply the normalization method for sparse RNA-seq data
 as implemented in \code{\link[Linnorm]{Linnorm.Norm}}.
 For \code{Linnorm}, the user can also supply \code{spikeData}.}
-\item{RUV}{removes unwanted variation. There are two approaches implemented:
-(1) utilizing negative control genes, i.e. spike-ins stored in \code{spikeData} (\code{\link[RUVSeq]{RUVg}}).
-(2) utilizing replicate samples, i.e. samples for which the covariates of interest are considered constant.
-This annotation is stored in \code{batchData} (\code{\link[RUVSeq]{RUVs}}).}
+\item{sctransform}{apply the normalization method developed for single-cell
+UMI RNA-seq data as implemented in \code{\link[sctransform]{vst}}. }
 \item{Census}{converts relative measures of TPM/FPKM values into mRNAs per cell (RPC) without the need of spike-in standards.
 Census at least needs \code{Lengths} for single-end data and preferably \code{MeanFragLengths} for paired-end data.
-Do not use this algorithm for UMI data!}
+The authors state that Census should not be used for UMI data.}
 \item{depth}{Sequencing depth normalisation.}
 }
 }
@@ -137,7 +131,6 @@ followed by \code{\link[limma]{eBayes}} on counts transformed by \code{\link[lim
 \item{NOISeq}{applies differential testing as implemented in \code{\link[NOISeq]{noiseqbio}} based on CPM values.}
 \item{EBSeq}{applies differential testing as implemented in \code{\link[EBSeq]{EBTest}}.}
 \item{MAST}{applies differential testing as implemented in \code{\link[MAST]{zlm}} for zero-inflated model fitting followed by \code{\link[MAST]{lrTest}} on log2 CPM values.}
-\item{scde}{applies differential testing as implemented in \code{\link[scde]{scde.expression.difference}}.}
 \item{BPSC}{applies differential testing as implemented in \code{\link[BPSC]{BPglm}} on CPM values.}
 \item{scDD}{applies differential testing as implemented in \code{\link[scDD]{scDD}} on CPM values.}
 \item{DECENT}{applies differential testing as implemented in \code{\link[DECENT]{decent}}.}
@@ -148,25 +141,54 @@ followed by \code{\link[limma]{eBayes}} on counts transformed by \code{\link[lim
 
 \examples{
 \dontrun{
-# estimated parameters
-data(kolodziejczk_param)
-# set up simulation
-setupres <- Setup(ngenes = NULL, nsims = 25,
-p.DE = 0.1, pLFC = 1.25,
-p.B = NULL, bLFC = NULL, bPattern = 'uncorrelated',
-n1 = c(20,50,100), n2 = c(30,60,120),
-Thinning = NULL, LibSize = 'equal',
-estParamRes = kolodziejczk_param,
-estSpikeRes = NULL,
-DropGenes = FALSE,
-sim.seed = 52679, verbose = TRUE)
+# estimate gene parameters
+data("SmartSeq2_Gene_Read_Counts")
+Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_Gene_Read_Counts), "_"), "[[", 1),
+                     stringsAsFactors = F,
+                     row.names = colnames(SmartSeq2_Gene_Read_Counts))
+data("GeneLengths_mm10")
+estparam_gene <- estimateParam(countData = SmartSeq2_Gene_Read_Counts,
+                               readData = NULL,
+                              batchData = Batches,
+                               spikeData = NULL, spikeInfo = NULL,
+                               Lengths = GeneLengths_mm10, MeanFragLengths = NULL,
+                               RNAseq = 'singlecell', Protocol = 'Read',
+                               Distribution = 'ZINB', Normalisation = "scran",
+                               GeneFilter = 0.1, SampleFilter = 3,
+                               sigma = 1.96, NCores = NULL, verbose = TRUE)
+# estimate spike parameters
+data("SmartSeq2_SpikeIns_Read_Counts")
+data("SmartSeq2_SpikeInfo")
+Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_SpikeIns_Read_Counts), "_"), "[[", 1),
+                     stringsAsFactors = F,
+                     row.names = colnames(SmartSeq2_SpikeIns_Read_Counts))
+estparam_spike <- estimateSpike(spikeData = SmartSeq2_SpikeIns_Read_Counts,
+                                spikeInfo = SmartSeq2_SpikeInfo,
+                                MeanFragLength = NULL,
+                                batchData = Batches,
+                                Normalisation = 'depth')
+# define log2 fold change
+p.lfc <- function(x) sample(c(-1,1), size=x,replace=T)*rgamma(x, shape = 1, rate = 2)
+# set up simulations
+setupres <- Setup(ngenes = 10000, nsims = 10,
+                  p.DE = 0.1, pLFC = p.lfc,
+                  n1 = c(20,50,100), n2 = c(30,60,120),
+                  Thinning = c(1,0.9,0.8), LibSize = 'given',
+                  estParamRes = estparam_gene,
+                  estSpikeRes = estparam_spike,
+                  DropGenes = FALSE,
+                  sim.seed = 52679, verbose = TRUE)
 # run simulation
-simres <- simulateDE(SetupRes,
-Prefilter = NULL, Imputation = NULL,
-Normalisation = "scran", Label = "none",
-DEmethod = "limma-trend", DEFilter = FALSE,
-NCores = NULL,
-verbose = TRUE)
+simres <- simulateDE(SetupRes = setupres,
+                     Prefilter = "FreqFilter", Imputation = NULL,
+                     Normalisation = 'scran', Label = 'none',
+                     DEmethod = "limma-trend", DEFilter = FALSE,
+                     NCores = NULL, verbose = TRUE)
+# quick evaluation
+evalderes <- evaluateDE(simRes = simres)
+# plot evaluation
+plotEvalDE(evalRes = evalderes, rate = "marginal",
+           quick = TRUE, Annot = FALSE)
 }
 }
 \seealso{

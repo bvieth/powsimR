@@ -14,8 +14,9 @@ MeanFragLengths = NULL,
 RNAseq = c('bulk', 'singlecell'),
 Protocol = c('UMI', 'Read'),
 Distribution = c('NB', 'ZINB'),
-Normalisation = c('TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm',
-                  'SCnorm', 'RUV', 'Census', 'depth', 'none'),
+Normalisation = c("TMM", "MR", "PosCounts", "UQ",
+"scran", "Linnorm", "sctransform",
+"SCnorm", "Census", "depth", "none"),
 GeneFilter = 0.05,
 SampleFilter = 5,
 sigma = 1.96,
@@ -39,7 +40,7 @@ Rows correspond to samples. The first column should contain the batches, e.g. 'a
 \item{spikeData}{is a count \code{matrix}.
 Rows correspond to spike-ins, columns to samples.
 The order of columns should be the same as in the \code{countData}.
-This is only needed for spike-in aware normalisation methods (), see Details.}
+This is only needed for spike-in aware normalisation methods ('MR', 'Linnorm', 'scran', 'SCnorm', 'bayNorm', 'Census'), see Details.}
 
 \item{spikeInfo}{is a molecule count \code{matrix} of spike-ins.
 Rows correspond to spike-ins. The order of rows should be the same as in the \code{spikeData}.
@@ -60,7 +61,7 @@ Options are "UMI" (e.g. 10X Genomics, CEL-seq2) or "Read" (e.g. Smart-seq2).}
 \item{Distribution}{is a character value: "NB" for negative binomial or "ZINB" for zero-inflated negative binomial distribution fitting.}
 
 \item{Normalisation}{is a character value: 'TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm',
-'SCnorm', 'RUV', 'Census', 'depth', 'none'.
+'SCnorm', 'Census', 'depth', 'none'.
 For more information, please consult the Details section.}
 
 \item{GeneFilter}{is a numeric vector indicating the minimal proportion of nonzero expression values
@@ -93,7 +94,9 @@ List object with the following entries:
 \item{Lengths -..- SampleFilter}{The chosen parameters settings.}
 }
 \description{
-This function estimates and returns parameters needed for power simulations. The user needs to choose the following options at least: specify a gene expression matrix; the type of RNA-seq experiment, i.e. bulk or single cell; the recommended distribution is negative binomial (NB) except for single-cell full-length Smart-seq2 read data where we recommend zero-inflated NB (ZINB); the preferred normalisation method, we recommend scran for single cell and TMM or MR for bulk. The other parameters are optional (additional data) or have preset values (gene and sample filtering). Please consult the detailed arguments description.
+This function estimates and returns parameters needed for power simulations.\cr
+The user needs to choose the following options at least: specify a gene expression matrix; the type of RNA-seq experiment, i.e. bulk or single cell; the recommended distribution is negative binomial (NB) except for single-cell full-length Smart-seq2 read data where we recommend zero-inflated NB (ZINB); the preferred normalisation method, we recommend scran for single cell and TMM or MR for bulk.\cr
+The other parameters are optional (additional data) or have preset values (gene and sample filtering). Please consult the detailed arguments description.
 }
 \details{
 \strong{Normalisation Methods}
@@ -107,10 +110,8 @@ as implemented in \code{\link[scran]{computeSumFactors}} and \code{\link[SCnorm]
 \item{Linnorm}{apply the normalization method for sparse RNA-seq data
 as implemented in \code{\link[Linnorm]{Linnorm.Norm}}.
 For \code{Linnorm}, the user can also supply \code{spikeData}.}
-\item{RUV}{removes unwanted variation. There are two approaches implemented:
-(1) utilizing negative control genes, i.e. spike-ins stored in \code{spikeData} (\code{\link[RUVSeq]{RUVg}}).
-(2) utilizing replicate samples, i.e. samples for which the covariates of interest are considered constant.
-This annotation is stored in \code{batchData} (\code{\link[RUVSeq]{RUVs}}).}
+\item{sctransform}{apply the normalization method developed for single-cell
+UMI RNA-seq data as implemented in \code{\link[sctransform]{vst}}. }
 \item{Census}{converts relative measures of TPM/FPKM values into mRNAs per cell (RPC) without the need of spike-in standards.
 Census at least needs \code{Lengths} for single-end data and preferably \code{MeanFragLengths} for paired-end data.
 The authors state that Census should not be used for UMI data.}
@@ -120,50 +121,39 @@ The authors state that Census should not be used for UMI data.}
 }
 \examples{
 \dontrun{
-## using example data set
-data(kolodziejczk_cnts)
-serum_lif_cnts <- kolodziejczk_cnts[, grepl('serum', colnames(kolodziejczk_cnts))]
-estparam <- estimateParam(countData = serum_lif_cnts,
-                          Distribution = 'ZINB',
-                          Protocol = 'Read',
-                          RNAseq = 'singlecell',
-                          Normalisation = 'scran')
-## simulating single cell RNA-seq experiment
-ngenes <- 10000
-ncells <- 100
-true.means <- 2^runif(ngenes, 3, 6)
-true.dispersions <- 3 + 100/true.means
-sf.values <- 2^rnorm(ncells, sd=0.5)
-sf.means <- outer(true.means, sf.values, '*')
-cnts <- matrix(rnbinom(ngenes*ncells,
-                       mu=sf.means, size=1/true.dispersions),
-               ncol=ncells)
-## estimating negative binomial parameters
-estparam <- estimateParam(countData = cnts,
-                          Distribution = 'NB',
-                          RNAseq = 'singlecell',
-                          Protocol = 'Read',
-                          Normalisation='scran')
+# Single Cells
+data("SmartSeq2_Gene_Read_Counts")
+Batches <- data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_Gene_Read_Counts), "_"), "[[", 1),
+                      stringsAsFactors = FALSE, row.names = colnames(SmartSeq2_Gene_Read_Counts))
+data("GeneLengths_mm10")
+estparam <- estimateParam(countData = SmartSeq2_Gene_Read_Counts,
+                          readData = NULL,
+                          batchData = Batches,
+                          spikeData = SmartSeq2_SpikeIns_Read_Counts,
+                          spikeInfo = SmartSeq2_SpikeInfo,
+                          Lengths = GeneLengths, MeanFragLengths = NULL,
+                          RNAseq = 'singlecell', Protocol = 'Read',
+                          Distribution = 'ZINB', Normalisation = "scran",
+                          GeneFilter = 0.1, SampleFilter = 3,
+                          sigma = 1.96, NCores = NULL, verbose = TRUE)
 
-## simulating bulk RNA-seq experiment
-ngenes <- 10000
-nsamples <- 10
-true.means <- 2^rnorm(ngenes, mean=8, sd=2)
-true.dispersions <- 3/true.means + 0.1
-sf.values <- rnorm(nsamples, mean=1, sd=0.1)
-sf.means <- outer(true.means, sf.values, '*')
-cnts <- matrix(rnbinom(ngenes*nsamples,
-                       mu=sf.means, size=1/true.dispersions),
-               ncol=nsamples)
-## estimating negative binomial parameters
-estparam <- estimateParam(countData = cnts,
-                          Distribution = 'NB',
-                          RNAseq = 'bulk',
-                          Protocol = 'Read',
-                          Normalisation = 'MR')
+# Bulk
+data("Bulk_Read_Counts")
+data("GeneLengths_hg19")
+estparam <- estimateParam(countData = Bulk_Read_Counts,
+                          readData = NULL,
+                          batchData = NULL,
+                          spikeData = NULL,
+                          spikeInfo = NULL,
+                         Lengths = GeneLengths_hg19,
+                          MeanFragLengths = NULL,
+                          RNAseq = 'bulk', Protocol = 'Read',
+                          Distribution = 'NB', Normalisation = "MR",
+                          GeneFilter = 0.1, SampleFilter = 3,
+                          sigma = 1.96, NCores = NULL, verbose = TRUE)
 
-## plot the results of estimation
-plotParam(estparam, annot = TRUE)
+# plot the results of estimation
+plotParam(estparam, Annot = FALSE)
 }
 }
 \author{

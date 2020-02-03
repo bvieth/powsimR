@@ -187,9 +187,3 @@
 
   return(Kij)
 }
-
-
-# Estimation Parameters ---------------------------------------------------
-
-#' @importFrom stats dbinom
-.myphat <- function(size,prob) {  -sum(stats::dbinom(mydata,size,prob,log=TRUE))  }

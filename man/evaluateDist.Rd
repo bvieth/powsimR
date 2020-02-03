@@ -4,12 +4,13 @@
 \alias{evaluateDist}
 \title{Model Diagnostics for RNAseq Data}
 \usage{
-evaluateDist(countData, batchData =NULL,
+evaluateDist(countData, batchData = NULL,
 spikeData = NULL, spikeInfo = NULL,
 Lengths = NULL, MeanFragLengths = NULL,
-RNAseq, Normalisation,
-frac.genes=1, min.meancount = 0.1,
-max.dropout=0.7, min.libsize=1000,
+RNAseq = "singlecell", Protocol,
+Normalisation,
+GeneFilter = 0.25, SampleFilter = 3,
+FracGenes = 1,
 verbose = TRUE)
 }
 \arguments{
@@ -22,33 +23,47 @@ This is only used for the normalisation.}
 
 \item{spikeData}{is a count \code{matrix}.
 Rows correspond to spike-ins, columns to samples.
-The order of columns should be the same as in the \code{countData}.}
+The order of columns should be the same as in the \code{countData}.
+This is only needed for spike-in aware normalisation methods ('MR', 'Linnorm', 'scran', 'SCnorm', 'bayNorm', 'Census'),
+see details section of \code{\link{estimateParam}}.}
 
 \item{spikeInfo}{is a molecule count \code{matrix} of spike-ins.
 Rows correspond to spike-ins. The order of rows should be the same as in the \code{spikeData}.
-The column names should be 'SpikeID' and 'SpikeInput' for molecule counts of spike-ins.}
+The column names should be 'SpikeID' and 'SpikeInput' for molecule counts of spike-ins.
+This is only needed for spike-in aware normalisation methods ('MR', 'Linnorm', 'scran', 'SCnorm', 'bayNorm', 'Census'),
+see details section of \code{\link{estimateParam}}.}
 
 \item{Lengths}{is a numeric vector of transcript lengths with the same length and order as the rows in countData.
-This variable is only used for internal TPM calculations if Census normalization is specified.}
+This variable is only needed for internal gene length corrections (TPM), see details section of \code{\link{estimateParam}}.}
 
 \item{MeanFragLengths}{is a numeric vector of mean fragment lengths with the same length as columns in countData.
-This variable is only used for internal TPM calculations if Census normalization is specified.}
+This variable is only needed for internal gene length corrections (TPM), see details section of \code{\link{estimateParam}}.}
 
-\item{RNAseq}{is a character value: "bulk" or "singlecell".}
+\item{RNAseq}{is a character value: "bulk" or "singlecell". We recommended to use this evaluaiton for single cells only.}
+
+\item{Protocol}{is a character value defining the type of counts given in \code{countData}.
+Options are "UMI" (e.g. 10X Genomics, CEL-seq2) or "Read" (e.g. Smart-seq2).}
 
 \item{Normalisation}{is a character value: 'TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm',
-'SCnorm', 'RUV', 'Census', 'depth', 'none'.
+'SCnorm', 'Census', 'depth', 'none'.
 For more information, please consult the details section of \code{\link{estimateParam}}.}
 
-\item{frac.genes}{The fraction of genes to calculate goodness of fit statistics, default is 1, i.e. for all genes.}
+\item{GeneFilter}{is a numeric vector indicating the minimal proportion of nonzero expression values
+for a gene across all samples to be considered expressed and used for estimating normalisation size factors.
+The default is \code{0.25}, i.e. at least 25\% of the expression values per gene need to be nonzero.}
 
-\item{min.meancount}{The minimum mean normalised count per gene if fraction of genes are defined. Default is \code{0.1}.}
+\item{SampleFilter}{is a numeric vector indicating the minimal number of MADs (median absolute deviation)
+away from the median number of features detected as well as sequencing depth across all samples
+so that outlying samples are removed prior to normalisation.
+The default is \code{5}, i.e. at least 5 MADs away from the median.
+Choose higher values if you wsant to filter out less samples.
+This parameter is particularly important for single cells to ensure reliable parameter estimation.
+For more information, please consult \code{\link[scater]{isOutlier}}.}
 
-\item{max.dropout}{The maximal percentage of zero expression per gene. Genes with more than \code{max.dropout} will be remove. Default is \code{0.7}, i.e. genes with more than 70\% dropouts.}
+\item{FracGenes}{The fraction of genes to calculate goodness of fit statistics, default is 1, i.e. for all genes.}
 
-\item{min.libsize}{The minimum raw read counts per sample, default is \code{1000}.}
-
-\item{verbose}{Logical value to indicate whether to show progress report of simulations.}
+\item{verbose}{Logical value to indicate whether to print function information.
+Default is \code{TRUE}.}
 }
 \value{
 List object with the results of goodness of fit and estimated parameters:
@@ -62,14 +77,17 @@ With this function, the user can determine goodness of fit for each gene.
 }
 \examples{
 \dontrun{
-## using example data set
-data(kolodziejczk_cnts)
-evaldist <- evaluateDist(countData = kolodziejczk_cnts,
-RNAseq = "singlecell", Normalisation="scran",
-frac.genes=1, min.meancount = 0.1,
-max.dropout=0.7, min.libsize=1000,
-verbose = TRUE)
-plotEvalDist(evaldist, annot = TRUE)
+## using example data set, but run it for fraction of genes
+data("CELseq2_Gene_UMI_Counts")
+evalDistRes <- evaluateDist(countData = CELseq2_Gene_UMI_Counts, batchData = NULL,
+                            spikeData = NULL, spikeInfo = NULL,
+                            Lengths = NULL, MeanFragLengths = NULL,
+                            RNAseq = "singlecell", Protocol = "UMI",
+                            Normalisation = "scran",
+                            GeneFilter = 0.1, SampleFilter = 3,
+                            FracGenes = 0.1,
+                            verbose = TRUE)
+plotEvalDist(evalDistRes)
 }
 }
 \author{

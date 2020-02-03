@@ -4,12 +4,12 @@
 \alias{plotEvalDist}
 \title{Visualize distribution assessment}
 \usage{
-plotEvalDist(evalDist, annot=TRUE)
+plotEvalDist(evalDistRes, Annot=TRUE)
 }
 \arguments{
-\item{evalDist}{The output of \code{\link{evaluateDist}}.}
+\item{evalDistRes}{The output of \code{\link{evaluateDist}}.}
 
-\item{annot}{A logical vector. If \code{TRUE}, a short description of the plot is included.}
+\item{Annot}{A logical vector. If \code{TRUE}, a short description of the plot is included.}
 }
 \value{
 A ggplot object.
@@ -19,14 +19,17 @@ This function plots the results of \code{\link{evaluateDist}} to assess goodness
 }
 \examples{
 \dontrun{
-## using example data set
-data(kolodziejczk_cnts)
-evaldist <- evaluateDist(countData = kolodziejczk_cnts,
-RNAseq = "singlecell", ="scran",
-frac.genes=1, min.meancount = 0.1,
-max.dropout=0.7, min.libsize=1000,
-verbose = TRUE)
-plotEvalDist(evaldist, annot = TRUE)
+## using example data set, but run it for fraction of genes
+data("CELseq2_Gene_UMI_Counts")
+evalDistRes <- evaluateDist(countData = CELseq2_Gene_UMI_Counts, batchData = NULL,
+                            spikeData = NULL, spikeInfo = NULL,
+                            Lengths = NULL, MeanFragLengths = NULL,
+                            RNAseq = "singlecell", Protocol = "UMI",
+                            Normalisation = "scran",
+                            GeneFilter = 0.1, SampleFilter = 3,
+                            FracGenes = 0.1,
+                            verbose = TRUE)
+plotEvalDist(evalDistRes)
 }
 }
 \author{

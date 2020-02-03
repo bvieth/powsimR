@@ -2,6 +2,7 @@
 
 #' @importFrom SingleCellExperiment SingleCellExperiment
 #' @importFrom scater isOutlier calcAverage
+#' @importFrom BiocGenerics counts
 .run.checkup <- function(countData,
                          readData,
                          batchData,
@@ -182,7 +183,7 @@
                    detectS, " out of ",
                    totalS," ", samplename, " and ",
                    detectG, " out of ",
-                   totalG, " genes with at least 1 read count."))
+                   totalG, " genes with at least 1 count."))
   }
 
   if(!is.null(Lengths)) {
@@ -317,6 +318,7 @@
                          verbose=verbose)
 
   # parameters: mean, dispersion, dropout
+  if(verbose) {message('Estimating moments.')}
 
   # raw data
   RawData <- countData
@@ -372,12 +374,13 @@
                     'DropSample' = dropcell.params)
 
   # fitting: mean vs dispersion, mean vs dropout
+  if(verbose) {message('Fitting models.')}
 
   # full data
   RawFit <- .run.fits(ParamData = raw.params,
-                       Distribution = Distribution,
-                       RNAseq = RNAseq,
-                       sigma = sigma)
+                      Distribution = Distribution,
+                      RNAseq = RNAseq,
+                      sigma = sigma)
 
   # full data
   FullFit <- .run.fits(ParamData = full.params,
@@ -618,19 +621,24 @@
 # Fitting -----------------------------------------------------------------
 
 #' @importFrom reshape2 melt
+#' @importFrom rlang .data
 #' @importFrom dplyr inner_join rename filter distinct
 #' @importFrom magrittr %>%
 .run.fit.readumi <- function(countData, readData){
   # combine umi and read count matrices, keep unique combis, log transform
   umi.dat <- reshape2::melt(as.matrix(countData))
   read.dat <- reshape2::melt(as.matrix(readData))
+  vars <- c(UMI = "value.x", Read ="value.y",
+            GeneID = "Var1", SampleID = 'Var2')
+  UMI <- Read <- NULL
+  suppressWarnings(suppressMessages(
   count.dat <- dplyr::inner_join(x = umi.dat, y = read.dat,
-                                 by = c(Var1 = "Var1", Var2 = "Var2")) %>%
-    dplyr::rename(UMI = value.x, Read = value.y, GeneID = Var1, SampleID = Var2) %>%
-    dplyr::filter(UMI > 0 , Read > 0) %>%
-    dplyr::filter(UMI <= Read) %>% # I needed to put this in for kallisto!
+                    by = c(Var1 = "Var1", Var2 = "Var2")) %>%
+    dplyr::rename(!!vars) %>%
+    dplyr::filter(UMI > 0 & Read > 0) %>%
+    dplyr::filter(UMI <= Read) %>%
     dplyr::distinct(UMI, Read, .keep_all = TRUE)
-
+  ))
   lUMI <- log10(count.dat$UMI+1)
   lRead <- log10(count.dat$Read+1)
   lRatio <- lRead / lUMI
@@ -871,7 +879,7 @@
     cobs.predict.nonamplified <- as.data.frame(stats::predict(cobs.fit.nonamplified, cobs.sim.nonamplified))
     cobs.predict.nonamplified[,"fit"] <- ifelse(cobs.predict.nonamplified$fit < 0, 0, cobs.predict.nonamplified[,"fit"])
     cobs.predict.nonamplified <- cobs.predict.nonamplified[cobs.predict.nonamplified[,'fit'] < 0.05,]
-    g0.cut.nonamplified <- log(10)
+    g0.cut.nonamplified <- log1p(10)
     nonamplified.dat <- cbind.data.frame(lmu.nonamplified, g0.nonamplified)
     nonamplified.dat <- nonamplified.dat[stats::complete.cases(nonamplified.dat),]
     nonamplified.dat <- nonamplified.dat[nonamplified.dat$lmu.nonamplified<g0.cut.nonamplified,]

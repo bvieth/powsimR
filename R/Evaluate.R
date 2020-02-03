@@ -4,12 +4,13 @@
 #' @aliases evaluateDist
 #' @title Model Diagnostics for RNAseq Data
 #' @description With this function, the user can determine goodness of fit for each gene.
-#' @usage evaluateDist(countData, batchData =NULL,
+#' @usage evaluateDist(countData, batchData = NULL,
 #' spikeData = NULL, spikeInfo = NULL,
 #' Lengths = NULL, MeanFragLengths = NULL,
-#' RNAseq, Normalisation,
-#' frac.genes=1, min.meancount = 0.1,
-#' max.dropout=0.7, min.libsize=1000,
+#' RNAseq = "singlecell", Protocol,
+#' Normalisation,
+#' GeneFilter = 0.25, SampleFilter = 3,
+#' FracGenes = 1,
 #' verbose = TRUE)
 #' @param countData is a count matrix (row=gene, column=sample).
 #' Please provide the measurements of one group only, e.g. the control group.
@@ -19,22 +20,36 @@
 #' @param spikeData is a count \code{matrix}.
 #' Rows correspond to spike-ins, columns to samples.
 #' The order of columns should be the same as in the \code{countData}.
+#' This is only needed for spike-in aware normalisation methods ('MR', 'Linnorm', 'scran', 'SCnorm', 'bayNorm', 'Census'),
+#' see details section of \code{\link{estimateParam}}.
 #' @param spikeInfo is a molecule count \code{matrix} of spike-ins.
 #' Rows correspond to spike-ins. The order of rows should be the same as in the \code{spikeData}.
 #' The column names should be 'SpikeID' and 'SpikeInput' for molecule counts of spike-ins.
+#' This is only needed for spike-in aware normalisation methods ('MR', 'Linnorm', 'scran', 'SCnorm', 'bayNorm', 'Census'),
+#' see details section of \code{\link{estimateParam}}.
 #' @param Lengths is a numeric vector of transcript lengths with the same length and order as the rows in countData.
-#' This variable is only used for internal TPM calculations if Census normalization is specified.
+#' This variable is only needed for internal gene length corrections (TPM), see details section of \code{\link{estimateParam}}.
 #' @param MeanFragLengths is a numeric vector of mean fragment lengths with the same length as columns in countData.
-#' This variable is only used for internal TPM calculations if Census normalization is specified.
-#' @param RNAseq is a character value: "bulk" or "singlecell".
+#' This variable is only needed for internal gene length corrections (TPM), see details section of \code{\link{estimateParam}}.
+#' @param RNAseq is a character value: "bulk" or "singlecell". We recommended to use this evaluaiton for single cells only.
+#' @param Protocol is a character value defining the type of counts given in \code{countData}.
+#' Options are "UMI" (e.g. 10X Genomics, CEL-seq2) or "Read" (e.g. Smart-seq2).
 #' @param Normalisation is a character value: 'TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm',
-#' 'SCnorm', 'RUV', 'Census', 'depth', 'none'.
+#' 'SCnorm', 'Census', 'depth', 'none'.
 #' For more information, please consult the details section of \code{\link{estimateParam}}.
-#' @param frac.genes The fraction of genes to calculate goodness of fit statistics, default is 1, i.e. for all genes.
-#' @param min.meancount The minimum mean normalised count per gene if fraction of genes are defined. Default is \code{0.1}.
-#' @param max.dropout The maximal percentage of zero expression per gene. Genes with more than \code{max.dropout} will be remove. Default is \code{0.7}, i.e. genes with more than 70\% dropouts.
-#' @param min.libsize The minimum raw read counts per sample, default is \code{1000}.
-#' @param verbose Logical value to indicate whether to show progress report of simulations.
+#' @param GeneFilter is a numeric vector indicating the minimal proportion of nonzero expression values
+#' for a gene across all samples to be considered expressed and used for estimating normalisation size factors.
+#' The default is \code{0.25}, i.e. at least 25\% of the expression values per gene need to be nonzero.
+#' @param SampleFilter is a numeric vector indicating the minimal number of MADs (median absolute deviation)
+#' away from the median number of features detected as well as sequencing depth across all samples
+#' so that outlying samples are removed prior to normalisation.
+#' The default is \code{5}, i.e. at least 5 MADs away from the median.
+#' Choose higher values if you wsant to filter out less samples.
+#' This parameter is particularly important for single cells to ensure reliable parameter estimation.
+#' For more information, please consult \code{\link[scater]{isOutlier}}.
+#' @param FracGenes The fraction of genes to calculate goodness of fit statistics, default is 1, i.e. for all genes.
+#' @param verbose Logical value to indicate whether to print function information.
+#' Default is \code{TRUE}.
 #' @return List object with the results of goodness of fit and estimated parameters:
 #' \item{edgeR}{Goodness-of-fit statistic, degrees of freedom and associated p-value using the deviance and residual degrees of freedom from \code{\link[edgeR]{glmFit}}. Furthermore, the AIC of the edgeR model fit using the residuals of \code{\link[edgeR]{zscoreNBinom}}.}
 #' \item{GOF}{The fitting results per distribution, including loglikelihood, goodness-of-fit statistics, AIC and predicted number of zeroes. The following distributions were considered: Poisson, negative binomial, zero-inflated poisson and negative binomial following the 'standard' (i.e. \code{\link[stats]{glm}}, \code{\link[MASS]{glm.nb}} and \code{\link[pscl]{zeroinfl}} implementation) and fitdist approach (see \code{\link[fitdistrplus]{fitdist}}) and Beta-Poisson following Marioni or Hemberg parameterisation. Furthermore, model fit comparison by LRT for nested and Vuong Test for non-nested models.}
@@ -42,14 +57,17 @@
 #' \item{ObservedZeros}{The number of zeroes and dropout rate per gene.}
 #' @examples
 #' \dontrun{
-#' ## using example data set
-#' data(kolodziejczk_cnts)
-#' evaldist <- evaluateDist(countData = kolodziejczk_cnts,
-#' RNAseq = "singlecell", Normalisation="scran",
-#' frac.genes=1, min.meancount = 0.1,
-#' max.dropout=0.7, min.libsize=1000,
-#' verbose = TRUE)
-#' plotEvalDist(evaldist, annot = TRUE)
+#' ## using example data set, but run it for fraction of genes
+#' data("CELseq2_Gene_UMI_Counts")
+#' evalDistRes <- evaluateDist(countData = CELseq2_Gene_UMI_Counts, batchData = NULL,
+#'                             spikeData = NULL, spikeInfo = NULL,
+#'                             Lengths = NULL, MeanFragLengths = NULL,
+#'                             RNAseq = "singlecell", Protocol = "UMI",
+#'                             Normalisation = "scran",
+#'                             GeneFilter = 0.1, SampleFilter = 3,
+#'                             FracGenes = 0.1,
+#'                             verbose = TRUE)
+#' plotEvalDist(evalDistRes)
 #' }
 #' @author Beate Vieth
 #' @rdname evaluateDist
@@ -61,12 +79,13 @@
 #' @importFrom gamlss.dist ZIP ZINBI
 #' @importFrom nonnest2 vuongtest
 #' @export
-evaluateDist <- function(countData, batchData =NULL,
+evaluateDist <- function(countData, batchData = NULL,
                          spikeData = NULL, spikeInfo = NULL,
                          Lengths = NULL, MeanFragLengths = NULL,
-                         RNAseq, Normalisation,
-                         frac.genes=1, min.meancount = 0.1,
-                         max.dropout=0.7, min.libsize=1000,
+                         RNAseq = "singlecell", Protocol,
+                         Normalisation,
+                         GeneFilter = 0.25, SampleFilter = 3,
+                         FracGenes = 1,
                          verbose = TRUE) {
 
   invisible(gamlss.dist::ZINBI())
@@ -74,65 +93,73 @@ evaluateDist <- function(countData, batchData =NULL,
 
   options(stringsAsFactors = F)
 
-  # check the matching of names
-  checkup <- .run.checkup(countData = countData,
-                          batchData = batchData,
-                          spikeData = spikeData,
-                          spikeInfo = spikeInfo,
-                          Lengths = Lengths,
-                          MeanFragLengths = MeanFragLengths,
-                          RNAseq = RNAseq,
-                          verbose=verbose)
+  # check the matching of names and objects
+  checkup = .run.checkup(countData = countData,
+                         readData = NULL,
+                         batchData = batchData,
+                         spikeData = spikeData,
+                         spikeInfo = spikeInfo,
+                         Lengths = Lengths,
+                         MeanFragLengths = MeanFragLengths,
+                         RNAseq = RNAseq,
+                         verbose = TRUE)
 
+  # extract checked objects
   countData <- checkup$countData
+  readData <- checkup$readData
   batchData <- checkup$batchData
   spikeData <- checkup$spikeData
   spikeInfo <- checkup$spikeInfo
   Lengths <- checkup$Lengths
   MeanFragLengths <- checkup$MeanFragLengths
-
-  # kick out dropout genes and very small libs
-  nsamples = ncol(countData)
-  counts0 = countData == 0
-  nn0 = rowSums(!counts0)
-  p0 = (nsamples - nn0)/nsamples
-  highE <- p0 < max.dropout
-  fullS <- colSums(countData) > min.libsize
-
-  countData <- countData[highE,fullS]
-  batchData <- batchData[fullS,]
-  Lengths <- Lengths[highE]
-  MeanFragLengths <- MeanFragLengths[fullS]
+  Label <- ifelse(is.null(batchData), "none", "known")
 
   # run estimation
   estParam = .run.estParam(countData = countData,
+                           readData = NULL,
                            batchData = batchData,
                            spikeData = spikeData,
                            spikeInfo = spikeInfo,
                            Lengths = Lengths,
                            MeanFragLengths = MeanFragLengths,
-                           Distribution = 'NB',
+                           Distribution = "NB",
                            RNAseq = RNAseq,
+                           Protocol = Protocol,
                            Normalisation = Normalisation,
-                           Label = "none",
+                           Label = Label,
+                           GeneFilter = GeneFilter,
+                           SampleFilter = SampleFilter,
                            sigma = 1.96,
                            NCores = NULL,
-                           verbose=verbose)
+                           verbose = FALSE)
 
-  countData <- countData[,colnames(countData) %in% names(estParam$seqDepth)]
+  # kick out dropouts
+  detect.samples <- rownames(estParam$DropOuts$Sample)[rowSums(estParam$DropOuts$Sample[,c(1:3)], na.rm = TRUE) == 0L]
+  detect.genes <- rownames(countData[rowSums(countData)>1,])
+  filt.genes <- names(estParam$DropOuts$Gene)[!estParam$DropOuts$Gene]
+
+  # inform user
+  if(verbose){
+    sampletype <- ifelse(RNAseq == "singlecell", "single cells", "bulk samples")
+    message(paste0("The count matrix contains the expression of ", length(detect.genes), " genes with at least one count profiled across ", ncol(countData), " ",  sampletype, ". ", length(filt.genes), " genes and ", length(detect.samples), " ", sampletype, " passed the filtering and were used for estimating normalisation factors with ", Normalisation, "."))
+  }
+
+  # fill in size factors and use only detected genes
+  sf <- structure(colSums(countData) / median(colSums(countData)), names = colnames(countData))
+  sf[names(estParam$sf)] <- estParam$sf
+  countData <- countData[rownames(countData) %in% detect.genes, ]
 
   # set up dge edgeR
-  sf <- estParam$sf
-  sf[sf<0] <- min(sf[sf > 0])
-  nsf <- log(sf/estParam$seqDepth)
-  nsf <- exp(nsf - mean(nsf, na.rm=T))
+  seq.depth <- colSums(countData)
+  nsf <- log(sf/seq.depth)
+  nsf <- exp(nsf - mean(nsf, na.rm=TRUE))
   # construct input object
   dge <- edgeR::DGEList(counts = countData,
                         lib.size = colSums(countData),
                         norm.factors = nsf,
                         remove.zeros = FALSE)
   # calculate normalized counts (if norm lib is true does not sum up to 1 million)
-  out.cpm <- edgeR::cpm.DGEList(dge, normalized.lib.sizes = T, log = F)
+  out.cpm <- edgeR::cpm.DGEList(dge, normalized.lib.sizes = TRUE, log = FALSE)
   # estimate dispersions
   invisible(capture.output(
     dge <- suppressMessages(edgeR::estimateDisp(y=dge))
@@ -173,26 +200,28 @@ evaluateDist <- function(countData, batchData =NULL,
   headers_tmp4 <- c('LRT_standard_NBPoisson', 'Vuong_standard_ZPoisson', 'Vuong_standard_ZNB', 'Vuong_standard_ZNBZPoisson')
   headersgof <- c(headers_tmp1, headers_tmp2, headers_tmp3, headers_tmp4)
 
-  gof.res <- data.frame(matrix(vector(), length(genenames), length(headersgof),
-                               dimnames=list(c(genenames), c(headersgof))))
+  gof.res <- data.frame(matrix(NA, length(genenames), length(headersgof),
+                               dimnames=list(c(genenames), c(headersgof))),
+                        stringsAsFactors = F)
 
   headersests <- c("pois_lambda", "nbinom_size", "nbinom_mu", "zifpois_mu", "zifpois_sigma", "zifnbinom_mu", "zifnbinom_sigma", "zifnbinom_nu", 'alpha_bp_hemberg', 'alpha_bp_marioni', 'beta_bp_hemberg', 'beta_bp_marioni', 'gamma_bp_hemberg', 'gamma_bp_marioni')
-  estimate.res <- data.frame(matrix(vector(), length(genenames), length(headersests),
-                                    dimnames=list(c(genenames), c(headersests))))
+  estimate.res <- data.frame(matrix(NA, length(genenames), length(headersests),
+                                    dimnames=list(c(genenames), c(headersests))),
+                             stringsAsFactors = F)
 
   # run model fits for the genes
-  if(frac.genes==1) {
+  if(FracGenes==1) {
     geneid <- 1:nrow(dge$counts)
   }
-  if(!frac.genes==1) { # take fraction of genes per mean bins
+  if(!FracGenes==1) { # take fraction of genes per mean bins
     meancnts = rowMeans(out.cpm)
     tmp.ecdf.mean = stats::ecdf(meancnts)
     tmp.quantile.mean = stats::quantile(tmp.ecdf.mean, probs=c(0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 0.9))
-    qbins.mean = c(min.meancount,unname(tmp.quantile.mean),Inf)
+    qbins.mean = unique(c(min(meancnts, na.rm = TRUE),unname(tmp.quantile.mean),Inf))
     bin.mean = cut(meancnts, qbins.mean)
     geneid = unname(unlist(sapply(levels(bin.mean), function(x) {
       tmp.group <- genenames[(bin.mean %in% x)]
-      tmp.id <- sample(tmp.group, size= round(frac.genes*length(tmp.group)), replace = F)
+      tmp.id <- sample(tmp.group, size= round(FracGenes*length(tmp.group)), replace = F)
     })))
   }
 
@@ -239,78 +268,101 @@ evaluateDist <- function(countData, batchData =NULL,
 
     # fill up results table
     # poisson
-    if(inherits(tmp.fit.pois, 'try-error')) gof.res[i, grep("^pois_standard", colnames(gof.res), perl=TRUE)] <- NA
-    else{pois.gof.stats <- .myGOF(deviances = tmp.fit.pois$deviance, df.residuals =  tmp.fit.pois$df.residual)
-    pois.predzero <- round(sum(stats::dpois(0, stats::fitted(tmp.fit.pois))))
-    pois.aic <- stats::AIC(tmp.fit.pois)
-    pois.loglik <- as.numeric(logLik(tmp.fit.pois))
-    pois.loglikdf <- as.numeric(attr(logLik(tmp.fit.pois), "df"))
-    gof.res[i, grep("^pois_standard", colnames(gof.res), perl=TRUE)] <-  cbind(pois.loglik, pois.loglikdf, pois.gof.stats, pois.predzero, pois.aic)
-    }
+    if(inherits(tmp.fit.pois, 'try-error')) {
+      gof.res[i, grep("^pois_standard", colnames(gof.res), perl=TRUE)] <- NA
+    } else {
+      pois.gof.stats <- .myGOF(deviances = tmp.fit.pois$deviance, df.residuals =  tmp.fit.pois$df.residual)
+      pois.predzero <- round(sum(stats::dpois(0, stats::fitted(tmp.fit.pois))))
+      pois.aic <- stats::AIC(tmp.fit.pois)
+      pois.loglik <- as.numeric(logLik(tmp.fit.pois))
+      pois.loglikdf <- as.numeric(attr(logLik(tmp.fit.pois), "df"))
+      gof.res[i, grep("^pois_standard", colnames(gof.res), perl=TRUE)] <- cbind(pois.loglik, pois.loglikdf, pois.gof.stats, pois.predzero, pois.aic)
+      }
     # poisson with fitdistr
-    if(inherits(tmp.fit.pois.wo, 'try-error')) gof.res[i, grep("^pois_fitdistr", colnames(gof.res), perl=TRUE)] <- NA
-    else{pois.gof.fitdistr <- try(.fitdistrplusGOF(fitdistobj=tmp.fit.pois.wo), silent=T)
-    if(inherits(pois.gof.fitdistr, 'try-error')) {
-      gof.res[i, grep("^pois_fitdistr", colnames(gof.res), perl=TRUE)] <-  NA
-    } else{
-      gof.res[i, grep("^pois_fitdistr", colnames(gof.res), perl=TRUE)] <-  cbind(pois.gof.fitdistr)
-      estimate.res[i, grep("^pois_", colnames(estimate.res), perl=TRUE)] <- tmp.fit.pois.wo$estimate
-    }
+    if(inherits(tmp.fit.pois.wo, 'try-error')) {
+      gof.res[i, grep("^pois_fitdistr", colnames(gof.res), perl=TRUE)] <- NA
+    } else {
+      pois.gof.fitdistr <- try(.fitdistrplusGOF(fitdistobj=tmp.fit.pois.wo), silent=T)
+      if(inherits(pois.gof.fitdistr, 'try-error')) {
+        gof.res[i, grep("^pois_fitdistr", colnames(gof.res), perl=TRUE)] <-  NA
+      } else {
+        gof.res[i, grep("^pois_fitdistr", colnames(gof.res), perl=TRUE)] <-  cbind(pois.gof.fitdistr)
+        estimate.res[i, grep("^pois_", colnames(estimate.res), perl=TRUE)] <- tmp.fit.pois.wo$estimate
+      }
     }
     # neg binom
-    if(inherits(tmp.fit.nbinom, 'try-error')) gof.res[i, grep("^nbinom_standard", colnames(gof.res), perl=TRUE)] <- NA
-    else{nbinom.gof.stats <- .myGOF(deviances = tmp.fit.nbinom$deviance, df.residuals =  tmp.fit.nbinom$df.residual)
-    nbinom.predzero <- round(sum(stats::dnbinom(0, mu = stats::fitted(tmp.fit.nbinom), size = tmp.fit.nbinom$theta)))
-    nbinom.aic <- stats::AIC(tmp.fit.nbinom)
-    nbinom.loglik <- as.numeric(logLik(tmp.fit.nbinom))
-    nbinom.loglikdf <- as.numeric(attr(logLik(tmp.fit.nbinom), "df"))
-    gof.res[i, grep("^nbinom_standard", colnames(gof.res), perl=TRUE)] <-  cbind(nbinom.loglik, nbinom.loglikdf, nbinom.gof.stats, nbinom.predzero, nbinom.aic)}
+    if(inherits(tmp.fit.nbinom, 'try-error')) {
+      gof.res[i, grep("^nbinom_standard", colnames(gof.res), perl=TRUE)] <- NA
+    } else {
+      nbinom.gof.stats <- .myGOF(deviances = tmp.fit.nbinom$deviance, df.residuals =  tmp.fit.nbinom$df.residual)
+      nbinom.predzero <- round(sum(stats::dnbinom(0, mu = stats::fitted(tmp.fit.nbinom), size = tmp.fit.nbinom$theta)))
+      nbinom.aic <- stats::AIC(tmp.fit.nbinom)
+      nbinom.loglik <- as.numeric(logLik(tmp.fit.nbinom))
+      nbinom.loglikdf <- as.numeric(attr(logLik(tmp.fit.nbinom), "df"))
+      gof.res[i, grep("^nbinom_standard", colnames(gof.res), perl=TRUE)] <- cbind(nbinom.loglik, nbinom.loglikdf, nbinom.gof.stats, nbinom.predzero, nbinom.aic)
+    }
     # neg binom with fitdistr
-    if(inherits(tmp.fit.nbinom.wo, 'try-error')) gof.res[i, grep("^nbinom_fitdistr", colnames(gof.res), perl=TRUE)] <- NA
-    else{nbinom.gof.fitdistr <- try(.fitdistrplusGOF(fitdistobj=tmp.fit.nbinom.wo), silent=T)
-    if(inherits(nbinom.gof.fitdistr, 'try-error')) {
-      gof.res[i, grep("^nbinom_fitdistr", colnames(gof.res), perl=TRUE)] <-  NA
-    } else{
-      gof.res[i, grep("^nbinom_fitdistr", colnames(gof.res), perl=TRUE)] <-  cbind(nbinom.gof.fitdistr)
-      estimate.res[i, grep("^nbinom_", colnames(estimate.res), perl=TRUE)] <- tmp.fit.nbinom.wo$estimate
-    }}
+    if(inherits(tmp.fit.nbinom.wo, 'try-error')) {
+      gof.res[i, grep("^nbinom_fitdistr", colnames(gof.res), perl=TRUE)] <- NA
+    } else {
+      nbinom.gof.fitdistr <- try(.fitdistrplusGOF(fitdistobj=tmp.fit.nbinom.wo), silent=T)
+      if(inherits(nbinom.gof.fitdistr, 'try-error')) {
+        gof.res[i, grep("^nbinom_fitdistr", colnames(gof.res), perl=TRUE)] <-  NA
+      } else {
+        gof.res[i, grep("^nbinom_fitdistr", colnames(gof.res), perl=TRUE)] <-  cbind(nbinom.gof.fitdistr)
+        estimate.res[i, grep("^nbinom_", colnames(estimate.res), perl=TRUE)] <- tmp.fit.nbinom.wo$estimate
+      }
+    }
     # zero inflated poisson
-    if(inherits(tmp.fit.zifpois, 'try-error')) gof.res[i, grep("^zifpois_standard", colnames(gof.res), perl=TRUE)] <- NA
-    else{zifpois.predzero <- round(sum(predict(tmp.fit.zifpois, type = "prob")[, 1]))
-    zifpois.aic <- stats::AIC(tmp.fit.zifpois)
-    zifpois.loglik <- as.numeric(logLik(tmp.fit.zifpois))
-    zifpois.loglikdf <- as.numeric(attr(logLik(tmp.fit.zifpois), "df"))
-    zifpois.gof.stats <- .myGOF(deviances = -2*logLik(tmp.fit.zifpois), df.residuals =  length(dge$counts[i,]-2))
-    gof.res[i, grep("^zifpois_standard", colnames(gof.res), perl=TRUE)] <-  cbind(zifpois.loglik, zifpois.loglikdf, zifpois.gof.stats, zifpois.predzero, zifpois.aic)}
+    if(inherits(tmp.fit.zifpois, 'try-error')) {
+      gof.res[i, grep("^zifpois_standard", colnames(gof.res), perl=TRUE)] <- NA
+    } else {
+      zifpois.predzero <- round(sum(predict(tmp.fit.zifpois, type = "prob")[, 1]))
+      zifpois.aic <- stats::AIC(tmp.fit.zifpois)
+      zifpois.loglik <- as.numeric(logLik(tmp.fit.zifpois))
+      zifpois.loglikdf <- as.numeric(attr(logLik(tmp.fit.zifpois), "df"))
+      zifpois.gof.stats <- .myGOF(deviances = -2*logLik(tmp.fit.zifpois), df.residuals =  length(dge$counts[i,]-2))
+      gof.res[i, grep("^zifpois_standard", colnames(gof.res), perl=TRUE)] <- cbind(zifpois.loglik, zifpois.loglikdf, zifpois.gof.stats, zifpois.predzero, zifpois.aic)
+    }
     # zero inflated poisson with fitdistr
-    if(inherits(tmp.fit.zifpois.wo, 'try-error')) gof.res[i, grep("^zifpois_fitdistr", colnames(gof.res), perl=TRUE)] <- NA
-    else{zifpois.gof.fitdistr <- try(.fitdistrplusGOF(fitdistobj=tmp.fit.zifpois.wo), silent=T)
-    if(inherits(zifpois.gof.fitdistr, 'try-error')) {
-      gof.res[i, grep("^zifpois_fitdistr", colnames(gof.res), perl=TRUE)] <-  NA
-    } else{
-      gof.res[i, grep("^zifpois_fitdistr", colnames(gof.res), perl=TRUE)] <-  cbind(zifpois.gof.fitdistr)
-      estimate.res[i, grep("^zifpois_", colnames(estimate.res), perl=TRUE)] <- tmp.fit.zifpois.wo$estimate
-    }}
+    if(inherits(tmp.fit.zifpois.wo, 'try-error')) {
+      gof.res[i, grep("^zifpois_fitdistr", colnames(gof.res), perl=TRUE)] <- NA
+    } else {
+      zifpois.gof.fitdistr <- try(.fitdistrplusGOF(fitdistobj=tmp.fit.zifpois.wo), silent=T)
+      if(inherits(zifpois.gof.fitdistr, 'try-error')) {
+        gof.res[i, grep("^zifpois_fitdistr", colnames(gof.res), perl=TRUE)] <-  NA
+      } else {
+        gof.res[i, grep("^zifpois_fitdistr", colnames(gof.res), perl=TRUE)] <-  cbind(zifpois.gof.fitdistr)
+        estimate.res[i, grep("^zifpois_", colnames(estimate.res), perl=TRUE)] <- tmp.fit.zifpois.wo$estimate
+      }
+    }
     # zero inflated neg binom
-    if(inherits(tmp.fit.zifnbinom, 'try-error')) gof.res[i, grep("^zifnbinom_standard", colnames(gof.res), perl=TRUE)] <- NA
-    else{zifnbinom.predzero <- round(sum(predict(tmp.fit.zifnbinom, type = "prob")[, 1]))
-    zifnbinom.aic <- stats::AIC(tmp.fit.zifnbinom)
-    zifnbinom.loglik <- as.numeric(logLik(tmp.fit.zifnbinom))
-    zifnbinom.loglikdf <- as.numeric(attr(logLik(tmp.fit.zifnbinom), "df"))
-    zifnbinom.gof.stats <- .myGOF(deviances = -2*logLik(tmp.fit.zifnbinom), df.residuals =  length(dge$counts[i,]-1))
-    gof.res[i, grep("^zifnbinom_standard", colnames(gof.res), perl=TRUE)]  <-  cbind(zifnbinom.loglik, zifnbinom.loglikdf, zifnbinom.gof.stats, zifnbinom.predzero, zifnbinom.aic)}
+    if(inherits(tmp.fit.zifnbinom, 'try-error')) {
+      gof.res[i, grep("^zifnbinom_standard", colnames(gof.res), perl=TRUE)] <- NA
+    } else {
+      zifnbinom.predzero <- round(sum(predict(tmp.fit.zifnbinom, type = "prob")[, 1]))
+      zifnbinom.aic <- stats::AIC(tmp.fit.zifnbinom)
+      zifnbinom.loglik <- as.numeric(logLik(tmp.fit.zifnbinom))
+      zifnbinom.loglikdf <- as.numeric(attr(logLik(tmp.fit.zifnbinom), "df"))
+      zifnbinom.gof.stats <- .myGOF(deviances = -2*logLik(tmp.fit.zifnbinom), df.residuals =  length(dge$counts[i,]-1))
+      gof.res[i, grep("^zifnbinom_standard", colnames(gof.res), perl=TRUE)]  <-  cbind(zifnbinom.loglik, zifnbinom.loglikdf, zifnbinom.gof.stats, zifnbinom.predzero, zifnbinom.aic)
+    }
     # zero inflated neg binom with fitdistr
-    if(inherits(tmp.fit.zifnbinom.wo, 'try-error')) gof.res[i, grep("^zifnbinom_fitdistr", colnames(gof.res), perl=TRUE)] <- NA
-    else{zifnbinom.gof.fitdistr <- try(.fitdistrplusGOF(fitdistobj=tmp.fit.zifnbinom.wo), silent=T)
-    if(inherits(zifnbinom.gof.fitdistr, 'try-error')) {
-      gof.res[i, grep("^zifnbinom_fitdistr", colnames(gof.res), perl=TRUE)] <-  NA
-    } else{
-      gof.res[i, grep("^zifnbinom_fitdistr", colnames(gof.res), perl=TRUE)] <-  cbind(zifnbinom.gof.fitdistr)
-      estimate.res[i, grep("^zifnbinom_", colnames(estimate.res), perl=TRUE)] <- tmp.fit.zifnbinom.wo$estimate
-    }}
+    if(inherits(tmp.fit.zifnbinom.wo, 'try-error')) {
+      gof.res[i, grep("^zifnbinom_fitdistr", colnames(gof.res), perl=TRUE)] <- NA
+    } else {
+      zifnbinom.gof.fitdistr <- try(.fitdistrplusGOF(fitdistobj=tmp.fit.zifnbinom.wo), silent=T)
+      if(inherits(zifnbinom.gof.fitdistr, 'try-error')) {
+        gof.res[i, grep("^zifnbinom_fitdistr", colnames(gof.res), perl=TRUE)] <-  NA
+      } else {
+        gof.res[i, grep("^zifnbinom_fitdistr", colnames(gof.res), perl=TRUE)] <-  cbind(zifnbinom.gof.fitdistr)
+        estimate.res[i, grep("^zifnbinom_", colnames(estimate.res), perl=TRUE)] <- tmp.fit.zifnbinom.wo$estimate
+      }
+    }
     # LR Test for NB > P ?
     if(all(!inherits(tmp.fit.pois, 'try-error') && !inherits(tmp.fit.nbinom, 'try-error'))) {
-      tmp.lrt.nbp = try(pchisq(as.numeric(2 * (logLik(tmp.fit.nbinom) - logLik(tmp.fit.pois))), df = 1, lower.tail = FALSE), silent=T)
+      tmp.lrt.nbp = try(pchisq(as.numeric(2 * (logLik(tmp.fit.nbinom) - logLik(tmp.fit.pois))),
+                               df = 1, lower.tail = FALSE), silent=T)
       if(!inherits(tmp.lrt.nbp, 'try-error')) {
         gof.res[i, grep("LRT_standard_NBPoisson", colnames(gof.res), perl=TRUE)] <- tmp.lrt.nbp
       }
@@ -337,9 +389,12 @@ evaluateDist <- function(countData, batchData =NULL,
     }
 
     # poisson beta fit
-    if(inherits(tmp.fit.pb, 'try-error')) gof.res[i, grep("^PoiBeta", colnames(gof.res))] <- NA
-    else{gof.res[i, grep("^PoiBeta", colnames(gof.res))] <- c(tmp.fit.pb$LogLikelihood.hemberg, 3, tmp.fit.pb$PredZero.hemberg, tmp.fit.pb$AIC.hemberg, tmp.fit.pb$LogLikelihood.marioni, 3, tmp.fit.pb$PredZero.marioni, tmp.fit.pb$AIC.marioni)
-    estimate.res[i,grep('bp', colnames(estimate.res), perl=TRUE)] <- cbind(tmp.fit.pb$bp.alpha.hemberg, tmp.fit.pb$bp.alpha.marioni, tmp.fit.pb$bp.beta.hemberg, tmp.fit.pb$bp.beta.marioni,tmp.fit.pb$bp.gamma.hemberg, tmp.fit.pb$bp.gamma.marioni)}
+    if(inherits(tmp.fit.pb, 'try-error')) {
+      gof.res[i, grep("^PoiBeta", colnames(gof.res))] <- NA
+    } else {
+      gof.res[i, grep("^PoiBeta", colnames(gof.res))] <- c(tmp.fit.pb$LogLikelihood.hemberg, 3, tmp.fit.pb$PredZero.hemberg, tmp.fit.pb$AIC.hemberg, tmp.fit.pb$LogLikelihood.marioni, 3, tmp.fit.pb$PredZero.marioni, tmp.fit.pb$AIC.marioni)
+    estimate.res[i,grep('bp', colnames(estimate.res), perl=TRUE)] <- cbind(tmp.fit.pb$bp.alpha.hemberg, tmp.fit.pb$bp.alpha.marioni, tmp.fit.pb$bp.beta.hemberg, tmp.fit.pb$bp.beta.marioni,tmp.fit.pb$bp.gamma.hemberg, tmp.fit.pb$bp.gamma.marioni)
+    }
 
   }
 
@@ -376,7 +431,8 @@ evaluateDist <- function(countData, batchData =NULL,
 #' stratify.by=c("mean", "dispersion", "dropout", "lfc"),
 #' strata.probs = c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9),
 #' filter.by=c("none", "mean", "dispersion", "dropout"),
-#' strata.filtered=1, target.by=c("lfc", "effectsize"), delta=0)
+#' strata.filtered=1, target.by=c("lfc", "effectsize"), delta=0,
+#' Table = TRUE)
 #' @param simRes The result from \code{\link{simulateDE}}.
 #' @param MTC Multiple testing correction method to use. Available options are
 #' 1) see \link[stats]{p.adjust.methods},
@@ -408,6 +464,7 @@ evaluateDist <- function(countData, batchData =NULL,
 #' Genes with absolute log2 fold changes (when target.by is "lfc")
 #' or effect sizes (when target.by is "effectsize") greater than this value
 #' are deemed DE in error rates calculations. If \code{delta=0} then no threshold is applied. See "Details" for more description.
+#' @param Table A logical vector. If the default \code{TRUE}, then a table of marginal error rates is printed additionally (see \code{\link{printEvalDE}}).
 #' @return A list with the following entries:
 #' \item{TN, TP, FP, FN, TNR, TPR, FPR, FNR, FDR}{3D array representing the number of true negatives, true positives, false positives,
 #' false negatives and their proportions/rates as well as false discovery rate
@@ -454,8 +511,43 @@ evaluateDist <- function(countData, batchData =NULL,
 #' \code{\link{plotEvalDE}} for visualisation.
 #' @examples
 #' \dontrun{
-#' data(kolodziejczk_simDE)
-#' eval.de <- evaluateDE(simRes = kolodziejczk_simDE)
+#' # estimate gene parameters
+#' data("Bulk_Read_Counts")
+#' data("GeneLengths_hg19")
+#' estparam_gene <- estimateParam(countData = Bulk_Read_Counts,
+#'                                readData = NULL,
+#'                                batchData = NULL,
+#'                                spikeData = NULL, spikeInfo = NULL,
+#'                                Lengths = GeneLengths_hg19, MeanFragLengths = NULL,
+#'                                RNAseq = 'bulk', Protocol = 'Read',
+#'                                Distribution = 'NB', Normalisation = "MR",
+#'                                GeneFilter = 0.25, SampleFilter = 3,
+#'                                sigma = 1.96, NCores = NULL, verbose = TRUE)
+#' # define log fold change
+#' p.lfc <- function(x) sample(c(-1,1), size=x,replace=T)*rgamma(x, shape = 2, rate = 2)
+#' # set up simulations
+#' setupres <- Setup(ngenes = 10000, nsims = 10,
+#'                   p.DE = 0.1, pLFC = p.lfc,
+#'                   n1 = c(3,6,12), n2 = c(3,6,12),
+#'                   Thinning = c(1,0.9,0.8), LibSize = 'given',
+#'                   estParamRes = estparam_gene,
+#'                   estSpikeRes = NULL,
+#'                   DropGenes = FALSE,
+#'                   sim.seed = 4379, verbose = TRUE)
+#' # run simulation
+#' simres <- simulateDE(SetupRes = setupres,
+#'                      Prefilter = NULL, Imputation = NULL,
+#'                      Normalisation = 'MR', Label = 'none',
+#'                      DEmethod = "limma-trend", DEFilter = FALSE,
+#'                      NCores = NULL, verbose = TRUE)
+#' # DE evaluation
+#' evalderes <- evaluateDE(simRes = simres, alpha.type="adjusted",
+#'                         MTC='BH', alpha.nominal=0.05,
+#'                         stratify.by = "lfc", filter.by = "mean",
+#'                         strata.filtered = 1,
+#'                         target.by = "lfc", delta = 0.25)
+#' plotEvalDE(evalRes = evalderes, rate = "marginal")
+#' plotEvalDE(evalRes = evalderes, rate = "conditional")
 #' }
 #' @rdname evaluateDE
 #' @importFrom stats ecdf quantile p.adjust.methods p.adjust
@@ -469,7 +561,8 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
                        strata.probs = c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9),
                        filter.by=c("none", "mean", "dispersion", "dropout"),
                        strata.filtered=1,
-                       target.by=c("lfc", "effectsize"), delta=0) {
+                       target.by=c("lfc", "effectsize"), delta=0,
+                       Table = TRUE) {
 
   alpha.type = match.arg(alpha.type)
   MTC = match.arg(MTC)
@@ -497,11 +590,11 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
   fdr = simRes$SimulateRes$fdr
 
   ## calculate strata
-  tmp.ecdf.mean = stats::ecdf(log2(estmeans+1))
+  tmp.ecdf.mean = stats::ecdf(log1p(estmeans))
   tmp.quantile.mean = stats::quantile(tmp.ecdf.mean, probs=strata.probs)
   strata.mean = unique(c(0,unname(tmp.quantile.mean),Inf))
   strata.mean = unique(round(strata.mean, digits=2))
-  tmp.ecdf.disps = stats::ecdf(log2(estdisps))
+  tmp.ecdf.disps = stats::ecdf(log1p(estdisps))
   tmp.quantile.disps = stats::quantile(tmp.ecdf.disps, probs=strata.probs)
   strata.disps = unique(c(0,unname(tmp.quantile.disps),Inf))
   strata.disps = unique(round(strata.disps, digits=2))
@@ -529,10 +622,19 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
     nr = length(strata.lfc) - 1
   }
   if(filter.by %in% c("mean", "dispersion", "dropout")) {
-    nr = nr - strata.filtered
+    if(filter.by == stratify.by){
+      nstrata = nr - strata.filtered
+    }
+    if(!filter.by == stratify.by){
+      nstrata = nr
+    }
+  }
+  if(filter.by == "none") {
+    nstrata = nr
   }
 
-  TP = TN =  FP = FN = TPR = TNR = FPR = FNR = FDR = xgrl = xgrld = array(NA,dim=c(nr,length(Nreps1), nsims))
+
+  TP = TN =  FP = FN = TPR = TNR = FPR = FNR = FDR = xgrl = xgrld = array(NA,dim=c(nstrata,length(Nreps1), nsims))
   TP.marginal = TN.marginal = FP.marginal = FN.marginal = TPR.marginal = TNR.marginal = FPR.marginal = FNR.marginal = FDR.marginal = matrix(NA,length(Nreps1), nsims)
 
   ## loop over simulation and replicates
@@ -553,7 +655,7 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
         if(target.by == "lfc") {
           ix = abs(lfc) > delta
         } else if (target.by == "effectsize") {
-          effectsize = lfc / sqrt(1/(log2(mu[,,i])+log2(disp[,,i])))
+          effectsize = lfc / sqrt(1/((log2(mu[,j,i] + 1)+log2(disp[,j,i] + 1))))
           ix = abs(effectsize) > delta
         }
         Zg2[ix] = 1
@@ -564,13 +666,13 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
       # mean
       X.bar1 = mu[,j,i]
       ix.keep.mean = which(!is.na(X.bar1))
-      xgr.mean = cut(log2(X.bar1[ix.keep.mean]+1), strata.mean)
-      xgrd.mean = cut(log2(X.bar1[DEid]+1), strata.mean)
+      xgr.mean = cut(log1p(X.bar1[ix.keep.mean]), strata.mean)
+      xgrd.mean = cut(log1p(X.bar1[DEid]), strata.mean)
       # dispersion
       X.disp1 = disp[,j,i]
       ix.keep.disps = which(!is.na(X.disp1))
-      xgr.disps = cut(log2(X.disp1[ix.keep.disps]), strata.disps)
-      xgrd.disps = cut(log2(X.disp1[DEid]), strata.disps)
+      xgr.disps = cut(log1p(X.disp1[ix.keep.disps]), strata.disps)
+      xgrd.disps = cut(log1p(X.disp1[DEid]), strata.disps)
       # dropout
       X.drop1 = dropout[,j,i]
       ix.keep.drop = which(!is.na(X.drop1))
@@ -589,31 +691,34 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
         if(filter.by == "mean") {
           lev.mean = levels(xgr.mean)
           strata.filt.mean = c(1:strata.filtered)
-          ix.keep.mean = ix.keep.mean[!(xgr.mean %in% lev.mean[strata.filt.mean])]
+          fix.keep.mean = ix.keep.mean[!(xgr.mean %in% lev.mean[strata.filt.mean])]
+          fix.dekeep.mean = intersect(fix.keep.mean, DEid)
           # recut
-          xgr.mean = cut(log2(X.bar1[ix.keep.mean]+1), strata.mean[-strata.filt.mean])
-          xgrd.mean = cut(log2(X.bar1[(ix.keep.mean && DEid)]+1), strata.mean[-strata.filt.mean])
+          fxgr.mean = cut(log1p(X.bar1[fix.keep.mean]), strata.mean[-strata.filt.mean])
+          fxgrd.mean = cut(log1p(X.bar1[fix.dekeep.mean]), strata.mean[-strata.filt.mean])
         }
         if(filter.by == "dispersion") {
           lev.disps = levels(xgr.disps)
-          strata.filt.disps = c((max(nlevels(lev.disps))-(1-strata.filtered)):max(nlevels(lev.disps)))
-          ix.keep.mean = ix.keep.mean[!(xgr.disps %in% lev.disps[strata.filt.disps])]
+          strata.filt.disps = c((length(lev.disps)-strata.filtered+1):length(lev.disps))
+          fix.keep.mean = ix.keep.mean[!(xgr.disps %in% lev.disps[strata.filt.disps])]
+          fix.dekeep.mean = intersect(fix.keep.mean, DEid)
           # recut
-          xgr.mean = cut(log2(X.bar1[ix.keep.mean]+1), strata.mean)
-          xgrd.mean = cut(log2(X.bar1[(ix.keep.mean && DEid)]+1), strata.mean)
+          fxgr.mean = cut(log1p(X.bar1[fix.keep.mean]), strata.mean)
+          fxgrd.mean = cut(log1p(X.bar1[fix.dekeep.mean]), strata.mean)
         }
         if(filter.by == "dropout") {
           lev.drop = levels(xgr.drop)
-          strata.filt.drop = c((max(nlevels(lev.drop))-(1-strata.filtered)):max(nlevels(lev.drop)))
-          ix.keep.mean = ix.keep.mean[!(xgr.drop %in% lev.drop[strata.filt.drop])]
+          strata.filt.drop = c((length(lev.drop)-strata.filtered+1):length(lev.drop))
+          fix.keep.mean = ix.keep.mean[!(xgr.drop %in% lev.drop[strata.filt.drop])]
+          fix.dekeep.mean = intersect(fix.keep.mean, DEid)
           # recut
-          xgr.mean = cut(log2(X.bar1[ix.keep.mean]+1), strata.mean)
-          xgrd.mean = cut(log2(X.bar1[(ix.keep.mean && DEid)]+1), strata.mean)
+          fxgr.mean = cut(log1p(X.bar1[fix.keep.mean]), strata.mean)
+          fxgrd.mean = cut(log1p(X.bar1[fix.dekeep.mean]), strata.mean)
         }
         if(filter.by == "none") {
-          ix.keep.mean = ix.keep.mean
-          xgr.mean = xgr.mean
-          xgrd.mean = xgrd.mean
+          fix.keep.mean = ix.keep.mean
+          fxgr.mean = xgr.mean
+          fxgrd.mean = xgrd.mean
         }
       }
       ## stratify by dispersion
@@ -621,31 +726,35 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
         if(filter.by == "mean") {
           lev.mean = levels(xgr.mean)
           strata.filt.mean = c(1:strata.filtered)
-          ix.keep.disps = ix.keep.disps[!(xgr.mean %in% lev.mean[strata.filt.mean])]
+          fix.keep.disps = ix.keep.disps[!(xgr.mean %in% lev.mean[strata.filt.mean])]
+          fix.dekeep.disps = intersect(fix.keep.disps, DEid)
           # recut
-          xgr.disps = cut(log2(X.disp1[ix.keep.disps]), strata.disps)
-          xgrd.disps = cut(log2(X.disp1[(ix.keep.disps && DEid)]), strata.disps)
+          fxgr.disps = cut(log1p(X.disp1[fix.keep.disps]), strata.disps)
+          fxgrd.disps = cut(log1p(X.disp1[fix.dekeep.disps]), strata.disps)
         }
         if(filter.by == "dispersion") {
           lev.disps = levels(xgr.disps)
-          strata.filt.disps = c((max(nlevels(lev.disps))-(1-strata.filtered)):max(nlevels(lev.disps)))
-          ix.keep.disps = ix.keep.disps[!(xgr.disps %in% lev.disps[strata.filt.disps])]
+          lev.filt.disps = c((length(lev.disps)-strata.filtered+1):length(lev.disps))
+          fix.keep.disps = ix.keep.disps[!(xgr.disps %in% lev.disps[lev.filt.disps])]
+          fix.dekeep.disps = intersect(fix.keep.disps, DEid)
+          strata.filt.disps = length(strata.disps) - strata.filtered
           # recut
-          xgr.disps = cut(log2(X.disp1[ix.keep.disps]), strata.disps[-strata.filt.disps])
-          xgrd.disps = cut(log2(X.disp1[(ix.keep.disps && DEid)]), strata.disps[-strata.filt.disps])
+          fxgr.disps = cut(log1p(X.disp1[fix.keep.disps]), strata.disps[1:strata.filt.disps])
+          fxgrd.disps = cut(log1p(X.disp1[fix.dekeep.disps]), strata.disps[1:strata.filt.disps])
         }
         if(filter.by == "dropout") {
           lev.drop = levels(xgr.drop)
-          strata.filt.drop = c((max(nlevels(lev.drop))-(1-strata.filtered)):max(nlevels(lev.drop)))
-          ix.keep.disps = ix.keep.disps[!(xgr.drop %in% lev.drop[strata.filt.drop])]
+          strata.filt.drop = c((length(lev.drop)-strata.filtered+1):length(lev.drop))
+          fix.keep.disps = ix.keep.disps[!(xgr.drop %in% lev.drop[strata.filt.drop])]
+          fix.dekeep.disps = intersect(fix.keep.disps, DEid)
           # recut
-          xgr.disps = cut(X.disp1[ix.keep.disps], strata.disps)
-          xgrd.disps = cut(X.disp1[(ix.keep.disps && DEid)], strata.disps)
+          fxgr.disps = cut(X.disp1[fix.keep.disps], strata.disps)
+          fxgrd.disps = cut(X.disp1[fix.dekeep.disps], strata.disps)
         }
         if(filter.by == "none") {
-          ix.keep.disps = ix.keep.disps
-          xgr.disps = xgr.disps
-          xgrd.disps = xgrd.disps
+          fix.keep.disps = ix.keep.disps
+          fxgr.disps = xgr.disps
+          fxgrd.disps = xgrd.disps
         }
       }
       ## stratify by dropout
@@ -653,31 +762,35 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
         if(filter.by == "mean") {
           lev.mean = levels(xgr.mean)
           strata.filt.mean = c(1:strata.filtered)
-          ix.keep.drop = ix.keep.drop[!(xgr.mean %in% lev.mean[strata.filt.mean])]
+          fix.keep.drop = ix.keep.drop[!(xgr.mean %in% lev.mean[strata.filt.mean])]
+          fix.dekeep.drop = intersect(fix.keep.drop, DEid)
           # recut
-          xgr.drop = cut(X.drop1[ix.keep.drop], strata.drop)
-          xgrd.drop = cut(X.drop1[(ix.keep.drop && DEid)], strata.drop)
+          fxgr.drop = cut(X.drop1[fix.keep.drop], strata.drop)
+          fxgrd.drop = cut(X.drop1[fix.dekeep.drop], strata.drop)
         }
         if(filter.by == "dispersion") {
           lev.disps = levels(xgr.disps)
-          strata.filt.disps = c((max(nlevels(lev.disps))-(1-strata.filtered)):max(nlevels(lev.disps)))
-          ix.keep.drop = ix.keep.drop[!(xgr.disps %in% lev.mean[strata.filt.disps])]
+          strata.filt.disps = c((length(lev.disps)-strata.filtered+1):length(lev.disps))
+          fix.keep.drop = ix.keep.drop[!(xgr.disps %in% lev.disps[strata.filt.disps])]
+          fix.dekeep.drop = intersect(fix.keep.drop, DEid)
           # recut
-          xgr.drop = cut(X.drop1[ix.keep.drop], strata.drop)
-          xgrd.drop = cut(X.drop1[(ix.keep.drop && DEid)], strata.drop)
+          fxgr.drop = cut(X.drop1[fix.keep.drop], strata.drop)
+          fxgrd.drop = cut(X.drop1[fix.dekeep.drop], strata.drop)
         }
         if(filter.by == "dropout") {
           lev.drop = levels(xgr.drop)
-          strata.filt.drop = c((max(nlevels(lev.drop))-(1-strata.filtered)):max(nlevels(lev.drop)))
-          ix.keep.drop = ix.keep.drop[!(xgr.drop %in% lev.drop[strata.filt.drop])]
+          strata.filt.drop = c((length(lev.drop)-strata.filtered+1):length(lev.drop))
+          fix.keep.drop = ix.keep.drop[!(xgr.drop %in% lev.drop[strata.filt.drop])]
+          fix.dekeep.drop = intersect(fix.keep.drop, DEid)
+          strata.filt.drop = length(strata.drop) - strata.filtered
           # recut
-          xgr.drop = cut(X.drop1[ix.keep.drop], strata.drop[-strata.filt.drop])
-          xgrd.drop = cut(X.drop1[(ix.keep.drop && DEid)], strata.drop[-strata.filt.drop])
+          fxgr.drop = cut(X.drop1[fix.keep.drop], strata.drop[1:strata.filt.drop])
+          fxgrd.drop = cut(X.drop1[fix.dekeep.drop], strata.drop[1:strata.filt.drop])
         }
         if(filter.by == "none") {
-          ix.keep.drop = ix.keep.drop
-          xgr.drop = xgr.drop
-          xgrd.drop = xgrd.drop
+          fix.keep.drop = ix.keep.drop
+          fxgr.drop = xgr.drop
+          fxgrd.drop = xgrd.drop
         }
       }
       ## stratify by lfc
@@ -685,58 +798,62 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
         if(filter.by == "mean") {
           lev.mean = levels(xgr.mean)
           strata.filt.mean = c(1:strata.filtered)
-          ix.keep.lfc = ix.keep.lfc[!(xgr.mean %in% lev.mean[strata.filt.mean])]
+          fix.keep.lfc = ix.keep.lfc[!(xgr.mean %in% lev.mean[strata.filt.mean])]
+          fix.dekeep.lfc = intersect(fix.keep.lfc, DEid)
           # recut
-          xgr.lfc = cut(X.lfc1[ix.keep.lfc], strata.lfc)
-          xgrd.lfc = cut(X.lfc1[(ix.keep.lfc && DEid)], strata.lfc)
+          fxgr.lfc = cut(X.lfc1[fix.keep.lfc], strata.lfc)
+          fxgrd.lfc = cut(X.lfc1[fix.dekeep.lfc], strata.lfc)
         }
         if(filter.by == "dispersion") {
           lev.disps = levels(xgr.disps)
-          strata.filt.disps = c((max(nlevels(lev.disps))-(1-strata.filtered)):max(nlevels(lev.disps)))
-          ix.keep.lfc = ix.keep.lfc[!(xgr.disps %in% lev.mean[strata.filt.disps])]
+          strata.filt.disps = c((length(lev.disps)-strata.filtered+1):length(lev.disps))
+          fix.keep.lfc = ix.keep.lfc[!(xgr.disps %in% lev.mean[strata.filt.disps])]
+          fix.dekeep.lfc = intersect(fix.keep.lfc, DEid)
           # recut
-          xgr.lfc = cut(X.lfc1[ix.keep.lfc], strata.lfc)
-          xgrd.lfc = cut(X.lfc1[(ix.keep.lfc && DEid)], strata.lfc)
+          fxgr.lfc = cut(X.lfc1[fix.keep.lfc], strata.lfc)
+          fxgrd.lfc = cut(X.lfc1[fix.dekeep.lfc], strata.lfc)
         }
         if(filter.by == "dropout") {
           lev.drop = levels(xgr.drop)
-          strata.filt.drop = c((max(nlevels(lev.drop))-(1-strata.filtered)):max(nlevels(lev.drop)))
-          ix.keep.lfc = ix.keep.lfc[!(xgr.drop %in% lev.drop[strata.filt.drop])]
+          strata.filt.drop = c((length(lev.drop)-strata.filtered+1):length(lev.drop))
+          fix.keep.lfc = ix.keep.lfc[!(xgr.drop %in% lev.drop[strata.filt.drop])]
+          fix.dekeep.lfc = intersect(fix.keep.lfc, DEid)
           # recut
-          xgr.lfc = cut(X.lfc1[ix.keep.lfc], strata.lfc)
-          xgrd.lfc = cut(X.lfc1[(ix.keep.lfc && DEid)], strata.lfc)
+          fxgr.lfc = cut(X.lfc1[fix.keep.lfc], strata.lfc)
+          fxgrd.lfc = cut(X.lfc1[fix.dekeep.lfc], strata.lfc)
         }
         if(filter.by == "none") {
-          ix.keep.lfc = ix.keep.lfc
-          xgr.lfc = xgr.lfc
-          xgr.lfc = xgr.lfc
+          fix.keep.lfc = ix.keep.lfc
+          fxgr.lfc = xgr.lfc
+          fxgr.lfc = xgr.lfc
+          fxgrd.lfc = xgrd.lfc
         }
       }
 
       ### SET STRATIFICATION
       if(stratify.by == "mean") {
         strata = strata.mean
-        xgr = xgr.mean
-        xgrd = xgrd.mean
-        ix.keep = ix.keep.mean
+        xgr = fxgr.mean
+        xgrd = fxgrd.mean
+        ix.keep = fix.keep.mean
       }
       if(stratify.by == "dispersion") {
         strata = strata.disps
-        xgr = xgr.disps
-        xgrd = xgrd.disps
-        ix.keep = ix.keep.disps
+        xgr = fxgr.disps
+        xgrd = fxgrd.disps
+        ix.keep = fix.keep.disps
       }
       if(stratify.by == "dropout") {
         strata = strata.drop
-        xgr = xgr.drop
-        xgrd = xgrd.drop
-        ix.keep = ix.keep.drop
+        xgr = fxgr.drop
+        xgrd = fxgrd.drop
+        ix.keep = fix.keep.drop
       }
       if(stratify.by == "lfc") {
         strata = strata.lfc
-        xgr = xgr.lfc
-        xgrd = xgrd.lfc
-        ix.keep = ix.keep.lfc
+        xgr = fxgr.lfc
+        xgrd = fxgrd.lfc
+        ix.keep = fix.keep.lfc
       }
 
       ## get type I error alpha (pvalue or fdr output from testing)
@@ -758,7 +875,7 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
                            "DESeq2", "ROTS", "MAST", "scde", "BPSC", "scDD", "monocle", "DECENT",
                            "edgeR-zingeR", "edgeR-ZINB-WaVE", "DESeq2-zingeR", "DESeq2-ZINB-WaVE")) {
           pval = pvalue[ix.keep,j,i]
-          meanexpr = mu[ix.keep,j,i]
+          meanexpr = log1p(mu[ix.keep,j,i])
           if(MTC %in% stats::p.adjust.methods) {
             x = stats::p.adjust(pval, method = MTC)
             x[is.na(x)] = 1
@@ -824,8 +941,10 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
                  stratadiffgenes=xgrld,
                  TN=TN, TP=TP, FP=FP, FN=FN,
                  TN.marginal=TN.marginal,
-                 TP.marginal=TP.marginal, FP.marginal=FP.marginal, FN.marginal=FN.marginal,
-                 TNR=TNR, TPR=TPR, FPR=FPR, FNR=FNR,FDR=FDR,
+                 TP.marginal=TP.marginal,
+                 FP.marginal=FP.marginal,
+                 FN.marginal=FN.marginal,
+                 TNR=TNR, TPR=TPR, FPR=FPR, FNR=FNR, FDR=FDR,
                  TNR.marginal=TNR.marginal, TPR.marginal=TPR.marginal,
                  FPR.marginal=FPR.marginal, FNR.marginal=FNR.marginal,
                  FDR.marginal=FDR.marginal,
@@ -834,6 +953,10 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
                  alpha.nominal=alpha.nominal,
                  stratify.by=stratify.by, strata=strata, strata.levels=levels(xgr),
                  target.by=target.by, n1=Nreps1, n2=Nreps2, delta=delta)
+
+  if(Table){
+    printEvalDE(evalRes = output)
+  }
 
   return(output)
 }
@@ -845,34 +968,66 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
 #' @title Compute the performance related metrics from simulation results.
 #' @description This function takes the simulation output from \code{\link{simulateDE}}
 #' and computes several metrics that give an indication of the simulation setup performance.
-#' @usage evaluateSim(simRes, timing=TRUE)
+#' @usage evaluateSim(simRes)
 #' @param simRes The result from \code{\link{simulateDE}}.
-#' @param timing A logical vector indicating whether to summarise computational time of simulation run.
-#' Default is \code{TRUE}.
 #' @return A list with the following entries:
-#' \item{Log2FoldChange}{The absolute mean error (\code{MAE}), root mean square error (\code{RMSE})
+#' \item{LogFoldChange}{The absolute mean error (\code{MAE}), root mean square error (\code{RMSE})
 #' and root mean square residual error of a robust linear model (\code{rRMSE}, \code{\link[MASS]{rlm}})
-#' of log2 fold change differences between estimated LFC and simulated LFC.
+#' of log fold change differences between estimated and simulated.
 #' Furthermore, the fraction of missing entries (\code{NAFraction}) for MAE annd RMSE.}
-#' \item{SizeFactors}{The median absolute deviation (MAD) between the estimated and true size factors,
+#' \item{SizeFactors}{The median absolute deviation (MAD) between the simulated and estimated size factors,
 #' the root mean square residual error of a robust linear model (rRMSE, \code{\link[MASS]{rlm}}) and
-#' the ratio between estimated and true size factors of the two groups (\code{GroupX}).}
+#' the group-specific ratio between simulated and estimated size factors (\code{GroupX}).}
 #' @author Beate Vieth
 #' @seealso \code{\link{estimateParam}} for negative binomial parameters,
 #' \code{\link{Setup}} for setting up simulation parameters and
-#' \code{\link{simulateDE}} for simulating differential expression and
+#' \code{\link{simulateDE}} for simulating differential expression
 #' @examples
 #' \dontrun{
-#' ## using example data set
-#' data(kolodziejczk_simDE)
-#' eval.sim <- evaluateSim(simRes = kolodziejczk_simDE, timing = T)
+#' # estimate gene parameters
+#' data("SmartSeq2_Gene_Read_Counts")
+#' Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_Gene_Read_Counts), "_"), "[[", 1),
+#'                      stringsAsFactors = F,
+#'                      row.names = colnames(SmartSeq2_Gene_Read_Counts))
+#' data("GeneLengths_mm10")
+#' estparam_gene <- estimateParam(countData = SmartSeq2_Gene_Read_Counts,
+#'                                readData = NULL,
+#'                                batchData = Batches,
+#'                                spikeData = NULL, spikeInfo = NULL,
+#'                                Lengths = GeneLengths_mm10, MeanFragLengths = NULL,
+#'                                RNAseq = 'singlecell', Protocol = 'Read',
+#'                                Distribution = 'ZINB', Normalisation = "scran",
+#'                                GeneFilter = 0.1, SampleFilter = 3,
+#'                                sigma = 1.96, NCores = NULL, verbose = TRUE)
+#' # define log fold change
+#' p.lfc <- function(x) sample(c(-1,1), size=x,replace=T)*rgamma(x, shape = 1, rate = 2)
+#' # set up simulations
+#' setupres <- Setup(ngenes = 10000, nsims = 10,
+#'                   p.DE = 0.1, pLFC = p.lfc,
+#'                   n1 = c(20,50,100), n2 = c(30,60,120),
+#'                   Thinning = c(1,0.9,0.8), LibSize = 'given',
+#'                   estParamRes = estparam_gene,
+#'                   estSpikeRes = NULL,
+#'                   DropGenes = FALSE,
+#'                   sim.seed = 66437, verbose = TRUE)
+#' # run simulation
+#' simres <- simulateDE(SetupRes = setupres,
+#'                      Prefilter = "FreqFilter",
+#'                      Imputation = NULL,
+#'                      Normalisation = 'scran', Label = 'none',
+#'                      DEmethod = "limma-trend", DEFilter = FALSE,
+#'                      NCores = NULL, verbose = TRUE)
+#'
+#' # evaluation
+#' evalsimres <- evaluateSim(simRes = simres)
+#' plotEvalSim(evalRes = evalsimres, Annot = TRUE)
+#' plotTime(evalRes = evalsimres, Annot = TRUE)
 #' }
 #' @rdname evaluateSim
 #' @importFrom stats mad
-#' @importFrom mclust adjustedRandIndex
 #' @importFrom matrixStats rowSds
 #' @export
-evaluateSim <- function(simRes, timing=TRUE) {
+evaluateSim <- function(simRes) {
 
   # simulation parameters
   Nreps1 = simRes$SimSetup$n1
@@ -890,7 +1045,7 @@ evaluateSim <- function(simRes, timing=TRUE) {
 
   time.taken <- simRes$SimulateRes$time.taken
 
-  # create output objects
+  # create lfc output objects
   my.names = paste0(Nreps1, " vs ", Nreps2)
   # error in log2 fold changes
   lfc.error.mat <- lapply(1:length(my.names), function(x) {
@@ -901,13 +1056,22 @@ evaluateSim <- function(simRes, timing=TRUE) {
   })
   names(lfc.error.mat) <- my.names
 
-  # error in size factors
+  # create library size error output objects
   sf.error.mat <- lapply(1:length(my.names), function(x) {
     matrix(NA, nrow =  nsims, ncol = 4,
            dimnames = list(c(paste0("Sim_", 1:nsims)),
                            c("MAD", "rRMSE", "Group 1","Group 2")))
   })
   names(sf.error.mat) <- my.names
+
+  # create timing output objects
+  time.taken.mat <- lapply(1:length(my.names), function(x) {
+    data.frame(matrix(NA, nrow = length(colnames(time.taken[[1]])),
+                      ncol = 3, dimnames = list(c(colnames(time.taken[[1]])),
+                                                c("Mean", "SD", "SEM")))
+    )
+  })
+  names(time.taken.mat) <- my.names
 
   ## loop over simulation and replicates
   for(i in 1:nsims) {
@@ -968,26 +1132,19 @@ evaluateSim <- function(simRes, timing=TRUE) {
     }
   }
 
-  output <- list(Log2FoldChange=lfc.error.mat,
-                 SizeFactors=sf.error.mat)
-
-  if(isTRUE(timing)) {
-    # create output objects
-    time.taken.mat <- lapply(1:length(my.names), function(x) {
-      data.frame(matrix(NA, nrow = length(colnames(time.taken[[1]])),
-                        ncol = 3, dimnames = list(c(colnames(time.taken[[1]])),
-                                                  c("Mean", "SD", "SEM")))
-      )
-    })
-    names(time.taken.mat) <- my.names
-    for(j in seq(along=Nreps1)) {
-      tmp.time <- time.taken[[j]]
-      time.taken.mat[[j]][,"Mean"] <- colMeans(tmp.time)
-      time.taken.mat[[j]][,"SD"] <- matrixStats::colSds(tmp.time)
-      time.taken.mat[[j]][,"SEM"] <- matrixStats::colSds(tmp.time)/sqrt(nsims)
-    }
-    output <- c(output, list(Timing=time.taken.mat))
+  ## TIMING
+  for(j in seq(along=Nreps1)) {
+    tmp.time <- time.taken[[j]]
+    time.taken.mat[[j]][,"Mean"] <- colMeans(tmp.time)
+    time.taken.mat[[j]][,"SD"] <- matrixStats::colSds(tmp.time)
+    time.taken.mat[[j]][,"SEM"] <- matrixStats::colSds(tmp.time)/sqrt(nsims)
   }
+
+  output <- list(LogFoldChange = lfc.error.mat,
+                 SizeFactors = sf.error.mat,
+                 Pipeline = simRes$Pipeline,
+                 DESetup = simRes$DESetup,
+                 Timing = time.taken.mat)
 
   # return object
   return(output)
@@ -1000,14 +1157,14 @@ evaluateSim <- function(simRes, timing=TRUE) {
 #' @aliases evaluateROC
 #' @title Receiver operator characteristics of simulation results
 #' @description This function takes the simulation output from \code{\link{simulateDE}}
-#' and computes receiver operator characteristics (ROC) and area under the curve values (AUC).
+#' and computes receiver operator characteristics (ROC) and area under the curve values (AUC) with the help of functions implemented in \code{\link[iCOBRA]{calculate_performance}}.
 #' @usage evaluateROC(simRes,
 #' alpha.type=c("adjusted","raw"),
 #' MTC=c('BY', 'BH', 'Storey', 'IHW',
 #' 'holm', 'hochberg', 'hommel', 'bonferroni'),
 #' alpha.nominal = 0.1,
-#' target.by=c("lfc", "effectsize"),
-#' delta=0)
+#' target.by=c("lfc", "effectsize"), delta=0,
+#' raw = FALSE, verbose = TRUE)
 #' @param simRes The result from \code{\link{simulateDE}}.
 #' @param alpha.type A string to represent the way to call DE genes.
 #'  Available options are \code{"adjusted"} i.e. applying multiple testing correction and
@@ -1026,24 +1183,58 @@ evaluateSim <- function(simRes, timing=TRUE) {
 #' Genes with absolute log2 fold changes (when target.by is "lfc")
 #' or effect sizes (when target.by is "effectsize") greater than this value
 #' are deemed DE in error rates calculations.
-#' If \code{delta=0} then no threshold is applied. See "Details" for more description.
+#' If the default \code{delta=0}, then no threshold is applied.
+#' @param raw Logical vector. The default \code{FALSE} removes
+#' intermediate calculations from the output since they can be quite large.
+#' @param verbose Logical vector to indicate whether to show progress report of evaluation.
+#' Default is \code{TRUE}.
 #' @return A list with the following entries:
-#' \item{Performance}{The output of \code{\link[iCOBRA]{calculate_performance}} of aspect "fdrtprcurve" calculating the proportions of TN, FN, TP and FP and related rates which uses \code{\link[ROCR]{prediction}} and \code{\link[ROCR]{performance}} internally.}
-#' \item{FDR_TPR_Thres}{The output of \code{\link[iCOBRA]{calculate_performance}} of aspect "fdrtpr" calculating the proportions of TN, FN, TP and FP and associated TPR and FDR for each nominal level from 0.01 to 1 in steps of 0.01.}
-#' \item{TPRvsPPV_AUC}{The area under the curve for TPR versus PPV. This is also split up by group comparisons into lists with length equal to number of simulations.}
-#' \item{TPRvsFPR_AUC}{The area under the curve for TPR versus FPR, i.e. classical ROC-curve. This is also split up by group comparisons into lists with length equal to number of simulations.}
-#' \item{TPRvsFDR_pAUC_conv,TPRvsFDR_pAUC_lib}{The partial area under the curve for TPR versus FDR, once for conservative and once for liberal nominal FDR level (see Details section). This is also split up by group comparisons into lists with length equal to number of simulations.}
-#' \item{MCC_conv,MCC_lib}{The Matthews Correlation Coefficient, once for conservative and once for liberal nominal FDR level (see Details section). This is also split up by group comparisons into lists with length equal to number of simulations.}
-#' \item{F1score_conv,F1score_lib}{The precision-recall F measure, once for conservative and once for liberal nominal FDR level (see Details section). This is also split up by group comparisons into lists with length equal to number of simulations.}
-#' \item{alpha.type - .. - delta}{Reiterating chosen evaluation parameters.}
+#' \item{Performances}{The output of \code{\link[iCOBRA]{calculate_performance}} of aspect "fdrtprcurve" calculating the proportions of TN, FN, TP and FP and related rates which uses \code{\link[ROCR]{prediction}} and \code{\link[ROCR]{performance}} internally.}
+#' \item{TPRvsFDR}{The output of \code{\link[iCOBRA]{calculate_performance}} of aspect "fdrtpr" calculating the proportions of TN, FN, TP and FP and associated TPR and observed FDR for each nominal level from 0.01 to 1 in steps of 0.01.}
+#' \item{Scores}{The mean +/- standard error of performance measures and area under the curve. These are calculated once for conservative (extension "conv") and once for liberal nominal (extension "lib") FDR levels. Measures include: accuracy (ACC), F-measure of precision and recall (F1score), Matthew's correlation coefficient (MCC), partial Area under the Curve of TPR vs FDR (TPRvsFDR_pAUC), area under the ROC-curve (TPRvsFPR_AUC) and area under the PR-curve (TPRvsPPV_AUC).}
+#' \item{Raw}{If \code{raw} is \code{TRUE}, then the intermediate calculations of the above three list entries is also included in the output.}
+#' \item{Settings}{Reiterating chosen evaluation parameters.}
 #' @author Beate Vieth
 #' @seealso \code{\link{estimateParam}} for parameter estimation needed for simulations,
 #' \code{\link{Setup}} for setting up simulation parameters and
 #' \code{\link{simulateDE}} for simulating differential expression.
 #' @examples
 #' \dontrun{
-#' data(kolodziejczk_simDE)
-#' eval.roc <- evaluateROC(simRes = kolodziejczk_simDE)
+#' # estimate gene parameters
+#' data("SmartSeq2_Gene_Read_Counts")
+#' estparam_gene <- estimateParam(countData = SmartSeq2_Gene_Read_Counts,
+#'                                readData = NULL,
+#'                               batchData = NULL,
+#'                                spikeData = NULL, spikeInfo = NULL,
+#'                                Lengths = NULL, MeanFragLengths = NULL,
+#'                                RNAseq = 'singlecell', Protocol = 'Read',
+#'                                Distribution = 'ZINB', Normalisation = "scran",
+#'                                GeneFilter = 0.1, SampleFilter = 3,
+#'                                sigma = 1.96, NCores = NULL, verbose = TRUE)
+#' # define log2 fold change
+#' p.lfc <- function(x) sample(c(-1,1), size=x,replace=T)*rgamma(x, shape = 1, rate = 2)
+#' # set up simulations
+#' setupres <- Setup(ngenes = 10000, nsims = 10,
+#'                   p.DE = 0.1, pLFC = p.lfc,
+#'                   n1 = c(20,50,100), n2 = c(30,60,120),
+#'                   Thinning = c(1,0.9,0.8), LibSize = 'given',
+#'                   estParamRes = estparam_gene,
+#'                   estSpikeRes = NULL,
+#'                   DropGenes = TRUE,
+#'                   sim.seed = 83596, verbose = TRUE)
+#' # run simulation
+#' simres <- simulateDE(SetupRes = setupres,
+#'                      Prefilter = "FreqFilter", Imputation = NULL,
+#'                      Normalisation = 'scran', Label = 'none',
+#'                      DEmethod = "limma-trend", DEFilter = FALSE,
+#'                      NCores = NULL, verbose = TRUE)
+#' # evaluation
+#' evalrocres <- evaluateROC(simRes = simres,
+#'                           alpha.type = "adjusted",
+#'                           MTC = 'BH', alpha.nominal = 0.05,
+#'                           raw = FALSE)
+#' # plot evaluation
+#' plotEvalROC(evalRes = evalrocres)
 #' }
 #' @rdname evaluateROC
 #' @importFrom stats ecdf quantile p.adjust.methods p.adjust
@@ -1051,17 +1242,22 @@ evaluateSim <- function(simRes, timing=TRUE) {
 #' @importFrom IHW ihw adj_pvalues
 #' @importFrom iCOBRA calculate_performance COBRAData
 #' @importFrom tidyr "%>%"
-#' @importFrom dplyr mutate select
+#' @importFrom dplyr select
+#' @importFrom utils tail
 #' @export
 evaluateROC <- function(simRes, alpha.type=c("adjusted","raw"),
                         MTC=c('BY', 'BH', 'Storey', 'IHW',
                               'holm', 'hochberg', 'hommel', 'bonferroni'),
                         alpha.nominal = 0.1,
                         target.by=c("lfc", "effectsize"),
-                        delta=0) {
+                        delta=0,
+                        raw = FALSE,
+                        verbose = TRUE) {
+
   alpha.type = match.arg(alpha.type)
   MTC = match.arg(MTC)
   target.by = match.arg(target.by)
+
   Nreps1 = simRes$SimSetup$n1
   Nreps2 = simRes$SimSetup$n2
   ngenes = simRes$DESetup$ngenes
@@ -1069,24 +1265,44 @@ evaluateROC <- function(simRes, alpha.type=c("adjusted","raw"),
   DEids = simRes$DESetup$DEid
   lfcs = simRes$DESetup$pLFC
   elfcs = simRes$SimulateRes$elfc
-
   DEmethod = simRes$Pipeline$DEmethod
   pvalue = simRes$SimulateRes$pvalue
   fdr = simRes$SimulateRes$fdr
   mu = simRes$SimulateRes$mu
+  disp = simRes$SimulateRes$disp
+
+  if (verbose) { message(paste0("Preparing output arrays.")) }
+
   my.names = paste0(Nreps1, " vs ", Nreps2)
   Truths = Predictions = array(NA, dim = c(length(Nreps1),
                                            ngenes, nsims))
-  perfCOBRA =  vector("list", length(my.names))
-  perfCOBRA <- lapply(1:length(perfCOBRA), function(x) {
-    perfCOBRA[[x]] = vector("list", nsims)
-  })
-  calcCOBRA = vector("list", length(my.names))
-  calcCOBRA <- lapply(1:length(calcCOBRA), function(x) {
-    calcCOBRA[[x]] = vector("list", nsims)
+
+  perf = vector("list", length(my.names))
+  perf <- lapply(1:length(perf), function(x) {
+    perf[[x]] = vector("list", nsims)
   })
 
-  TPRvsFPR_AUC = TPRvsPPV_AUC = TPRvsFDR_pAUC_lib = TPRvsFDR_pAUC_conv = MCC_lib = F1score_lib = MCC_conv = F1score_conv = vector("list", length(my.names))
+  tprvsfdr =  vector("list", length(my.names))
+  tprvsfdr <- lapply(1:length(tprvsfdr), function(x) {
+    tprvsfdr[[x]] = vector("list", nsims)
+  })
+
+  scores =  vector("list", length(my.names))
+  scores <- lapply(1:length(scores), function(x) {
+    scores[[x]] = data.frame(matrix(NA, nrow = nsims, ncol = 12,
+                                        dimnames = list(NULL, c("Samples", "Sim",
+                                                                "TPRvsFPR_AUC", "TPRvsPPV_AUC",
+                                                                "TPRvsFDR_pAUC_lib", "TPRvsFDR_pAUC_conv",
+                                                                "ACC_lib", "ACC_conv",
+                                                                "F1score_lib", "F1score_conv",
+                                                                "MCC_lib", "MCC_conv"
+                                                                ))))
+    scores[[x]][, "Samples"] = rep(x = my.names[x], nsims)
+    scores[[x]][, "Sim"] = 1:nsims
+    scores[[x]]
+  })
+
+  if (verbose) { message(paste0("Calculating performance measures.")) }
 
   for (i in 1:nsims) {
     for (j in seq(along = Nreps1)) {
@@ -1105,8 +1321,7 @@ evaluateROC <- function(simRes, alpha.type=c("adjusted","raw"),
           ix = abs(lfc) > delta
         }
         else if (target.by == "effectsize") {
-          effectsize = lfc/sqrt(1/(log2(mu[, , i]) +
-                                     log2(disp[, , i])))
+          effectsize = lfc / sqrt(1/((log2(mu[,j,i] + 1)+log2(disp[,j,i] + 1))))
           ix = abs(effectsize) > delta
         }
         Zg2[ix] = 1
@@ -1130,7 +1345,7 @@ evaluateROC <- function(simRes, alpha.type=c("adjusted","raw"),
       if (alpha.type == "adjusted") {
         if (DEmethod %in% c("edgeR-QL", "edgeR-LRT", "T-Test",
                             "limma-voom", "limma-trend", "NBPSeq", "DESeq2",
-                            "ROTS", "MAST", "scde", "BPSC", "scDD", "monocle",
+                            "ROTS", "MAST", "BPSC", "scDD",
                             "DECENT", "edgeR-zingeR", "edgeR-ZINB-WaVE",
                             "DESeq2-zingeR", "DESeq2-ZINB-WaVE")) {
           pval = pvalue[, j, i]
@@ -1179,43 +1394,44 @@ evaluateROC <- function(simRes, alpha.type=c("adjusted","raw"),
                                       type_venn = "adjp", topn_venn = 100, rank_by_abs = TRUE,
                                       prefer_pval = TRUE))
         ))
-      calcCOBRA[[j]][[i]] <- res@fdrtprcurve %>%
-        dplyr::select(-c(method:splitval)) %>%
-        dplyr::mutate(FPR = FP / (FP + TN),
-                      TNR = TN / (TN + FP),
-                      FNR = FN / (FN + TP),
-                      PPV = TP / (TP + FP),
-                      F1score = (2*TP) / ((2*TP) +FP +FN),
-                      MCC = ( (TP * TN) - (FP*FN) ) / (sqrt((TP+FP)*(TP+FN)*(TN+FP)*(TN+FN))) )
-
+      fdrtprcurve <- res@fdrtprcurve %>%
+        dplyr::select(-c(!!"method":!!"splitval")) %>%
+        dplyr::mutate(Samples = my.names[j], Sim = i)
+      perf.dat <- .roc.calc(df = fdrtprcurve)
+      perf[[j]][[i]] <- perf.dat[, c("Samples", "Sim", "CUTOFF",
+                                            "TP", "FP", "TN", "FN",
+                                            "FPR", "FNR", "FDR",
+                                            "TPR", "TNR", "NBR",
+                                            "PPV",  "ACC",
+                                            "F1score", "MCC")]
 
       # AUC calculations
-      fpr <- calcCOBRA[[j]][[i]]$FPR
-      tpr <- calcCOBRA[[j]][[i]]$TPR
-      ppv <- calcCOBRA[[j]][[i]]$PPV
+      fpr <- perf[[j]][[i]]$FPR
+      tpr <- perf[[j]][[i]]$TPR
+      ppv <- perf[[j]][[i]]$PPV
 
       # TPR versus FPR
       fpr1 <- fpr[!is.na(fpr) & !is.na(tpr)]
       tpr1 <- tpr[!is.na(fpr) & !is.na(tpr)]
       id <- order(fpr1)
-      TPRvsFPR_AUC[[j]][i] <- sum(diff(fpr1[id]) * zoo::rollmean(tpr1[id], 2))
+      scores[[j]][i, "TPRvsFPR_AUC"] <- sum(diff(fpr1[id]) * zoo::rollmean(tpr1[id], 2))
 
       # TPR versus PPV
       ppv1 <- ppv[!is.na(ppv) & !is.na(tpr)]
       tpr1 <- tpr[!is.na(ppv) & !is.na(tpr)]
       id <- order(ppv1)
-      TPRvsPPV_AUC[[j]][i] <- sum(diff(ppv1[id]) * zoo::rollmean(tpr1[id], 2))
-
+      scores[[j]][i, "TPRvsPPV_AUC"] <- sum(diff(ppv1[id]) * zoo::rollmean(tpr1[id], 2))
 
       obs.fdr = as.vector(res@fdrtpr[,c("FDR")])
       tmp.nom = as.vector(res@fdrtpr[,c("thr")])
       nom.fdr = as.numeric(gsub("thr", "", tmp.nom))
       dat.fdr =  data.frame(obs.fdr, nom.fdr)
-      # TPR vs FDR (liberal); MCC (liberal); F1 score (liberal)
-      a.fdr = tail(dat.fdr[dat.fdr$obs.fdr <=alpha.nominal & dat.fdr$nom.fdr <= alpha.nominal, "obs.fdr"], 1)
+
+      # TPR vs FDR (liberal); MCC (liberal); F1 score (liberal); ACC (liberal)
+      a.fdr = utils::tail(dat.fdr[dat.fdr$obs.fdr <=alpha.nominal & dat.fdr$nom.fdr <= alpha.nominal, "obs.fdr"], 1)
       if (all(c(!length(a.fdr) == 0, !a.fdr == 0))) {
         if(a.fdr <= alpha.nominal) {
-          a.fdr = tail(dat.fdr[dat.fdr$obs.fdr <= alpha.nominal, "obs.fdr"], 1)
+          a.fdr = utils::tail(dat.fdr[dat.fdr$obs.fdr <= alpha.nominal, "obs.fdr"], 1)
         }
         x <- as.vector(res@fdrtprcurve[,c("FDR")])[-1]
         y <- as.vector(res@fdrtprcurve[,c("TPR")])[-1]
@@ -1225,21 +1441,24 @@ evaluateROC <- function(simRes, alpha.type=c("adjusted","raw"),
         y1 <- y[!is.na(x) & !is.na(y)]
         id <- order(x1)
         pauc_lib <- sum(diff(x1[id]) * zoo::rollmean(y1[id], 2)) / alpha.nominal
-        mcc <- as.vector(calcCOBRA[[j]][[i]][,c("MCC")])[-1]
-        mcc_lib <- tail(mcc[as.vector(res@fdrtprcurve[,c("FDR")])[-1] < a.fdr], 1)
-        f1 <- as.vector(calcCOBRA[[j]][[i]][,c("F1score")])[-1]
-        f1_lib <- tail(f1[as.vector(res@fdrtprcurve[,c("FDR")])[-1] < a.fdr], 1)
+        mcc <- as.vector(perf[[j]][[i]][,c("MCC")])[-1]
+        mcc_lib <- utils::tail(mcc[as.vector(res@fdrtprcurve[,c("FDR")])[-1] < a.fdr], 1)
+        f1 <- as.vector(perf[[j]][[i]][,c("F1score")])[-1]
+        f1_lib <- utils::tail(f1[as.vector(res@fdrtprcurve[,c("FDR")])[-1] < a.fdr], 1)
+        acc <- as.vector(perf[[j]][[i]][,c("ACC")])[-1]
+        acc_lib <- utils::tail(acc[as.vector(res@fdrtprcurve[,c("FDR")])[-1] < a.fdr], 1)
       }
       if (any(c(length(a.fdr) == 0, a.fdr == 0))) {
-        pauc_lib <- f1_lib <- 0
+        pauc_lib <- f1_lib <- acc_lib <- 0
         mcc_lib <- NA
       }
-      TPRvsFDR_pAUC_lib[[j]][i] <- pauc_lib
-      MCC_lib[[j]][i] <- mcc_lib
-      F1score_lib[[j]][i] <- f1_lib
+      scores[[j]][i, "TPRvsFDR_pAUC_lib"] <- pauc_lib
+      scores[[j]][i, "MCC_lib"] <- mcc_lib
+      scores[[j]][i, "F1score_lib"] <- f1_lib
+      scores[[j]][i, "ACC_lib"] <- acc_lib
 
-      # TPR vs FDR (conservative); MCC (conversative); F1 score (conservative)
-      a.fdr = tail(dat.fdr[dat.fdr$obs.fdr <= alpha.nominal &
+      # TPR vs FDR (conservative); MCC (conversative); F1 score (conservative); ACC (conservative)
+      a.fdr = utils::tail(dat.fdr[dat.fdr$obs.fdr <= alpha.nominal &
                            dat.fdr$nom.fdr <= alpha.nominal,
                            "obs.fdr"], 1)
       if (all(c(!length(a.fdr) == 0, !a.fdr == 0))) {
@@ -1251,40 +1470,61 @@ evaluateROC <- function(simRes, alpha.type=c("adjusted","raw"),
         y1 <- y[!is.na(x) & !is.na(y)]
         id <- order(x1)
         pauc_conv <- sum(diff(x1[id]) * zoo::rollmean(y1[id], 2)) / alpha.nominal
-        mcc <- as.vector(calcCOBRA[[j]][[i]][,c("MCC")])[-1]
-        mcc_conv <- tail(mcc[as.vector(res@fdrtprcurve[,c("FDR")])[-1] < a.fdr], 1)
-        f1 <- as.vector(calcCOBRA[[j]][[i]][,c("F1score")])[-1]
-        f1_conv <- tail(f1[as.vector(res@fdrtprcurve[,c("FDR")])[-1] < a.fdr], 1)
+        mcc <- as.vector(perf[[j]][[i]][,c("MCC")])[-1]
+        mcc_conv <- utils::tail(mcc[as.vector(res@fdrtprcurve[,c("FDR")])[-1] < a.fdr], 1)
+        f1 <- as.vector(perf[[j]][[i]][,c("F1score")])[-1]
+        f1_conv <- utils::tail(f1[as.vector(res@fdrtprcurve[,c("FDR")])[-1] < a.fdr], 1)
+        acc <- as.vector(perf[[j]][[i]][,c("ACC")])[-1]
+        acc_conv <- utils::tail(acc[as.vector(res@fdrtprcurve[,c("FDR")])[-1] < a.fdr], 1)
       }
       if (any(c(length(a.fdr) == 0, a.fdr == 0))) {
-        pauc_conv <- f1_conv <- 0
+        pauc_conv <- f1_conv <- acc_conv <- 0
         mcc_conv <- NA
       }
-      TPRvsFDR_pAUC_conv[[j]][i] <- pauc_conv
-      MCC_conv[[j]][i] <- mcc_conv
-      F1score_conv[[j]][i] <- f1_conv
+      scores[[j]][i, "TPRvsFDR_pAUC_conv"] <- pauc_conv
+      scores[[j]][i, "MCC_conv"] <- mcc_conv
+      scores[[j]][i, "F1score_conv"] <- f1_conv
+      scores[[j]][i, "ACC_conv"] <- acc_conv
 
-      perfCOBRA[[j]][[i]] <- res@fdrtpr
+      fdrtpr <- res@fdrtpr %>%
+        dplyr::mutate(Samples = my.names[j], Sim = i)
+      fdrtpr[, "Threshold"] <- as.numeric(gsub(x = fdrtpr$thr, pattern = "thr", replacement = ""))
+      tprvsfdr[[j]][[i]] <- fdrtpr[, c("Samples", "Sim", "Threshold",
+                                            "TP", "FP", "TN", "FN",
+                                            "TPR", "FDR", "NBR")]
     }
   }
-  names(perfCOBRA) <- names(calcCOBRA) <- names(TPRvsPPV_AUC) <- names(TPRvsFPR_AUC) <- names(TPRvsFDR_pAUC_conv) <- names(TPRvsFDR_pAUC_lib)  <- names(MCC_conv) <- names(F1score_conv) <- names(F1score_lib) <- names(MCC_lib) <- names(MCC_conv) <- my.names
 
-  output <- list(Performance = calcCOBRA,
-                 FDR_TPR_Thres = perfCOBRA,
-                 TPRvsPPV_AUC = TPRvsPPV_AUC,
-                 TPRvsFPR_AUC = TPRvsFPR_AUC,
-                 TPRvsFDR_pAUC_conv =TPRvsFDR_pAUC_conv,
-                 TPRvsFDR_pAUC_lib = TPRvsFDR_pAUC_lib,
-                 MCC_conv = MCC_conv,
-                 MCC_lib = MCC_lib,
-                 F1score_conv = F1score_conv,
-                 F1score_lib = F1score_lib,
-                 alpha.type = alpha.type,
-                 MTC = ifelse(alpha.type == "adjusted", MTC, "not applicable"),
-                 target.by = target.by,
-                 n1 = Nreps1,
-                 n2 = Nreps2,
-                 delta = delta)
+  names(tprvsfdr) <- names(perf) <- names(scores) <- my.names
+
+  if (verbose) { message(paste0("Summarising performance measures.")) }
+
+  if(raw == FALSE) {
+    PERF <- .perf.summary.calc(calc.obj = perf)
+    TPR_FDR <- .tprvsfdr.summary.calc(calc.obj = tprvsfdr)
+    SCORES <- .scores.summary.calc(calc.obj = scores)
+    RAW <- NULL
+    }
+
+  if(raw == TRUE) {
+    PERF <- .perf.summary.calc(calc.obj = perf)
+    TPR_FDR <- .tprvsfdr.summary.calc(calc.obj = tprvsfdr)
+    SCORES <- .scores.summary.calc(calc.obj = scores)
+    RAW <- list("PERF" = perf,
+                "TPR_FDR" = tprvsfdr,
+                "SCORES" = scores)
+  }
+
+  output <- list(Performances = PERF,
+                 TPRvsFDR = TPR_FDR,
+                 Scores = SCORES,
+                 Raw = RAW,
+                 Settings = list(alpha.type = alpha.type,
+                              MTC = ifelse(alpha.type == "adjusted", MTC, "not applicable"),
+                              alpha.nominal=alpha.nominal,
+                              target.by = target.by,
+                              delta = delta,
+                              raw = raw))
   return(output)
 }
 

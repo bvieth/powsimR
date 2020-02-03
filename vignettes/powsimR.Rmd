@@ -66,19 +66,19 @@ ipak <- function(pkg, repository=c('CRAN', 'Bioconductor', 'github')){
 
 # CRAN PACKAGES
 cranpackages <- c("broom", "cobs", "cowplot", 
-                  "data.table", "devtools", "doParallel", "dplyr", "drc", "DrImpute", 
-                  "fastICA", "fitdistrplus", "foreach", 
-                  "gamlss.dist", "ggExtra", "ggplot2", "ggthemes", "grDevices",
-                  "glmnet", "grid", "gtools", "Hmisc", "kernlab", "MASS", "MBESS",
+                  "data.table", "doParallel", "dplyr", "DrImpute", 
+                  "fastICA", "fitdistrplus", "foreach", "future",
+                  "gamlss.dist", "ggplot2", "ggpubr", "grDevices",
+                  "grid", "Hmisc", "kernlab", "MASS", "magrittr", "MBESS", "Matrix",
                   "matrixStats", "mclust", "methods", "minpack.lm", "moments", "msir", 
                   "NBPSeq", "nonnest2", "parallel", "penalized", "plyr", "pscl",
-                  "reshape2", "Rmagic", "rsvd", "Rtsne", "scales", "Seurat", "snow", 
-                  "stats", "tibble", "tidyr", "VGAM", "ZIM")
+                  "reshape2", "Rmagic", "rsvd", "Rtsne", "scales", "Seurat", "snow", "sctransform", 
+                  "stats", "tibble", "tidyr", "truncnorm", "VGAM", "ZIM", "zoo")
 ipak(cranpackages, repository='CRAN')
 
 # BIOCONDUCTOR
-biocpackages <- c("AnnotationDbi", "bayNorm", "baySeq", "Biobase", "BiocGenerics", 
-                  "BiocParallel", "DEDS", "DESeq2", "EBSeq", "edgeR", "IHW", "iCOBRA",
+biocpackages <- c("bayNorm", "baySeq", "BiocGenerics", "BiocParallel", 
+                  "DEDS", "DESeq2", "EBSeq", "edgeR", "IHW", "iCOBRA",
                   "limma", "Linnorm", "MAST", "monocle", "NOISeq", "qvalue", "ROTS", "RUVSeq", 
                   "S4Vectors", "scater", "scDD", "scde", "scone", "scran", "SCnorm", 
                   "SingleCellExperiment", "SummarizedExperiment", "zinbwave")
@@ -102,14 +102,14 @@ library("powsimR")
 
 # Introduction
 
-In this vignette, we illustrate the features of `powsimR` by assessing the power to detect differential expression between two groups of embryonic stem cells cultured in standard 2i medium [E-MTAB-2600](http://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-2600/) [@Kolodziejczyk2015-vn].
+In this vignette, we illustrate the features of `powsimR` by assessing the power to detect differential expression between two groups of mouse embryonic stem cells cultured in standard 2i/LIF culture medium [GSE75790](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE75790) [@Ziegenhain2017-sf].
 
 # _powsimR_ Workflow
 
-The basic workflow of `powsimR` is illustrated in Figure \@ref(fig:schematic): A) The mean-dispersion relationship is estimated from RNA-seq data, which can be either single cell or bulk data. The user can provide their own count table or a publicly available one and choose whether to fit a negative binomial or a zero-inflated negative binomial. The plot shows a representative example of the mean-dispersion relation estimated, assuming a zero-inflated negative binomial for the Kolodziejczyk data, the red line is the loess fit, that we later use for the simulations. B) These distribution parameters are then used to set up the simulations. C) Finally, the error rates are calculated. These can be either returned as marginal estimates per sample configuration (top), or stratified according to the estimates of mean expression, dispersion or dropout rate (bottom). Furthermore, the user can evaluate the analytical choices (e.g. imputation and normalisation).
+The basic workflow of `powsimR` is illustrated in Figure \@ref(fig:schematic): A) The mean-dispersion relationship is estimated from RNA-seq data, which can be either single cell or bulk data. The user can provide their own count table or a publicly available one and choose whether to fit a negative binomial or a zero-inflated negative binomial. The plot shows a representative example of the mean-dispersion relation estimated, assuming a negative binomial for the Ziegenhain data, the red line is the loess fit, that we later use for the simulations. B) These distribution parameters are then used to set up the simulations. C) Finally, the error rates are calculated. These can be either returned as marginal estimates per sample configuration (top), or stratified according to the estimates of mean expression, dispersion or dropout rate (bottom). Furthermore, the user can evaluate the analytical choices (e.g. imputation and normalisation).
 
 ```{r schematic, fig.cap="PowsimR schematic overview. (A) Estimation (B) Simulation (C) Evaluation.", echo=F, eval=T, include=T, fig.wide = T}
-knitr::include_graphics("powsimR-vignette-schematic.png")
+knitr::include_graphics("powsimRvignetteschematic.png")
 ```
 
 # Parameter Estimation
@@ -117,6 +117,9 @@ knitr::include_graphics("powsimR-vignette-schematic.png")
 ## Gene Expression
 
 The parameters of the (zero-inflated) negative binomial distribution, i.e. mean and dispersion are estimated by the function `estimateParam`. In addition, the dropout probability, i.e. the fraction of zero counts per gene, is calculated.
+
+It is very important to supply the count matrix of a RNA-seq experiment profiling one group of samples or cells only. For example, for bulk please provide the count matrix containing the expression of the untreated samples / wild type _ONLY_; for single cells please provide the count matrix containing the expression of one cell type sampled from one patient / mouse _ONLY_, e.g. the expression of monocytes from peripheral mononuclear blood (PBMC) extracted from one patient.
+
 The user can choose between two estimation frameworks:
 
 * Negative binomial distribution (NB)
@@ -128,48 +131,36 @@ The user can choose between multiple normalisation methods (see Details section 
 
 The estimates, sequencing depth and normalisation factors are plotted with `plotParam`.
 
-With the following command, we estimate and plot the parameters for the embryonic stem cells using the different media as batch annotation [@Kolodziejczyk2015-vn] (Figure \@ref(fig:paramsplot)). As expected for single cell RNA-seq, the variability (i.e. dispersion) and dropout rates are high. Furthermore, the dispersion strongly depends on the mean and does not level off with higher mean values compared to bulk data.
+With the following command, we estimate and plot the parameters for the mouse embryonic stem cells profiled with Smartseq2 [@Ziegenhain2017-sf] (Figure \@ref(fig:paramsplot)). As expected for single cell RNA-seq, the variability (i.e. dispersion) and dropout rates are high. Furthermore, the dispersion strongly depends on the mean and does not level off with higher mean values compared to bulk data.
 
 ```{r params, echo=T, eval=T, include=T}
-data("kolodziejczk_cnts")
-kolodziejczk_grps <- data.frame(Culture = c(rep("alternative", 194),
-                                            rep("serum", 242),
-                                            rep("standard", 433)),
-                                row.names = colnames(kolodziejczk_cnts),
-                                stringsAsFactors = F)
-dim(kolodziejczk_cnts)
-dim(kolodziejczk_grps)
-TwoiLIF.params <- estimateParam(countData = kolodziejczk_cnts,
-                                batchData = kolodziejczk_grps, 
-                                spikeData = NULL,
-                                spikeInfo = NULL,
-                                Lengths = NULL,
-                                MeanFragLengths = NULL,
-                                Distribution = 'ZINB',
-                                RNAseq = 'singlecell',
-                                Protocol = 'Read',
-                                Normalisation = 'scran',
-                                GeneFilter = 0.05,
-                                SampleFilter = 5,
-                                sigma = 1.96,
-                                NCores = NULL,
-                                verbose=TRUE)
+library("powsimR")
+data("SmartSeq2_Gene_Read_Counts")
+Batches <- data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_Gene_Read_Counts), "_"), "[[", 1),
+                      stringsAsFactors = FALSE, row.names = colnames(SmartSeq2_Gene_Read_Counts))
+data("GeneLengths_mm10")
+estparam_gene <- estimateParam(countData = SmartSeq2_Gene_Read_Counts,
+                          readData = NULL,
+                          batchData = Batches,
+                          spikeData = NULL,
+                          spikeInfo = NULL,
+                          Lengths = GeneLengths, MeanFragLengths = NULL,
+                          RNAseq = 'singlecell', Protocol = 'Read',
+                          Distribution = 'ZINB', Normalisation = "scran",
+                          GeneFilter = 0.1, SampleFilter = 3,
+                          sigma = 1.96, NCores = NULL, verbose = TRUE)
 ```
 
-```{r paramsplot, echo=T, eval=T, include=T, fig.height = 15, fig.width=20, fig.cap="Estimated parameters for Kolodziejczyk data set."}
-plotParam(TwoiLIF.params, annot = T)
+```{r paramsplot, echo=T, eval=T, include=T, fig.height = 15, fig.width=20, fig.cap="Estimated parameters for Ziegenhain data set. A) Quality Control Metrics: Sequencing depth; Library size factors with median (black line) for the filtered data set; Detected genes; Ratio of gene to spike-in counts (if spike-ins were provided). Outliers are marked in red. B) Marginal Distribution of gene mean, dispersion and dropout rate per estimation set. C) Number of genes and samples per estimation set. Provided by the user; Detected = number of genes and samples with at least one count; All = number of genes for which mean, dispersion and dropout could be estimated using non-outlying samples. \nFiltered = number of genes above filter threshold for which mean, dispersion and dropout could be estimated using non-outlying samples. Dropout Genes = number of genes filtered out due to dropout rate. D) Local polynomial regression fit between mean and dispersion estimates with variability band per gene (yellow). Common dispersion estimate (grey dashed line). E) Fraction of dropouts versus estimated mean expression per gene."}
+plotParam(estparam_gene, Annot = F)
 ```
 
-We have implemented a read count simulation framework assuming either a negative binomial distribution or a zero-inflated negative binomial distribution.
+We have implemented a count simulation framework assuming either a negative binomial distribution or a zero-inflated negative binomial distribution.
 To predict the dispersion given a random draw of mean expression value observed, we apply a locally weighted polynomial regression fit. To capture the variability of dispersion estimates observed, a local variability prediction band is applied.
 For bulk RNA-seq experiments, dropouts are less probable but can still occur. To include this phenomenon we sample from the observed dropout rates for genes that have a mean expression value below 5\% dropout probability determined by a decrease constrained B-splines regresssion of dropout rate against mean expression (`cobs` in `r CRANpkg('cobs')`).
-The resulting read count matrix has similar distributional characteristics as the original Kolodziejczyk data set (Figure \@ref(fig:simeval)).
-For the zero-inflated negative binomial distribution, the mean-dispersion relation is similarly estimated, but based on positive read counts. Furthermore, the dropouts are also predicted based on a locally weighted polynomial regression fit between mean and dropouts. Of note, this fit is done separately for amplified and non-amplified transcripts separately and similar proportions of genes as observed are also generated in the simulations [@Ziegenhain2017-sf].
+The resulting count matrix has similar distributional characteristics as the original Ziegenhain data set.
+For the zero-inflated negative binomial distribution, the mean-dispersion relation is similarly estimated, but based on positive read counts. Furthermore, the dropouts are also predicted based on a locally weighted polynomial regression fit between mean and dropouts. Of note, this fit is done separately for amplified and non-amplified transcripts and similar proportions of genes as observed are also generated in the simulations [@Ziegenhain2017-sf].
 We have found that the negative binomial distribution is particularly suited for UMI-methods (e.g. SCRB-Seq, Drop-Seq, 10XGenomics) [@Vieth2017-lh].
-
-```{r simeval, fig.cap="Comparison of estimated and simulated read counts. (A) Dispersion versus Mean. (B) Dropout versus Mean.", echo=F, eval=T, include=T, out.width = "95%"}
-knitr::include_graphics("simeval.jpeg")
-```
 
 ## Spike-ins
 
@@ -186,82 +177,77 @@ The number of molecules $Y_{j}$ for each ERCC spike-in species is the product of
 With the following command, we estimate the parameters for the spike-ins added to the library preparation of mouse embryonic stem cells cultured in standard 2i+lif medium [@Ziegenhain2017-sf]. Descriptive plots of the spike-ins can be drawn with `plotSpike`  (Figure \@ref(fig:spikeplot)).
 
 ```{r spikeparams, echo=T, eval=T, include=T, warning=F}
-data("scrbseq_spike_cnts")
-data("scrbseq_spike_info")
-batch_info <- data.frame(Batch = ifelse(grepl(pattern = "SCRBseqA_", colnames(scrbseq_spike_cnts)), "A", "B"), row.names = colnames(scrbseq_spike_cnts))
-## spike information table
-spike_info <- scrbseq_spike_info[-1,]
-## estimation
-invisible(capture.output(
-  spike.param <- estimateSpike(spikeData = scrbseq_spike_cnts,
-                             spikeInfo = spike_info,
-                             MeanFragLength = NULL,
-                             batchData = batch_info,
-                             Normalisation = 'depth')
-))
+data("SmartSeq2_SpikeIns_Read_Counts")
+data("SmartSeq2_SpikeInfo")
+Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_SpikeIns_Read_Counts), "_"), "[[", 1),
+                       stringsAsFactors = F,
+                       row.names = colnames(SmartSeq2_SpikeIns_Read_Counts))
+# estimation
+estparam_spike <- estimateSpike(spikeData = SmartSeq2_SpikeIns_Read_Counts,
+spikeInfo = SmartSeq2_SpikeInfo,
+MeanFragLength = NULL,
+batchData = Batches,
+Normalisation = 'depth')
 
 ```
 
-```{r spikeplot, fig.cap="Estimated parameters for the spike-ins added to SCRBseq libraries in Ziegenhain dataset. (A) Sequencing depth per sample with median sequencing depth (grey dashed line). (B) Library size normalisation factor per sample with median size factor (grey dashed line). (C) Calibration curve with mean expression estimates and average R squared over all cells. (D) Capture efficiency with binomial logistic regression fit over all cells.", echo=T, warning=F, eval=T, include=T, fig.height = 7, fig.width=10, fig.align='centered'}
-plotSpike(spike.param, annot = F)
+```{r spikeplot, fig.cap="Estimated parameters for the spike-ins added to Smartseq2 libraries in Ziegenhain dataset. (A) Sequencing depth per sample with median sequencing depth (grey dashed line). (B) Library size normalisation factor per sample with median size factor (grey dashed line). (C) Calibration curve with mean expression estimates and average R squared over all cells. (D) Capture efficiency with binomial logistic regression fit over all cells.", echo=T, warning=F, eval=T, include=T, fig.height = 7, fig.width=10, fig.align='centered'}
+plotSpike(estSpike = estparam_spike, Annot = FALSE)
 ```
 
 # Simulations
 
-For simulating differential expression between two groups, the number of genes, number of simulations, percentage of differential expression and effect size are set up with the function `DESetup`. The effect size is here defined as the log2 fold change which can be a constant, sampled from a vector or function. The uniform, normal and gamma distributions are possible options and illustrated in figure \@ref(fig:lfcs). Depending on the settings, these distribution can be broader or narrower. If using this option, we recommend to choose a distribution that closely resembles previously observed or expected fold changes. There is also the possibility to include batch effects.
+For simulating differential expression between two groups, the number of genes, number of simulations, percentage of differential expression and effect size are set up with the function `Setup`. The effect size is here defined as the log2 fold change which can be a constant, sampled from a vector or function. The uniform, normal and gamma distributions are possible options and illustrated in figure \@ref(fig:lfcs). Depending on the settings, these distribution can be broader or narrower. If using this option, we recommend to choose a distribution that closely resembles previously observed or expected fold changes. 
+There is also the possibility to include batch effects.
 
-```{r lfcs, fig.cap="Log2 fold change examples for gamma, uniform and normal distribution.", echo=F, eval=T, include=T, out.width = "95%"}
+```{r lfcs, fig.cap="Log2 fold change examples for gamma, uniform and normal distribution.", echo=F, eval=F, include=T, out.width = "95%"}
 knitr::include_graphics("lfcdist.jpeg")
 ```
 
-The distribution estimates and these settings are then combined to one object with `SimSetup`. This allows the user to assess power of multiple groupwise comparisons and different differential testing methods.
-The following command sets up simulations with 10,000 genes, 20\% genes being DE, log fold change sample from a narrow gamma distribution and parameter estimates based on Kolodziejczyk data.
+The number of replicates per group (n1 and n2) are also defined in `Setup` which can be unbalanced. In addition the user can choose to include the simulaiton of dropout genes so that the resulting count matrix as a percentage of dropouts equal to the rate filtered out during estimation.
 
-```{r simsetup, echo = TRUE, eval = FALSE}
-lfc.gamma = function(x) sample(c(-1,1), size=x,replace=T)*rgamma(x, 3, 3)
-de.opts = DESetup(ngenes=10000, nsims=25,
-                  p.DE=0.2, pLFC=lfc.gamma,
-                  sim.seed = 58673)
-sim.opts = SimSetup(desetup = de.opts,
-                    params = TwoiLIF.params,
-                    spike=NULL,
-                    size.factors='equal',
-                    downsample=FALSE, geneset = FALSE)
+The distribution estimates and these settings are then combined to one object.
+The following command sets up simulations with 10,000 genes, 20\% genes being DE, log fold change sample from a narrow gamma distribution and parameter estimates based on Smartseq2 libraries in Ziegenhain dataset. Please note that I decreased the number of simulations for this illustration.
+
+```{r simsetup, echo = TRUE, eval = TRUE}
+# define log fold change
+p.lfc <- function(x) sample(c(-1,1), size=x,replace=T)*rgamma(x, shape = 1, rate = 2)
+# set up simulations
+setupres <- Setup(ngenes = 10000, nsims = 10,
+                  p.DE = 0.1, pLFC = p.lfc,
+                  n1 = c(48, 96, 384, 800), n2 = c(48, 96, 384, 800),
+                  Thinning = NULL, LibSize = 'given',
+                  estParamRes = estparam_gene,
+                  estSpikeRes = estparam_spike,
+                  DropGenes = TRUE,
+                  sim.seed = 5299, verbose = TRUE)
+
 ```
 
 With the setup defined, the differential expression simulation is run with `simulateDE`. For this, the user needs to set the following options:
 
-* **Replicates:** The number of sample replicates per group (n1 and n2). These can be unbalanced.
 * **DEmethod:** The differential testing method. The user can choose between 20 methods in total.  10 developed for bulk, 9 developed for single cells (see the Details section of `simulateDE`).
 * **Normalisation:** The normalisation method. The user can choose between 10 methods in total.  5 developed for bulk, 5 developed for single cells (see the Details section of `simulateDE`).
 
 There are also additional options: Whether to apply a prefiltering or imputation step prior to normalisation; whether spike-in information should be used (if available). For more information, please consult the Details section of `simulateDE`.
 
-``` {r simrun, eval=F, echo=T}
-simDE = simulateDE(n1 = c(24,48,96,192,384,800),
-                   n2 = c(24,48,96,192,384,800),
-                   sim.settings = sim.opts,
-                   DEmethod = "limma-trend",
-                   Normalisation = "scran",
-                   Label = "none",
-                   Prefilter = NULL,
-                   Impute = NULL,
-                   spikeIns = FALSE,
-                   NCores = NULL,
-                   verbose = TRUE)
+``` {r simrun, eval=T, echo=T}
+simres <- simulateDE(SetupRes = setupres,
+                     Prefilter = NULL, Imputation = NULL,
+                     Normalisation = 'scran',
+                     DEmethod = "limma-trend", DEFilter = FALSE,
+                     NCores = NULL, verbose = TRUE)
 ```
 
 # Evaluation
 
 The results of differential expression simulation are evaluated with `evaluateDE`. We have separated the evaluation from DE detection to allow the user to evaluate power in a comprehensive way as advocated by [@Wu2015-uj].
-In this function, the proporations and error rates are estimated. The rates can be stratified by mean, dispersion dropout or log fold change. Furthermore, the user can choose between different multiple testing correction methods (see `p.adjust.methods`, `ihw` in `r Biocpkg("IHW")` and `qvalue` in `r Biocpkg("qvalue")`). Also, the genes can be filtered by mean, dispersion or dropout. To define biologically interesting genes, a cutoff for the log2 fold change with `delta` can be set.
+In this function, the proportions and error rates are estimated. The rates can be stratified by mean, dispersion, dropout or log fold change. Furthermore, the user can choose between different multiple testing correction methods (see `p.adjust.methods`, `ihw` in `r Biocpkg("IHW")` and `qvalue` in `r Biocpkg("qvalue")`). Also, the genes can be filtered by mean, dispersion or dropout. To define biologically interesting genes, a cutoff for the log fold change with `delta` can be set.
 
-With the following command we evaluate the marginal TPR and FDR conditional on the mean expression for the simulation based on Kolodziejczyk data. For this example, a smaller example simulation run is loaded.
+With the following command we evaluate the marginal TPR and FDR conditional on the mean expression for the simulation based on Ziegenhain data set. 
 
-```{r, echo = T, eval=T}
-data("kolodziejczk_simDE")
-simDE = kolodziejczk_simDE
-evalDE = evaluateDE(simRes = simDE,
+```{r, echo = T, eval=F}
+evalres = evaluateDE(simRes = simres,
                      alpha.type = 'adjusted',
                      MTC = 'BH',
                      alpha.nominal = 0.1,
@@ -277,108 +263,47 @@ The results of the evaluation can be plotted with `plotEvalDE`.
 * **rate:** The user can choose to plot the marginal or stratified error rates. The number of genes per stratum are also summarised.
 * **quick:** If this is set to `TRUE` then only the TPR and FDR will be plotted.
 
-With the following commands, the quick marginal and conditional power assessment for the Kolodziejczyk data is plotted (Figurer \@ref(fig:evalplot1) and \@ref(fig:evalplot2)).
+With the following commands, the quick marginal and conditional power assessment for the Ziegenhain data is plotted (Figurer \@ref(fig:evalplot1) and \@ref(fig:evalplot2)).
 
 ```{r evalplot1, echo=T, eval=T, fig.cap="Marginal Error Rates. (A) Marginal TPR and FDR per sample size comparison. (B) Marginal TPR and FDR per sample size comparison with dashed line indicating nominal alpha level (type I error) and nominal 1-beta level, i.e. 80% power (type II error)."}
-plotEvalDE(evalRes = evalDE,
+plotEvalDE(evalRes = evalres,
             rate='marginal',
-            quick=TRUE, annot=FALSE)
+            quick=TRUE, Annot=FALSE)
 ```
 
 ```{r evalplot2, echo=T, eval=T, fig.cap="Stratified Error Rates. (A) Conditional TPR and FDR per sample size comparison per stratum. (B) Number of equally (EE) and differentially expressed (DE) genes per stratum."}
-plotEvalDE(evalRes = evalDE,
+plotEvalDE(evalRes = evalres,
             rate='stratified',
-            quick=TRUE, annot=FALSE)
+            quick=TRUE, Annot=FALSE)
 ```
 
 # Additional Functionalities
 
-## Read Count Matrices
+## Simulation Settings
 
-Some users might be interested in outputting only simulated read counts by calling `simulateCounts`. With this function, users can also simulate multiple groups of samples. To define meaningful log2 fold change differences between the groups, I recommend to use multivariate distributions with a defined covariance structure.
+### Include differences in library sizes
 
-One can also have a quick visualisation of the simulated counts with `plotCounts`.
+By default, there is no difference in library sizes between the samples. If the user wishes for a more realistic, i.e. more variable distribution of read counts across samples, the library sizes can be sampled from observed, vector or function. See the Details section of `Setup`.
 
-Here a small example for simulating a data set containing two groups with batch effects (Figure \@ref(fig:plottwogrp)).
+### Downsample simulated count matrices by binomial thinning
 
-```{r twogroup, echo = TRUE, eval = TRUE}
-plfc.foo = function(x) sample(c(-1,1), size=x, prob = c(0.25,0.75),replace=T)*
-  rgamma(x, 2, 4)
-blfc.foo = function(x) rnorm(x, sd = 0.25)
-simcounts.2grp <- simulateCounts(n=c(120, 100),
-                                 ngenes=10000,
-                                 p.DE=0.1, pLFC=plfc.foo,
-                                 p.B=0.1, bLFC=blfc.foo, 
-                                 bPattern="uncorrelated",
-                                 p.M=NULL, mLFC=NULL,
-                                 params=kolodziejczk_param,
-                                 spike=NULL,
-                                 spikeIns=FALSE,
-                                 size.factors="given",
-                                 downsample=F,
-                                 geneset=F,
-                                 sim.seed=NULL,
-                                 verbose=TRUE)
-```
-
-```{r plottwogrp, fig.cap="PCA plot showing two simulated groups.", echo=F, eval=T, include=T, out.width = "95%"}
-plotCounts(simCounts = simcounts.2grp, Distance = "euclidean", Scale = T, DimReduce = "PCA", verbose = T)
-```
-
-With this function, we can also simulate single cell populations (Figure \@ref(fig:plotthreegrp)). In the following section the expression profiles of embryonic stem cells grown in different media are used as an example. The covariance matrix of log2 fold changes needs to be provided and forms the basis for simulating cell populations differing in expression by a multivariate normal distribution of fold changes:
-
-```{r multigroup, echo=T, eval=T, include=T}
-if(length(grep("MBESS",installed.packages()))==0){
-   install.packages("MBESS", dependencies = TRUE, repos = "https://cran.rstudio.com/")
-}
-if(length(grep("mvtnorm",installed.packages()))==0){
-   install.packages("mvtnorm", dependencies = TRUE, repos = "https://cran.rstudio.com/")
- }
-cor.lfc <- matrix(c(1,0.5,0.7,0.5,1,0.95,0.7,0.95,1), nrow=3, ncol=3)
-v.lfc <- c(4,1,1)
-cov.lfc <- MBESS::cor2cov(cor.lfc,v.lfc)
-
-plfc.foo = function(x) {
-  mu.tmp = stats::rnorm(n = ncol(cov.lfc), mean = 0, sd = 0.5)
-  mvtnorm::rmvnorm(x, mean = mu.tmp, sigma = cov.lfc)
-}
-
-simcounts.3grp <- simulateCounts(n=c(100, 50, 50),
-                                 ngenes=10000,
-                                 p.DE=0.1, pLFC=plfc.foo,
-                                 p.B=NULL, bLFC=NULL, 
-                                 bPattern="uncorrelated",
-                                 p.M=NULL, mLFC=NULL,
-                                 params=kolodziejczk_param,
-                                 spike=NULL,
-                                 spikeIns=FALSE,
-                                 size.factors="given",
-                                 downsample=F,
-                                 geneset=F,
-                                 sim.seed=NULL,
-                                 verbose=TRUE)
-```
-
-```{r plotthreegrp, fig.cap="PCA plot showing three simulated groups.", echo=F, eval=T, include=T, out.width = "95%"}
-plotCounts(simCounts = simcounts.3grp, Distance = "euclidean", Scale = F, DimReduce = "PCA", verbose = T)
-```
+There is the additional option to downsample simulated count matrices with the option `Thinning` in `Setup` in order to know in how far a shallower sequencing depth affects the power to detect differential expression. For example, the estimation was done using 500 cells and in the simulations we would like to compare two groups with a total of 1000 cells but do not want to increase the sequencing depth compared to the pilot data. Thus we can set the Thinning parameters to 0.5 to half the number of counts per cell. Please note, that the thinning assumes that the count matrix is based on reads, not UMIs. For UMI-methods, please supply the UMI count matrix as `countData` in `estimateParam` and the raw read count matrix without UMI deduplication as `readData`. For more information, please check out the help page of `estimateParam`.
 
 ## Negative Binomial Parameters
 
 ### Count matrices of single cell RNA-seq experiments
 
-We have uploaded read count matrices of 5 single cell RNA-seq experiments on [github](https://github.com/bvieth/powsimRData).
+We have uploaded count matrices of 5 single cell RNA-seq experiments on [github](https://github.com/bvieth/powsimRData). There are also smaller data sets included, see description on the help page `GeneCounts`.
 The user can calculate the negative binomial parameters with `estimateParam`, view these estimates with `plotParam` and use it as an input for simulations.
 
 ### Access to raw read counts stored in online data base
 
 We have provided a number of exemplatory single cell RNA-seq data sets for parameter estimation. Nevertheless, you might not find a data set that matches your own experimental setup. In those cases, we recommend to check online repositories for a suitable data set. Below you can find an example script to get count tables from [recount2](https://jhubiostatistics.shinyapps.io/recount/) [@Collado-Torres2017-mo]. For a single cell RNA-seq data base, see [conquer](http://imlspenticton.uzh.ch:3838/conquer/) [@Soneson2018-xe].
-As before, the user can then estimate the negative binomial parameters with `estimateParam`, view these estimates with `plotParam` and use it as an input for `SimSetup`.
+As before, the user can then estimate the negative binomial parameters with `estimateParam`, view these estimates with `plotParam` and use it as an input for `Setup`.
 
 ```{r online_repos, echo = T, eval = F}
 # Install and load the R package
-source('http://bioconductor.org/biocLite.R')
-biocLite('recount')
+BiocManager::install("recount")
 library('recount')
 
 # Download the data set
@@ -395,41 +320,31 @@ sample.info <- data.frame(colData(rse_gene)@listData, stringsAsFactors=F)
 gene.info <- data.frame(GeneID=rowData(rse_gene)@listData$gene_id, GeneLength=rowData(rse_gene)@listData$bp_length, stringsAsFactors=F)
 ```
 
-## Simulation Settings
-
-By default, there is no difference in library sizes between the samples. If the user wishes for a more realistic, i.e. more variable distribution of read counts across samples, the library sizes can be sampled from observed, vector or function.
-
-## Evaluate Simulation Framework
+## Evaluate distributions for RNA-seq data sets
 
 It is important to validate the appropiateness of the chosen simulation framework. The function `evaluateDist` compares the theoretical fit of the Poisson, negative binomial, zero-inflated Poisson and zero-inflated negative binomial and beta-Poisson distribution to the empirical RNA-seq read counts ([@Colin_Cameron2013-vb], [@Kim2013-qo], [@Delmans2016-ef]).
 The evaluation is then plotted with the function `plotEvalDist` which summarizes the best fitting distribution per gene based on goodness-of-fit statistics (Chi-square test), Akaike Information Criterium, comparing observed dropouts with zero count prediction of the models and comparing the model fitness with Likelihood Ratio Test and Vuong Test.
 As noted by other developers, goodness-of-fit tests are not an objective tool and heavily depend on sample sizes [@Delignette-Muller2015-ie]. A graphical evaluation of the fitted distribution is considered the most appropiate way but for high-throughput sequencing this is an unrealistic recommendation.
 Bulk RNA-seq experiments are usually conducted with a small number of samples. We therefore recommend to rely on the goodness-of-fit validation by [@Mi2015-ri]. 
 
-With the following command, we determine and plot the fitting for the embryonic stem cells cultured in standard 2i lif medium [@Kolodziejczyk2015-vn]. Note that the results shown in Figure \@ref(fig:evaldistplot) will differ from the executed command since I reduced the data set and evaluate the fitting only for a fraction of genes.
+With the following command, we determine and plot the fitting for the embryonic stem cells cultured in standard 2i+lif medium profiled with the Smartseq2 protocol [@Ziegenhain2017-sf]. Note that the results shown in Figure \@ref(fig:evaldistplot) will differ from the executed command since I reduced the data set and evaluate the fitting only for a fraction of genes.
 
 ``` {r evaldist, eval=F, echo=T}
-library("powsimRDev")
-data("kolodziejczk_cnts")
-kolodziejczk_cnts <- kolodziejczk_cnts[, grep('standard',
-                                              colnames(kolodziejczk_cnts))]
-TwoiLIF.dist <- evaluateDist(countData = kolodziejczk_cnts,
-                             batchData = NULL, 
-                             spikeData = NULL, 
-                             spikeInfo = NULL, 
-                             Lengths = NULL, 
-                             MeanFragLengths = NULL, 
-                             RNAseq = 'singlecell', 
-                             normalisation = 'scran', 
-                             frac.genes = 0.2, 
-                             min.meancount = 0.1, 
-                             max.dropout = 0.8, 
-                             min.libsize = 1000, 
-                             verbose = TRUE)
+data("SmartSeq2_Gene_Read_Counts")
+evalDistRes <- evaluateDist(countData = SmartSeq2_Gene_Read_Counts, 
+                            batchData = NULL,
+                            spikeData = NULL, spikeInfo = NULL,
+                            Lengths = NULL, MeanFragLengths = NULL,
+                            RNAseq = "singlecell", Protocol = "UMI",
+                            Normalisation = "scran",
+                            GeneFilter = 0.1, SampleFilter = 3,
+                            FracGenes = 0.1,
+                            verbose = TRUE)
+plotEvalDist(evalDistRes)
 ```
 
-```{r evaldistplot, echo=F, eval=T, include=T, fig.wide = TRUE, fig.cap="Distribution Evaluation. A) Goodness-of-fit of the model assessed with a Chi-Square Test based on residual deviance and degrees of freedom. B) Akaike Information Criterion per gene: Model with the lowest AIC. Model with the lowest AIC and passed goodness-of-fit statistic test.  C) Observed versus predicted dropouts per model and gene plotted without outliers. D) Model Assessment based on LRT for nested models and Vuong test for nonnested models. "}
-knitr::include_graphics("evaldist.png")
+```{r evaldistplot, echo=F, eval=F, include=T, fig.wide = TRUE, fig.cap="Distribution Evaluation. A) Goodness-of-fit of the model assessed with a Chi-Square Test based on residual deviance and degrees of freedom. B) Akaike Information Criterion per gene: Model with the lowest AIC. Model with the lowest AIC and passed goodness-of-fit statistic test.  C) Observed versus predicted dropouts per model and gene plotted without outliers. D) Model Assessment based on LRT for nested models and Vuong test for nonnested models. "}
+knitr::include_graphics("evaldist_smartseq2.png", error = FALSE)
 ```
 
 # Session info {.unnumbered}

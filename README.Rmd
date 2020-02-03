@@ -25,7 +25,7 @@ install.packages('devtools')
 library(devtools)
 ```
 
-I recommend to install first the dependencies manually and then powsimR. If you plan to use MAGIC for imputation, then please follow their [instruction](https://github.com/KrishnaswamyLab/MAGIC) to install the python implementation beforre installing powsimR.  
+I recommend to install first the dependencies manually and then powsimR. If you plan to use MAGIC for imputation, then please follow their [instruction](https://github.com/KrishnaswamyLab/MAGIC) to install the python implementation before installing powsimR.  
 
 ```{r, echo=T, eval=F, tidy=T}
 ipak <- function(pkg, repository=c('CRAN', 'Bioconductor', 'github')){
@@ -55,19 +55,19 @@ ipak <- function(pkg, repository=c('CRAN', 'Bioconductor', 'github')){
 
 # CRAN PACKAGES
 cranpackages <- c("broom", "cobs", "cowplot", 
-                  "data.table", "devtools", "doParallel", "dplyr", "drc", "DrImpute", 
-                  "fastICA", "fitdistrplus", "foreach", 
-                  "gamlss.dist", "ggExtra", "ggplot2", "ggthemes", "grDevices",
-                  "glmnet", "grid", "gtools", "Hmisc", "kernlab", "MASS", "MBESS",
+                  "data.table", "doParallel", "dplyr", "DrImpute", 
+                  "fastICA", "fitdistrplus", "foreach", "future",
+                  "gamlss.dist", "ggplot2", "ggpubr", "grDevices",
+                  "grid", "Hmisc", "kernlab", "MASS", "magrittr", "MBESS", "Matrix",
                   "matrixStats", "mclust", "methods", "minpack.lm", "moments", "msir", 
                   "NBPSeq", "nonnest2", "parallel", "penalized", "plyr", "pscl",
-                  "reshape2", "Rmagic", "rsvd", "Rtsne", "scales", "Seurat", "snow", 
-                  "stats", "tibble", "tidyr", "VGAM", "ZIM")
+                  "reshape2", "Rmagic", "rsvd", "Rtsne", "scales", "Seurat", "snow", "sctransform", 
+                  "stats", "tibble", "tidyr", "truncnorm", "VGAM", "ZIM", "zoo")
 ipak(cranpackages, repository='CRAN')
 
 # BIOCONDUCTOR
-biocpackages <- c("AnnotationDbi", "bayNorm", "baySeq", "Biobase", "BiocGenerics", 
-                  "BiocParallel", "DEDS", "DESeq2", "EBSeq", "edgeR", "IHW", "iCOBRA",
+biocpackages <- c("bayNorm", "baySeq", "BiocGenerics", "BiocParallel", 
+                  "DEDS", "DESeq2", "EBSeq", "edgeR", "IHW", "iCOBRA",
                   "limma", "Linnorm", "MAST", "monocle", "NOISeq", "qvalue", "ROTS", "RUVSeq", 
                   "S4Vectors", "scater", "scDD", "scde", "scone", "scran", "SCnorm", 
                   "SingleCellExperiment", "SummarizedExperiment", "zinbwave")
@@ -77,6 +77,7 @@ ipak(biocpackages, repository='Bioconductor')
 githubpackages <- c('nghiavtr/BPSC', 'cz-ye/DECENT', 
                     'mohuangx/SAVER', 'statOmics/zingeR')
 ipak(githubpackages, repository = 'github')
+
 
 ```
 
@@ -121,7 +122,7 @@ For examples and tips on using the package, please consult the vignette after su
 browseVignettes('powsimR')
 ```
 
-Some users have experienced issues installing powsimR due to vignette compilation errors. If that is the case, you can leave out building the vignette and read it on my Github Page of [powsimR](https://bvieth.github.io/powsimR/articles/powsimR.html) or download it as a html file [here](https://github.com/bvieth/powsimR/tree/master/inst/doc/powsimR.html).
+Some users have experienced issues installing powsimR due to vignette compilation errors. If that is the case, you can leave out building the vignette (by setting build_vignettes to FALSE) and read it on my Github Page of [powsimR](https://bvieth.github.io/powsimR/articles/powsimR.html) or download it as a html file [here](https://github.com/bvieth/powsimR/tree/master/inst/doc/powsimR.html).
 
 ### DLLs and ulimit
 

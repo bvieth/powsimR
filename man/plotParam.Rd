@@ -2,24 +2,50 @@
 % Please edit documentation in R/Plot.R
 \name{plotParam}
 \alias{plotParam}
-\title{Visualize distributional characteristics of RNAseq experiment}
+\title{Visualize distributional characteristics of RNA-seq experiment}
 \usage{
-plotParam(estParamRes, annot=TRUE)
+plotParam(estParamRes, Annot=TRUE)
 }
 \arguments{
 \item{estParamRes}{The output of \code{\link{estimateParam}}.}
 
-\item{annot}{A logical vector. If \code{TRUE}, a short figure legend is included.}
+\item{Annot}{A logical vector. If \code{TRUE}, a short figure legend is included.}
 }
 \value{
 A ggplot object.
 }
 \description{
-This function plots the results of the parameter estimation. This includes the absolute and relative sequencing depth (i.e. library size factor) as well as marginal log2(mean+1), log2(dispersion) and dropout. Furthermore, the mean-dispersion relationship with loess fit for simulations is visualized. Lastly, the mean-dropout rate is presented as a smooth scatter plot.
+This function plots the results of the parameter estimation. This includes the absolute and relative sequencing depth (i.e. library size factor) as well as marginal log mean, log dispersion and dropout. Furthermore, the mean-dispersion relationship with loess fit for simulations is visualized. Lastly, the mean-dropout rate is presented as a smooth scatter plot.
 }
 \examples{
 \dontrun{
-plotParam(estParamRes = kolodziejczk_param, annot=TRUE)
+# using example data set
+data("CELseq2_Gene_UMI_Counts")
+data("CELseq2_Gene_Read_Counts")
+Batches <- data.frame(Batch = sapply(strsplit(colnames(CELseq2_Gene_UMI_Counts), "_"), "[[", 1),
+                  stringsAsFactors = FALSE, row.names = colnames(CELseq2_Gene_UMI_Counts))
+data("GeneLengths_mm10")
+data("CELseq2_SpikeIns_UMI_Counts")
+data("CELseq2_SpikeInfo")
+# estimation
+estparam <-  estimateParam(countData = CELseq2_Gene_UMI_Counts,
+readData = CELseq2_Gene_Read_Counts,
+batchData = Batches,
+spikeData = NULL,
+spikeInfo = NULL,
+Lengths = GeneLengths_mm10,
+MeanFragLengths = NULL,
+Distribution = 'NB',
+RNAseq = 'singlecell',
+Protocol = 'UMI',
+Normalisation = 'scran',
+GeneFilter = 0.1,
+SampleFilter = 3,
+sigma = 1.96,
+NCores = NULL,
+verbose = TRUE)
+# plotting
+plotParam(estParamRes = estparam, Annot=TRUE)
 }
 }
 \author{

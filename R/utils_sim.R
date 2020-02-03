@@ -105,6 +105,7 @@
 # Simulate NB -------------------------------------------------------------
 
 #' @importFrom stats rnorm rnbinom
+#' @importFrom truncnorm rtruncnorm
 .sc.NB_counts <- function(simOptions,
                           phenotype,
                           modelmatrix,
@@ -135,12 +136,16 @@
   predsize.mean = suppressWarnings(approx(meansizefit$x,
                                           meansizefit$y,
                                           xout = lmu, rule=2)$y)
+  predsize.mean[predsize.mean==0] = min(predsize.mean > 0, na.rm = TRUE)
   predsize.sd = suppressWarnings(approx(meansizefit$x,
                                         meansizefit$sd,
                                         xout = lmu, rule=2)$y)
-  sizevec = rnorm(n = length(lmu),
-                  mean = predsize.mean,
-                  sd = predsize.sd)
+  predsize.sd[predsize.sd==0] = min(predsize.sd > 0, na.rm = TRUE)
+  sizevec = truncnorm::rtruncnorm(n = length(lmu),
+                                  a = min(sizes, na.rm = TRUE),
+                                  b = Inf,
+                                  mean = predsize.mean,
+                                  sd = predsize.sd)
 
   # size factor
   if (simOptions$SimSetup$LibSize == "equal") {
@@ -172,8 +177,8 @@
   # result count matrix
   counts = matrix(
     stats::rnbinom(nsamples * ngenes,
-                   mu = 2 ^ mumat - 1,
-                   size = 2 ^ sizevec),
+                   mu = expm1(mumat),
+                   size = expm1(sizevec)),
     ncol = nsamples,
     nrow = ngenes,
     dimnames = list(paste0(rownames(mumat),"_", seq_len(ngenes)),
@@ -224,12 +229,16 @@
   predsize.mean = suppressWarnings(approx(meansizefit$x,
                                           meansizefit$y,
                                           xout = lmu, rule=2)$y)
+  predsize.mean[predsize.mean==0] = min(predsize.mean > 0, na.rm = TRUE)
   predsize.sd = suppressWarnings(approx(meansizefit$x,
                                         meansizefit$sd,
                                         xout = lmu, rule=2)$y)
-  sizevec = rnorm(n = length(lmu),
-                  mean = predsize.mean,
-                  sd = predsize.sd)
+  predsize.sd[predsize.sd==0] = min(predsize.sd > 0, na.rm = TRUE)
+  sizevec = truncnorm::rtruncnorm(n = length(lmu),
+                                  a = min(pos.sizes, na.rm = TRUE),
+                                  b = Inf,
+                                  mean = predsize.mean,
+                                  sd = predsize.sd)
 
   # size factor
   if (simOptions$SimSetup$LibSize == "equal") {
@@ -351,8 +360,8 @@
   # make the count matrix
     counts.nb = matrix(
       stats::rnbinom(nsamples * ngenes,
-                     mu = 2 ^ mumat - 1,
-                     size = 2 ^ sizevec),
+                     mu = expm1(mumat),
+                     size = expm1(sizevec)),
       ncol = nsamples,
       nrow = ngenes)
 
@@ -447,12 +456,16 @@
   predsize.mean = suppressWarnings(approx(meansizefit$x,
                                           meansizefit$y,
                                           xout = lmu, rule=2)$y)
+  predsize.mean[predsize.mean==0] = min(predsize.mean > 0, na.rm = TRUE)
   predsize.sd = suppressWarnings(approx(meansizefit$x,
                                         meansizefit$sd,
                                         xout = lmu, rule=2)$y)
-  sizevec = rnorm(n = length(lmu),
-                  mean = predsize.mean,
-                  sd = predsize.sd)
+  predsize.sd[predsize.sd==0] = min(predsize.sd > 0, na.rm = TRUE)
+  sizevec = truncnorm::rtruncnorm(n = length(lmu),
+                                  a = min(sizes, na.rm = TRUE),
+                                  b = Inf,
+                                  mean = predsize.mean,
+                                  sd = predsize.sd)
 
   # effective means
   effective.means <- outer(true.means, all.facs, "*")
@@ -461,12 +474,14 @@
 
   # replace counts with dropouts
   dcounts = simData$counts
-  dcounts[d.index,] = matrix(stats::rnbinom(nsamples * ndrop,
-                                           mu = 2 ^ effective.means - 1,
-                                           size = 2 ^ sizevec),
-                            ncol = nsamples,
-                            nrow = ndrop)
-
+  dcounts[d.index,] = suppressWarnings(
+    matrix(stats::rnbinom(nsamples * ndrop,
+                           mu = expm1(effective.means),
+                           size = expm1(sizevec)),
+            ncol = nsamples,
+            nrow = ndrop)
+    )
+  dcounts[is.na(dcounts)] <- 0
   dcounts <- apply(dcounts, 2, function(x) {storage.mode(x) <- 'integer'; x})
 
   simData$counts <- dcounts
@@ -527,183 +542,6 @@
   return(thinData)
 }
 
-# Simulate multiple groups ------------------------------------------------
 
-#' @importFrom stats model.matrix coef poisson sd rbinom
-.simRNAseq.multi <- function(simOptions, n, verbose) {
-
-  # warn if estimated number of genes is larger than ngenes so that fillin will not work!
-  if(isTRUE(simOptions$FillUp) &&
-     c(simOptions$ngenes < length(simOptions$means))){
-    stop(message(paste0(simOptions$ngenes, " genes are to be simulated with filling up, but there are ", length(simOptions$means), " to sample mean expression values from. Please consider to thin the means parameter provided or set FillUp to FALSE.")))
-  }
-
-  if(is.null(simOptions$bLFC)) {
-    ## make group labels for phenotype LFC
-    ## solve the issue by naming n!
-    phenotype <- as.factor(unlist(sapply(names(n), function(i) {rep(i, n[i])}, simplify = F, USE.NAMES = F)))
-    ## make model matrix
-    mod = stats::model.matrix(~-1 + phenotype)
-    coeffs = cbind(simOptions$pLFC)
-    batch = NULL
-  }
-
-  if(!is.null(simOptions$bLFC)) {
-    if(simOptions$bPattern=="uncorrelated") {
-      ## make group labels for phenotype LFC
-      phenotype <- as.factor(unlist(sapply(names(n), function(i) {rep(i, n[i])}, simplify = F, USE.NAMES = F)))
-      # make batch labels for batch LFC
-      batch <- as.factor(unlist(sapply(names(n), function(i) {rep_len(c(-1,1), n[i])}, simplify = F, USE.NAMES = F)))
-      # make model matrix
-      mod = stats::model.matrix(~-1 + phenotype + batch)
-      coeffs = cbind(simOptions$pLFC, simOptions$bLFC)
-    }
-    if(simOptions$bPattern=="orthogonal") {
-      ## make group labels for phenotype LFC
-      phenotype <- as.factor(unlist(sapply(names(n), function(i) {rep(i, n[i])}, simplify = F, USE.NAMES = F)))
-      # make batch labels for batch LFC
-      batch <- as.factor(unlist(sapply(names(n), function(i) {
-        1 - 2*stats::rbinom(n[i],size=1,prob=0.5)
-      }, simplify = F)))
-      # make model matrix
-      mod = stats::model.matrix(~-1 + phenotype + batch)
-      coeffs = cbind(simOptions$pLFC, simOptions$bLFC)
-    }
-    if(simOptions$bPattern=="correlated") {
-      ## make group labels for phenotype LFC
-      phenotype <- as.factor(unlist(sapply(names(n), function(i) {rep(i, n[i])}, simplify = F, USE.NAMES = F)))
-      # make batch labels for batch LFC
-      flip <- stats::rbinom(sum(n), size = 1, prob = 0.9)
-      corgroup <- sample(levels(phenotype), size = 1)
-      phenogroups <- ifelse(phenotype==corgroup, -1, 1)
-      batch <- as.numeric(phenogroups)*flip + -as.numeric(phenogroups)*(1-flip)
-      # make model matrix
-      mod = stats::model.matrix(~-1 + phenotype + batch)
-      coeffs = cbind(simOptions$pLFC, simOptions$bLFC)
-    }
-  }
-
-  # generate read counts
-  if (attr(simOptions, 'RNAseq') == 'singlecell') {
-    # take mean dispersion relationship as is
-    if (!isTRUE(simOptions$ActualMeans)) {
-      if (verbose) {message(paste0("Predict dispersion based on true mean values.")) }
-      if (attr(simOptions, 'Distribution') == 'NB') {
-        if (!isTRUE(simOptions$FillUp)) {
-          if (verbose) {message(paste0("Sampling with replace.")) }
-          sim.data = .sc.NB.SampleWReplace_counts(sim.options = simOptions,
-                                                  phenotype = phenotype,
-                                                  modelmatrix = mod,
-                                                  coef.dat=coeffs)
-        }
-        if (isTRUE(simOptions$FillUp)) {
-          if (verbose) {message(paste0("Fill in with low magnitude Poisson.")) }
-          sim.data = .sc.NB.FillIn_counts(sim.options = simOptions,
-                                          phenotype = phenotype,
-                                          modelmatrix = mod,
-                                          coef.dat=coeffs)
-        }
-      }
-      if (attr(simOptions, 'Distribution') == 'ZINB') {
-        if (!isTRUE(simOptions$FillUp)) {
-          if (verbose) {message(paste0("Sampling with replace.")) }
-          sim.data = .sc.ZINB.SampleWReplace_counts(sim.options = simOptions,
-                                                    phenotype = phenotype,
-                                                    modelmatrix = mod,
-                                                    coef.dat=coeffs)
-        }
-        if (isTRUE(simOptions$FillUp)) {
-          if (verbose) {message(paste0("Fill in with low magnitude Poisson.")) }
-          sim.data = .sc.ZINB.FillIn_counts(sim.options = simOptions,
-                                            phenotype = phenotype,
-                                            modelmatrix = mod,
-                                            coef.dat=coeffs)
-        }
-      }
-    }
-
-    # determine actual mean and then draw dispersion
-    if (isTRUE(simOptions$ActualMeans)) {
-      if (verbose) {message(paste0("Predict dispersion based on effective mean values.")) }
-      if (attr(simOptions, 'Distribution') == 'NB') {
-        if (!isTRUE(simOptions$FillUp)) {
-          if (verbose) {message(paste0("Sampling with replace.")) }
-          sim.data = .sc.NB.SampleWReplace_ActualMeans_counts(sim.options = simOptions,
-                                                              phenotype = phenotype,
-                                                              modelmatrix = mod,
-                                                              coef.dat=coeffs)
-        }
-        if (isTRUE(simOptions$FillUp)) {
-          if (verbose) {message(paste0("Fill in with low magnitude Poisson.")) }
-          sim.data = .sc.NB.FillIn_ActualMeans_counts(sim.options = simOptions,
-                                                      phenotype = phenotype,
-                                                      modelmatrix = mod,
-                                                      coef.dat=coeffs)
-        }
-      }
-      if (attr(simOptions, 'Distribution') == 'ZINB') {
-        if (!isTRUE(simOptions$FillUp)) {
-          if (verbose) {message(paste0("Sampling with replace.")) }
-          sim.data = .sc.ZINB.SampleWReplace_ActualMeans_counts(sim.options = simOptions,
-                                                                phenotype = phenotype,
-                                                                modelmatrix = mod,
-                                                                coef.dat=coeffs)
-        }
-        if (isTRUE(simOptions$FillUp)) {
-          if (verbose) {message(paste0("Fill in with low magnitude Poisson.")) }
-          sim.data = .sc.ZINB.FillIn_ActualMeans_counts(sim.options = simOptions,
-                                                        phenotype = phenotype,
-                                                        modelmatrix = mod,
-                                                        coef.dat=coeffs)
-        }
-      }
-    }
-  }
-
-  if (attr(simOptions, 'RNAseq') == 'bulk')  {
-    sim.data = .bulk.NB.RNAseq_counts(sim.options = simOptions,
-                                      phenotype = phenotype,
-                                      modelmatrix = mod,
-                                      coef.dat=coeffs)
-  }
-
-  sim.counts = sim.data$counts
-  sf.value = sim.data$sf
-  mus = sim.data$mus
-  disps = sim.data$disps
-  drops = sim.data$drops
-
-  sim.counts <- apply(sim.counts,2,function(x) {storage.mode(x) <- 'integer'; x})
-
-  # fill in gene pseudonames if missing (only true for in silico)
-  if (is.null(rownames(sim.counts))) {
-    rownames(sim.counts) <- paste0("G", 1:nrow(sim.counts))
-    names(mus) <- names(disps) <- names(drops) <- rownames(sim.counts)
-  }
-  # add human readable sample names
-  if (is.null(colnames(sim.counts))) {
-    if(is.null(batch)) {
-      ngroup <- phenotype
-      colnames(sim.counts) <- paste0("S", 1:ncol(sim.counts), "_", ngroup)
-    }
-    if(!is.null(batch)) {
-      ngroup <- phenotype
-      nbatch <- ifelse(batch==-1, "b1", "b2")
-      colnames(sim.counts) <- paste0("S", 1:ncol(sim.counts), "_", ngroup, "_", nbatch)
-    }
-  }
-
-  invisible(gc())
-
-  ## return
-  list(counts = sim.counts,
-       phenotypes = phenotype,
-       mus=mus,
-       disps=disps,
-       drops=drops,
-       batches = batch,
-       sf = sf.value,
-       simOptions = simOptions)
-}
 
 

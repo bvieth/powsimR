@@ -4,12 +4,12 @@
 \alias{plotEvalSim}
 \title{Visualize power assessment}
 \usage{
-plotEvalSim(evalRes, annot=TRUE)
+plotEvalSim(evalRes, Annot=TRUE)
 }
 \arguments{
 \item{evalRes}{The output of \code{\link{evaluateSim}}.}
 
-\item{annot}{A logical vector. If \code{TRUE}, a short figure legend under the plot is included.}
+\item{Annot}{A logical vector. If \code{TRUE}, a short figure legend under the plot is included.}
 }
 \value{
 A ggplot object.
@@ -19,9 +19,42 @@ This function plots the results of \code{\link{evaluateSim}} for assessing the s
 }
 \examples{
 \dontrun{
-## using example data set
-eval.sim <- evaluateSim(simRes = kolodziejczk_simDE, timing = T)
-plotEvalSim(eval.sim)
+# estimate gene parameters
+data("SmartSeq2_Gene_Read_Counts")
+Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_Gene_Read_Counts), "_"), "[[", 1),
+                     stringsAsFactors = F,
+                     row.names = colnames(SmartSeq2_Gene_Read_Counts))
+data("GeneLengths_mm10")
+estparam_gene <- estimateParam(countData = SmartSeq2_Gene_Read_Counts,
+                               readData = NULL,
+                               batchData = Batches,
+                               spikeData = NULL, spikeInfo = NULL,
+                               Lengths = GeneLengths_mm10, MeanFragLengths = NULL,
+                               RNAseq = 'singlecell', Protocol = 'Read',
+                               Distribution = 'ZINB', Normalisation = "scran",
+                               GeneFilter = 0.1, SampleFilter = 3,
+                               sigma = 1.96, NCores = NULL, verbose = TRUE)
+# define log fold change
+p.lfc <- function(x) sample(c(-1,1), size=x,replace=T)*rgamma(x, shape = 1, rate = 2)
+# set up simulations
+setupres <- Setup(ngenes = 10000, nsims = 10,
+                  p.DE = 0.1, pLFC = p.lfc,
+                  n1 = c(20,50,100), n2 = c(30,60,120),
+                  Thinning = c(1,0.9,0.8), LibSize = 'given',
+                  estParamRes = estparam_gene,
+                  estSpikeRes = NULL,
+                  DropGenes = FALSE,
+                  sim.seed = 66437, verbose = TRUE)
+# run simulation
+simres <- simulateDE(SetupRes = setupres,
+                     Prefilter = "FreqFilter",
+                     Imputation = NULL,
+                     Normalisation = 'scran', Label = 'none',
+                     DEmethod = "limma-trend", DEFilter = FALSE,
+                     NCores = NULL, verbose = TRUE)
+# evaluation
+evalsimres <- evaluateSim(simRes = simres)
+plotEvalSim(evalRes = evalsimres, Annot = TRUE)
 }
 }
 \author{

@@ -4,23 +4,20 @@
 \alias{evaluateSim}
 \title{Compute the performance related metrics from simulation results.}
 \usage{
-evaluateSim(simRes, timing=TRUE)
+evaluateSim(simRes)
 }
 \arguments{
 \item{simRes}{The result from \code{\link{simulateDE}}.}
-
-\item{timing}{A logical vector indicating whether to summarise computational time of simulation run.
-Default is \code{TRUE}.}
 }
 \value{
 A list with the following entries:
-\item{Log2FoldChange}{The absolute mean error (\code{MAE}), root mean square error (\code{RMSE})
+\item{LogFoldChange}{The absolute mean error (\code{MAE}), root mean square error (\code{RMSE})
 and root mean square residual error of a robust linear model (\code{rRMSE}, \code{\link[MASS]{rlm}})
-of log2 fold change differences between estimated LFC and simulated LFC.
+of log fold change differences between estimated and simulated.
 Furthermore, the fraction of missing entries (\code{NAFraction}) for MAE annd RMSE.}
-\item{SizeFactors}{The median absolute deviation (MAD) between the estimated and true size factors,
+\item{SizeFactors}{The median absolute deviation (MAD) between the simulated and estimated size factors,
 the root mean square residual error of a robust linear model (rRMSE, \code{\link[MASS]{rlm}}) and
-the ratio between estimated and true size factors of the two groups (\code{GroupX}).}
+the group-specific ratio between simulated and estimated size factors (\code{GroupX}).}
 }
 \description{
 This function takes the simulation output from \code{\link{simulateDE}}
@@ -28,15 +25,50 @@ and computes several metrics that give an indication of the simulation setup per
 }
 \examples{
 \dontrun{
-## using example data set
-data(kolodziejczk_simDE)
-eval.sim <- evaluateSim(simRes = kolodziejczk_simDE, timing = T)
+# estimate gene parameters
+data("SmartSeq2_Gene_Read_Counts")
+Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_Gene_Read_Counts), "_"), "[[", 1),
+                     stringsAsFactors = F,
+                     row.names = colnames(SmartSeq2_Gene_Read_Counts))
+data("GeneLengths_mm10")
+estparam_gene <- estimateParam(countData = SmartSeq2_Gene_Read_Counts,
+                               readData = NULL,
+                               batchData = Batches,
+                               spikeData = NULL, spikeInfo = NULL,
+                               Lengths = GeneLengths_mm10, MeanFragLengths = NULL,
+                               RNAseq = 'singlecell', Protocol = 'Read',
+                               Distribution = 'ZINB', Normalisation = "scran",
+                               GeneFilter = 0.1, SampleFilter = 3,
+                               sigma = 1.96, NCores = NULL, verbose = TRUE)
+# define log fold change
+p.lfc <- function(x) sample(c(-1,1), size=x,replace=T)*rgamma(x, shape = 1, rate = 2)
+# set up simulations
+setupres <- Setup(ngenes = 10000, nsims = 10,
+                  p.DE = 0.1, pLFC = p.lfc,
+                  n1 = c(20,50,100), n2 = c(30,60,120),
+                  Thinning = c(1,0.9,0.8), LibSize = 'given',
+                  estParamRes = estparam_gene,
+                  estSpikeRes = NULL,
+                  DropGenes = FALSE,
+                  sim.seed = 66437, verbose = TRUE)
+# run simulation
+simres <- simulateDE(SetupRes = setupres,
+                     Prefilter = "FreqFilter",
+                     Imputation = NULL,
+                     Normalisation = 'scran', Label = 'none',
+                     DEmethod = "limma-trend", DEFilter = FALSE,
+                     NCores = NULL, verbose = TRUE)
+
+# evaluation
+evalsimres <- evaluateSim(simRes = simres)
+plotEvalSim(evalRes = evalsimres, Annot = TRUE)
+plotTime(evalRes = evalsimres, Annot = TRUE)
 }
 }
 \seealso{
 \code{\link{estimateParam}} for negative binomial parameters,
 \code{\link{Setup}} for setting up simulation parameters and
-\code{\link{simulateDE}} for simulating differential expression and
+\code{\link{simulateDE}} for simulating differential expression
 }
 \author{
 Beate Vieth

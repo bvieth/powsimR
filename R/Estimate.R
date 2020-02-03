@@ -4,7 +4,9 @@
 #' @name estimateParam
 #' @aliases estimateParam
 #' @title Estimate simulation parameters
-#' @description This function estimates and returns parameters needed for power simulations. The user needs to choose the following options at least: specify a gene expression matrix; the type of RNA-seq experiment, i.e. bulk or single cell; the recommended distribution is negative binomial (NB) except for single-cell full-length Smart-seq2 read data where we recommend zero-inflated NB (ZINB); the preferred normalisation method, we recommend scran for single cell and TMM or MR for bulk. The other parameters are optional (additional data) or have preset values (gene and sample filtering). Please consult the detailed arguments description.
+#' @description This function estimates and returns parameters needed for power simulations.\cr
+#' The user needs to choose the following options at least: specify a gene expression matrix; the type of RNA-seq experiment, i.e. bulk or single cell; the recommended distribution is negative binomial (NB) except for single-cell full-length Smart-seq2 read data where we recommend zero-inflated NB (ZINB); the preferred normalisation method, we recommend scran for single cell and TMM or MR for bulk.\cr
+#' The other parameters are optional (additional data) or have preset values (gene and sample filtering). Please consult the detailed arguments description.
 #' @usage estimateParam(countData,
 #' readData = NULL,
 #' batchData = NULL,
@@ -15,8 +17,9 @@
 #' RNAseq = c('bulk', 'singlecell'),
 #' Protocol = c('UMI', 'Read'),
 #' Distribution = c('NB', 'ZINB'),
-#' Normalisation = c('TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm',
-#'                   'SCnorm', 'RUV', 'Census', 'depth', 'none'),
+#' Normalisation = c("TMM", "MR", "PosCounts", "UQ",
+#' "scran", "Linnorm", "sctransform",
+#' "SCnorm", "Census", "depth", "none"),
 #' GeneFilter = 0.05,
 #' SampleFilter = 5,
 #' sigma = 1.96,
@@ -35,7 +38,7 @@
 #' @param spikeData is a count \code{matrix}.
 #' Rows correspond to spike-ins, columns to samples.
 #' The order of columns should be the same as in the \code{countData}.
-#' This is only needed for spike-in aware normalisation methods (), see Details.
+#' This is only needed for spike-in aware normalisation methods ('MR', 'Linnorm', 'scran', 'SCnorm', 'bayNorm', 'Census'), see Details.
 #' @param spikeInfo is a molecule count \code{matrix} of spike-ins.
 #' Rows correspond to spike-ins. The order of rows should be the same as in the \code{spikeData}.
 #' The column names should be 'SpikeID' and 'SpikeInput' for molecule counts of spike-ins.
@@ -49,7 +52,7 @@
 #' Options are "UMI" (e.g. 10X Genomics, CEL-seq2) or "Read" (e.g. Smart-seq2).
 #' @param Distribution is a character value: "NB" for negative binomial or "ZINB" for zero-inflated negative binomial distribution fitting.
 #' @param Normalisation is a character value: 'TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm',
-#' 'SCnorm', 'RUV', 'Census', 'depth', 'none'.
+#' 'SCnorm', 'Census', 'depth', 'none'.
 #' For more information, please consult the Details section.
 #' @param GeneFilter is a numeric vector indicating the minimal proportion of nonzero expression values
 #' for a gene across all samples to be considered expressed and used for normalisation and parameter estimation.
@@ -87,10 +90,8 @@
 #' \item{Linnorm}{apply the normalization method for sparse RNA-seq data
 #' as implemented in \code{\link[Linnorm]{Linnorm.Norm}}.
 #' For \code{Linnorm}, the user can also supply \code{spikeData}.}
-#' \item{RUV}{removes unwanted variation. There are two approaches implemented:
-#' (1) utilizing negative control genes, i.e. spike-ins stored in \code{spikeData} (\code{\link[RUVSeq]{RUVg}}).
-#' (2) utilizing replicate samples, i.e. samples for which the covariates of interest are considered constant.
-#' This annotation is stored in \code{batchData} (\code{\link[RUVSeq]{RUVs}}).}
+#' \item{sctransform}{apply the normalization method developed for single-cell
+#' UMI RNA-seq data as implemented in \code{\link[sctransform]{vst}}. }
 #' \item{Census}{converts relative measures of TPM/FPKM values into mRNAs per cell (RPC) without the need of spike-in standards.
 #' Census at least needs \code{Lengths} for single-end data and preferably \code{MeanFragLengths} for paired-end data.
 #' The authors state that Census should not be used for UMI data.}
@@ -100,50 +101,39 @@
 #'
 #' @examples
 #' \dontrun{
-#' ## using example data set
-#' data(kolodziejczk_cnts)
-#' serum_lif_cnts <- kolodziejczk_cnts[, grepl('serum', colnames(kolodziejczk_cnts))]
-#' estparam <- estimateParam(countData = serum_lif_cnts,
-#'                           Distribution = 'ZINB',
-#'                           Protocol = 'Read',
-#'                           RNAseq = 'singlecell',
-#'                           Normalisation = 'scran')
-#' ## simulating single cell RNA-seq experiment
-#' ngenes <- 10000
-#' ncells <- 100
-#' true.means <- 2^runif(ngenes, 3, 6)
-#' true.dispersions <- 3 + 100/true.means
-#' sf.values <- 2^rnorm(ncells, sd=0.5)
-#' sf.means <- outer(true.means, sf.values, '*')
-#' cnts <- matrix(rnbinom(ngenes*ncells,
-#'                        mu=sf.means, size=1/true.dispersions),
-#'                ncol=ncells)
-#' ## estimating negative binomial parameters
-#' estparam <- estimateParam(countData = cnts,
-#'                           Distribution = 'NB',
-#'                           RNAseq = 'singlecell',
-#'                           Protocol = 'Read',
-#'                           Normalisation='scran')
+#' # Single Cells
+#' data("SmartSeq2_Gene_Read_Counts")
+#' Batches <- data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_Gene_Read_Counts), "_"), "[[", 1),
+#'                       stringsAsFactors = FALSE, row.names = colnames(SmartSeq2_Gene_Read_Counts))
+#' data("GeneLengths_mm10")
+#' estparam <- estimateParam(countData = SmartSeq2_Gene_Read_Counts,
+#'                           readData = NULL,
+#'                           batchData = Batches,
+#'                           spikeData = SmartSeq2_SpikeIns_Read_Counts,
+#'                           spikeInfo = SmartSeq2_SpikeInfo,
+#'                           Lengths = GeneLengths, MeanFragLengths = NULL,
+#'                           RNAseq = 'singlecell', Protocol = 'Read',
+#'                           Distribution = 'ZINB', Normalisation = "scran",
+#'                           GeneFilter = 0.1, SampleFilter = 3,
+#'                           sigma = 1.96, NCores = NULL, verbose = TRUE)
 #'
-#' ## simulating bulk RNA-seq experiment
-#' ngenes <- 10000
-#' nsamples <- 10
-#' true.means <- 2^rnorm(ngenes, mean=8, sd=2)
-#' true.dispersions <- 3/true.means + 0.1
-#' sf.values <- rnorm(nsamples, mean=1, sd=0.1)
-#' sf.means <- outer(true.means, sf.values, '*')
-#' cnts <- matrix(rnbinom(ngenes*nsamples,
-#'                        mu=sf.means, size=1/true.dispersions),
-#'                ncol=nsamples)
-#' ## estimating negative binomial parameters
-#' estparam <- estimateParam(countData = cnts,
-#'                           Distribution = 'NB',
-#'                           RNAseq = 'bulk',
-#'                           Protocol = 'Read',
-#'                           Normalisation = 'MR')
+#' # Bulk
+#' data("Bulk_Read_Counts")
+#' data("GeneLengths_hg19")
+#' estparam <- estimateParam(countData = Bulk_Read_Counts,
+#'                           readData = NULL,
+#'                           batchData = NULL,
+#'                           spikeData = NULL,
+#'                           spikeInfo = NULL,
+#'                          Lengths = GeneLengths_hg19,
+#'                           MeanFragLengths = NULL,
+#'                           RNAseq = 'bulk', Protocol = 'Read',
+#'                           Distribution = 'NB', Normalisation = "MR",
+#'                           GeneFilter = 0.1, SampleFilter = 3,
+#'                           sigma = 1.96, NCores = NULL, verbose = TRUE)
 #'
-#' ## plot the results of estimation
-#' plotParam(estparam, annot = TRUE)
+#' # plot the results of estimation
+#' plotParam(estparam, Annot = FALSE)
 #' }
 #' @author Beate Vieth
 #' @rdname estimateParam
@@ -158,10 +148,9 @@ estimateParam <- function(countData,
                           RNAseq = c('bulk', 'singlecell'),
                           Protocol = c('UMI', 'Read'),
                           Distribution = c('NB', 'ZINB'),
-                          Normalisation = c('TMM', 'MR', 'PosCounts', 'UQ',
-                                            'scran', 'Linnorm',
-                                            'SCnorm', 'RUV', 'Census',
-                                            'depth', 'none'),
+                          Normalisation = c("TMM", "MR", "PosCounts", "UQ",
+                                            "scran", "Linnorm", "sctransform",
+                                            "SCnorm", "Census", "depth", "none"),
                           GeneFilter = 0.05,
                           SampleFilter = 5,
                           sigma = 1.96,
@@ -181,7 +170,7 @@ estimateParam <- function(countData,
     if(verbose) {message(paste0(Normalisation, " should only be used for non-UMI methods! \nFor more information, please consult the monocle vignette."))}
     if (Normalisation=='Census' && is.null(Lengths) && Protocol == "Read") {
       if(verbose) {message(paste0(Normalisation, " should be used in combination with transcript lengths.
-                                   \nIf the library is paird-end, please also provide the mean fragment lengths which can be determined by e.g. Picard."))}
+                                   \nIf the library is paired-end, please also provide the mean fragment lengths which can be determined by e.g. Picard."))}
     }
   }
 
@@ -273,9 +262,11 @@ estimateParam <- function(countData,
 #' batchData = NULL,
 #' Normalisation=c('depth','none'),
 #' SampleFilter = 3,
+#' RNAseq = c("bulk", "singlecell"),
+#' Protocol = c('UMI', 'Read'),
 #' verbose = TRUE)
 #' @param spikeData  is a count \code{matrix}. Rows correspond to spike-ins, columns to samples.
-#' Rownames should contain the spike-in names, column names the sample names.
+#' \code{rownames} should contain the spike-in names, \code{colnames} the sample names.
 #' @param spikeInfo is a molecule count \code{matrix} of spike-ins. Rows correspond to spike-ins.
 #' The order of rows should be the same as the rows in \code{spikeData}.
 #' The rownames should be the same as the rownames of spikeData.
@@ -294,6 +285,9 @@ estimateParam <- function(countData,
 #' Choose higher values if you want to filter out less samples.
 #' This parameter is particularly important for single cells to ensure reliable parameter estimation.
 #' For more information, please consult \code{\link[scater]{isOutlier}}.
+#' @param RNAseq is a character value: "bulk" or "singlecell".
+#' @param Protocol is a character value defining the type of counts given in \code{countData}.
+#' Options are "UMI" (e.g. 10X Genomics, CEL-seq2) or "Read" (e.g. Smart-seq2).
 #' @param verbose Logical value to indicate whether to print function information.
 #' Default is \code{TRUE}.
 #' @return List object with the following entries:
@@ -311,20 +305,19 @@ estimateParam <- function(countData,
 #' \item{Settings}{Reporting the chosen normalisation framework.}
 #' @examples
 #' \dontrun{
-#' ## batch annotation
-#' data(scrbseq_spike_cnts)
-#' data(scrbseq_spike_info)
-#' batch_info <- data.frame(Batch = ifelse(grepl(pattern = "SCRBseqA_",
-#' colnames(scrbseq_spike_cnts)), "A", "B"),
-#' row.names = colnames(scrbseq_spike_cnts))
-#' ## spike information table
-#' spike_info <- scrbseq_spike_info
-#' ## estimation
-#' spike_param <- estimateSpike(spikeData = scrbseq_spike_cnts,
-#' spikeInfo = spike_info,
+#' data("SmartSeq2_SpikeIns_Read_Counts")
+#' data("SmartSeq2_SpikeInfo")
+#' Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_SpikeIns_Read_Counts), "_"), "[[", 1),
+#'                        stringsAsFactors = F,
+#'                        row.names = colnames(SmartSeq2_SpikeIns_Read_Counts))
+#' # estimation
+#' spike_param <- estimateSpike(spikeData = SmartSeq2_SpikeIns_Read_Counts,
+#' spikeInfo = SmartSeq2_SpikeInfo,
 #' MeanFragLength = NULL,
-#' batchData = batch_info,
+#' batchData = Batches,
 #' Normalisation = 'depth')
+#' # plotting
+#' plotSpike(estSpike = spike_param, Annot = FALSE)
 #' }
 #' @details
 #' Normalisation methods
@@ -334,8 +327,6 @@ estimateParam <- function(countData,
 #' }
 #' @author Beate Vieth
 #' @rdname estimateSpike
-# #' @importFrom stats setNames dbinom
-# #' @importFrom bbmle mle2
 #' @importFrom Hmisc binconf
 #' @importFrom matrixStats rowSds
 #' @export
@@ -345,6 +336,8 @@ estimateSpike <- function(spikeData,
                           batchData = NULL,
                           Normalisation=c('depth','none'),
                           SampleFilter = 3,
+                          RNAseq = c('bulk', 'singlecell'),
+                          Protocol = c('UMI', 'Read'),
                           verbose = TRUE) {
   # check provided input
   if(!is.null(batchData)) {
@@ -418,7 +411,7 @@ estimateSpike <- function(spikeData,
 
   if(verbose){
     message(paste0(nrow(spikeData.red), " spike-ins have been detected in ",
-                 ncol(spikeData.red), " cells."))
+                   ncol(spikeData.red), " cells."))
   }
 
   if(nrow(spikeInfo.red)<10) {
@@ -477,7 +470,8 @@ estimateSpike <- function(spikeData,
 
     # return normalized, batch-corrected counts and size factors for spike-ins
     normCounts <- do.call('cbind', normCountsL)
-    sizeFactor <- unlist(lapply(normspikeData, function(x) x$size.factors))
+    sizeFactor <- as.vector(unlist(sapply(normspikeData, function(x) x$size.factors)))
+    names(sizeFactor) <- colnames(spikeData.red)
     seqDepth <- colSums(spikeData.red)
     names(seqDepth) <- colnames(spikeData.red)
   }
@@ -529,37 +523,6 @@ estimateSpike <- function(spikeData,
   noobs <- ncol(spikeData.red)
   spikecapture.dat[,"p_fail"] <- spikecapture.dat["detect_fail"]/noobs
   spikecapture.dat[,"p_success"] <- spikecapture.dat["detect_success"]/noobs
-  # estimate the mean percentage of detection / complete failures over all spike-ins and experiments
-  #  (gives starting value for maximum likelihood estimation per spike-in)
-  # mean_p_fail <- mean(spikecapture.dat[,"detect_fail"])/noobs
-  # mean_p_success <- mean(spikecapture.dat[,"detect_success"])/noobs
-  # # maximum likelihhod estimation. we know the number of failures, extrapolate the number of successes.
-  # # estimate the prob(success) per ercc
-  # hat_p_success <- c()
-  # hat_p_fail <- c()
-  # myfunc <- function(size,prob) {  -sum(stats::dbinom(mydata,size,prob,log=TRUE))  }
-  # for (i in 1:nrow(spikecapture.dat)) {
-  #   mydata <- spikecapture.dat[i,"detect_success"]
-  #   invisible(capture.output(
-  #   hat_p_success[i] <- suppressWarnings(try(bbmle::mle2(myfunc, start=list(prob=mean_p_success),
-  #                                                          data=list(size=noobs))@coef, silent = T))
-  #   ))
-  #   if(!is.numeric(hat_p_success[i])) {next}
-  # }
-  #
-  # for (i in 1:nrow(spikecapture.dat)) {
-  #   mydata <- spikecapture.dat[i,"detect_fail"]
-  #   invisible(capture.output(
-  #   hat_p_fail[i] <- suppressWarnings(try(bbmle::mle2(myfunc, start=list(prob=mean_p_fail),
-  #                                                     data=list(size=noobs))@coef, silent = TRUE))
-  #   ))
-  #   if(!is.numeric(hat_p_fail[i])) {next}
-  # }
-  #
-  # hat_p_success[grepl("Error", hat_p_success)] <- NA
-  # hat_p_fail[grepl("Error", hat_p_fail)] <- NA
-  # spikecapture.dat[, "hat_p_success"] <- as.numeric(hat_p_success)
-  # spikecapture.dat[, "hat_p_fail"] <- as.numeric(hat_p_fail)
 
   # confidence intervals of MLE p (applying Wilson interval which is a score based method as normal approximation can be biased
   # if n*p is not sufficiently large which is the case for some of the spike ins (very low p))
@@ -591,6 +554,9 @@ estimateSpike <- function(spikeData,
                                      "batchData"=batchData.red,
                                      "MeanFragLengths"=MeanFragLengths.red),
               "Settings"=list("normFramework"=Normalisation))
+  attr(res, 'Protocol') <- Protocol
+  attr(res, 'RNAseq') <- RNAseq
+
   return(res)
 }
 

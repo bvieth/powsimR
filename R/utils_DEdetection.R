@@ -85,7 +85,7 @@
                                                  countData=countData,
                                                  DEOpts=DEOpts,
                                                  verbose=verbose)}
-  if (DEmethod=='EBSeq') {DERes = .run.EBSeq(normData=normData,
+  if (DEmethod == "EBSeq") {DERes = .run.EBSeq(normData=normData,
                                              countData=countData,
                                              DEOpts=DEOpts,
                                              verbose=verbose)}
@@ -94,11 +94,6 @@
                                              countData=countData,
                                              Lengths=Lengths,
                                              MeanFragLengths=MeanFragLengths,
-                                             DEOpts=DEOpts,
-                                             NCores=NCores,
-                                             verbose=verbose)}
-  if (DEmethod == "scde") {DERes = .run.scde(normData=normData,
-                                             countData=countData,
                                              DEOpts=DEOpts,
                                              NCores=NCores,
                                              verbose=verbose)}
@@ -112,31 +107,12 @@
                                              DEOpts=DEOpts,
                                              NCores=NCores,
                                              verbose=verbose)}
-  if (DEmethod == "monocle") {DERes = .run.monocle(normData=normData,
-                                                   countData=countData,
-                                                   DEOpts=DEOpts,
-                                                   NCores=NCores,
-                                                   verbose=verbose)}
   if (DEmethod == "DECENT") {DERes = .run.decent(countData=countData,
                                                  DEOpts=DEOpts,
                                                  spikeData=spikeData,
                                                  spikeInfo=spikeInfo,
                                                  NCores=NCores,
                                                  verbose=verbose)}
-  # if (DEmethod == "sctransformLRT") {DERes = .run.sctransform.lrt(normData=normData,
-  #                                                                 countData=countData,
-  #                                                                 DEOpts=DEOpts,
-  #                                                                 NCores=NCores,
-  #                                                                 verbose=verbose)}
-
-  # if (DEmethod == "BASiCS") {DERes = .run.BASiCS(normData=normData,
-  #                                                countData=countData,
-  #                                                DEOpts=DEOpts,
-  #                                                NCores=NCores)}
-  # if (DEmethod == "D3E") {DERes = .run.D3E(normData=normData,
-  #                                          countData=countData,
-  #                                          DEOpts=DEOpts,
-  #                                          NCores=NCores)}
   return(DERes)
 }
 
@@ -748,7 +724,7 @@
 
 # baySeq ------------------------------------------------------------------
 
-#' @importFrom snow makeCluster stopCluster
+#' @importFrom parallel makeCluster stopCluster
 #' @importMethodsFrom baySeq libsizes
 #' @importFrom baySeq getPriors.NB getLikelihoods topCounts
 .run.baySeq <- function(normData, countData, DEOpts, NCores, verbose) {
@@ -761,7 +737,7 @@
     cl <- NULL
   }
   if(!is.null(NCores)) {
-    cl <- snow::makeCluster(NCores)
+    cl <- parallel::makeCluster(NCores)
   }
 
   if (attr(normData, 'normFramework')  %in% c('sctransform')) {
@@ -799,7 +775,7 @@
 
   # free multiple cores
   if(!is.null(NCores)) {
-    snow::stopCluster(cl)
+    parallel::stopCluster(cl)
   }
 
   # construct result data frame
@@ -985,6 +961,9 @@
 #' @importFrom parallel mclapply
 .run.MAST <- function(normData, countData, Lengths, MeanFragLengths, DEOpts, NCores, verbose) {
 
+  # due to NSE notes in R CMD check
+  metric = test.type = primerid = value = contrast = component = . = NULL
+
   if (attr(normData, 'normFramework')  %in% c('sctransform')) {
     norm.cnts <- normData$RoundNormCounts
     ixx.valid <- rownames(countData) %in% rownames(norm.cnts)
@@ -1060,9 +1039,6 @@
                        stringsAsFactors = F)
   return(result)
 }
-
-
-# scde --------------------------------------------------------------------
 
 
 # BPSC --------------------------------------------------------------------

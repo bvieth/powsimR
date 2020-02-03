@@ -10,19 +10,18 @@ printEvalDE(evalRes)
 \item{evalRes}{The result object from \code{\link{evaluateDE}}.}
 }
 \value{
-A matrix of results per sample size considered (rows). Columns include sample size, specified nomial type I control value (for FDR or p-values), actual error rate, marginal TPR, averaged number of true and false discoveries, and false discovery costs.
+A matrix of results per sample size considered (rows). Columns include sample size, specified nomial significance level (for FDR or p-values),  the actual marginal error rate and marginal TPR.
 }
 \description{
 This function takes as input a result object from \code{\link{evaluateDE}}
 and prints out a table to summarize important error-rates-related quantities.
 The results are marginalized, meaning that they are averaged quantities
 over all strata and simulations.
-This provides a quick view of the marginal results per sample size.
+This provides a quick view of the statistical power analysis per sample size setup.
 }
 \examples{
 \dontrun{
-## for example evaluation result see \\code{\\link{evaluateDE}}
-printEvalRes(evalRes=evalres)
+## for example evaluation result see \code{\link{evaluateDE}}
 }
 }
 \seealso{

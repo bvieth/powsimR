@@ -9,8 +9,8 @@ alpha.type=c("adjusted","raw"),
 MTC=c('BY', 'BH', 'Storey', 'IHW',
 'holm', 'hochberg', 'hommel', 'bonferroni'),
 alpha.nominal = 0.1,
-target.by=c("lfc", "effectsize"),
-delta=0)
+target.by=c("lfc", "effectsize"), delta=0,
+raw = FALSE, verbose = TRUE)
 }
 \arguments{
 \item{simRes}{The result from \code{\link{simulateDE}}.}
@@ -36,27 +36,63 @@ absolute log2 fold changes divided by the square root of 1/(mean+dispersion).}
 Genes with absolute log2 fold changes (when target.by is "lfc")
 or effect sizes (when target.by is "effectsize") greater than this value
 are deemed DE in error rates calculations.
-If \code{delta=0} then no threshold is applied. See "Details" for more description.}
+If the default \code{delta=0}, then no threshold is applied.}
+
+\item{raw}{Logical vector. The default \code{FALSE} removes
+intermediate calculations from the output since they can be quite large.}
+
+\item{verbose}{Logical vector to indicate whether to show progress report of evaluation.
+Default is \code{TRUE}.}
 }
 \value{
 A list with the following entries:
-\item{Performance}{The output of \code{\link[iCOBRA]{calculate_performance}} of aspect "fdrtprcurve" calculating the proportions of TN, FN, TP and FP and related rates which uses \code{\link[ROCR]{prediction}} and \code{\link[ROCR]{performance}} internally.}
-\item{FDR_TPR_Thres}{The output of \code{\link[iCOBRA]{calculate_performance}} of aspect "fdrtpr" calculating the proportions of TN, FN, TP and FP and associated TPR and FDR for each nominal level from 0.01 to 1 in steps of 0.01.}
-\item{TPRvsPPV_AUC}{The area under the curve for TPR versus PPV. This is also split up by group comparisons into lists with length equal to number of simulations.}
-\item{TPRvsFPR_AUC}{The area under the curve for TPR versus FPR, i.e. classical ROC-curve. This is also split up by group comparisons into lists with length equal to number of simulations.}
-\item{TPRvsFDR_pAUC_conv,TPRvsFDR_pAUC_lib}{The partial area under the curve for TPR versus FDR, once for conservative and once for liberal nominal FDR level (see Details section). This is also split up by group comparisons into lists with length equal to number of simulations.}
-\item{MCC_conv,MCC_lib}{The Matthews Correlation Coefficient, once for conservative and once for liberal nominal FDR level (see Details section). This is also split up by group comparisons into lists with length equal to number of simulations.}
-\item{F1score_conv,F1score_lib}{The precision-recall F measure, once for conservative and once for liberal nominal FDR level (see Details section). This is also split up by group comparisons into lists with length equal to number of simulations.}
-\item{alpha.type - .. - delta}{Reiterating chosen evaluation parameters.}
+\item{Performances}{The output of \code{\link[iCOBRA]{calculate_performance}} of aspect "fdrtprcurve" calculating the proportions of TN, FN, TP and FP and related rates which uses \code{\link[ROCR]{prediction}} and \code{\link[ROCR]{performance}} internally.}
+\item{TPRvsFDR}{The output of \code{\link[iCOBRA]{calculate_performance}} of aspect "fdrtpr" calculating the proportions of TN, FN, TP and FP and associated TPR and observed FDR for each nominal level from 0.01 to 1 in steps of 0.01.}
+\item{Scores}{The mean +/- standard error of performance measures and area under the curve. These are calculated once for conservative (extension "conv") and once for liberal nominal (extension "lib") FDR levels. Measures include: accuracy (ACC), F-measure of precision and recall (F1score), Matthew's correlation coefficient (MCC), partial Area under the Curve of TPR vs FDR (TPRvsFDR_pAUC), area under the ROC-curve (TPRvsFPR_AUC) and area under the PR-curve (TPRvsPPV_AUC).}
+\item{Raw}{If \code{raw} is \code{TRUE}, then the intermediate calculations of the above three list entries is also included in the output.}
+\item{Settings}{Reiterating chosen evaluation parameters.}
 }
 \description{
 This function takes the simulation output from \code{\link{simulateDE}}
-and computes receiver operator characteristics (ROC) and area under the curve values (AUC).
+and computes receiver operator characteristics (ROC) and area under the curve values (AUC) with the help of functions implemented in \code{\link[iCOBRA]{calculate_performance}}.
 }
 \examples{
 \dontrun{
-data(kolodziejczk_simDE)
-eval.roc <- evaluateROC(simRes = kolodziejczk_simDE)
+# estimate gene parameters
+data("SmartSeq2_Gene_Read_Counts")
+estparam_gene <- estimateParam(countData = SmartSeq2_Gene_Read_Counts,
+                               readData = NULL,
+                              batchData = NULL,
+                               spikeData = NULL, spikeInfo = NULL,
+                               Lengths = NULL, MeanFragLengths = NULL,
+                               RNAseq = 'singlecell', Protocol = 'Read',
+                               Distribution = 'ZINB', Normalisation = "scran",
+                               GeneFilter = 0.1, SampleFilter = 3,
+                               sigma = 1.96, NCores = NULL, verbose = TRUE)
+# define log2 fold change
+p.lfc <- function(x) sample(c(-1,1), size=x,replace=T)*rgamma(x, shape = 1, rate = 2)
+# set up simulations
+setupres <- Setup(ngenes = 10000, nsims = 10,
+                  p.DE = 0.1, pLFC = p.lfc,
+                  n1 = c(20,50,100), n2 = c(30,60,120),
+                  Thinning = c(1,0.9,0.8), LibSize = 'given',
+                  estParamRes = estparam_gene,
+                  estSpikeRes = NULL,
+                  DropGenes = TRUE,
+                  sim.seed = 83596, verbose = TRUE)
+# run simulation
+simres <- simulateDE(SetupRes = setupres,
+                     Prefilter = "FreqFilter", Imputation = NULL,
+                     Normalisation = 'scran', Label = 'none',
+                     DEmethod = "limma-trend", DEFilter = FALSE,
+                     NCores = NULL, verbose = TRUE)
+# evaluation
+evalrocres <- evaluateROC(simRes = simres,
+                          alpha.type = "adjusted",
+                          MTC = 'BH', alpha.nominal = 0.05,
+                          raw = FALSE)
+# plot evaluation
+plotEvalROC(evalRes = evalrocres)
 }
 }
 \seealso{

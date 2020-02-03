@@ -11,7 +11,8 @@ alpha.nominal=0.1,
 stratify.by=c("mean", "dispersion", "dropout", "lfc"),
 strata.probs = c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9),
 filter.by=c("none", "mean", "dispersion", "dropout"),
-strata.filtered=1, target.by=c("lfc", "effectsize"), delta=0)
+strata.filtered=1, target.by=c("lfc", "effectsize"), delta=0,
+Table = TRUE)
 }
 \arguments{
 \item{simRes}{The result from \code{\link{simulateDE}}.}
@@ -54,6 +55,8 @@ absolute log2 fold changes divided by the square root of 1/(mean+dispersion).}
 Genes with absolute log2 fold changes (when target.by is "lfc")
 or effect sizes (when target.by is "effectsize") greater than this value
 are deemed DE in error rates calculations. If \code{delta=0} then no threshold is applied. See "Details" for more description.}
+
+\item{Table}{A logical vector. If the default \code{TRUE}, then a table of marginal error rates is printed additionally (see \code{\link{printEvalDE}}).}
 }
 \value{
 A list with the following entries:
@@ -104,8 +107,43 @@ and the rate calculations are based on these genes.}
 }
 \examples{
 \dontrun{
-data(kolodziejczk_simDE)
-eval.de <- evaluateDE(simRes = kolodziejczk_simDE)
+# estimate gene parameters
+data("Bulk_Read_Counts")
+data("GeneLengths_hg19")
+estparam_gene <- estimateParam(countData = Bulk_Read_Counts,
+                               readData = NULL,
+                               batchData = NULL,
+                               spikeData = NULL, spikeInfo = NULL,
+                               Lengths = GeneLengths_hg19, MeanFragLengths = NULL,
+                               RNAseq = 'bulk', Protocol = 'Read',
+                               Distribution = 'NB', Normalisation = "MR",
+                               GeneFilter = 0.25, SampleFilter = 3,
+                               sigma = 1.96, NCores = NULL, verbose = TRUE)
+# define log fold change
+p.lfc <- function(x) sample(c(-1,1), size=x,replace=T)*rgamma(x, shape = 2, rate = 2)
+# set up simulations
+setupres <- Setup(ngenes = 10000, nsims = 10,
+                  p.DE = 0.1, pLFC = p.lfc,
+                  n1 = c(3,6,12), n2 = c(3,6,12),
+                  Thinning = c(1,0.9,0.8), LibSize = 'given',
+                  estParamRes = estparam_gene,
+                  estSpikeRes = NULL,
+                  DropGenes = FALSE,
+                  sim.seed = 4379, verbose = TRUE)
+# run simulation
+simres <- simulateDE(SetupRes = setupres,
+                     Prefilter = NULL, Imputation = NULL,
+                     Normalisation = 'MR', Label = 'none',
+                     DEmethod = "limma-trend", DEFilter = FALSE,
+                     NCores = NULL, verbose = TRUE)
+# DE evaluation
+evalderes <- evaluateDE(simRes = simres, alpha.type="adjusted",
+                        MTC='BH', alpha.nominal=0.05,
+                        stratify.by = "lfc", filter.by = "mean",
+                        strata.filtered = 1,
+                        target.by = "lfc", delta = 0.25)
+plotEvalDE(evalRes = evalderes, rate = "marginal")
+plotEvalDE(evalRes = evalderes, rate = "conditional")
 }
 }
 \seealso{

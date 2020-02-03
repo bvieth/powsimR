@@ -12,13 +12,19 @@
 #' @usage simulateDE(SetupRes,
 #' Prefilter = NULL,
 #' Imputation = NULL,
-#' Normalisation,
+#' Normalisation = c("TMM", "MR", "PosCounts", "UQ",
+#' "scran", "Linnorm", "sctransform",
+#' "SCnorm", "Census", "depth"),
 #' Label = "none",
-#' DEmethod,
+#' DEmethod = c("T-Test", "edgeR-LRT", "edgeR-QL",
+#' "edgeR-zingeR", "edgeR-ZINB-WaVE",
+#' "limma-voom", "limma-trend",
+#' "DESeq2", "DESeq2-zingeR", "DESeq2-ZINB-WaVE",
+#' "ROTS", "baySeq", "NOISeq", "EBSeq",
+#' "MAST", "BPSC", "scDD", "DECENT"),
 #' DEFilter = FALSE,
 #' NCores = NULL,
 #' verbose = TRUE)
-#'
 #' @param SetupRes This object specifies the simulation setup.
 #' This must be the return object from \code{\link{Setup}}.
 #' @param Prefilter A character vector specifying the gene expression filtering method
@@ -48,7 +54,6 @@
 #' Default is \code{NULL}, i.e. 1 core.
 #' @param verbose Logical vector to indicate whether to show progress report of simulations.
 #' Default is \code{TRUE}.
-
 #' @return A list of list objects complex list where the list named "SimulateRes" contains the results of simulations:
 #' \strong{SimulateRes: Results of DE simulations}
 #' \describe{
@@ -59,7 +64,7 @@
 #' \item{true.depth,est.depth}{True simulated and processed (after prefiltering and/or imputation if defined) sequencing depth per sample.}
 #' \item{est.sf}{Global library size factor estimates per sample.}
 #' \item{est.gsf}{3D array (ngenes * N * nsims) for size factor estimates. These are gene- and sample-wise estimates and only for SCnorm and Linnorm normalisation.}
-#' \item{elfc,rlfc}{3D array (ngenes * N * nsims) for log2 fold changes (LFC):
+#' \item{elfc,rlfc}{3D array (ngenes * N * nsims) for log fold changes (LFC):
 #' elfc is for the DE tool estimated LFC; rlfc is for the LFC estimated from the normalised read counts.}
 #' \item{time.taken}{The time taken given by \code{\link[base]{proc.time}} for each simulation, given for preprocessing, normalisation, differential expression testing and moment estimation.}
 #' }
@@ -71,6 +76,8 @@
 #'
 #' @details
 #' Here you can find detailed information about preprocessing, imputation, normalisation and differential testing choices.
+#' For recommendations concerning single cell RNA-sequencing pipelines,
+#' we kindly refer the user to (\href{https://www.nature.com/articles/s41467-019-12266-7}{Vieth, et al (2019). A systematic evaluation of single cell RNA-seq analysis pipelines. Nature Communications, 10(1), 4667.}).
 #' @section Prefiltering prior to imputation/normalisation:
 #' \describe{
 #' \item{CountFilter}{removes genes that have a mean expression below 0.2.}
@@ -78,34 +85,20 @@
 #' }
 #' @section Imputation prior to normalisation:
 #' \describe{
-#' \item{scImpute}{employs scImpute method of imputing dropouts. Imputation is only carried out for genes with more than 50 percent dropout. Please consider multiple cores to speed up computation.}
-#' \item{DrImpute}{employs DrImpute method of imputing dropouts as implemented
-#' in \code{\link[DrImpute]{DrImpute}}.}
-#' \item{SAVER}{employs SAVER method of imputing dropouts as implemented
-#' in \code{\link[SAVER]{saver}}. Imputation is only carried out for genes with more than 50 percent dropout.}
-# #' \item{Seurat}{employs Seurat method of imputing dropouts as implemented
-# #' in \code{\link[Seurat]{AddImputedScore}} using variable genes identified with \code{\link[Seurat]{FindVariableGenes}}. Imputation is only carried out for genes with more than 50 percent dropout.}
-#' \item{scone}{employs scone method of imputing dropouts as implemented
-#' in \code{\link[scone]{scone}} using estimated dropout probabilities of \code{\link[scone]{estimate_ziber}}.}
-#' }
-#' @section Normalisation applied to (prefiltered/imputed/raw) gene count matrix:
-#' \describe{
 #' \item{TMM, UQ}{employ the edgeR style normalization of weighted trimmed mean of M-values and upperquartile
 #' as implemented in \code{\link[edgeR]{calcNormFactors}}, respectively.}
 #' \item{MR, PosCounts}{employ the DESeq2 style normalization of median ratio method and a modified geometric mean method
-#' as implemented in \code{\link[DESeq2]{estimateSizeFactors}}, respectively. Spike-ins can also be supplied for both methods via \code{spikeData}.}
+#' as implemented in \code{\link[DESeq2]{estimateSizeFactors}}, respectively.}
 #' \item{scran, SCnorm}{apply the deconvolution and quantile regression normalization methods developed for sparse RNA-seq data
-#' as implemented in \code{\link[scran]{computeSumFactors}} and \code{\link[SCnorm]{SCnorm}}, respectively. Spike-ins can also be supplied for both methods via \code{spikeData}. Note, however that this means for scran that the normalisation as implemented in \code{\link[scran]{computeSpikeFactors}} is also applied to genes (\code{general.use=TRUE}). Please consider multiple cores to speed up computation for SCnorm.}
+#' as implemented in \code{\link[scran]{computeSumFactors}} and \code{\link[SCnorm]{SCnorm}}, respectively. Spike-ins can also be supplied for both methods via \code{spikeData}. Note, however that this means for scran that the normalisation as implemented in \code{\link[scran]{computeSpikeFactors}} is also applied to genes (\code{general.use=TRUE}).}
 #' \item{Linnorm}{apply the normalization method for sparse RNA-seq data
 #' as implemented in \code{\link[Linnorm]{Linnorm.Norm}}.
 #' For \code{Linnorm}, the user can also supply \code{spikeData}.}
-#' \item{RUV}{removes unwanted variation. There are two approaches implemented:
-#' (1) utilizing negative control genes, i.e. spike-ins stored in \code{spikeData} (\code{\link[RUVSeq]{RUVg}}).
-#' (2) utilizing replicate samples, i.e. samples for which the covariates of interest are considered constant.
-#' This annotation is stored in \code{batchData} (\code{\link[RUVSeq]{RUVs}}).}
+#' \item{sctransform}{apply the normalization method developed for single-cell
+#' UMI RNA-seq data as implemented in \code{\link[sctransform]{vst}}. }
 #' \item{Census}{converts relative measures of TPM/FPKM values into mRNAs per cell (RPC) without the need of spike-in standards.
 #' Census at least needs \code{Lengths} for single-end data and preferably \code{MeanFragLengths} for paired-end data.
-#' Do not use this algorithm for UMI data!}
+#' The authors state that Census should not be used for UMI data.}
 #' \item{depth}{Sequencing depth normalisation.}
 #' }
 #' @section Differential testing using raw read count matrix:
@@ -120,7 +113,6 @@
 #' \item{NOISeq}{applies differential testing as implemented in \code{\link[NOISeq]{noiseqbio}} based on CPM values.}
 #' \item{EBSeq}{applies differential testing as implemented in \code{\link[EBSeq]{EBTest}}.}
 #' \item{MAST}{applies differential testing as implemented in \code{\link[MAST]{zlm}} for zero-inflated model fitting followed by \code{\link[MAST]{lrTest}} on log2 CPM values.}
-#' \item{scde}{applies differential testing as implemented in \code{\link[scde]{scde.expression.difference}}.}
 #' \item{BPSC}{applies differential testing as implemented in \code{\link[BPSC]{BPglm}} on CPM values.}
 #' \item{scDD}{applies differential testing as implemented in \code{\link[scDD]{scDD}} on CPM values.}
 #' \item{DECENT}{applies differential testing as implemented in \code{\link[DECENT]{decent}}.}
@@ -129,25 +121,54 @@
 #' }
 #' @examples
 #' \dontrun{
-#' # estimated parameters
-#' data(kolodziejczk_param)
-#' # set up simulation
-#' setupres <- Setup(ngenes = NULL, nsims = 25,
-#' p.DE = 0.1, pLFC = 1.25,
-#' p.B = NULL, bLFC = NULL, bPattern = 'uncorrelated',
-#' n1 = c(20,50,100), n2 = c(30,60,120),
-#' Thinning = NULL, LibSize = 'equal',
-#' estParamRes = kolodziejczk_param,
-#' estSpikeRes = NULL,
-#' DropGenes = FALSE,
-#' sim.seed = 52679, verbose = TRUE)
+#' # estimate gene parameters
+#' data("SmartSeq2_Gene_Read_Counts")
+#' Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_Gene_Read_Counts), "_"), "[[", 1),
+#'                      stringsAsFactors = F,
+#'                      row.names = colnames(SmartSeq2_Gene_Read_Counts))
+#' data("GeneLengths_mm10")
+#' estparam_gene <- estimateParam(countData = SmartSeq2_Gene_Read_Counts,
+#'                                readData = NULL,
+#'                               batchData = Batches,
+#'                                spikeData = NULL, spikeInfo = NULL,
+#'                                Lengths = GeneLengths_mm10, MeanFragLengths = NULL,
+#'                                RNAseq = 'singlecell', Protocol = 'Read',
+#'                                Distribution = 'ZINB', Normalisation = "scran",
+#'                                GeneFilter = 0.1, SampleFilter = 3,
+#'                                sigma = 1.96, NCores = NULL, verbose = TRUE)
+#' # estimate spike parameters
+#' data("SmartSeq2_SpikeIns_Read_Counts")
+#' data("SmartSeq2_SpikeInfo")
+#' Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_SpikeIns_Read_Counts), "_"), "[[", 1),
+#'                      stringsAsFactors = F,
+#'                      row.names = colnames(SmartSeq2_SpikeIns_Read_Counts))
+#' estparam_spike <- estimateSpike(spikeData = SmartSeq2_SpikeIns_Read_Counts,
+#'                                 spikeInfo = SmartSeq2_SpikeInfo,
+#'                                 MeanFragLength = NULL,
+#'                                 batchData = Batches,
+#'                                 Normalisation = 'depth')
+#' # define log2 fold change
+#' p.lfc <- function(x) sample(c(-1,1), size=x,replace=T)*rgamma(x, shape = 1, rate = 2)
+#' # set up simulations
+#' setupres <- Setup(ngenes = 10000, nsims = 10,
+#'                   p.DE = 0.1, pLFC = p.lfc,
+#'                   n1 = c(20,50,100), n2 = c(30,60,120),
+#'                   Thinning = c(1,0.9,0.8), LibSize = 'given',
+#'                   estParamRes = estparam_gene,
+#'                   estSpikeRes = estparam_spike,
+#'                   DropGenes = FALSE,
+#'                   sim.seed = 52679, verbose = TRUE)
 #' # run simulation
-#' simres <- simulateDE(SetupRes,
-#' Prefilter = NULL, Imputation = NULL,
-#' Normalisation = "scran", Label = "none",
-#' DEmethod = "limma-trend", DEFilter = FALSE,
-#' NCores = NULL,
-#' verbose = TRUE)
+#' simres <- simulateDE(SetupRes = setupres,
+#'                      Prefilter = "FreqFilter", Imputation = NULL,
+#'                      Normalisation = 'scran', Label = 'none',
+#'                      DEmethod = "limma-trend", DEFilter = FALSE,
+#'                      NCores = NULL, verbose = TRUE)
+#' # quick evaluation
+#' evalderes <- evaluateDE(simRes = simres)
+#' # plot evaluation
+#' plotEvalDE(evalRes = evalderes, rate = "marginal",
+#'            quick = TRUE, Annot = FALSE)
 #' }
 #' @author Beate Vieth
 #' @rdname simulateDE
@@ -157,9 +178,16 @@
 simulateDE <- function(SetupRes,
                        Prefilter = NULL,
                        Imputation = NULL,
-                       Normalisation,
+                       Normalisation = c("TMM", "MR", "PosCounts", "UQ",
+                                         "scran", "Linnorm", "sctransform",
+                                         "SCnorm", "Census", "depth"),
                        Label = "none",
-                       DEmethod,
+                       DEmethod = c("T-Test", "edgeR-LRT", "edgeR-QL",
+                                    "edgeR-zingeR", "edgeR-ZINB-WaVE",
+                                    "limma-voom", "limma-trend",
+                                    "DESeq2", "DESeq2-zingeR", "DESeq2-ZINB-WaVE",
+                                    "ROTS", "baySeq", "NOISeq", "EBSeq",
+                                    "MAST", "BPSC", "scDD", "DECENT"),
                        DEFilter = FALSE,
                        NCores = NULL,
                        verbose = TRUE) {
@@ -177,7 +205,7 @@ simulateDE <- function(SetupRes,
     if(verbose) {message(paste0(DEmethod, " is developed for single cell RNA-seq experiments."))}
   }
 
-  if(attr(SetupRes, 'RNAseq') == "bulk" && DEmethod %in% c('scde', 'scDD', 'monocle', 'DECENT')) {
+  if(attr(SetupRes, 'RNAseq') == "bulk" && DEmethod %in% c('scDD', 'DECENT')) {
     stop(message(paste0(DEmethod, " is only developed and implemented for single cell RNA-seq experiments.")))
   }
 
@@ -192,6 +220,13 @@ simulateDE <- function(SetupRes,
     stop(message(paste0("You wish to use imputed/filtered gene expression values for DE testing but you did not specify the imputation/filtering method. Aborting.")))
   }
 
+  if(!is.null(Imputation) && attr(SetupRes,"RNAseq")== "bulk") {
+    message(paste0("You wish to use imputation but powsimR has only methods implemented for single cell RNA-seq and in most cases imputation is not needed for bulk RNA-seq. Setting Imputation to NULL."))
+    Imputation = NULL
+  }
+
+  start.time.pipe = proc.time()
+
   # define the maximal count matrix for simulations
   max.n = max(SetupRes$SimSetup$n1, SetupRes$SimSetup$n2)
   min.n = min(SetupRes$SimSetup$n1, SetupRes$SimSetup$n2)
@@ -201,8 +236,8 @@ simulateDE <- function(SetupRes,
   if(!Label == "clustering") {PreclustNumber <- NULL}
   Pipeline <- list(Prefilter = Prefilter,
                    Imputation = Imputation,
-                   Label = Label,
                    Normalisation=Normalisation,
+                   Label = Label,
                    DEmethod=DEmethod,
                    DEFilter = DEFilter,
                    NCores = NCores,
@@ -221,12 +256,13 @@ simulateDE <- function(SetupRes,
                                                                                                                 SetupRes$DESetup$nsims))
 
   tstep <- c("Simulation",
-             "Preprocess",
+             "Preprocessing",
             "Normalisation",
             "DE",
-            "Moments")
+            "Moments",
+            "Total")
   tmoment <- c('User', 'System', 'Elapsed')
-  tname <- paste(rep(tstep, each=3), rep(tmoment, times=5), sep="_")
+  tname <- paste(rep(tstep, each=3), rep(tmoment, times=6), sep="_")
 
   true.sf <- lapply(1:length(my.names), function(x) {
     matrix(NA,
@@ -356,7 +392,6 @@ simulateDE <- function(SetupRes,
                                Thin = Thin,
                                simOptions = tmp.simOpts)
       }
-
 
       ## filter out zero expression genes
       ix.valid = rowSums(sim.cnts) > 0
@@ -608,6 +643,8 @@ simulateDE <- function(SetupRes,
 
       true.designs[[j]][i,] = true.design
 
+      end.time.pipe = proc.time()
+
       # time taken for each step
       # copy designs into list of matrices
       time.taken.sim <- (end.time.sim1 - start.time.sim1) + (end.time.sim2 - start.time.sim2)
@@ -620,12 +657,14 @@ simulateDE <- function(SetupRes,
       time.taken.norm <- end.time.norm - start.time.norm
       time.taken.DE <- end.time.DE - start.time.DE
       time.taken.moments <- end.time.moments - start.time.moments
+      time.taken.total <- end.time.pipe - start.time.pipe
 
       timing <- c(time.taken.sim,
                   time.taken.preprocess,
                   time.taken.norm,
                   time.taken.DE,
-                  time.taken.moments)
+                  time.taken.moments,
+                  time.taken.total)
 
       timing <- timing[!grepl(pattern = "child", names(timing))]
       # copy time taken in 2D array of time taken
@@ -660,337 +699,4 @@ simulateDE <- function(SetupRes,
   return(res.out)
 }
 
-
-# simulateCounts ----------------------------------------------------------
-
-#' @name simulateCounts
-#' @aliases simulateCounts
-#' @title Simulate Read Counts
-#' @description With this function, the user can simulate realistic read counts for genes and spike-ins across two and multiple groups of samples (cells).
-#' @usage simulateCounts(n=c(20,100,30,25,500), Thinning = NULL,
-#' ngenes=10000,
-#' p.DE=0.1, pLFC,
-#' p.B=NULL, bLFC=NULL, bPattern="uncorrelated",
-#' p.M=NULL, mLFC=NULL,
-#' params, LibSize='equal',
-#' spikeIns = FALSE, spike = NULL, thinSpike = FALSE,
-#' ActualMeans=FALSE, FillUp=FALSE,
-#' sim.seed=NULL, verbose=TRUE)
-#' @param n The vector of sample groups with n samples, \code{e.g c(10,50,20,16)}.
-#' @param Thinning Integer vector specifying the downsampling if desired. It has to be the same length and order as the vectors n1 and n2. This is an implementation of \code{\link[edgeR]{thinCounts}}. The vector entries should be a proportion between 0 and 1, e.g. \code{0.75} means that each sample in that group will have on average 75\% sequencing depth compared to the original sequencing depth as listed in \code{\link{estimateParam}} if and only if approximately the same number of genes are simulated. Note that no upsampling is possible, i.e. defining a proportion greater than 1.
-#' @param ngenes The total number of genes to simulate. Default is \code{10000}.
-#' @param p.DE Numeric vector between 0 and 1 representing
-#' the percentage of genes being differentially expressed due to phenotype,
-#' i.e. biological signal. Default is \code{0.1}.
-#' @param pLFC The log2 phenotypic fold changes of DE genes. (1) For two group simulations, this can be:
-#' (a) a constant, e.g. 2;
-#' (b) a vector of values with length being number of DE genes.
-#' If the input is a vector and the length is not the number of DE genes,
-#' it will be sampled with replacement to generate log-fold change;
-#' (c) an univariate function that takes an integer n and generates vector(s) of length n,
-#' e.g. function(x) rnorm(x, mean=0, sd=1.5).
-#' (2) For multigroup simulations, this can be:
-#' (a) a list with number of elements equal to number of groups to simulate.
-#' The element of the list are vectors of log2 fold changes.
-#' (b) a multivariate function that takes an integer n
-#' and generates a dataframe with number of columns equal to number of groups.
-#' e.g. function(x) mvtnorm::rmvnorm(x, mean=c(4,2,1), sigma = matrix(c(4,2,2,2,3,2, 2, 2, 5), ncol=3)).
-#' @param p.B Numeric vector between 0 and 1 representing the percentage of genes
-#' being differentially expressed between batches. Default is \code{NULL}, i.e. no batch effect.
-#' @param bLFC The log2 batch fold change for all genes. This can be:
-#' (1) a constant, e.g. 2;
-#' (2) a vector of values with length being number of all genes.
-#' If the input is a vector and the length is not the number of total genes,
-#' it will be sampled with replacement to generate log2 fold changes;
-#' (3) an univariate function that takes an integer n, and generates a vector of length n,
-#' e.g. function(x) rnorm(x, mean=0, sd=1.5).
-#' Note that only two batches will be simulated
-#' irrespective of the number of phenotypic groups defined in pLFC.
-#' @param bPattern Character vector for batch effect pattern. Possible options include:
-#' "uncorrelated", "orthogonal" and " correlated". Default is \code{"uncorrelated"}.
-#' @param p.M Numeric vector between 0 and 1 representing the percentage of genes
-#' being differentially expressed exclusively in one group, i.e. marker genes. Default is \code{NULL}.
-#' @param mLFC The log2 batch fold change for marker genes. This can be:
-#' (1) a constant, e.g. 2;
-#' (2) a vector of values with length being number of marker genes.
-#' If the input is a vector and the length is not the number of marker genes,
-#' it will be sampled with replacement to generate log2 fold changes;
-#' (3) a function that takes an integer n, and generates a vector of length n,
-#' e.g. function(x) rnorm(x, mean=0, sd=1.5).
-#' @param params The distributional parameters for simulations of genes,
-#' i.e. the output of \code{\link{estimateParam}}.
-#' @param LibSize Size factors representing sample-specific differences/biases in expected mean values of the (ZI)NB distribution:
-#' "equal" or "given". The default is \code{"equal"}, i.e. equal size factor of 1.
-#' If the user defines it as given, the size factors are sampled from the size factors ("sf") provided by the output of \code{\link{estimateParam}}.
-#' @param spikeIns Logical value to indicate whether to simulate spike-ins.
-#' Default is \code{FALSE}.
-#' @param spike The distributional parameters for simulations of spike-ins,
-#' i.e. the output of \code{\link{estimateSpike}}.
-#' @param thinSpike Logical vector to indicate whether simulated spike-ins read counts should be downsampled as defined by 'Thinning'. Default is \code{FALSE}, i.e. no downsampling of spike-in counts.
-#' @param ActualMeans Drawing the associated dispersions after determining effective mean expressions by size factors.
-#' Default is \code{FALSE}, i.e. using the true mean expression values.
-#' @param FillUp Sampling with replacement or filling count tables with low magnitude Poisson
-#' when the estimated mean expression vector is shorter than the number of genes to be simulated.
-#' Default is \code{FALSE}, i.e. random sampling of mean expression values with replacement.
-#' @param sim.seed Simulation seed.
-#' @param verbose Logical value to indicate whether to show progress report of simulation.
-#' Default is \code{TRUE}.
-#' @return List with the following vectors:
-#' \item{GeneCounts}{The simulated read count matrix for genes with row=genes and columns=samples.}
-#' \item{SpikeCounts}{The simulated read count matrix for spike-ins with row=spike-ins and columns=samples.}
-#' \item{DEid}{A vector (length=ngenes*p.DE) for the IDs of phenotypic DE genes.}
-#' \item{Bid}{A vector (length=ngenes*p.B) for the IDs of batch DE genes.}
-#' \item{Mid}{A vector (length=ngenes*p.M) for the IDs of marker genes.}
-#' \item{pLFC}{A vector / matrix (columns = length(n); rows = ngenes) for phenotypic log fold change of all genes, i.e. nonDE=0 and DE=plfc.}
-#' \item{bLFC}{A vector / matrix (columns = length(n); rows = ngenes) for phenotypic log fold change of all genes, i.e. nonDE=0 and DE=plfc.}
-#' \item{mLFC}{A vector / matrix (columns = length(n); rows = ngenes) for phenotypic log fold change of all genes, i.e. nonDE=0 and DE=plfc.}
-#' \item{sf}{A vector of library size factors with length equal to the total number of samples simulated.}
-#' \item{ngenes, nsims, p.DE, p.B, p.M, sim.seed, n, k, Thinning, LibSize, thinSpike, ActualMeans, FillUp}{Input parameters.}
-#'
-#' @examples
-#' \dontrun{
-#' ## define log2 fold changes
-#' p.foo <- function(x) mvtnorm::rmvnorm(x, mean=c(4,2,1),
-#' sigma = matrix(c(4,2,2,2,3,2, 2, 2, 5), ncol=3))
-#' b.foo <- function(x) rnorm(x, mean=0, sd=1.5)
-#' ## simulate 3 groups of cells
-#' simcounts <- simulateCounts(n=c(100,110,90), Thinning = NULL,
-#' ngenes=10000,
-#' p.DE=0.05, pLFC = p.foo,
-#' p.B=0.1, bLFC=b.foo, bPattern="uncorrelated",
-#' p.M=NULL, mLFC=NULL,
-#' params=kolodziejczk_param,
-#' LibSize="equal",
-#' spike=NULL, spikeIns=FALSE, thinSpike = FALSE,
-#' ActualMeans=FALSE, FillUp=FALSE,
-#' sim.seed=34628, verbose=TRUE)
-#' }
-#' @author Beate Vieth
-#' @rdname simulateCounts
-#' @export
-simulateCounts <- function(n = c(20,100,30,25,500),
-                           Thinning = NULL,
-                           ngenes = 10000,
-                           p.DE = 0.1, pLFC,
-                           p.B = NULL, bLFC = NULL, bPattern = "uncorrelated",
-                           p.M = NULL, mLFC = NULL,
-                           params,
-                           LibSize = "equal",
-                           spikeIns = FALSE,
-                           spike = NULL,
-                           thinSpike = FALSE,
-                           ActualMeans = FALSE,
-                           FillUp = FALSE,
-                           sim.seed = NULL,
-                           verbose = TRUE) {
-
-  ## check settings
-  if(c(length(n) == 1 && p.DE>0)) {
-    if(verbose) {stop(message(paste0("You have specified differential expression but only one sample group.")))}
-  }
-  if(!is.null(Thinning) && !length(Thinning) == length(n)) {
-    stop(message(paste0("You wish to use binomial thinning but the Thinning vector is not the same length as the sample size vectors. Aborting.")))
-  }
-  if(!is.null(Thinning) && any(c(Thinning > 1, Thinning <= 0))) {
-    stop(message(paste0("You wish to use binomial thinning but the Thinning vector contains values outside the allowed proportions. Aborting.")))
-  }
-  if(is.null(Thinning) && isTRUE(thinSpike)) {
-    stop(message(paste0("You wish to use binomial thinning for the spike-ins but the Thinning vector is empty. Aborting.")))
-  }
-  if(is.null(spike) && isTRUE(thinSpike)) {
-    stop(message(paste0("You wish to use binomial thinning for the spike-ins but you did not supply spike parameters. Aborting.")))
-  }
-  if(is.null(spike) && isTRUE(spikeIns)) {
-    stop(message(paste0("You wish to simulate spike-ins but you did not supply spike parameters. Aborting.")))
-  }
-
-  ## setup preparation
-  if (verbose) { message(paste0("Preparing setup.")) }
-
-  # set simulation seed
-  if(is.null(sim.seed)){
-    sim.seed = sample(1:1000000, size = 1)
-    if (verbose) { message(paste0("Seed: ", sim.seed)) }
-    }
-  set.seed(sim.seed)
-  # define the number of cell populations
-  k = length(n)
-  # name the groups of cells otherwise issue when groups have same n!
-  names(n) <- paste0("n", 1:k)
-
-  # set gene expr settings
-  nDE = round(ngenes*p.DE)
-  if(!is.null(p.B)) { nB = round(ngenes*p.B) }
-  if(!is.null(p.M)) { nM = round(ngenes*p.M) }
-
-  DEids = Bids = Mids = plfcs = blfcs = mlfcs = lfcs = ids = NULL
-
-  # generate a random id for DE genes
-  DEids <- sample(ngenes, nDE, replace = FALSE)
-  ## generate lfc for all genes: 0 for nonDE and LFC for DE
-  pdim <- ifelse(k==2,1,k)
-  plfcs = matrix(0, nrow = ngenes, ncol = pdim)
-  if(length(n)>1) {
-    plfcs[DEids,] = .setFC(pLFC, nDE, k = k)
-    if(!is.null(bLFC)) {
-      # generate a random id for batch affected genes
-      Bids <- sample(ngenes, nB, replace = FALSE)
-      ## generate batch lfc for all genes: 0 for nonDE and LFC for DE, only two batches up until now
-      blfcs = matrix(0, nrow = ngenes, ncol = 1)
-      blfcs[Bids,] = .setFC(bLFC, nB, k=2)
-    }
-    if(!is.null(mLFC)) {
-      leftgenes <- c(1:ngenes)[-DEids]
-      ## generate lfc for marker genes: LFC for expressing group and 0 for all others
-      mlfc = .setMarker(input=mLFC, nDEgenes=nM, idpool=leftgenes, ngenes=ngenes, k=k)
-      mlfcs = mlfc$lfcs
-      Mids = mlfc$id
-      lfcs = plfcs
-      lfcs[Mids,] = mlfcs[Mids,]
-      ids = c(DEids, Mids)
-    }
-    if(is.null(mLFC)) {
-      lfcs = plfcs
-      ids = DEids
-      Mids = NULL
-      mlfcs = NULL
-    }
-  }
-  if(length(n) == 1) {
-    if(!is.null(bLFC)) {
-      # generate a random id for batch affected genes
-      Bids <- sample(ngenes, nB, replace = FALSE)
-      ## generate batch lfc for all genes: 0 for nonDE and LFC for DE, only two batches up until now
-      blfcs = matrix(0, nrow = ngenes, ncol = 1)
-      blfcs[Bids,] = .setFC(bLFC, nB, k=2)
-    }
-    if(!is.null(mLFC)) {
-      leftgenes <- c(1:ngenes)[-DEids]
-      ## generate lfc for marker genes: LFC for expressing group and 0 for all others
-      mlfc = .setMarker(input=mLFC, nDEgenes=nM, idpool=leftgenes, ngenes=ngenes, k=k)
-      mlfcs = mlfc$lfcs
-      Mids = mlfc$id
-      lfcs = plfcs
-      lfcs[Mids,] = mlfcs[Mids,]
-      ids = c(DEids, Mids)
-    }
-    if(is.null(mLFC)) {
-      lfcs = plfcs
-      ids = DEids
-      Mids = NULL
-      mlfcs = NULL
-    }
-  }
-
-  sim.settings = c(params,
-                   list(DEid = ids,
-                        pLFC = lfcs,
-                        bLFC = blfcs,
-                        bPattern = bPattern,
-                        sim.seed = sim.seed,
-                        spike = spike,
-                        spikeIns = spikeIns,
-                        RNAseq = params$RNAseq,
-                        ngenes = ngenes,
-                        ActualMeans = ActualMeans,
-                        FillUp = FillUp,
-                        LibSize = LibSize))
-  attr(sim.settings, 'Distribution') = attr(params, 'Distribution')
-  attr(sim.settings, 'RNAseq') = attr(params, 'RNAseq')
-
-  ## set up output arrays
-  if (verbose) { message(paste0("Preparing output arrays.")) }
-
-  # gene read counts
-  genes.mat = matrix(0, nrow = ngenes, ncol = sum(n))
-
-  ## simulation
-  if (verbose) { message(paste0("Simulating gene read counts \n")) }
-
-  if(k==2) {
-    gene.simdata = .simRNAseq.2grp(simOptions = sim.settings, n1=n[1], n2 = n[2], verbose=verbose)
-    gene.data = gene.simdata$counts
-  }
-
-  if(k>2) {
-    gene.simdata = .simRNAseq.multi(simOptions = sim.settings, n = n, verbose=verbose)
-    gene.data = gene.simdata$counts
-  }
-
-  # spike-in read counts
-  if(isTRUE(spikeIns)) {
-    if(is.null(sim.settings$spike)) {
-      stop(message(paste0("You requested the simulations of spike-in read counts \n
-                          but the spike parameter is empty. Aborting.")))
-    }
-    if(!is.null(sim.settings$spike)) {
-      spikes <- sim.settings$spike$spikeInfo$SpikeID
-      spike.data = matrix(0, nrow = length(spikes), ncol = sum(n),
-                          dimnames = list(spikes,NULL))
-    }
-  }
-  if(!isTRUE(sim.settings$spikeIns)) {
-    spike.data = NULL
-  }
-
-  ## generate spike-in read counts
-  if(isTRUE(spikeIns)) {
-    if (verbose) { message(paste0("Generating spike-in read counts")) }
-    spike.simdata = .simSpike(SpikeOptions = sim.settings$spike,
-                              n1 = floor(sum(n)/2),
-                              n2 = ceiling(sum(n)/2),
-                              sf = gene.simdata$sf)
-    spikes.mat = spike.simdata$counts
-    colnames(spikes.mat) = colnames(gene.data)
-    allspike <- rownames(spike.data)
-    simspike <- rownames(spikes.mat)
-    ixx.valid <- allspike %in% simspike
-    spike.data[ixx.valid, ] = spikes.mat
-  }
-  if(!isTRUE(spikeIns)) {
-    spike.data = NULL
-  }
-
-  ## apply thinning
-  if(!is.null(Thinning)) {
-    if (verbose) { message(paste0("Reduce the size of gene counts using binomial thinning.")) }
-    count.data <- gene.data
-    gene.data <- do.call(cbind, sapply(1:length(n), function (i) {
-      edgeR::thinCounts(x = count.data[, grepl(pattern = names(n)[i], colnames(count.data))],
-                        prob = rep(Thinning[i], n[i]))
-    }, simplify = FALSE, USE.NAMES = TRUE))
-  }
-  if(c(!is.null(Thinning) && !is.null(spike.data) &&isTRUE(thinSpike))) {
-    if (verbose) { message(paste0("Reduce the size of spike-in counts using binomial thinning.")) }
-    count.data <- spike.data
-    spike.data <- do.call(cbind, sapply(1:length(n), function (i) {
-      edgeR::thinCounts(x = count.data[, grepl(pattern = names(n)[i], colnames(count.data))],
-                        prob = rep(Thinning[i], n[i]))
-    }, simplify = FALSE, USE.NAMES = TRUE))
-  }
-
-  # return object
-  res <- c(list(GeneCounts=gene.data,
-                SpikeCounts=spike.data,
-                DEid = DEids,
-                Bid = Bids,
-                Mid = Mids,
-                pLFC = plfcs,
-                bLFC = blfcs,
-                mLFC = mlfcs,
-                sf = gene.simdata$sf,
-                ngenes = ngenes,
-                p.DE = p.DE,
-                p.B = p.B,
-                p.M = p.M,
-                sim.seed = sim.seed,
-                k = k,
-                n = n,
-                Thinning = Thinning,
-                LibSize = LibSize,
-                thinSpike = thinSpike)
-           )
-
-  return(res)
-}
 

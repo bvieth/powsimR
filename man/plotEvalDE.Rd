@@ -4,17 +4,17 @@
 \alias{plotEvalDE}
 \title{Visualize power assessment}
 \usage{
-plotEvalDE(evalRes, rate=c('marginal', 'stratified'),
-                   quick=TRUE, annot=TRUE)
+plotEvalDE(evalRes, rate=c('marginal', 'conditional'),
+                   quick=TRUE, Annot=TRUE)
 }
 \arguments{
 \item{evalRes}{The output of \code{\link{evaluateDE}}.}
 
-\item{rate}{Character vector defining whether the marginal or condtional rates should be plotted. Conditional depends on the choice of stratify.by in \code{\link{evaluateDE}}.}
+\item{rate}{Character vector defining whether the \code{"marginal"} or \code{"conditional"} rates should be plotted. Conditional depends on the choice of stratify.by in \code{\link{evaluateDE}}.}
 
 \item{quick}{A logical vector. If \code{TRUE}, the TPR and FDR are only plotted. If \code{FALSE}, then all rates are plotted.}
 
-\item{annot}{A logical vector. If \code{TRUE}, a short figure legend under the plot is included.}
+\item{Annot}{A logical vector. If \code{TRUE}, a short figure legend under the plot is included.}
 }
 \value{
 A ggplot object.
@@ -24,10 +24,41 @@ This function plots the results of \code{\link{evaluateDE}} for assessing the er
 }
 \examples{
 \dontrun{
-## using example data set
-eval.de <- evaluateDE(simRes = kolodziejczk_simDE)
-plotEvalDE(evalRes=eval.de, rate ="marginal", quick=T, annot=T)
-plotEvalDE(evalRes=eval.de, rate ="stratified", quick=T, annot=T)
+# estimate gene parameters
+data("Bulk_Read_Counts")
+data("GeneLengths_hg19")
+estparam_gene <- estimateParam(countData = Bulk_Read_Counts,
+                               readData = NULL,
+                               batchData = NULL,
+                               spikeData = NULL, spikeInfo = NULL,
+                               Lengths = GeneLengths_hg19, MeanFragLengths = NULL,
+                               RNAseq = 'bulk', Protocol = 'Read',
+                               Distribution = 'NB', Normalisation = "MR",
+                               GeneFilter = 0.25, SampleFilter = 3,
+                               sigma = 1.96, NCores = NULL, verbose = TRUE)
+# define log fold change
+p.lfc <- function(x) sample(c(-1,1), size=x,replace=T)*rgamma(x, shape = 2, rate = 2)
+# set up simulations
+setupres <- Setup(ngenes = 10000, nsims = 10,
+                  p.DE = 0.1, pLFC = p.lfc,
+                  n1 = c(3,6,12), n2 = c(3,6,12),
+                  Thinning = c(1,0.9,0.8), LibSize = 'given',
+                  estParamRes = estparam_gene,
+                  estSpikeRes = NULL,
+                  DropGenes = FALSE,
+                  sim.seed = 4379, verbose = TRUE)
+# run simulation
+simres <- simulateDE(SetupRes = setupres,
+                     Prefilter = NULL, Imputation = NULL,
+                     Normalisation = 'MR', Label = 'none',
+                     DEmethod = "limma-trend", DEFilter = FALSE,
+                     NCores = NULL, verbose = TRUE)
+# DE evaluation
+evalderes <- evaluateDE(simRes = simres, alpha.type="adjusted",
+                        MTC='BH', alpha.nominal=0.05,
+                        stratify.by = "mean", filter.by = "none")
+plotEvalDE(evalderes, rate = "marginal", quick = FALSE, Annot = TRUE)
+plotEvalDE(evalderes, rate = "conditional", quick = FALSE, Annot = TRUE)
 }
 }
 \author{

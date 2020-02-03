@@ -92,6 +92,7 @@
     NormData <- .sctransform.calc(countData = countData,
                                   batchData = batchData,
                                   Step = Step,
+                                  NCores = NCores,
                                   verbose = verbose)
   }
   if(Normalisation=="bayNorm") {
@@ -114,15 +115,6 @@
                              NCores = NCores,
                              verbose = verbose)
   }
-  if(Normalisation=='RUV' && Step == "Estimation") {
-    NormData <- .RUV.calc(countData = countData,
-                          spikeData = spikeData,
-                          batchData = batchData,
-                          verbose = verbose)
-  }
-  if(Normalisation=='RUV' && Step == "Simulation") {
-    stop(message(paste0("RUV should only be used for batch-aware normalisation during estimation.")))
-  }
 
   if(Normalisation=='depth') {
     NormData <- .depth.calc(countData = countData,
@@ -130,7 +122,7 @@
   }
   if(Normalisation=='SF') {
     NormData <- .sf.calc(countData = countData,
-                         sf=sf,
+                         sf = sf,
                          verbose = verbose)
   }
   if(Normalisation=='none') {
@@ -325,8 +317,9 @@
 
 # scran ------------------------------------------------------
 
-#' @importFrom scran computeSumFactors computeSpikeFactors
-#' @importFrom SingleCellExperiment SingleCellExperiment isSpike
+#' @importFrom scran calculateSumFactors computeSpikeFactors
+#' @importFrom SingleCellExperiment SingleCellExperiment sizeFactors altExp
+#' @importFrom SummarizedExperiment SummarizedExperiment rowData
 .scran.calc <- function(countData, spikeData, verbose) {
 
   spike = ifelse(is.null(spikeData), FALSE, TRUE)
@@ -334,37 +327,42 @@
   if(spike==TRUE) {
     message(paste0("Using computeSpikeFactors, i.e. spike-ins for normalisation!"))
     rownames(spikeData) = paste('ERCC', 1:nrow(spikeData), sep="-")
-    cnts = rbind(countData, spikeData)
-    sce <- SingleCellExperiment::SingleCellExperiment(assays = list(counts = as.matrix(cnts)))
-    SingleCellExperiment::isSpike(sce, "Spike") <- nrow(countData) + seq_len(nrow(spikeData))
-    sf <- scran::computeSpikeFactors(sce, sf.out=T)
+    sce <- SingleCellExperiment::SingleCellExperiment(assays = list(counts = countData))
+    sce.spike <- SummarizedExperiment::SummarizedExperiment(assays = list(counts = spikeData))
+    SummarizedExperiment::rowData(sce.spike)$IDs <- rownames(spikeData)
+    SingleCellExperiment::altExp(sce, "Spikes") <- sce.spike
+    sce <- scran::computeSpikeFactors(x = sce, spikes = "Spikes", assay.type = "counts")
+    sf <- SingleCellExperiment::sizeFactors(sce)
+
   }
 
   if(spike==FALSE) {
-    message(paste0("Using computeSumFactors, i.e. deconvolution over all cells!"))
+    message(paste0("Using calculateSumFactors, i.e. deconvolution over all cells!"))
     cnts = countData
     sce <- SingleCellExperiment::SingleCellExperiment(assays = list(counts = as.matrix(cnts)))
     if(ncol(countData)<=14) {
       sizes <- c(round(seq(from=2, to=trunc(ncol(countData)/2), by = 1)))
-      sf <- scran::computeSumFactors(sce,
-                                     sizes=sizes,
-                                     positive=FALSE, sf.out=TRUE)
+      sf <- scran::calculateSumFactors(sce,
+                                       sizes = sizes,
+                                       positive = TRUE)
     }
     if(ncol(countData)>14 & ncol(countData)<=50) {
       sizes <- c(round(seq(from=2, to=trunc(ncol(countData)/2), length.out=6)))
-      sf <- scran::computeSumFactors(sce,
-                                     sizes=sizes,
-                                     positive=FALSE, sf.out=TRUE)
+      sf <- scran::calculateSumFactors(sce,
+                                       sizes = sizes,
+                                       positive = TRUE)
     }
     if(ncol(countData)>50 & ncol(countData)<=1000) {
       sizes <- c(round(seq(from=10, to=trunc(ncol(countData)/2), length.out=6)))
-      sf <- scran::computeSumFactors(sce,
-                                     sizes=sizes,
-                                     positive=FALSE, sf.out=TRUE)
+      sf <- scran::calculateSumFactors(sce,
+                                       sizes = sizes,
+                                       positive = TRUE)
     }
     if(trunc(ncol(countData))>1000) {
       sizes <- c(round(seq(from=20, to=trunc(ncol(countData)/2), length.out=6)))
-      sf <- scran::computeSumFactors(sce, positive=FALSE, sf.out=TRUE)
+      sf <- scran::calculateSumFactors(sce,
+                                       sizes = sizes,
+                                       positive = TRUE)
     }
   }
 
@@ -393,32 +391,31 @@
 
   if(ncol(countData)<=14) {
     sizes <- unique(c(round(seq(from=2, to=min(table(clusters))-1, by = 1))))
-    sf <- scran::computeSumFactors(sce,
-                                   sizes=sizes,
-                                   clusters = clusters,
-                                   positive=FALSE, sf.out=TRUE)
+    sf <- scran::calculateSumFactors(sce,
+                                     sizes = sizes,
+                                     clusters = clusters,
+                                     positive = TRUE)
   }
   if(ncol(countData)>14 & ncol(countData)<=50) {
     sizes <- unique(c(round(seq(from=2, to=min(table(clusters))-1, length.out=6))))
-    sf <- scran::computeSumFactors(sce,
-                                   sizes=sizes,
-                                   clusters = clusters,
-                                   positive=FALSE, sf.out=TRUE)
+    sf <- scran::calculateSumFactors(sce,
+                                     sizes = sizes,
+                                     clusters = clusters,
+                                     positive = TRUE)
   }
   if(ncol(countData)>50 & ncol(countData)<=1000) {
     sizes <- unique(c(round(seq(from=10, to=min(table(clusters))-1, length.out=6))))
-    sf <- scran::computeSumFactors(sce,
-                                   sizes=sizes,
-                                   clusters = clusters,
-                                   positive=FALSE, sf.out=TRUE)
+    sf <- scran::calculateSumFactors(sce,
+                                     sizes = sizes,
+                                     clusters = clusters,
+                                     positive = TRUE)
   }
   if(trunc(ncol(countData))>1000) {
     sizes <- unique(c(round(seq(from=20, to=min(table(clusters))-1, length.out=6))))
-    sf <- scran::computeSumFactors(sce,
-                                   sizes = sizes,
-                                   clusters = clusters,
-                                   positive=FALSE,
-                                   sf.out=TRUE)
+    sf <- scran::calculateSumFactors(sce,
+                                     sizes = sizes,
+                                     clusters = clusters,
+                                     positive = TRUE)
   }
 
   names(sf) <- colnames(countData)
@@ -431,7 +428,7 @@
 }
 
 
-#' @importFrom scran computeSumFactors quickCluster
+#' @importFrom scran calculateSumFactors quickCluster
 #' @importFrom SingleCellExperiment SingleCellExperiment
 .scranclust.calc <- function(countData, PreclustNumber, verbose) {
   if (verbose) { message(paste0("Deconvolution within clusters.")) }
@@ -441,42 +438,42 @@
   if(ncol(countData)<=14) {
     clusters <- scran::quickCluster(sce, method="hclust", min.size=floor(PreclustNumber*0.75))
     sizes <- unique(c(round(seq(from=2, to=min(table(clusters))-1, by = 1))))
-    sf <- scran::computeSumFactors(sce,
-                                   sizes=sizes,
-                                   cluster=clusters,
-                                   positive=FALSE, sf.out=TRUE)
+    sf <- scran::calculateSumFactors(sce,
+                                     sizes = sizes,
+                                     clusters = clusters,
+                                     positive = TRUE)
   }
   if(ncol(countData)>14 & ncol(countData)<=50) {
     clusters <- scran::quickCluster(sce, method="hclust", min.size=floor(PreclustNumber*0.75))
     sizes <- unique(c(round(seq(from=2, to=min(table(clusters))-1, length.out=6))))
-    sf <- scran::computeSumFactors(sce,
-                                   sizes=sizes,
-                                   cluster=clusters,
-                                   positive=FALSE, sf.out=TRUE)
+    sf <- scran::calculateSumFactors(sce,
+                                     sizes = sizes,
+                                     clusters = clusters,
+                                     positive = TRUE)
   }
   if(ncol(countData)>50 & ncol(countData)<=1000) {
     clusters <- scran::quickCluster(sce, method="hclust", min.size=floor(PreclustNumber*0.75))
     sizes <- unique(c(round(seq(from=10, to=min(table(clusters))-1, length.out=6))))
-    sf <- scran::computeSumFactors(sce,
-                                   sizes=sizes,
-                                   cluster=clusters,
-                                   positive=FALSE, sf.out=TRUE)
+    sf <- scran::calculateSumFactors(sce,
+                                     sizes = sizes,
+                                     clusters = clusters,
+                                     positive = TRUE)
   }
   if(ncol(countData)>1000 & ncol(countData)<=5000) {
     clusters <- scran::quickCluster(sce, method="hclust", min.size=floor(PreclustNumber*0.75))
     sizes <- unique(c(round(seq(from=20, to=min(table(clusters))-1, length.out=6))))
-    sf <- scran::computeSumFactors(sce,
-                                   sizes=sizes,
-                                   cluster=clusters,
-                                   positive=FALSE, sf.out=TRUE)
+    sf <- scran::calculateSumFactors(sce,
+                                     sizes = sizes,
+                                     clusters = clusters,
+                                     positive = TRUE)
   }
   if(ncol(countData)>5000) {
     clusters <- scran::quickCluster(sce, method="igraph", min.size=floor(PreclustNumber*0.75))
     sizes <- unique(c(round(seq(from=20, to=min(table(clusters))-1, length.out=6))))
-    sf <- scran::computeSumFactors(sce,
-                                   sizes=sizes,
-                                   cluster=clusters,
-                                   positive=FALSE, sf.out=TRUE)
+    sf <- scran::calculateSumFactors(sce,
+                                     sizes = sizes,
+                                     clusters = clusters,
+                                     positive = TRUE)
   }
 
   names(sf) <- colnames(countData)
@@ -491,10 +488,10 @@
 
 # sctransform -------------------------------------------------------------
 
-
-
-#' @importFrom sctransform vst
-.sctransform.calc <- function(countData, batchData, Step, verbose) {
+#' @importFrom sctransform vst correct
+#' @importFrom future plan
+#' @importFrom Matrix Matrix
+.sctransform.calc <- function(countData, batchData, Step, NCores, verbose) {
 
   if(Step == "Estimation") {
     if(!is.null(batchData)) {
@@ -518,55 +515,51 @@
     batch_var <- NULL
   }
 
-  if(!is.null(cond)){
-    if (verbose) {
-      message(paste0("Correcting for nuisance factors defined by batchData."))
-      }
+  if(!is.null(NCores)){
+    future::plan(strategy = 'multicore', workers = NCores)
+    options(future.globals.maxSize = 10 * 1024 ^ 3)
   }
 
-  sctransform_out <- sctransform::vst(countData,
+  umi <- Matrix::Matrix(as.matrix(countData), sparse = TRUE)
+
+  sctransform_out <- sctransform::vst(umi = umi,
                                       cell_attr = cond,
                                       latent_var = c("log_umi"),
                                       batch_var = batch_var,
                                       latent_var_nonreg = NULL,
-                                      n_genes = 2000,
+                                      n_genes = NULL,
                                       n_cells = NULL,
                                       method = "poisson",
                                       do_regularize = TRUE,
-                                      res_clip_range = c(-sqrt(ncol(countData)), sqrt(ncol(countData))),
-                                      bin_size = 256,
-                                      min_cells = 5,
+                                      res_clip_range = c(-sqrt(ncol(umi)), sqrt(ncol(umi))),
+                                      bin_size = 256, min_cells = 5,
+                                      residual_type = "pearson",
                                       return_cell_attr = TRUE,
                                       return_gene_attr = TRUE,
-                                      return_dev_residuals = TRUE,
                                       return_corrected_umi = TRUE,
-                                      bw_adjust = 3,
-                                      gmean_eps = 1,
+                                      bw_adjust = 3, gmean_eps = 1,
                                       theta_given = NULL,
                                       show_progress = verbose)
-
-
-  norm.counts <- as.matrix(sctransform_out$umi_corrected)
+  norm.counts <- sctransform::correct(sctransform_out)
 
   ixx.valid <- rownames(countData)  %in% rownames(norm.counts)
   NormCounts <- countData
   NormCounts[ixx.valid, ] <- norm.counts
 
   gsf <-  countData / NormCounts
-  gsf[is.infinite(gsf)] <- NA
-  wmu <- sctransform_out$gene_attr$mean
+  gsf[is.infinite(as.matrix(gsf))] <- NA
+  wmu <- sctransform_out$gene_attr$gmean
   sf <- apply(gsf[ixx.valid,], 2, function(x) {
     stats::weighted.mean(x = x, w = wmu, na.rm = TRUE)
   })
   sf[is.infinite(sf)] <- mean(sf[is.finite(sf)])
-  sf <- sf/exp(mean(log(sf))) # needed ? CHECK!!!
+  sf <- sf/exp(mean(log(sf)))
   names(sf) <- colnames(countData)
 
   res <- list(NormCounts=NormCounts,
               RoundNormCounts=round(NormCounts),
               size.factors=sf,
-              scale.factors=gsf,
-              vst_out=sctransform_out)
+              scale.factors=gsf)
   attr(res, 'normFramework') <- "sctransform"
 
   invisible(gc())
@@ -860,7 +853,7 @@
       ## cell capture efficiency
       total_ercc_molecules <- sum(spikeInfo$SpikeInput)
       cellcapture <- apply(spikeData, 2, function(i) {
-        sum(i) / sum(spikeInfo$SpikeInput)
+        sum(i) / total_ercc_molecules
       })
       beta_vec <- bayNorm::BetaFun(Data = countData, MeanBETA = mean(cellcapture))$BETA
     }
@@ -904,6 +897,8 @@
               scale.factors=gsf)
 
 }
+
+
 
 # Census ----------------------------------------------------
 
@@ -1002,115 +997,11 @@
   # return object
   res <- list(NormCounts=norm.counts,
               RoundNormCounts=round(norm.counts),
+              RPC = rpc_matrix,
               size.factors=sf)
   attr(res, 'normFramework') <- "Census"
   return(res)
 
-}
-
-# RUV ---------------------------------------------
-
-#' @importFrom RUVSeq RUVg
-#' @importFrom tibble rownames_to_column
-#' @importFrom tidyr %>%
-#' @importFrom dplyr rename_
-.RUV.calc <- function(countData, spikeData, batchData, verbose) {
-
-  if(is.null(batchData) && !is.null(spikeData)) {
-    # annotate spike-ins and genes
-    rownames(spikeData) = paste('ERCC', 1:nrow(spikeData), sep="-")
-    cnts = rbind(countData, spikeData)
-    spike = grepl(pattern='ERCC', rownames(cnts))
-
-    #RUVg calculation
-    RUV.out = RUVSeq::RUVg(x=as.matrix(cnts),
-                            cIdx=spike,
-                            k=1,
-                            drop=0,
-                            center=TRUE,
-                            round=FALSE,
-                            epsilon=1,
-                            tolerance=1e-8,
-                            isLog=FALSE)
-  }
-
-  if(!is.null(batchData) && !is.null(spikeData)) {
-    # prepare replicate sample annotation matrix
-    tmp <- batchData %>%
-      dplyr::rename_(Batch = names(.)[1]) %>%
-      tibble::rownames_to_column(var="SampleID")  %>%
-      tibble::rownames_to_column(var="SampleNumber")
-    tmp2 <- split(x = tmp, f = as.factor(tmp$Batch))
-    longestbatch <- max(sapply(tmp2, nrow))
-    tmp3 <- sapply(tmp2, function(x) {
-      tmp <- as.numeric(x$SampleNumber)
-      tmp1 <- c(tmp, rep(-1, longestbatch-length(tmp)))
-      tmp1
-    })
-    differences = t(tmp3)
-
-    # annotate spike-ins and genes
-    rownames(spikeData) = paste('ERCC', 1:nrow(spikeData), sep="-")
-    cnts = rbind(countData, spikeData)
-    spike = grepl(pattern='ERCC', rownames(cnts))
-
-    #RUVs calculation
-    RUV.out = RUVSeq::RUVs(x=as.matrix(cnts),
-                           cIdx=spike,
-                           scIdx = differences,
-                           k=1,
-                           round=FALSE,
-                           epsilon=1,
-                           tolerance=1e-8,
-                           isLog=FALSE)
-  }
-
-  if(!is.null(batchData) && is.null(spikeData)) {
-    # prepare replicate sample annotation matrix
-    tmp <- batchData %>%
-      dplyr::rename_(Batch = names(.)[1]) %>%
-      tibble::rownames_to_column(var="SampleID")  %>%
-      tibble::rownames_to_column(var="SampleNumber")
-    tmp2 <- split(x = tmp, f = as.factor(tmp$Batch))
-    longestbatch <- max(sapply(tmp2, nrow))
-    tmp3 <- sapply(tmp2, function(x) {
-      tmp <- as.numeric(x$SampleNumber)
-      tmp1 <- c(tmp, rep(-1, longestbatch-length(tmp)))
-      tmp1
-    })
-    differences = t(tmp3)
-
-    # annotate genes
-    cnts = countData
-    controls = rownames(countData)
-
-    #RUVs calculation
-    RUV.out = RUVSeq::RUVs(x=as.matrix(cnts),
-                           cIdx=controls,
-                           scIdx = differences,
-                           k=1,
-                           round=FALSE,
-                           epsilon=1,
-                           tolerance=1e-8,
-                           isLog=FALSE)
-  }
-
-  # return object
-  # normalized counts
-  normCounts <- RUV.out$normalizedCounts[!grepl(pattern = "ERCC",
-                                                rownames(RUV.out$normalizedCounts)),]
-  normCounts[normCounts<0] <- 0
-  # RUV proxy size factors
-  gsf <-  t(t(countData)/t(normCounts))
-  sf <- apply(gsf, 2, stats::median, na.rm=T)
-  sf <- sf*length(sf)/sum(sf)
-  names(sf) <- colnames(countData)
-  res <- list(NormCounts = normCounts,
-              RoundNormCounts = round(normCounts),
-              size.factors = sf,
-              RUV.W = RUV.out$W)
-  attr(res, 'normFramework') <- "RUV"
-  return(res)
 }
 
 

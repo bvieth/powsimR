@@ -119,9 +119,134 @@
 
 
   # output
-  list(TN=TN,TN.marginal=TN.mar, TP=TP, TP.marginal=TP.mar, FP=FP, FP.marginal=FP.mar, FN=FN, FN.marginal=FN.mar,
-       TNR=TNR, TPR=TPR, FPR=FPR, FNR=FNR,FDR=FDR,
-       TNR.marginal=TNR.marginal, TPR.marginal=TPR.marginal,
-       FPR.marginal=FPR.marginal, FNR.marginal=FNR.marginal,
-       FDR.marginal=FDR.marginal)
+  out <- list(TN=TN,TN.marginal=TN.mar,
+              TP=TP, TP.marginal=TP.mar,
+              FP=FP, FP.marginal=FP.mar,
+              FN=FN, FN.marginal=FN.mar,
+              TNR=TNR, TPR=TPR, FPR=FPR, FNR=FNR,FDR=FDR,
+              TNR.marginal=TNR.marginal, TPR.marginal=TPR.marginal,
+              FPR.marginal=FPR.marginal, FNR.marginal=FNR.marginal,
+              FDR.marginal=FDR.marginal)
+
+  return(out)
+}
+
+#' @importFrom dplyr mutate
+#' @importFrom rlang .data
+.roc.calc <- function(df){
+  res <- dplyr::mutate(df,
+                       FPR = .data$FP / (.data$FP + .data$TN),
+                       TNR = .data$TN / (.data$TN + .data$FP),
+                       FNR = .data$FN / (.data$FN + .data$TP),
+                       PPV = .data$TP / (.data$TP + .data$FP),
+                       ACC = (.data$TP + .data$TN) / (.data$TP + .data$TN + .data$FP + .data$FN),
+                       F1score = (2*.data$TP) / ((2*.data$TP) + .data$FP + .data$FN),
+                       MCC = ( (.data$TP * .data$TN) - (.data$FP * .data$FN) ) /
+                         sqrt( (.data$TP + .data$FP)*(.data$TP + .data$FN)*
+                                 (.data$TN + .data$FP)*(.data$TN + .data$FN) )
+                )
+
+  return(res)
+}
+
+#' @importFrom dplyr select group_by summarise_all
+#' @importFrom tidyr pivot_longer
+#' @importFrom rlang .data
+#' @importFrom plotrix std.error
+.scores.summary.calc <- function(calc.obj) {
+
+  res <- do.call("rbind", calc.obj) %>%
+    tidyr::pivot_longer(-c(.data$Samples, .data$Sim),
+                        names_to = "Score") %>%
+    dplyr::select(-.data$Sim) %>%
+    dplyr::group_by(.data$Samples, .data$Score) %>%
+    dplyr::summarise(Mean = mean(.data$value, na.rm = TRUE),
+                     SE = plotrix::std.error(.data$value, na.rm = TRUE)) %>%
+    data.frame()
+
+  return(res)
+}
+
+#' @importFrom dplyr select group_by summarise_all
+#' @importFrom tidyr pivot_longer
+#' @importFrom rlang .data
+#' @importFrom plotrix std.error
+.tprvsfdr.summary.calc <- function(calc.obj) {
+
+  res <- do.call("rbind", do.call("rbind", calc.obj)) %>%
+    dplyr::select(-c(.data$Sim, .data$TP:.data$FN, .data$NBR)) %>%
+    dplyr::group_by(.data$Samples, .data$Threshold) %>%
+    dplyr::summarise_all(list(Mean = mean,
+                              SE = plotrix::std.error)) %>%
+    data.frame()
+
+  return(res)
+}
+
+.perf.summary.calc <- function(calc.obj) {
+
+  roc.obj.l <- sapply(names(calc.obj), function(j){
+    data.frame(.threshold.avg(perf.obj = calc.obj[[j]], x.name = "FPR", y.name = "TPR"))
+  }, USE.NAMES = TRUE, simplify = FALSE)
+
+  roc.obj <- data.table::rbindlist(roc.obj.l, use.names = TRUE, idcol = 'Samples')
+
+  pr.obj.l <- sapply(names(calc.obj), function(j){
+    data.frame(.threshold.avg(perf.obj = calc.obj[[j]], x.name = "TPR", y.name = "PPV"))
+  }, USE.NAMES = TRUE, simplify = FALSE)
+
+  pr.obj <- data.table::rbindlist(pr.obj.l, use.names = TRUE, idcol = 'Samples')
+
+  res <- list("ROC-Curve" = roc.obj, "PR-Curve" = pr.obj)
+
+  return(res)
+
+}
+
+#' @importFrom stats approxfun
+#' @importFrom matrixStats rowSds
+.threshold.avg <- function(perf.obj, x.name, y.name) {
+
+  alpha.values <- x.values <- y.values <- NULL
+
+  alpha.tmp <- lapply(1:length(perf.obj), function(i) {
+    x <- perf.obj[[i]][, "CUTOFF"]
+    x[-1]
+  })
+  x.tmp <- lapply(1:length(perf.obj), function(i) {
+    x <- perf.obj[[i]][, x.name]
+    x[-1]
+  })
+  y.tmp <- lapply(1:length(perf.obj), function(i) {
+    x <- perf.obj[[i]][, y.name]
+    x[-1]
+  })
+
+  alpha.values <- seq(min(unlist(alpha.tmp)),
+                      max(unlist(alpha.tmp)),
+                      length=max( sapply(alpha.tmp, length)))
+
+  for (i in 1:length(y.tmp)) {
+    x.values[[i]] <- stats::approxfun(alpha.tmp[[i]],
+                                      x.tmp[[i]],
+                                      rule=2, ties=mean)(alpha.values)
+    y.values[[i]] <- stats::approxfun(alpha.tmp[[i]],
+                                      y.tmp[[i]],
+                                      rule=2, ties=mean)(alpha.values)
+  }
+
+  res <- matrix(data = cbind(alpha.values,
+                             rowMeans(data.frame(x.values)),
+                             matrixStats::rowSds(as.matrix(data.frame(x.values))) / sqrt(length(x.values)),
+                             rowMeans(data.frame(y.values)) ,
+                             matrixStats::rowSds(as.matrix(data.frame(y.values))) / sqrt(length(y.values))),
+                nrow = length(alpha.values), ncol = 5,
+                dimnames = list(NULL, c("CUTOFF",
+                                        paste(rep(x.name, 2), c("Mean", "SE"), sep ="_"),
+                                        paste(rep(y.name, 2), c("Mean", "SE"), sep ="_"))
+                                )
+                )
+
+  return(res)
+
 }

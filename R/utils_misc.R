@@ -77,11 +77,6 @@
   return(list(lfcs=lfcs, id=Mids))
 }
 
-# remove scientific notation ----------------------------------------------
-
-.plain <- function(x,...) {
-  format(x, ..., scientific = FALSE, trim = TRUE, digits=1)
-}
 
 # Calculate AIC of model --------------------------------------------------
 

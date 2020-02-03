@@ -24,28 +24,30 @@ See \code{\link{estimateParam}} and \code{\link{plotParam}} for more information
 the percentage of genes being differentially expressed due to phenotype,
 i.e. biological signal. Default is \code{0.1}.}
 
-\item{pLFC}{The log2 phenotypic fold change for DE genes. This can be:
+\item{pLFC}{The log phenotypic fold change for DE genes. This can be:
 (1) a constant, e.g. 2;
 (2) a vector of values with length being number of DE genes.
 If the input is a vector and the length is not the number of DE genes,
-it will be sampled with replacement to generate log2 fold changes;
+it will be sampled with replacement to generate log fold changes;
 (3) a function that takes an integer n, and generates a vector of length n,
 e.g. function(x) rnorm(x, mean=0, sd=1.5).
-Default is \code{1}.}
+Default is \code{1}.
+Please note that the fold change should be on \code{\link[base]{log1p}} scale!}
 
 \item{p.B}{Numeric vector between 0 and 1 representing the percentage of genes
 being differentially expressed between batches.
 Default is \code{NULL}, i.e. no batch effect.}
 
-\item{bLFC}{The log2 batch fold change for all genes. This can be:
+\item{bLFC}{The log batch fold change for all genes. This can be:
 (1) a constant, e.g. 2;
 (2) a vector of values with length being number of all genes.
 If the input is a vector and the length is not the number of total genes,
- it will be sampled with replacement to generate log2 fold changes;
+ it will be sampled with replacement to generate log fold changes;
 (3) a function that takes an integer n, and generates a vector of length n,
  e.g. function(x) rnorm(x, mean=0, sd=1.5).
 Note that the simulations of only two batches is implemented.
-Default is \code{NULL}, i.e. no batch effect.}
+Default is \code{NULL}, i.e. no batch effect.
+Please note that the fold change should be on \code{\link[base]{log1p}} scale!}
 
 \item{bPattern}{Character vector for batch effect pattern if \code{p.B} is non-null.
 Possible options include:
@@ -117,16 +119,43 @@ fraction of DE genes is generated. There are also a number of options relating
 }
 \examples{
 \dontrun{
-data(kolodziejczk_param)
-setupres <- Setup(ngenes = NULL, nsims = 25,
-p.DE = 0.1, pLFC = 1.25,
-p.B = NULL, bLFC = NULL, bPattern = 'uncorrelated',
-n1 = c(20,50,100), n2 = c(30,60,120),
-Thinning = NULL, LibSize = 'equal',
-estParamRes = kolodziejczk_param,
-estSpikeRes = NULL,
-DropGenes = FALSE,
-sim.seed = 52679, verbose = TRUE)
+# estimate gene parameters
+data("SmartSeq2_Gene_Read_Counts")
+Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_Gene_Read_Counts), "_"), "[[", 1),
+                     stringsAsFactors = F,
+                     row.names = colnames(SmartSeq2_Gene_Read_Counts))
+data("GeneLengths_mm10")
+estparam_gene <- estimateParam(countData = SmartSeq2_Gene_Read_Counts,
+                               readData = NULL,
+                               batchData = Batches,
+                               spikeData = NULL, spikeInfo = NULL,
+                               Lengths = GeneLengths_mm10, MeanFragLengths = NULL,
+                               RNAseq = 'singlecell', Protocol = 'Read',
+                               Distribution = 'ZINB', Normalisation = "scran",
+                               GeneFilter = 0.1, SampleFilter = 3,
+                              sigma = 1.96, NCores = NULL, verbose = TRUE)
+# estimate spike parameters
+data("SmartSeq2_SpikeIns_Read_Counts")
+data("SmartSeq2_SpikeInfo")
+Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_SpikeIns_Read_Counts), "_"), "[[", 1),
+                     stringsAsFactors = F,
+                     row.names = colnames(SmartSeq2_SpikeIns_Read_Counts))
+estparam_spike <- estimateSpike(spikeData = SmartSeq2_SpikeIns_Read_Counts,
+                                spikeInfo = SmartSeq2_SpikeInfo,
+                                MeanFragLength = NULL,
+                                batchData = Batches,
+                                Normalisation = 'depth')
+# define log fold change
+p.lfc <- function(x) sample(c(-1,1), size=x,replace=T)*rgamma(x, shape = 1, rate = 2)
+# set up simulations
+setupres <- Setup(ngenes = 10000, nsims = 25,
+                  p.DE = 0.1, pLFC = p.lfc,
+                  n1 = c(20,50,100), n2 = c(30,60,120),
+                  Thinning = c(1,0.9,0.8), LibSize = 'given',
+                  estParamRes = estparam_gene,
+                  estSpikeRes = estparam_spike,
+                  DropGenes = TRUE,
+                  sim.seed = 52679, verbose = TRUE)
 }
 }
 \author{

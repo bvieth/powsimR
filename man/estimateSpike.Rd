@@ -10,11 +10,13 @@ MeanFragLengths = NULL,
 batchData = NULL,
 Normalisation=c('depth','none'),
 SampleFilter = 3,
+RNAseq = c("bulk", "singlecell"),
+Protocol = c('UMI', 'Read'),
 verbose = TRUE)
 }
 \arguments{
 \item{spikeData}{is a count \code{matrix}. Rows correspond to spike-ins, columns to samples.
-Rownames should contain the spike-in names, column names the sample names.}
+\code{rownames} should contain the spike-in names, \code{colnames} the sample names.}
 
 \item{spikeInfo}{is a molecule count \code{matrix} of spike-ins. Rows correspond to spike-ins.
 The order of rows should be the same as the rows in \code{spikeData}.
@@ -38,6 +40,11 @@ The default is \code{5}, i.e. at least 5 MADs away from the median.
 Choose higher values if you want to filter out less samples.
 This parameter is particularly important for single cells to ensure reliable parameter estimation.
 For more information, please consult \code{\link[scater]{isOutlier}}.}
+
+\item{RNAseq}{is a character value: "bulk" or "singlecell".}
+
+\item{Protocol}{is a character value defining the type of counts given in \code{countData}.
+Options are "UMI" (e.g. 10X Genomics, CEL-seq2) or "Read" (e.g. Smart-seq2).}
 
 \item{verbose}{Logical value to indicate whether to print function information.
 Default is \code{TRUE}.}
@@ -69,20 +76,19 @@ Normalisation methods
 }
 \examples{
 \dontrun{
-## batch annotation
-data(scrbseq_spike_cnts)
-data(scrbseq_spike_info)
-batch_info <- data.frame(Batch = ifelse(grepl(pattern = "SCRBseqA_",
-colnames(scrbseq_spike_cnts)), "A", "B"),
-row.names = colnames(scrbseq_spike_cnts))
-## spike information table
-spike_info <- scrbseq_spike_info
-## estimation
-spike_param <- estimateSpike(spikeData = scrbseq_spike_cnts,
-spikeInfo = spike_info,
+data("SmartSeq2_SpikeIns_Read_Counts")
+data("SmartSeq2_SpikeInfo")
+Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_SpikeIns_Read_Counts), "_"), "[[", 1),
+                       stringsAsFactors = F,
+                       row.names = colnames(SmartSeq2_SpikeIns_Read_Counts))
+# estimation
+spike_param <- estimateSpike(spikeData = SmartSeq2_SpikeIns_Read_Counts,
+spikeInfo = SmartSeq2_SpikeInfo,
 MeanFragLength = NULL,
-batchData = batch_info,
+batchData = Batches,
 Normalisation = 'depth')
+# plotting
+plotSpike(estSpike = spike_param, Annot = FALSE)
 }
 }
 \author{
