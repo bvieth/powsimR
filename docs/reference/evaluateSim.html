@@ -8,21 +8,25 @@
 
 <title>Compute the performance related metrics from simulation results. — evaluateSim • powsimR</title>
 
+
 <!-- jquery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous" />
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
 
-<!-- sticky kit -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sticky-kit/1.1.3/sticky-kit.min.js" integrity="sha256-c4Rlo1ZozqTPE2RLuvbusY3+SU1pQaJC0TjuhygMipw=" crossorigin="anonymous"></script>
+<!-- headroom.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -30,11 +34,12 @@
 
 
 
-<meta property="og:title" content="Compute the performance related metrics from simulation results. — evaluateSim" />
 
+<meta property="og:title" content="Compute the performance related metrics from simulation results. — evaluateSim" />
 <meta property="og:description" content="This function takes the simulation output from simulateDE
 and computes several metrics that give an indication of the simulation setup performance." />
 <meta name="twitter:card" content="summary" />
+
 
 
 
@@ -46,6 +51,7 @@ and computes several metrics that give an indication of the simulation setup per
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
+
 
 
   </head>
@@ -64,7 +70,7 @@ and computes several metrics that give an indication of the simulation setup per
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">powsimR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.0</span>
       </span>
     </div>
 
@@ -72,7 +78,7 @@ and computes several metrics that give an indication of the simulation setup per
       <ul class="nav navbar-nav">
         <li>
   <a href="../index.html">
-    <span class="fa fa-home fa-lg"></span>
+    <span class="fas fa fas fa-home fa-lg"></span>
      
   </a>
 </li>
@@ -86,11 +92,10 @@ and computes several metrics that give an indication of the simulation setup per
   <a href="../news/index.html">Changelog</a>
 </li>
       </ul>
-      
       <ul class="nav navbar-nav navbar-right">
         <li>
   <a href="https://github.com/bvieth/powsimR">
-    <span class="fa fa-github fa-lg"></span>
+    <span class="fab fa fab fa-github fa-lg"></span>
      
   </a>
 </li>
@@ -101,6 +106,7 @@ and computes several metrics that give an indication of the simulation setup per
 </div><!--/.navbar -->
 
       
+
       </header>
 
 <div class="row">
@@ -112,14 +118,12 @@ and computes several metrics that give an indication of the simulation setup per
     </div>
 
     <div class="ref-description">
-    
     <p>This function takes the simulation output from <code><a href='simulateDE.html'>simulateDE</a></code>
 and computes several metrics that give an indication of the simulation setup performance.</p>
-    
     </div>
 
-    <pre class="usage"><span class='fu'>evaluateSim</span>(<span class='no'>simRes</span>, <span class='kw'>timing</span><span class='kw'>=</span><span class='fl'>TRUE</span>)</pre>
-    
+    <pre class="usage"><span class='fu'>evaluateSim</span>(<span class='no'>simRes</span>)</pre>
+
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
@@ -127,49 +131,73 @@ and computes several metrics that give an indication of the simulation setup per
       <th>simRes</th>
       <td><p>The result from <code><a href='simulateDE.html'>simulateDE</a></code>.</p></td>
     </tr>
-    <tr>
-      <th>timing</th>
-      <td><p>A logical vector indicating whether to summarise computational time of simulation run.
-Default is <code>TRUE</code>.</p></td>
-    </tr>
     </table>
-    
+
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
     <p>A list with the following entries:</p>
-<dt>Log2FoldChange</dt><dd><p>The absolute mean error (<code>MAE</code>), root mean square error (<code>RMSE</code>)
-and root mean square residual error of a robust linear model (<code>rRMSE</code>, <code><a href='https://www.rdocumentation.org/packages/MASS/topics/rlm'>rlm</a></code>)
-of log2 fold change differences between estimated LFC and simulated LFC.
+<dt>LogFoldChange</dt><dd><p>The absolute mean error (<code>MAE</code>), root mean square error (<code>RMSE</code>)
+and root mean square residual error of a robust linear model (<code>rRMSE</code>, <code><a href='https://rdrr.io/pkg/MASS/man/rlm.html'>rlm</a></code>)
+of log fold change differences between estimated and simulated.
 Furthermore, the fraction of missing entries (<code>NAFraction</code>) for MAE annd RMSE.</p></dd>
-<dt>SizeFactors</dt><dd><p>The median absolute deviation (MAD) between the estimated and true size factors,
-the root mean square residual error of a robust linear model (rRMSE, <code><a href='https://www.rdocumentation.org/packages/MASS/topics/rlm'>rlm</a></code>) and
-the ratio between estimated and true size factors of the two groups (<code>GroupX</code>).</p></dd>
+<dt>SizeFactors</dt><dd><p>The median absolute deviation (MAD) between the simulated and estimated size factors,
+the root mean square residual error of a robust linear model (rRMSE, <code><a href='https://rdrr.io/pkg/MASS/man/rlm.html'>rlm</a></code>) and
+the group-specific ratio between simulated and estimated size factors (<code>GroupX</code>).</p></dd>
 
-    
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
     <div class='dont-index'><p><code><a href='estimateParam.html'>estimateParam</a></code> for negative binomial parameters,
-<code><a href='SimSetup.html'>SimSetup</a></code> and
-<code><a href='DESetup.html'>DESetup</a></code> for setting up simulation parameters and
-<code><a href='simulateDE.html'>simulateDE</a></code> for simulating differential expression and</p></div>
-    
+<code><a href='Setup.html'>Setup</a></code> for setting up simulation parameters and
+<code><a href='simulateDE.html'>simulateDE</a></code> for simulating differential expression</p></div>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><span class='co'># NOT RUN {</span>
-<span class='co'>## using example data set</span>
-<span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/data'>data</a></span>(<span class='no'>kolodziejczk_simDE</span>)
-<span class='no'>eval.sim</span> <span class='kw'>&lt;-</span> <span class='fu'>evaluateSim</span>(<span class='kw'>simRes</span> <span class='kw'>=</span> <span class='no'>kolodziejczk_simDE</span>, <span class='kw'>timing</span> <span class='kw'>=</span> <span class='no'>T</span>)
-<span class='co'># }</span></pre>
+    <pre class="examples"><div class='input'><span class='kw'>if</span> (<span class='fl'>FALSE</span>) {
+<span class='co'># estimate gene parameters</span>
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='st'>"SmartSeq2_Gene_Read_Counts"</span>)
+<span class='no'>Batches</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span>(<span class='kw'>Batch</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/lapply.html'>sapply</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/strsplit.html'>strsplit</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>SmartSeq2_Gene_Read_Counts</span>), <span class='st'>"_"</span>), <span class='st'>"[["</span>, <span class='fl'>1</span>),
+                     <span class='kw'>stringsAsFactors</span> <span class='kw'>=</span> <span class='no'>F</span>,
+                     <span class='kw'>row.names</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>SmartSeq2_Gene_Read_Counts</span>))
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='st'>"GeneLengths_mm10"</span>)
+<span class='no'>estparam_gene</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='estimateParam.html'>estimateParam</a></span>(<span class='kw'>countData</span> <span class='kw'>=</span> <span class='no'>SmartSeq2_Gene_Read_Counts</span>,
+                               <span class='kw'>readData</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+                               <span class='kw'>batchData</span> <span class='kw'>=</span> <span class='no'>Batches</span>,
+                               <span class='kw'>spikeData</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>spikeInfo</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+                               <span class='kw'>Lengths</span> <span class='kw'>=</span> <span class='no'>GeneLengths_mm10</span>, <span class='kw'>MeanFragLengths</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+                               <span class='kw'>RNAseq</span> <span class='kw'>=</span> <span class='st'>'singlecell'</span>, <span class='kw'>Protocol</span> <span class='kw'>=</span> <span class='st'>'Read'</span>,
+                               <span class='kw'>Distribution</span> <span class='kw'>=</span> <span class='st'>'ZINB'</span>, <span class='kw'>Normalisation</span> <span class='kw'>=</span> <span class='st'>"scran"</span>,
+                               <span class='kw'>GeneFilter</span> <span class='kw'>=</span> <span class='fl'>0.1</span>, <span class='kw'>SampleFilter</span> <span class='kw'>=</span> <span class='fl'>3</span>,
+                               <span class='kw'>sigma</span> <span class='kw'>=</span> <span class='fl'>1.96</span>, <span class='kw'>NCores</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+<span class='co'># define log fold change</span>
+<span class='no'>p.lfc</span> <span class='kw'>&lt;-</span> <span class='kw'>function</span>(<span class='no'>x</span>) <span class='fu'><a href='https://rdrr.io/r/base/sample.html'>sample</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(-<span class='fl'>1</span>,<span class='fl'>1</span>), <span class='kw'>size</span><span class='kw'>=</span><span class='no'>x</span>,<span class='kw'>replace</span><span class='kw'>=</span><span class='no'>T</span>)*<span class='fu'><a href='https://rdrr.io/r/stats/GammaDist.html'>rgamma</a></span>(<span class='no'>x</span>, <span class='kw'>shape</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>rate</span> <span class='kw'>=</span> <span class='fl'>2</span>)
+<span class='co'># set up simulations</span>
+<span class='no'>setupres</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='Setup.html'>Setup</a></span>(<span class='kw'>ngenes</span> <span class='kw'>=</span> <span class='fl'>10000</span>, <span class='kw'>nsims</span> <span class='kw'>=</span> <span class='fl'>10</span>,
+                  <span class='kw'>p.DE</span> <span class='kw'>=</span> <span class='fl'>0.1</span>, <span class='kw'>pLFC</span> <span class='kw'>=</span> <span class='no'>p.lfc</span>,
+                  <span class='kw'>n1</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>20</span>,<span class='fl'>50</span>,<span class='fl'>100</span>), <span class='kw'>n2</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>30</span>,<span class='fl'>60</span>,<span class='fl'>120</span>),
+                  <span class='kw'>Thinning</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>,<span class='fl'>0.9</span>,<span class='fl'>0.8</span>), <span class='kw'>LibSize</span> <span class='kw'>=</span> <span class='st'>'given'</span>,
+                  <span class='kw'>estParamRes</span> <span class='kw'>=</span> <span class='no'>estparam_gene</span>,
+                  <span class='kw'>estSpikeRes</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+                  <span class='kw'>DropGenes</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+                  <span class='kw'>sim.seed</span> <span class='kw'>=</span> <span class='fl'>66437</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+<span class='co'># run simulation</span>
+<span class='no'>simres</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='simulateDE.html'>simulateDE</a></span>(<span class='kw'>SetupRes</span> <span class='kw'>=</span> <span class='no'>setupres</span>,
+                     <span class='kw'>Prefilter</span> <span class='kw'>=</span> <span class='st'>"FreqFilter"</span>,
+                     <span class='kw'>Imputation</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+                     <span class='kw'>Normalisation</span> <span class='kw'>=</span> <span class='st'>'scran'</span>, <span class='kw'>Label</span> <span class='kw'>=</span> <span class='st'>'none'</span>,
+                     <span class='kw'>DEmethod</span> <span class='kw'>=</span> <span class='st'>"limma-trend"</span>, <span class='kw'>DEFilter</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+                     <span class='kw'>NCores</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+
+<span class='co'># evaluation</span>
+<span class='no'>evalsimres</span> <span class='kw'>&lt;-</span> <span class='fu'>evaluateSim</span>(<span class='kw'>simRes</span> <span class='kw'>=</span> <span class='no'>simres</span>)
+<span class='fu'><a href='plotEvalSim.html'>plotEvalSim</a></span>(<span class='kw'>evalRes</span> <span class='kw'>=</span> <span class='no'>evalsimres</span>, <span class='kw'>Annot</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+<span class='fu'><a href='plotTime.html'>plotTime</a></span>(<span class='kw'>evalRes</span> <span class='kw'>=</span> <span class='no'>evalsimres</span>, <span class='kw'>Annot</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+}</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>
     <ul class="nav nav-pills nav-stacked">
       <li><a href="#arguments">Arguments</a></li>
-      
       <li><a href="#value">Value</a></li>
-
       <li><a href="#see-also">See also</a></li>
-      
       <li><a href="#examples">Examples</a></li>
     </ul>
 
@@ -178,19 +206,23 @@ the ratio between estimated and true size factors of the two groups (<code>Group
   </div>
 </div>
 
+
       <footer>
       <div class="copyright">
   <p>Developed by Beate Vieth.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
 </div>
+
       </footer>
    </div>
 
   
 
+
   </body>
 </html>
+
 

@@ -8,21 +8,25 @@
 
 <title>NA • powsimR</title>
 
+
 <!-- jquery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous" />
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
 
-<!-- sticky kit -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sticky-kit/1.1.3/sticky-kit.min.js" integrity="sha256-c4Rlo1ZozqTPE2RLuvbusY3+SU1pQaJC0TjuhygMipw=" crossorigin="anonymous"></script>
+<!-- headroom.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="pkgdown.css" rel="stylesheet">
@@ -30,7 +34,9 @@
 
 
 
+
 <meta property="og:title" content="NA" />
+
 
 
 
@@ -42,6 +48,7 @@
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
+
 
 
   </head>
@@ -60,7 +67,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">powsimR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.0</span>
       </span>
     </div>
 
@@ -68,7 +75,7 @@
       <ul class="nav navbar-nav">
         <li>
   <a href="index.html">
-    <span class="fa fa-home fa-lg"></span>
+    <span class="fas fa fas fa-home fa-lg"></span>
      
   </a>
 </li>
@@ -82,11 +89,10 @@
   <a href="news/index.html">Changelog</a>
 </li>
       </ul>
-      
       <ul class="nav navbar-nav navbar-right">
         <li>
   <a href="https://github.com/bvieth/powsimR">
-    <span class="fa fa-github fa-lg"></span>
+    <span class="fab fa fab fa-github fa-lg"></span>
      
   </a>
 </li>
@@ -97,6 +103,7 @@
 </div><!--/.navbar -->
 
       
+
       </header>
 
 <div class="row">
@@ -106,57 +113,57 @@
     </div>
 
 
-<div class="sourceCode"><pre class="sourceCode R"><code class="sourceCode r">           The Artistic License <span class="fl">2.0</span>
-
-       <span class="kw">Copyright</span> (c) <span class="dv">2017</span> Beate Vieth
-
- Everyone is permitted to copy and distribute verbatim copies
-  of this license document, but changing it is not allowed.</code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode R"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1">           The Artistic License <span class="fl">2.0</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">       <span class="kw">Copyright</span> (c) <span class="dv">2017</span> Beate Vieth</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"> Everyone is permitted to copy and distribute verbatim copies</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">  of this license document, but changing it is not allowed.</a></code></pre></div>
 <p>Preamble</p>
 <p>This license establishes the terms under which a given free software Package may be copied, modified, distributed, and/or redistributed. The intent is that the Copyright Holder maintains some artistic control over the development of that Package while still keeping the Package available as open source and free software.</p>
 <p>You are always permitted to make arrangements wholly outside of this license directly with the Copyright Holder of a given Package. If the terms of this license do not permit the full use that you propose to make of the Package, you should contact the Copyright Holder and seek a different licensing arrangement.</p>
 <p>Definitions</p>
-<div class="sourceCode"><pre class="sourceCode R"><code class="sourceCode r"><span class="st">"Copyright Holder"</span> means the <span class="kw">individual</span>(s) or <span class="kw">organization</span>(s)
-named <span class="cf">in</span> the copyright notice <span class="cf">for</span> the entire Package.
-
-<span class="st">"Contributor"</span> means any party that has contributed code or other
-material to the Package, <span class="cf">in</span> accordance with the Copyright Holder<span class="st">'s</span>
-<span class="st">procedures.</span>
-
-<span class="st">"You" and "your" means any person who would like to copy,</span>
-<span class="st">distribute, or modify the Package.</span>
-
-<span class="st">"Package" means the collection of files distributed by the</span>
-<span class="st">Copyright Holder, and derivatives of that collection and/or of</span>
-<span class="st">those files. A given Package may consist of either the Standard</span>
-<span class="st">Version, or a Modified Version.</span>
-
-<span class="st">"Distribute" means providing a copy of the Package or making it</span>
-<span class="st">accessible to anyone else, or in the case of a company or</span>
-<span class="st">organization, to others outside of your company or organization.</span>
-
-<span class="st">"Distributor Fee" means any fee that you charge for Distributing</span>
-<span class="st">this Package or providing support for this Package to another</span>
-<span class="st">party.  It does not mean licensing fees.</span>
-
-<span class="st">"Standard Version" refers to the Package if it has not been</span>
-<span class="st">modified, or has been modified only in ways explicitly requested</span>
-<span class="st">by the Copyright Holder.</span>
-
-<span class="st">"Modified Version" means the Package, if it has been changed, and</span>
-<span class="st">such changes were not explicitly requested by the Copyright</span>
-<span class="st">Holder.</span>
-
-<span class="st">"Original License" means this Artistic License as Distributed with</span>
-<span class="st">the Standard Version of the Package, in its current version or as</span>
-<span class="st">it may be modified by The Perl Foundation in the future.</span>
-
-<span class="st">"Source" form means the source code, documentation source, and</span>
-<span class="st">configuration files for the Package.</span>
-
-<span class="st">"Compiled" form means the compiled bytecode, object code, binary,</span>
-<span class="st">or any other form resulting from mechanical transformation or</span>
-<span class="st">translation of the Source form.</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode R"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="st">"Copyright Holder"</span> means the <span class="kw">individual</span>(s) or <span class="kw">organization</span>(s)</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">named <span class="cf">in</span> the copyright notice <span class="cf">for</span> the entire Package.</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4"><span class="st">"Contributor"</span> means any party that has contributed code or other</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">material to the Package, <span class="cf">in</span> accordance with the Copyright Holder<span class="st">'s</span></a>
+<a class="sourceLine" id="cb2-6" data-line-number="6"><span class="st">procedures.</span></a>
+<a class="sourceLine" id="cb2-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb2-8" data-line-number="8"><span class="st">"You" and "your" means any person who would like to copy,</span></a>
+<a class="sourceLine" id="cb2-9" data-line-number="9"><span class="st">distribute, or modify the Package.</span></a>
+<a class="sourceLine" id="cb2-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb2-11" data-line-number="11"><span class="st">"Package" means the collection of files distributed by the</span></a>
+<a class="sourceLine" id="cb2-12" data-line-number="12"><span class="st">Copyright Holder, and derivatives of that collection and/or of</span></a>
+<a class="sourceLine" id="cb2-13" data-line-number="13"><span class="st">those files. A given Package may consist of either the Standard</span></a>
+<a class="sourceLine" id="cb2-14" data-line-number="14"><span class="st">Version, or a Modified Version.</span></a>
+<a class="sourceLine" id="cb2-15" data-line-number="15"></a>
+<a class="sourceLine" id="cb2-16" data-line-number="16"><span class="st">"Distribute" means providing a copy of the Package or making it</span></a>
+<a class="sourceLine" id="cb2-17" data-line-number="17"><span class="st">accessible to anyone else, or in the case of a company or</span></a>
+<a class="sourceLine" id="cb2-18" data-line-number="18"><span class="st">organization, to others outside of your company or organization.</span></a>
+<a class="sourceLine" id="cb2-19" data-line-number="19"></a>
+<a class="sourceLine" id="cb2-20" data-line-number="20"><span class="st">"Distributor Fee" means any fee that you charge for Distributing</span></a>
+<a class="sourceLine" id="cb2-21" data-line-number="21"><span class="st">this Package or providing support for this Package to another</span></a>
+<a class="sourceLine" id="cb2-22" data-line-number="22"><span class="st">party.  It does not mean licensing fees.</span></a>
+<a class="sourceLine" id="cb2-23" data-line-number="23"></a>
+<a class="sourceLine" id="cb2-24" data-line-number="24"><span class="st">"Standard Version" refers to the Package if it has not been</span></a>
+<a class="sourceLine" id="cb2-25" data-line-number="25"><span class="st">modified, or has been modified only in ways explicitly requested</span></a>
+<a class="sourceLine" id="cb2-26" data-line-number="26"><span class="st">by the Copyright Holder.</span></a>
+<a class="sourceLine" id="cb2-27" data-line-number="27"></a>
+<a class="sourceLine" id="cb2-28" data-line-number="28"><span class="st">"Modified Version" means the Package, if it has been changed, and</span></a>
+<a class="sourceLine" id="cb2-29" data-line-number="29"><span class="st">such changes were not explicitly requested by the Copyright</span></a>
+<a class="sourceLine" id="cb2-30" data-line-number="30"><span class="st">Holder.</span></a>
+<a class="sourceLine" id="cb2-31" data-line-number="31"></a>
+<a class="sourceLine" id="cb2-32" data-line-number="32"><span class="st">"Original License" means this Artistic License as Distributed with</span></a>
+<a class="sourceLine" id="cb2-33" data-line-number="33"><span class="st">the Standard Version of the Package, in its current version or as</span></a>
+<a class="sourceLine" id="cb2-34" data-line-number="34"><span class="st">it may be modified by The Perl Foundation in the future.</span></a>
+<a class="sourceLine" id="cb2-35" data-line-number="35"></a>
+<a class="sourceLine" id="cb2-36" data-line-number="36"><span class="st">"Source" form means the source code, documentation source, and</span></a>
+<a class="sourceLine" id="cb2-37" data-line-number="37"><span class="st">configuration files for the Package.</span></a>
+<a class="sourceLine" id="cb2-38" data-line-number="38"></a>
+<a class="sourceLine" id="cb2-39" data-line-number="39"><span class="st">"Compiled" form means the compiled bytecode, object code, binary,</span></a>
+<a class="sourceLine" id="cb2-40" data-line-number="40"><span class="st">or any other form resulting from mechanical transformation or</span></a>
+<a class="sourceLine" id="cb2-41" data-line-number="41"><span class="st">translation of the Source form.</span></a></code></pre></div>
 <p>Permission for Use and Modification Without Distribution</p>
 <p>(1) You are permitted to use the Standard Version and create and use Modified Versions for any purpose without restriction, provided that you do not Distribute the Modified Version.</p>
 <p>Permissions for Redistribution of the Standard Version</p>
@@ -164,29 +171,29 @@ material to the Package, <span class="cf">in</span> accordance with the Copyrigh
 <p>(3) You may apply any bug fixes, portability changes, and other modifications made available from the Copyright Holder. The resulting Package will still be considered the Standard Version, and as such will be subject to the Original License.</p>
 <p>Distribution of Modified Versions of the Package as Source</p>
 <p>(4) You may Distribute your Modified Version as Source (either gratis or for a Distributor Fee, and with or without a Compiled form of the Modified Version) provided that you clearly document how it differs from the Standard Version, including, but not limited to, documenting any non-standard features, executables, or modules, and provided that you do at least ONE of the following:</p>
-<div class="sourceCode"><pre class="sourceCode R"><code class="sourceCode r">(a)  make the Modified Version available to the Copyright Holder
-of the Standard Version, under the Original License, so that the
-Copyright Holder may include your modifications <span class="cf">in</span> the Standard
-Version.
-
-(b)  ensure that installation of your Modified Version does not
-prevent the user installing or running the Standard Version. In
-addition, the Modified Version must bear a name that is different
-from the name of the Standard Version.
-
-(c)  allow anyone who receives a copy of the Modified Version to
-make the Source form of the Modified Version available to others
-under
-
-(i)  the Original License or
-
-(ii)  a license that permits the licensee to freely copy,
-modify and redistribute the Modified Version using the same
-licensing terms that apply to the copy that the licensee
-received, and requires that the Source form of the Modified
-Version, and of any works derived from it, be made freely
-available <span class="cf">in</span> that license fees are prohibited but Distributor
-Fees are allowed.</code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode R"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1">(a)  make the Modified Version available to the Copyright Holder</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">of the Standard Version, under the Original License, so that the</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">Copyright Holder may include your modifications <span class="cf">in</span> the Standard</a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">Version.</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">(b)  ensure that installation of your Modified Version does not</a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">prevent the user installing or running the Standard Version. In</a>
+<a class="sourceLine" id="cb3-8" data-line-number="8">addition, the Modified Version must bear a name that is different</a>
+<a class="sourceLine" id="cb3-9" data-line-number="9">from the name of the Standard Version.</a>
+<a class="sourceLine" id="cb3-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb3-11" data-line-number="11">(c)  allow anyone who receives a copy of the Modified Version to</a>
+<a class="sourceLine" id="cb3-12" data-line-number="12">make the Source form of the Modified Version available to others</a>
+<a class="sourceLine" id="cb3-13" data-line-number="13">under</a>
+<a class="sourceLine" id="cb3-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb3-15" data-line-number="15">(i)  the Original License or</a>
+<a class="sourceLine" id="cb3-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb3-17" data-line-number="17">(ii)  a license that permits the licensee to freely copy,</a>
+<a class="sourceLine" id="cb3-18" data-line-number="18">modify and redistribute the Modified Version using the same</a>
+<a class="sourceLine" id="cb3-19" data-line-number="19">licensing terms that apply to the copy that the licensee</a>
+<a class="sourceLine" id="cb3-20" data-line-number="20">received, and requires that the Source form of the Modified</a>
+<a class="sourceLine" id="cb3-21" data-line-number="21">Version, and of any works derived from it, be made freely</a>
+<a class="sourceLine" id="cb3-22" data-line-number="22">available <span class="cf">in</span> that license fees are prohibited but Distributor</a>
+<a class="sourceLine" id="cb3-23" data-line-number="23">Fees are allowed.</a></code></pre></div>
 <p>Distribution of Compiled Forms of the Standard Version or Modified Versions without the Source</p>
 <p>(5) You may Distribute Compiled forms of the Standard Version without the Source, provided that you include complete instructions on how to get the Source of the Standard Version. Such instructions must be valid at the time of your distribution. If these instructions, at any time while you are carrying out such distribution, become invalid, you must provide new instructions on demand or cease further distribution. If you provide valid instructions or cease distribution within thirty days after you become aware that the instructions are invalid, then you do not forfeit any of your rights under this license.</p>
 <p>(6) You may Distribute a Modified Version in Compiled form without the Source, provided that you comply with Section 4 with respect to the Source of the Modified Version.</p>
@@ -200,12 +207,13 @@ Fees are allowed.</code></pre></div>
 <p>(11) If your Modified Version has been derived from a Modified Version made by someone other than you, you are nevertheless required to ensure that your Modified Version complies with the requirements of this license.</p>
 <p>(12) This license does not grant you the right to use any trademark, service mark, tradename, or logo of the Copyright Holder.</p>
 <p>(13) This license includes the non-exclusive, worldwide, free-of-charge patent license to make, have made, use, offer to sell, sell, import and otherwise transfer the Package with respect to any patent claims licensable by the Copyright Holder that are necessarily infringed by the Package. If you institute patent litigation (including a cross-claim or counterclaim) against any party alleging that the Package constitutes direct or contributory patent infringement, then this Artistic License to you shall terminate on the date that such litigation is filed.</p>
-<p>(14) Disclaimer of Warranty: THE PACKAGE IS PROVIDED BY THE COPYRIGHT HOLDER AND CONTRIBUTORS “AS IS’ AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES. THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT ARE DISCLAIMED TO THE EXTENT PERMITTED BY YOUR LOCAL LAW. UNLESS REQUIRED BY LAW, NO COPYRIGHT HOLDER OR CONTRIBUTOR WILL BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES ARISING IN ANY WAY OUT OF THE USE OF THE PACKAGE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</p>
+<p>(14) Disclaimer of Warranty: THE PACKAGE IS PROVIDED BY THE COPYRIGHT HOLDER AND CONTRIBUTORS "AS IS’ AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES. THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT ARE DISCLAIMED TO THE EXTENT PERMITTED BY YOUR LOCAL LAW. UNLESS REQUIRED BY LAW, NO COPYRIGHT HOLDER OR CONTRIBUTOR WILL BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES ARISING IN ANY WAY OUT OF THE USE OF THE PACKAGE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</p>
 
 
   </div>
 
 </div>
+
 
 
       <footer>
@@ -214,13 +222,16 @@ Fees are allowed.</code></pre></div>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
 </div>
+
       </footer>
    </div>
 
   
 
+
   </body>
 </html>
+
 

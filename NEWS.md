@@ -4,6 +4,7 @@
 * Downsampling of count matrices using binomial thinning implemented in `estimateParam()` (UMI-read ratio estimation) and `simulateDE()`.
 * Setup of DE simulations now in one function (`Setup()`) instead of two.
 * `estimateParam()` with additional filtering options based on quality control checkup of scater package.
+* implement sctransform as a single cell normalisation method.
 
 # Version 1.1.3 (2018-07-10)
 
