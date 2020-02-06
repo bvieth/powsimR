@@ -26,12 +26,12 @@ Remotes: nghiavtr/BPSC, cz-ye/DECENT, mohuangx/SAVER, rhondabacher/SCnorm, statO
                 bioc::BiocParallel, bioc::DEDS, bioc::DESeq2, bioc::EBSeq, bioc::edgeR, bioc::iCOBRA, bioc::IHW, bioc::limma, bioc::Linnorm,
                 bioc::MAST, bioc::monocle, bioc::NOISeq, bioc::qvalue, bioc::ROTS, bioc::RUVSeq, bioc::S4Vectors, bioc::scater, bioc::scDD,
                 bioc::scde, bioc::scone, bioc::scran, bioc::SingleCellExperiment, bioc::SummarizedExperiment, bioc::zinbwave
-Depends: R (>= 3.5), gamlss.dist
+Depends: R (>= 3.6), gamlss.dist
 Suggests: rmdformats, knitr, mvtnorm, MBESS
 LazyData: TRUE
 Encoding: UTF-8
 VignetteBuilder: knitr
-License: GPL
+License: Artistic License 2.0
 NeedsCompilation: no
 Author: Beate Vieth
 Date: 2020-02-06
