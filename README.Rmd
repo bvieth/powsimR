@@ -24,7 +24,7 @@ For the installation, the R package `devtools` is needed.
 install.packages('devtools')
 library(devtools)
 ```
-
+    
 I recommend to install first the dependencies manually and then powsimR. If you plan to use MAGIC for imputation, then please follow their [instruction](https://github.com/KrishnaswamyLab/MAGIC) to install the python implementation before installing powsimR.  
 
 ```{r, echo=T, eval=F, tidy=T}
