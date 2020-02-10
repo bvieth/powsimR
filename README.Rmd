@@ -24,7 +24,7 @@ For the installation, the R package `devtools` is needed.
 install.packages('devtools')
 library(devtools)
 ```
-    
+
 I recommend to install first the dependencies manually and then powsimR. If you plan to use MAGIC for imputation, then please follow their [instruction](https://github.com/KrishnaswamyLab/MAGIC) to install the python implementation before installing powsimR.  
 
 ```{r, echo=T, eval=F, tidy=T}
@@ -36,15 +36,14 @@ ipak <- function(pkg, repository=c('CRAN', 'Bioconductor', 'github')){
       install.packages(new.pkg, dependencies = TRUE)
     }
     if(repository=='Bioconductor') {
-      if(strsplit(version[['version.string']], ' ')[[1]][3] > "3.5.0"){
+      if(strsplit(version[['version.string']], ' ')[[1]][3] > "3.6.0"){
         if (!requireNamespace("BiocManager")){
             install.packages("BiocManager")
         }
             BiocManager::install(new.pkg, dependencies=TRUE, ask=FALSE)
       }
-      if(strsplit(version[['version.string']], ' ')[[1]][3] < "3.5.0"){
-              source("https://bioconductor.org/biocLite.R")
-      biocLite(new.pkg, dependencies=TRUE, ask=FALSE)
+      if(strsplit(version[['version.string']], ' ')[[1]][3] < "3.6.0"){
+        stop(message("powsimR depends on packages that are only available in R 3.6.0 and higher."))
       }
     }
     if(repository=='github') {

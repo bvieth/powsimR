@@ -31,15 +31,14 @@ ipak <- function(pkg, repository = c("CRAN", "Bioconductor", "github")) {
             install.packages(new.pkg, dependencies = TRUE)
         }
         if (repository == "Bioconductor") {
-            if (strsplit(version[["version.string"]], " ")[[1]][3] > "3.5.0") {
+            if (strsplit(version[["version.string"]], " ")[[1]][3] > "3.6.0") {
                 if (!requireNamespace("BiocManager")) {
                   install.packages("BiocManager")
                 }
                 BiocManager::install(new.pkg, dependencies = TRUE, ask = FALSE)
             }
-            if (strsplit(version[["version.string"]], " ")[[1]][3] < "3.5.0") {
-                source("https://bioconductor.org/biocLite.R")
-                biocLite(new.pkg, dependencies = TRUE, ask = FALSE)
+            if (strsplit(version[["version.string"]], " ")[[1]][3] < "3.6.0") {
+                stop(message("powsimR depends on packages that are only available in R 3.6.0 and higher."))
             }
         }
         if (repository == "github") {
@@ -197,7 +196,7 @@ sessionInfo()
 #> [1] powsimR_1.2.0     gamlss.dist_5.1-6 MASS_7.3-51.5    
 #> 
 #> loaded via a namespace (and not attached):
-#>   [1] mixtools_1.1.0              softImpute_1.4             
+#>   [1] mixtools_1.2.0              softImpute_1.4             
 #>   [3] minpack.lm_1.2-1            lattice_0.20-38            
 #>   [5] vctrs_0.2.2                 fastICA_1.2-2              
 #>   [7] mgcv_1.8-31                 penalized_0.9-51           
@@ -216,7 +215,7 @@ sessionInfo()
 #>  [33] DT_0.12                     promises_1.1.0             
 #>  [35] gdata_2.18.0                DDRTree_0.1.5              
 #>  [37] DelayedArray_0.12.2         limma_3.42.2               
-#>  [39] vegan_2.5-6                 Hmisc_4.3-0                
+#>  [39] vegan_2.5-6                 Hmisc_4.3-1                
 #>  [41] ShortRead_1.44.3            apcluster_1.4.8            
 #>  [43] RSpectra_0.16-0             msir_1.3.2                 
 #>  [45] mnormt_1.5-6                digest_0.6.23              
@@ -250,8 +249,8 @@ sessionInfo()
 #> [101] maps_3.3.0                  RSQLite_2.2.0              
 #> [103] tidyr_1.0.2                 pheatmap_1.0.12            
 #> [105] data.table_1.12.8           DEDS_1.60.0                
-#> [107] rstudioapi_0.10             GenomicAlignments_1.22.1   
-#> [109] nlme_3.1-143                qvalue_2.18.0              
+#> [107] rstudioapi_0.11             GenomicAlignments_1.22.1   
+#> [109] nlme_3.1-144                qvalue_2.18.0              
 #> [111] scran_1.14.6                fastcluster_1.1.25         
 #> [113] locfit_1.5-9.1              scone_1.10.0               
 #> [115] listenv_0.8.0               cobs_1.3-4                 
@@ -286,7 +285,7 @@ sessionInfo()
 #> [173] foreign_0.8-75              fitdistrplus_1.0-14        
 #> [175] BiocParallel_1.20.1         aroma.light_3.16.0         
 #> [177] bit64_0.9-7                 rngtools_1.5               
-#> [179] doRNG_1.8.2                 foreach_1.4.7              
+#> [179] doRNG_1.8.2                 foreach_1.4.8              
 #> [181] robustbase_0.93-5           outliers_0.14              
 #> [183] Biostrings_2.54.0           combinat_0.0-8             
 #> [185] rsvd_1.0.2                  iCOBRA_1.14.0              
@@ -318,8 +317,8 @@ sessionInfo()
 #> [237] HSMMSingleCell_1.6.0        GenomeInfoDbData_1.2.2     
 #> [239] plyr_1.8.5                  dotCall64_1.0-0            
 #> [241] gtable_0.3.0                SCnorm_1.8.2               
-#> [243] monocle_2.14.0              knitr_1.27.2               
-#> [245] RcppArmadillo_0.9.800.4.0   latticeExtra_0.6-29        
+#> [243] monocle_2.14.0              knitr_1.28                 
+#> [245] RcppArmadillo_0.9.850.1.0   latticeExtra_0.6-29        
 #> [247] biomaRt_2.42.0              IRanges_2.20.2             
 #> [249] fastmap_1.0.1               doParallel_1.0.15          
 #> [251] pscl_1.5.2                  flexmix_2.3-15             
