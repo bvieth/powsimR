@@ -1,13 +1,13 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# powsimR: Power analysis for bulk and single cell RNA-seq experiments
+# `powsimR` <br/> Power analysis for bulk and <br/> single cell RNA-seq experiments <img src="vignettes/powsimR.png" align="right" width="200" />
 
 Please also consult my Github Page of
 [powsimR](https://bvieth.github.io/powsimR/) made with
 [pkgdown](http://pkgdown.r-lib.org/index.html)\!
 
-## Installation Guide
+## :arrow\_double\_down: Installation Guide
 
 For the installation, the R package `devtools` is needed.
 
@@ -104,7 +104,7 @@ directly using devtools:
 devtools::install_github("bvieth/powsimR")
 ```
 
-## User Guide
+## :book: User Guide
 
 For examples and tips on using the package, please consult the vignette
 after successful installation by
@@ -143,7 +143,7 @@ and
 [Linux](https://glassonionblog.wordpress.com/2013/01/27/increase-ulimit-and-file-descriptors-limit/)
 for guidance.
 
-## Citation
+## :scroll: Citation
 
 Please use the following entry for citing powsimR.
 
@@ -155,12 +155,12 @@ powsimR is published in
 [Bioinformatics](https://doi.org/10.1093/bioinformatics/btx435). A
 preprint paper is also on [bioRxiv](https://doi.org/10.1101/117150).
 
-## Notes
+## :incoming\_envelope: Notes
 
 Please send bug reports and feature requests by opening a new issue on
 [this page](https://github.com/bvieth/powsimR/issues).
 
-## R Session Info
+## `R` Session Info
 
 ``` r
 library(powsimR)

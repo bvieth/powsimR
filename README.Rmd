@@ -12,11 +12,11 @@ knitr::opts_chunk$set(
 )
 ```
 
-# powsimR: Power analysis for bulk and single cell RNA-seq experiments
+# `powsimR` <br/> Power analysis for bulk and <br/> single cell RNA-seq experiments <img src="vignettes/powsimR.png" align="right" width="200" />
 
 Please also consult my Github Page of [powsimR](https://bvieth.github.io/powsimR/) made with [pkgdown](http://pkgdown.r-lib.org/index.html)!
 
-## Installation Guide
+## :arrow_double_down: Installation Guide
 
 For the installation, the R package `devtools` is needed.
 
@@ -113,7 +113,7 @@ Alternative, you can try to install powsimR and its dependencies directly using 
 devtools::install_github("bvieth/powsimR")
 ```
 
-## User Guide
+## :book: User Guide
 
 For examples and tips on using the package, please consult the vignette after successful installation by 
 
@@ -131,7 +131,7 @@ On my Ubuntu machine, the Renviron file is in /usr/lib/R/etc/ and I can set it t
 
 In addition, the user limits for open files (unix: ulimit) might have to be set to a higher number to accomodate the increase in DLLs. Please check out the help pages for [MACs](https://gist.github.com/tombigel/d503800a282fcadbee14b537735d202c) and [Linux](https://glassonionblog.wordpress.com/2013/01/27/increase-ulimit-and-file-descriptors-limit/) for guidance.
 
-## Citation
+## :scroll: Citation
 
 Please use the following entry for citing powsimR.
 
@@ -142,13 +142,13 @@ citation("powsimR")
 powsimR is published in [Bioinformatics](https://doi.org/10.1093/bioinformatics/btx435). 
 A preprint paper is also on [bioRxiv](https://doi.org/10.1101/117150). 
 
-## Notes
+## :incoming_envelope:  Notes
 
 Please send bug reports and feature requests by opening a new issue on 
 [this page](https://github.com/bvieth/powsimR/issues).
 
 
-## R Session Info
+## `R` Session Info
 
 ```{r}
 library(powsimR)
