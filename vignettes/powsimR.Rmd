@@ -106,9 +106,11 @@ biocpackages <- c("bayNorm", "baySeq", "BiocGenerics", "BiocParallel",
 ipak(biocpackages, repository='Bioconductor')
 
 # GITHUB
-githubpackages <- c('nghiavtr/BPSC', 'cz-ye/DECENT', 
-                    'mohuangx/SAVER', 'statOmics/zingeR')
+githubpackages <- c('cz-ye/DECENT', 'nghiavtr/BPSC', 
+                    'mohuangx/SAVER', 'statOmics/zingeR',
+                    'Vivianstats/scImpute')
 ipak(githubpackages, repository = 'github')
+
 ```
 
 To check whether all dependencies are installed, you can run the following lines:

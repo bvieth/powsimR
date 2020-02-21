@@ -66,7 +66,8 @@ biocpackages <- c("bayNorm", "baySeq", "BiocGenerics", "BiocParallel", "DEDS", "
 ipak(biocpackages, repository = "Bioconductor")
 
 # GITHUB
-githubpackages <- c("nghiavtr/BPSC", "cz-ye/DECENT", "mohuangx/SAVER", "statOmics/zingeR")
+githubpackages <- c("cz-ye/DECENT", "nghiavtr/BPSC", "mohuangx/SAVER", "statOmics/zingeR", 
+    "Vivianstats/scImpute")
 ipak(githubpackages, repository = "github")
 ```
 
@@ -158,7 +159,11 @@ preprint paper is also on [bioRxiv](https://doi.org/10.1101/117150).
 ## :incoming\_envelope: Notes
 
 Please send bug reports and feature requests by opening a new issue on
-[this page](https://github.com/bvieth/powsimR/issues).
+[this page](https://github.com/bvieth/powsimR/issues). I try to keep up
+to date with new developments / changes of methods implemented in
+powsimR, but if you encounter run errors while using a certain tool
+(e.g. for imputation), then I appreciate if you can post this as an
+[issue](https://github.com/bvieth/powsimR/issues).
 
 ## `R` Session Info
 

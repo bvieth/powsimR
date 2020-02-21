@@ -124,7 +124,7 @@ plotParam <- function(estParamRes, Annot=TRUE) {
   if (Annot) {
     annottext.a <-  c("A) Quality Control Metrics: Sequencing depth; Library size factors with median (black line) for the filtered data set; Detected genes; Ratio of gene to spike-in counts (if spike-ins were provided). Outliers are marked in red.")
     annottext.b <- c("\nB) Marginal Distribution of gene mean, dispersion and dropout rate per estimation set.")
-    annottext.c <- c("\nC) Number of genes and samples per estimation set. Provided by the user; Detected = number of genes and samples with at least one count; All = number of genes for which mean, dispersion and dropout could be estimated using non-outlying samples. \nFiltered = number of genes above filter threshold for which mean, dispersion and dropout could be estimated using non-outlying samples. Dropout Genes = number of genes filtered out due to dropout rate.")
+    annottext.c <- c("\nC) Number of genes and samples per estimation set. Provided by the user; Detected = number of genes and samples with at least one count; All = number of genes for which mean, dispersion and dropout could be estimated using non-outlying samples. \nFiltered = number of genes above filter threshold for which mean, dispersion and dropout could be estimated using non-outlying samples. Dropout Genes = number of genes filtered out due to gene dropout rate.")
     annottext.d <- c("\nD) Local polynomial regression fit between mean and dispersion estimates with variability band per gene (yellow). Common dispersion estimate (grey dashed line).")
     annottext.e <- c("\nE) Fraction of dropouts versus estimated mean expression per gene.")
     if(is.null(readvsumi.plot)) {

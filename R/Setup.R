@@ -2,15 +2,15 @@
 
 #' @name Setup
 #' @aliases Setup
-#' @title Setup options for RNA-seq count simulations.
-#' @description This function generates the settings needed for simulateDE().
+#' @title Setup options for RNA-seq count simulations
+#' @description This function generates the settings needed for \code{\link{simulateDE}}.
 #' Firstly a set of differential expressed gene IDs with
 #' associated fold changes for a given number of genes, simulations and
 #' fraction of DE genes is generated. There are also a number of options relating
 #'  to count simulations such as downsampling.
 #'  Secondly, the estimated parameters for count simulations of genes (and spikes) are added.
 #' @usage Setup(ngenes=NULL, nsims=25,
-#' p.DE = 0.1, pLFC = 1,
+#' p.DE = 0.1, pLFC = 1, p.G = 1,
 #' p.B=NULL, bLFC=NULL, bPattern="uncorrelated",
 #' n1=c(20,50,100), n2=c(30,60,120),
 #' Thinning = NULL, LibSize='equal',
@@ -33,6 +33,10 @@
 #' e.g. function(x) rnorm(x, mean=0, sd=1.5).
 #' Default is \code{1}.
 #' Please note that the fold change should be on \code{\link[base]{log1p}} scale!
+#' @param p.G Numeric vector indicating the proportion of replicates per group
+#' that express the phenotypic fold change. Default is \code{1}, this means all show the expressiond difference.
+#' For example, if \code{0.5} and \code{n1 = 10} and \code{n2 = 8},
+#' then only 5 replicates in group 1 and 4 replicates in group 2 express the phenotypic fold change.
 #' @param p.B Numeric vector between 0 and 1 representing the percentage of genes
 #' being differentially expressed between batches.
 #' Default is \code{NULL}, i.e. no batch effect.
@@ -53,7 +57,7 @@
 #' @param n1,n2 Integer vectors specifying the number of biological replicates in each group.
 #' Default values are n1=c(20,50,100) and n2=c(30,60,120).
 #' The vectors need to have the same number of entries, i.e. length.
-#' @param Thinning Integer vector specifying the downsampling.
+#' @param Thinning Numeric vector specifying the downsampling.
 #' It has to be the same length and order as the vector \code{n1}.
 #' This is an implementation of \code{\link[edgeR]{thinCounts}}.
 #' The vector entries should be a proportion between 0 and 1,
@@ -140,7 +144,7 @@
 #' @rdname Setup
 #' @export
   Setup <- function(ngenes = NULL, nsims = 25,
-                    p.DE = 0.1, pLFC = 1,
+                    p.DE = 0.1, pLFC = 1, p.G = 1,
                     p.B = NULL, bLFC = NULL, bPattern = 'uncorrelated',
                     n1 = c(20,50,100), n2 = c(30,60,120),
                     Thinning = NULL, LibSize = 'equal',
@@ -175,6 +179,10 @@
                      ngenes, " genes, which will be randomly drawn with replacement from the observed expression of ", detect.genes, " genes."))
       SwReplace = TRUE
     }
+  }
+
+  if(any(c(p.G > 1, p.G <= 0.01))){
+    stop(message(paste0("You wish to define a proportion of replicates per group only expresses the defined phenotypic fold change but the value is outside the allowed proportions [0.01,1]. Aborting.")))
   }
 
   nDE = round(ngenes*p.DE)
@@ -213,6 +221,7 @@
                     nsims = nsims,
                     p.DE = p.DE,
                     p.B = p.B,
+                    p.G = p.G,
                     bPattern = bPattern,
                     sim.seed.DESetting = sim.seed),
                list(sim.seed = sim.seed),
@@ -253,10 +262,9 @@
       stop(message(paste0("You wish to use binomial thinning but the Thinning vector is not the same length as the sample size vectors. Aborting.")))
     }
     if(!is.null(Thinning) && any(c(Thinning > 1, Thinning <= 0))) {
-      stop(message(paste0("You wish to use binomial thinning but the Thinning vector contains values outside the allowed proportions. Aborting.")))
+      stop(message(paste0("You wish to use binomial thinning but the Thinning vector contains values outside the allowed proportions [0,1]. Aborting.")))
     }
-
-    if(all(is.na(estParamRes$Fit$UmiRead)) && attr(estParamRes, 'Protocol')=='UMI'){
+    if(!is.null(Thinning) && is.na(estParamRes$Fit$UmiRead) && attr(estParamRes, 'Protocol')=='UMI'){
       stop(message(paste0("You wish to use binomial thinning of UMI counts but there is no UMI-Read Fit in estParamRes object.
       In order to downsample UMI counts correctly, please provide readData in estimateParam(). Aborting.")))
     }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/Setup.R
 \name{Setup}
 \alias{Setup}
-\title{Setup options for RNA-seq count simulations.}
+\title{Setup options for RNA-seq count simulations}
 \usage{
 Setup(ngenes=NULL, nsims=25,
 p.DE = 0.1, pLFC = 1,
@@ -34,6 +34,11 @@ e.g. function(x) rnorm(x, mean=0, sd=1.5).
 Default is \code{1}.
 Please note that the fold change should be on \code{\link[base]{log1p}} scale!}
 
+\item{p.G}{Numeric vector indicating the proportion of replicates per group
+that express the phenotypic fold change. Default is \code{1}, this means all show the expressiond difference.
+For example, if \code{0.5} and \code{n1 = 10} and \code{n2 = 8},
+then only 5 replicates in group 1 and 4 replicates in group 2 express the phenotypic fold change.}
+
 \item{p.B}{Numeric vector between 0 and 1 representing the percentage of genes
 being differentially expressed between batches.
 Default is \code{NULL}, i.e. no batch effect.}
@@ -58,7 +63,7 @@ Default is \code{"uncorrelated"}.}
 Default values are n1=c(20,50,100) and n2=c(30,60,120).
 The vectors need to have the same number of entries, i.e. length.}
 
-\item{Thinning}{Integer vector specifying the downsampling.
+\item{Thinning}{Numeric vector specifying the downsampling.
 It has to be the same length and order as the vector \code{n1}.
 This is an implementation of \code{\link[edgeR]{thinCounts}}.
 The vector entries should be a proportion between 0 and 1,
@@ -110,7 +115,7 @@ Thinning parameters (Thinning, thinSpike); Library Size Factors (LibSize);
 \item{estSpikeRes}{A list object containing the spike-in simulation parameters provided.}
 }
 \description{
-This function generates the settings needed for simulateDE().
+This function generates the settings needed for \code{\link{simulateDE}}.
 Firstly a set of differential expressed gene IDs with
 associated fold changes for a given number of genes, simulations and
 fraction of DE genes is generated. There are also a number of options relating

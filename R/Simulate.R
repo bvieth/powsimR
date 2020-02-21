@@ -23,6 +23,7 @@
 #' "ROTS", "baySeq", "NOISeq", "EBSeq",
 #' "MAST", "BPSC", "scDD", "DECENT"),
 #' DEFilter = FALSE,
+#' Counts = FALSE,
 #' NCores = NULL,
 #' verbose = TRUE)
 #' @param SetupRes This object specifies the simulation setup.
@@ -50,11 +51,14 @@
 #' @param DEFilter A logical vector indicating whether to run DE testing on
 #' filtered and/or imputed count data.
 #' Default is \code{FALSE}.
+#' @param Counts A logical vector indicating whether the simulated count matrix is also provided as output.
+#' Default is \code{FALSE} since the output can be quite large. Note that if DEFilter is \code{TRUE},
+#' then the returned count matrix will countain the filtered and/or imputed count data.
 #' @param NCores integer positive number of cores for parallel processing.
 #' Default is \code{NULL}, i.e. 1 core.
 #' @param verbose Logical vector to indicate whether to show progress report of simulations.
 #' Default is \code{TRUE}.
-#' @return A list of list objects complex list where the list named "SimulateRes" contains the results of simulations:
+#' @return
 #' \strong{SimulateRes: Results of DE simulations}
 #' \describe{
 #' \item{pvalue, fdr}{3D array (ngenes * N * nsims) for p-values and FDR from each simulation.
@@ -69,28 +73,44 @@
 #' \item{time.taken}{The time taken given by \code{\link[base]{proc.time}} for each simulation, given for preprocessing, normalisation, differential expression testing and moment estimation.}
 #' }
 #' \strong{SetupRes: Simulation specifications}
+#' \describe{
+#' \item{DESetup - ... - estSpikeRes}{Reiterating the simulated setup defined by \code{\link{Setup}}.}
+#' \item{Pipeline}{A list of chosen pipeline tools defined by above arguments.}
+#' }
+#' \strong{Counts: Simulated Count Matrices}
+#' \describe{
+#' \item{Counts}{3D array (ngenes * N * nsims) containing simulated counts. Note that this will only be returned when \code{Counts} is \code{TRUE}. In addition, if \code{DEFilter} is \code{TRUE} then the filtered/imputed counts are returned.}
+#' }
 #'
-#' @seealso \code{\link{estimateParam}},  for parameter specifications;\cr
+#' @seealso \code{\link{estimateParam}} and \code{\link{estimateSpike}},  for parameter specifications;\cr
 #'  \code{\link{Setup}} for simulation setup;\cr
-#'  \code{\link{evaluateDE}} for DE evaluation.
+#'  \code{\link{evaluateDE}}, \code{\link{evaluateROC}} and \code{\link{evaluateSim}} for evaluation of simulation results.
 #'
 #' @details
 #' Here you can find detailed information about preprocessing, imputation, normalisation and differential testing choices.
 #' For recommendations concerning single cell RNA-sequencing pipelines,
-#' we kindly refer the user to (\href{https://www.nature.com/articles/s41467-019-12266-7}{Vieth, et al (2019). A systematic evaluation of single cell RNA-seq analysis pipelines. Nature Communications, 10(1), 4667.}).
-#' @section Prefiltering prior to imputation/normalisation:
+#' we kindly refer the user to \href{https://www.nature.com/articles/s41467-019-12266-7}{Vieth, et al (2019). A systematic evaluation of single cell RNA-seq analysis pipelines. Nature Communications, 10(1), 4667}.\cr
+#' \strong{Prefiltering}\cr
 #' \describe{
 #' \item{CountFilter}{removes genes that have a mean expression below 0.2.}
-#' \item{FreqFilter}{removes genes that have more than 80 percent dropouts.}
+#' \item{FreqFilter}{removes genes that have more than 80 \% dropouts.}
 #' }
-#' @section Imputation prior to normalisation:
+#' \strong{Imputation}\cr
+#' \describe{
+#' \item{scImpute}{apply the imputation as implemented in \code{\link[scImpute]{scimpute}}}
+#' \item{DrImpute}{apply the imputation as implemented in \code{\link[DrImpute]{DrImpute}}.}
+#' \item{SAVER}{apply the imputation as implemented in \code{\link[SAVER]{saver}}.}
+#' \item{scone}{apply the imputation as implemented in \code{\link[scone]{scone}}, defining 'house keeping genes' for the FNR model estimation as those that have less than 20 \% dropouts and small variance (i.e. in the lower 20th quartile). If less than 25 genes could be identified, the genes with less than 5 \% dropouts are used. If spike-in data is provided then these are used for the FNR model estimation.}
+#' \item{MAGIC}{apply the imputation as implemented in \code{\link[Rmagic]{magic}}. Please note that the python package MAGIC needs to be installed to use this implementation.}
+#' }
+#' \strong{Normalisation}\cr
 #' \describe{
 #' \item{TMM, UQ}{employ the edgeR style normalization of weighted trimmed mean of M-values and upperquartile
 #' as implemented in \code{\link[edgeR]{calcNormFactors}}, respectively.}
 #' \item{MR, PosCounts}{employ the DESeq2 style normalization of median ratio method and a modified geometric mean method
 #' as implemented in \code{\link[DESeq2]{estimateSizeFactors}}, respectively.}
 #' \item{scran, SCnorm}{apply the deconvolution and quantile regression normalization methods developed for sparse RNA-seq data
-#' as implemented in \code{\link[scran]{computeSumFactors}} and \code{\link[SCnorm]{SCnorm}}, respectively. Spike-ins can also be supplied for both methods via \code{spikeData}. Note, however that this means for scran that the normalisation as implemented in \code{\link[scran]{computeSpikeFactors}} is also applied to genes (\code{general.use=TRUE}).}
+#' as implemented in \code{\link[scran]{computeSumFactors}} and \code{\link[SCnorm]{SCnorm}}, respectively. Spike-ins can also be supplied for both methods via \code{spikeData}. Note, however that this means for scran that the normalisation as implemented in \code{\link[scran]{calculateSumFactors}} is also applied to genes (\code{general.use=TRUE}).}
 #' \item{Linnorm}{apply the normalization method for sparse RNA-seq data
 #' as implemented in \code{\link[Linnorm]{Linnorm.Norm}}.
 #' For \code{Linnorm}, the user can also supply \code{spikeData}.}
@@ -101,18 +121,18 @@
 #' The authors state that Census should not be used for UMI data.}
 #' \item{depth}{Sequencing depth normalisation.}
 #' }
-#' @section Differential testing using raw read count matrix:
+#' \strong{Differential testing}\cr
 #' \describe{
-#' \item{T-Test}{A T-Test per gene is applied using log2 transformed and normalized expression values (i.e. CPM or TPM).}
+#' \item{T-Test}{A T-Test per gene is applied using log transformed and normalized expression values (i.e. CPM or TPM).}
 #' \item{limma-trend, limma-voom}{apply differential testing as implemented in \code{\link[limma]{lmFit}}
-#' followed by \code{\link[limma]{eBayes}} on counts transformed by \code{\link[limma]{voom}} or by applying mean-variance trend on log2 CPM values in \code{\link[limma]{eBayes}}.}
+#' followed by \code{\link[limma]{eBayes}} on counts transformed by \code{\link[limma]{voom}} or by applying mean-variance trend on log CPM values in \code{\link[limma]{eBayes}}.}
 #' \item{edgeR-LRT, edgeR-QL}{apply differential testing as implemented in \code{\link[edgeR]{glmFit}}, \code{\link[edgeR]{glmLRT}} and\code{\link[edgeR]{glmQLFit}}, \code{\link[edgeR]{glmQLFTest}}, respectively.}
 #' \item{DESeq2}{applies differential testing as implemented in \code{\link[DESeq2]{DESeq}}.}
 #' \item{ROTS}{applies differential testing as implemented in \code{\link[ROTS]{ROTS}} with 100 permutations on transformed counts (\code{\link[limma]{voom}}).}
 #' \item{baySeq}{applies differential testing as implemented in \code{\link[baySeq]{getLikelihoods}} based on negative binomial prior estimates (\code{\link[baySeq]{getPriors.NB}}).}
 #' \item{NOISeq}{applies differential testing as implemented in \code{\link[NOISeq]{noiseqbio}} based on CPM values.}
 #' \item{EBSeq}{applies differential testing as implemented in \code{\link[EBSeq]{EBTest}}.}
-#' \item{MAST}{applies differential testing as implemented in \code{\link[MAST]{zlm}} for zero-inflated model fitting followed by \code{\link[MAST]{lrTest}} on log2 CPM values.}
+#' \item{MAST}{applies differential testing as implemented in \code{\link[MAST]{zlm}} for zero-inflated model fitting followed by \code{\link[MAST]{lrTest}} on log CPM values.}
 #' \item{BPSC}{applies differential testing as implemented in \code{\link[BPSC]{BPglm}} on CPM values.}
 #' \item{scDD}{applies differential testing as implemented in \code{\link[scDD]{scDD}} on CPM values.}
 #' \item{DECENT}{applies differential testing as implemented in \code{\link[DECENT]{decent}}.}
@@ -147,7 +167,7 @@
 #'                                 MeanFragLength = NULL,
 #'                                 batchData = Batches,
 #'                                 Normalisation = 'depth')
-#' # define log2 fold change
+#' # define log fold change
 #' p.lfc <- function(x) sample(c(-1,1), size=x,replace=T)*rgamma(x, shape = 1, rate = 2)
 #' # set up simulations
 #' setupres <- Setup(ngenes = 10000, nsims = 10,
@@ -189,6 +209,7 @@ simulateDE <- function(SetupRes,
                                     "ROTS", "baySeq", "NOISeq", "EBSeq",
                                     "MAST", "BPSC", "scDD", "DECENT"),
                        DEFilter = FALSE,
+                       Counts = FALSE,
                        NCores = NULL,
                        verbose = TRUE) {
 
@@ -309,6 +330,19 @@ simulateDE <- function(SetupRes,
   }
   if(!SetupRes$Pipeline$Normalisation %in% c("SCnorm", "Linnorm", 'sctransform', 'bayNorm')) {
     est.gsf = NULL
+  }
+
+  if(isTRUE(Counts)){
+    cnts <- lapply(1:length(my.names), function(x) {
+      array(0,dim=c(SetupRes$DESetup$nsims,
+                     SetupRes$DESetup$ngenes,
+                     SetupRes$SimSetup$n1[x] + SetupRes$SimSetup$n2[x]))
+    })
+    names(cnts) = my.names
+  }
+
+  if(isFALSE(Counts)){
+    cnts = NULL
   }
 
   ## start simulation
@@ -574,7 +608,27 @@ simulateDE <- function(SetupRes,
         norm.data <- res.de[["NormData"]]
       }
 
-      # move up to use in param estimation
+      # output count matrix
+      if(isTRUE(Counts)){
+        allgenes <- rownames(sim.cnts)
+        if(isTRUE(tmp.simOpts$Pipeline$DEFilter)) {
+          if (verbose) { message(paste0("Saving simulated counts after imputation / filtering.")) }
+          consideredgenes <- rownames(fornorm.count.data)
+          ixx.valid <- allgenes %in% consideredgenes
+          cnts[[j]][i, ixx.valid, ] <- fornorm.count.data
+
+        }
+        if(!isTRUE(tmp.simOpts$Pipeline$DEFilter)) {
+          if (verbose) { message(paste0("Saving raw simulated counts.")) }
+          consideredgenes <- rownames(count.data)
+          ixx.valid <- allgenes %in% consideredgenes
+          cnts[[j]][i, ixx.valid, ] <- count.data
+        }
+        dimnames(cnts[[j]][i, , ]) <- list(allgenes, colnames(sim.cnts))
+        print(cnts[[j]][i, 1:5, 1:5])
+      }
+
+      # adapt scale factor matrices to use in param estimation
       if(attr(norm.data, 'normFramework') %in% c("SCnorm", "Linnorm", "scTransform")) {
         allgenes <- rownames(sim.cnts)
         estgenes <- rownames(norm.data$scale.factors)
@@ -694,7 +748,8 @@ simulateDE <- function(SetupRes,
   attr(Simulate, 'Simulation') <- "DE"
 
   res.out <- c(SetupRes,
-               SimulateRes=list(Simulate))
+               SimulateRes=list(Simulate),
+               Counts = list(cnts))
 
   return(res.out)
 }
