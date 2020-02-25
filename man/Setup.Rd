@@ -5,7 +5,7 @@
 \title{Setup options for RNA-seq count simulations}
 \usage{
 Setup(ngenes=NULL, nsims=25,
-p.DE = 0.1, pLFC = 1,
+p.DE = 0.1, pLFC = 1, p.G = 1,
 p.B=NULL, bLFC=NULL, bPattern="uncorrelated",
 n1=c(20,50,100), n2=c(30,60,120),
 Thinning = NULL, LibSize='equal',
@@ -95,7 +95,7 @@ The dropout genes are defined in \code{\link{estimateParam}} using the \code{Gen
 and can be plotted with \code{\link{plotParam}}.
 Default is \code{FALSE}, i.e. no gene expression dropouts.}
 
-\item{sim.seed}{Simulation seed.}
+\item{setup.seed}{Setup seed.}
 
 \item{verbose}{Logical vector to indicate whether to print function information.
 Default is \code{TRUE}.}

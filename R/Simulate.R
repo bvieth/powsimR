@@ -334,9 +334,7 @@ simulateDE <- function(SetupRes,
 
   if(isTRUE(Counts)){
     cnts <- lapply(1:length(my.names), function(x) {
-      array(0,dim=c(SetupRes$DESetup$nsims,
-                     SetupRes$DESetup$ngenes,
-                     SetupRes$SimSetup$n1[x] + SetupRes$SimSetup$n2[x]))
+      vector("list", SetupRes$DESetup$nsims)
     })
     names(cnts) = my.names
   }
@@ -610,22 +608,15 @@ simulateDE <- function(SetupRes,
 
       # output count matrix
       if(isTRUE(Counts)){
-        allgenes <- rownames(sim.cnts)
         if(isTRUE(tmp.simOpts$Pipeline$DEFilter)) {
           if (verbose) { message(paste0("Saving simulated counts after imputation / filtering.")) }
-          consideredgenes <- rownames(fornorm.count.data)
-          ixx.valid <- allgenes %in% consideredgenes
-          cnts[[j]][i, ixx.valid, ] <- fornorm.count.data
+          cnts[[j]][[i]] <- fornorm.count.data
 
         }
         if(!isTRUE(tmp.simOpts$Pipeline$DEFilter)) {
           if (verbose) { message(paste0("Saving raw simulated counts.")) }
-          consideredgenes <- rownames(count.data)
-          ixx.valid <- allgenes %in% consideredgenes
-          cnts[[j]][i, ixx.valid, ] <- count.data
+          cnts[[j]][[i]] <- count.data
         }
-        dimnames(cnts[[j]][i, , ]) <- list(allgenes, colnames(sim.cnts))
-        print(cnts[[j]][i, 1:5, 1:5])
       }
 
       # adapt scale factor matrices to use in param estimation

@@ -84,7 +84,7 @@
 #' The dropout genes are defined in \code{\link{estimateParam}} using the \code{GeneFilter} option
 #' and can be plotted with \code{\link{plotParam}}.
 #' Default is \code{FALSE}, i.e. no gene expression dropouts.
-#' @param sim.seed Simulation seed.
+#' @param setup.seed Setup seed.
 #' @param verbose Logical vector to indicate whether to print function information.
 #' Default is \code{TRUE}.
 #'
@@ -150,36 +150,75 @@
                     Thinning = NULL, LibSize = 'equal',
                     estParamRes, estSpikeRes = NULL,
                     DropGenes = FALSE,
-                    sim.seed, verbose = TRUE) {
+                    setup.seed, verbose = TRUE) {
 
   ## DE Setup:
-  if(missing(sim.seed)){
-    sim.seed = sample(1:1000000, size = 1)
+  if(missing(setup.seed)){
+    setup.seed = sample(1:1000000, size = 1)
   }
-  set.seed(sim.seed)
-  if(verbose) {message(paste0("Seed: ", sim.seed))}
+  set.seed(setup.seed)
+  if(verbose) {message(paste0("Setup Seed: ", setup.seed))}
 
   nogenes <- ngenes
-  detect.genes <- estParamRes$Parameters$Filtered$ngenes
+  detect.genes <- estParamRes$Parameters$Raw$ngenes
+  est.genes <- estParamRes$Parameters$Filtered$ngenes
 
-  if(is.null(nogenes)){
-    ngenes <- estParamRes$Parameters$Filtered$ngenes
-    message(paste0("You have not defined the number of genes to simulate. Therefore, given that the expression of ", detect.genes, " could be estimated, that number of genes will be simulated by random draw without replacement."))
-    SwReplace = FALSE
-  }
-  if(is.numeric(nogenes)){
-    ngenes <- nogenes
-    if(ngenes <= detect.genes){
-      message(paste0("You have chosen to simulate the expression of ",
-                     ngenes, " genes, which will be randomly drawn without replacement from the observed expression of ", detect.genes, " genes."))
+  if(isTRUE(DropGenes)){
+    if(is.null(nogenes)){
+      ngenes <- detect.genes
+      message(paste0("You have not defined the number of genes to simulate. Therefore, given that the expression of ", detect.genes, " was detected, that number of genes will be simulated."))
       SwReplace = FALSE
     }
-    if(ngenes > detect.genes){
-      message(paste0("You have chosen to simulate the expression of ",
-                     ngenes, " genes, which will be randomly drawn with replacement from the observed expression of ", detect.genes, " genes."))
-      SwReplace = TRUE
+    if(is.numeric(nogenes)){
+      ngenes <- nogenes
+      if(ngenes <= est.genes){
+        message(paste0("You have chosen to simulate the expression of ",
+                       ngenes, " genes, which will be randomly drawn without replacement from the observed expression of ", est.genes, " genes."))
+        SwReplace = FALSE
+      }
+      if(ngenes > est.genes){
+        message(paste0("You have chosen to simulate the expression of ",
+                       ngenes, " genes, which will be randomly drawn with replacement from the observed expression of ", est.genes, " genes."))
+        SwReplace = TRUE
+      }
     }
+
+    if(all(is.na(estParamRes$Parameters$DropGene))){
+      message(paste0("You want to include dropout genes, but the estParamRes object does not contain dropout genes.
+                     Setting DropGenes to FALSE."))
+      DropGenes = FALSE
+    }
+    if(all(!is.na(estParamRes$Parameters$DropGene))){
+      DropRate = estParamRes$Parameters$DropGene$ngenes / detect.genes
+      message(paste0("From the simulated ",
+                     ngenes, " genes, ", round(DropRate*100), "% will be dropouts."))
+    }
+
   }
+
+  if(!isTRUE(DropGenes)){
+    if(is.null(nogenes)){
+      ngenes <- est.genes
+      message(paste0("You have not defined the number of genes to simulate. Therefore, given that the expression of ", est.genes, " could be estimated, that number of genes will be simulated."))
+      SwReplace = FALSE
+    }
+    if(is.numeric(nogenes)){
+      ngenes <- nogenes
+      if(ngenes <= est.genes){
+        message(paste0("You have chosen to simulate the expression of ",
+                       ngenes, " genes, which will be randomly drawn without replacement from the observed expression of ", detect.genes, " genes."))
+        SwReplace = FALSE
+      }
+      if(ngenes > est.genes){
+        message(paste0("You have chosen to simulate the expression of ",
+                       ngenes, " genes, which will be randomly drawn with replacement from the observed expression of ", detect.genes, " genes."))
+        SwReplace = TRUE
+      }
+    }
+
+    DropRate <- NULL
+  }
+
 
   if(any(c(p.G > 1, p.G <= 0.01))){
     stop(message(paste0("You wish to define a proportion of replicates per group only expresses the defined phenotypic fold change but the value is outside the allowed proportions [0.01,1]. Aborting.")))
@@ -209,43 +248,8 @@
 
   sim.seed = as.vector(sample(1:1000000, size = nsims, replace = F))
 
-  set.seed(NULL)
-
-  DESetup <- c(list(DEid = DEids,
-                    Bid = Bids,
-                    pLFC = plfcs,
-                    bLFC = blfcs,
-                    ngenes = ngenes,
-                    Draw = list(MoM='Filtered', Fit='Filtered'),
-                    SwReplace = SwReplace,
-                    nsims = nsims,
-                    p.DE = p.DE,
-                    p.B = p.B,
-                    p.G = p.G,
-                    bPattern = bPattern,
-                    sim.seed.DESetting = sim.seed),
-               list(sim.seed = sim.seed),
-               design = "2grp")
-
   ## Simulation Setup:
   if (!length(n1) == length(n2)) { stop("n1 and n2 must have the same length!") }
-
-  if(isTRUE(DropGenes)){
-    if(all(is.na(estParamRes$Parameters$DropGene))){
-      message(paste0("You want to include dropout genes, but the estParamRes object does not contain dropout genes.
-                     Setting DropGenes to FALSE."))
-      DropGenes = FALSE
-    }
-    if(all(!is.na(estParamRes$Parameters$DropGene))){
-      DropRate = estParamRes$Parameters$DropGene$ngenes / estParamRes$detectG
-      message(paste0("From the simulated ",
-                     ngenes, " genes, ", round(DropRate*100), "% will be dropouts."))
-    }
-  }
-
-  if(!isTRUE(DropGenes)){
-    DropRate <- NULL
-  }
 
   if(is.null(estSpikeRes)){
     spikeIns = FALSE
@@ -254,6 +258,7 @@
   if(!is.null(estSpikeRes)){
     spikeIns = TRUE
   }
+
   if(is.null(Thinning)){
     thinSpike = FALSE
   }
@@ -272,6 +277,23 @@
       thinSpike = TRUE
     }
   }
+
+  # output objects
+  DESetup <- c(list(DEid = DEids,
+                    Bid = Bids,
+                    pLFC = plfcs,
+                    bLFC = blfcs,
+                    ngenes = ngenes,
+                    Draw = list(MoM='Filtered', Fit='Filtered'),
+                    SwReplace = SwReplace,
+                    nsims = nsims,
+                    p.DE = p.DE,
+                    p.B = p.B,
+                    p.G = p.G,
+                    bPattern = bPattern,
+                    sim.seed.DESetting = setup.seed),
+               list(sim.seed = sim.seed),
+               design = "2grp")
 
   SimSetup <- list(n1=n1,
                    n2=n2,
