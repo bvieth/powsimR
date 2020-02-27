@@ -11,7 +11,7 @@ n1=c(20,50,100), n2=c(30,60,120),
 Thinning = NULL, LibSize='equal',
 estParamRes, estSpikeRes=NULL,
 DropGenes=FALSE,
-sim.seed, verbose = TRUE)
+setup.seed, verbose = TRUE)
 }
 \arguments{
 \item{ngenes}{is a numeric vector specifying the number of genes to simulate.
@@ -126,7 +126,8 @@ fraction of DE genes is generated. There are also a number of options relating
 \dontrun{
 # estimate gene parameters
 data("SmartSeq2_Gene_Read_Counts")
-Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_Gene_Read_Counts), "_"), "[[", 1),
+Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_Gene_Read_Counts),
+                                    "_"), "[[", 1),
                      stringsAsFactors = F,
                      row.names = colnames(SmartSeq2_Gene_Read_Counts))
 data("GeneLengths_mm10")
@@ -142,7 +143,8 @@ estparam_gene <- estimateParam(countData = SmartSeq2_Gene_Read_Counts,
 # estimate spike parameters
 data("SmartSeq2_SpikeIns_Read_Counts")
 data("SmartSeq2_SpikeInfo")
-Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_SpikeIns_Read_Counts), "_"), "[[", 1),
+Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_SpikeIns_Read_Counts),
+                                    "_"), "[[", 1),
                      stringsAsFactors = F,
                      row.names = colnames(SmartSeq2_SpikeIns_Read_Counts))
 estparam_spike <- estimateSpike(spikeData = SmartSeq2_SpikeIns_Read_Counts,
@@ -160,7 +162,7 @@ setupres <- Setup(ngenes = 10000, nsims = 25,
                   estParamRes = estparam_gene,
                   estSpikeRes = estparam_spike,
                   DropGenes = TRUE,
-                  sim.seed = 52679, verbose = TRUE)
+                  setup.seed = 52679, verbose = TRUE)
 }
 }
 \author{

@@ -311,9 +311,10 @@ estimateParam <- function(countData,
 #' \dontrun{
 #' data("SmartSeq2_SpikeIns_Read_Counts")
 #' data("SmartSeq2_SpikeInfo")
-#' Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_SpikeIns_Read_Counts), "_"), "[[", 1),
-#'                        stringsAsFactors = F,
-#'                        row.names = colnames(SmartSeq2_SpikeIns_Read_Counts))
+#' Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_SpikeIns_Read_Counts),
+#'                                     "_"), "[[", 1),
+#'                      stringsAsFactors = F,
+#'                      row.names = colnames(SmartSeq2_SpikeIns_Read_Counts))
 #' # estimation
 #' spike_param <- estimateSpike(spikeData = SmartSeq2_SpikeIns_Read_Counts,
 #' spikeInfo = SmartSeq2_SpikeInfo,

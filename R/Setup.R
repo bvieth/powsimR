@@ -16,7 +16,7 @@
 #' Thinning = NULL, LibSize='equal',
 #' estParamRes, estSpikeRes=NULL,
 #' DropGenes=FALSE,
-#' sim.seed, verbose = TRUE)
+#' setup.seed, verbose = TRUE)
 #' @param ngenes is a numeric vector specifying the number of genes to simulate.
 #' Default is \code{NULL}, i.e. the number of genes that were deemed expressed after filtering.
 #' See \code{\link{estimateParam}} and \code{\link{plotParam}} for more information about the number of genes that were used fo estimation and fitting.
@@ -105,7 +105,8 @@
 #' \dontrun{
 #' # estimate gene parameters
 #' data("SmartSeq2_Gene_Read_Counts")
-#' Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_Gene_Read_Counts), "_"), "[[", 1),
+#' Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_Gene_Read_Counts),
+#'                                     "_"), "[[", 1),
 #'                      stringsAsFactors = F,
 #'                      row.names = colnames(SmartSeq2_Gene_Read_Counts))
 #' data("GeneLengths_mm10")
@@ -121,7 +122,8 @@
 #' # estimate spike parameters
 #' data("SmartSeq2_SpikeIns_Read_Counts")
 #' data("SmartSeq2_SpikeInfo")
-#' Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_SpikeIns_Read_Counts), "_"), "[[", 1),
+#' Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_SpikeIns_Read_Counts),
+#'                                     "_"), "[[", 1),
 #'                      stringsAsFactors = F,
 #'                      row.names = colnames(SmartSeq2_SpikeIns_Read_Counts))
 #' estparam_spike <- estimateSpike(spikeData = SmartSeq2_SpikeIns_Read_Counts,
@@ -139,7 +141,7 @@
 #'                   estParamRes = estparam_gene,
 #'                   estSpikeRes = estparam_spike,
 #'                   DropGenes = TRUE,
-#'                   sim.seed = 52679, verbose = TRUE)
+#'                   setup.seed = 52679, verbose = TRUE)
 #' }
 #' @rdname Setup
 #' @export
@@ -291,7 +293,7 @@
                     p.B = p.B,
                     p.G = p.G,
                     bPattern = bPattern,
-                    sim.seed.DESetting = setup.seed),
+                    setup.seed = setup.seed),
                list(sim.seed = sim.seed),
                design = "2grp")
 

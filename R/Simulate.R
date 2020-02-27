@@ -79,7 +79,7 @@
 #' }
 #' \strong{Counts: Simulated Count Matrices}
 #' \describe{
-#' \item{Counts}{3D array (ngenes * N * nsims) containing simulated counts. Note that this will only be returned when \code{Counts} is \code{TRUE}. In addition, if \code{DEFilter} is \code{TRUE} then the filtered/imputed counts are returned.}
+#' \item{Counts}{List of lists object where \code{Counts[[Sample Size Setup]][[Simulation Run]]} containing simulated counts. Note that this will only be returned when \code{Counts} is \code{TRUE}. In addition, if \code{DEFilter} is \code{TRUE} then the filtered/imputed counts are returned.}
 #' }
 #'
 #' @seealso \code{\link{estimateParam}} and \code{\link{estimateSpike}},  for parameter specifications;\cr
@@ -143,7 +143,8 @@
 #' \dontrun{
 #' # estimate gene parameters
 #' data("SmartSeq2_Gene_Read_Counts")
-#' Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_Gene_Read_Counts), "_"), "[[", 1),
+#' Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_Gene_Read_Counts),
+#'                                     "_"), "[[", 1),
 #'                      stringsAsFactors = F,
 #'                      row.names = colnames(SmartSeq2_Gene_Read_Counts))
 #' data("GeneLengths_mm10")
@@ -159,7 +160,8 @@
 #' # estimate spike parameters
 #' data("SmartSeq2_SpikeIns_Read_Counts")
 #' data("SmartSeq2_SpikeInfo")
-#' Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_SpikeIns_Read_Counts), "_"), "[[", 1),
+#' Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_SpikeIns_Read_Counts),
+#'                                     "_"), "[[", 1),
 #'                      stringsAsFactors = F,
 #'                      row.names = colnames(SmartSeq2_SpikeIns_Read_Counts))
 #' estparam_spike <- estimateSpike(spikeData = SmartSeq2_SpikeIns_Read_Counts,

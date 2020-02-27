@@ -86,7 +86,7 @@ elfc is for the DE tool estimated LFC; rlfc is for the LFC estimated from the no
 }
 \strong{Counts: Simulated Count Matrices}
 \describe{
-\item{Counts}{3D array (ngenes * N * nsims) containing simulated counts. Note that this will only be returned when \code{Counts} is \code{TRUE}. In addition, if \code{DEFilter} is \code{TRUE} then the filtered/imputed counts are returned.}
+\item{Counts}{List of lists object where \code{Counts[[Sample Size Setup]][[Simulation Run]]} containing simulated counts. Note that this will only be returned when \code{Counts} is \code{TRUE}. In addition, if \code{DEFilter} is \code{TRUE} then the filtered/imputed counts are returned.}
 }
 }
 \description{
@@ -154,7 +154,8 @@ followed by \code{\link[limma]{eBayes}} on counts transformed by \code{\link[lim
 \dontrun{
 # estimate gene parameters
 data("SmartSeq2_Gene_Read_Counts")
-Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_Gene_Read_Counts), "_"), "[[", 1),
+Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_Gene_Read_Counts),
+                                    "_"), "[[", 1),
                      stringsAsFactors = F,
                      row.names = colnames(SmartSeq2_Gene_Read_Counts))
 data("GeneLengths_mm10")
@@ -170,7 +171,8 @@ estparam_gene <- estimateParam(countData = SmartSeq2_Gene_Read_Counts,
 # estimate spike parameters
 data("SmartSeq2_SpikeIns_Read_Counts")
 data("SmartSeq2_SpikeInfo")
-Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_SpikeIns_Read_Counts), "_"), "[[", 1),
+Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_SpikeIns_Read_Counts),
+                                    "_"), "[[", 1),
                      stringsAsFactors = F,
                      row.names = colnames(SmartSeq2_SpikeIns_Read_Counts))
 estparam_spike <- estimateSpike(spikeData = SmartSeq2_SpikeIns_Read_Counts,

@@ -72,7 +72,7 @@
 #' @author Beate Vieth
 #' @rdname evaluateDist
 #' @importFrom edgeR DGEList cpm.DGEList estimateDisp glmFit zscoreNBinom
-#' @importFrom stats model.matrix glm logLik AIC dnbinom dpois fitted na.omit
+#' @importFrom stats model.matrix glm logLik AIC dnbinom dpois fitted na.omit family
 #' @importFrom MASS glm.nb
 #' @importFrom pscl zeroinfl vuong
 #' @importFrom fitdistrplus fitdist
@@ -248,7 +248,8 @@ evaluateDist <- function(countData, batchData = NULL,
     disp =  1 / (estmu^2/(s2 - estmu + 1e-04))
 
     # fit glm poisson
-    tmp.fit.pois <- try(stats::glm(dge$counts[i,] ~ 1, family=poisson, offset = edgeR::getOffset(y=dge)), silent = TRUE)
+    tmp.fit.pois <- try(stats::glm(dge$counts[i,] ~ 1, family=stats::poisson(link = "log"),
+                                   offset = edgeR::getOffset(y=dge)), silent = TRUE)
     # fit poisson with fitdistrplus
     tmp.fit.pois.wo <- try(fitdistrplus::fitdist(data = dge$counts[i,], 'pois'), silent = TRUE)
     # fit glm negative binomial
@@ -258,7 +259,10 @@ evaluateDist <- function(countData, batchData = NULL,
     # fit glm zero inflated poisson
     tmp.fit.zifpois <- try(pscl::zeroinfl(dge$counts[i,] ~ 1, dist = 'poisson', offset = edgeR::getOffset(y=dge), EM = FALSE), silent = TRUE)
     # fit zero inflated poisson with fitdistrplus
-    tmp.fit.zifpois.wo <- try(fitdistrplus::fitdist(dge$counts[i,], "ZIP", start = list(mu = estmu, sigma=p0), discrete = TRUE, lower = c(0, 0), upper = c(Inf, 1)), silent = TRUE)
+    tmp.fit.zifpois.wo <- try(fitdistrplus::fitdist(dge$counts[i,], "ZIP",
+                                                    start = list(mu = estmu, sigma=p0),
+                                                    discrete = TRUE, lower = c(0, 0), upper = c(Inf, 1)),
+                              silent = TRUE)
     # fit glm zero inflated negative binomial
     tmp.fit.zifnbinom <- try(pscl::zeroinfl(dge$counts[i,] ~ 1, dist = 'negbin', offset = edgeR::getOffset(y=dge), EM = FALSE), silent = TRUE)
     # fit zero inflated negative binomial with fitdistrplus
