@@ -124,7 +124,7 @@ plotParam <- function(estParamRes, Annot=TRUE) {
   if (Annot) {
     annottext.a <-  c("A) Quality Control Metrics: Sequencing depth; Library size factors with median (black line) for the filtered data set; Detected genes; Ratio of gene to spike-in counts (if spike-ins were provided). Outliers are marked in red.")
     annottext.b <- c("\nB) Marginal Distribution of gene mean, dispersion and dropout rate per estimation set.")
-    annottext.c <- c("\nC) Number of genes and samples per estimation set. Provided by the user; Detected = number of genes and samples with at least one count; All = number of genes for which mean, dispersion and dropout could be estimated using non-outlying samples. \nFiltered = number of genes above filter threshold for which mean, dispersion and dropout could be estimated using non-outlying samples. Dropout Genes = number of genes filtered out due to dropout rate.")
+    annottext.c <- c("\nC) Number of genes and samples per estimation set. Provided by the user; Detected = number of genes and samples with at least one count; All = number of genes for which mean, dispersion and dropout could be estimated using non-outlying samples. \nFiltered = number of genes above filter threshold for which mean, dispersion and dropout could be estimated using non-outlying samples. Dropout Genes = number of genes filtered out due to gene dropout rate.")
     annottext.d <- c("\nD) Local polynomial regression fit between mean and dispersion estimates with variability band per gene (yellow). Common dispersion estimate (grey dashed line).")
     annottext.e <- c("\nE) Fraction of dropouts versus estimated mean expression per gene.")
     if(is.null(readvsumi.plot)) {
@@ -248,9 +248,9 @@ plotSpike <- function(estSpike, Annot = TRUE) {
     dplyr::group_by(.data$FSpike) %>%
     dplyr::mutate(Expectation=mean(.data$normCounts),
                   LExpectation=mean(log10(.data$normCounts)),
-                  Deviation=sd(.data$normCounts),
-                  Error=sd(.data$normCounts)/sqrt(dplyr::n()),
-                  LError=sd(log10(.data$normCounts))/sqrt(dplyr::n())) %>%
+                  Deviation=stats::sd(.data$normCounts),
+                  Error=stats::sd(.data$normCounts)/sqrt(dplyr::n()),
+                  LError=stats::sd(log10(.data$normCounts))/sqrt(dplyr::n())) %>%
     dplyr::ungroup() %>%
     dplyr::mutate(LSpikeInput = log10(.data$SpikeInput),
                   LExpectation = log10(.data$Expectation))
@@ -263,7 +263,7 @@ plotSpike <- function(estSpike, Annot = TRUE) {
     broom::glance(LmFit) %>%
     dplyr::ungroup() %>%
     dplyr::summarise(Rsquared=mean(.data$r.squared),
-                     RsquaredSE=sd(.data$r.squared))
+                     RsquaredSE=stats::sd(.data$r.squared))
 
   # calibration curve plot
   cal.plot <- ggplot2::ggplot(data = cal.info.dat,
@@ -388,6 +388,7 @@ plotSpike <- function(estSpike, Annot = TRUE) {
 #' @importFrom cowplot plot_grid add_sub ggdraw
 #' @importFrom dplyr group_by summarise ungroup n
 #' @importFrom tidyr %>%
+#' @importFrom stats sd
 #' @rdname plotEvalDE
 #' @export
 plotEvalDE <- function(evalRes, rate=c('marginal', 'conditional'), quick=TRUE, Annot=TRUE) {
@@ -481,8 +482,8 @@ plotEvalDE <- function(evalRes, rate=c('marginal', 'conditional'), quick=TRUE, A
     dat.genes.calc <- dat.genes.long %>%
       dplyr::group_by(.data$Var1, .data$L1) %>%
       dplyr::summarise(Expectation=mean(.data$value),
-                       Deviation=sd(.data$value),
-                       Error=sd(.data$value)/sqrt(dplyr::n())) %>%
+                       Deviation=stats::sd(.data$value),
+                       Error=stats::sd(.data$value)/sqrt(dplyr::n())) %>%
       dplyr::ungroup()
 
     refval <- data.frame(L1 = c("FDR", "TPR"),

@@ -2,30 +2,31 @@ Package: powsimR
 Type: Package
 Title: Power Simulations for RNA-sequencing
 Description: Recent development of very sensitive RNA-seq protocols, such as Smart-seq2 and CEL-seq allows transcriptional profiling at
-                single-cell resolution and droplet devices make single cell transcriptomics high-throughput, allowing to characterize thousands
-                or even millions of single cells. In powsimR, we have implemented a flexible tool to assess power and sample size requirements
-                for differential expression (DE) analysis of single cell and bulk RNA-seq experiments. For our read count simulations, we (1)
-                reliably model the mean, dispersion and dropout distributions as well as the relationship between those factors from the data.
-                (2) Simulate read counts from the empirical mean-variance and dropout relations, while offering flexible choices of the number
-                of differentially expressed genes, effect sizes and DE testing method. (3) Finally, we evaluate the power over various sample
-                sizes. The number of replicates required to achieve the desired statistical power is mainly determined by technical noise and
-                biological variability and both are considerably larger if the biological replicates are single cells. powsimR can not only
-                estimate sample sizes necessary to achieve a certain power, but also informs about the power to detect DE in a data set at
-                hand. We believe that this type of posterior analysis will become more and more important, if results from different studies
-                are to be compared. Often enough researchers are left to wonder why there is a lack of overlap in DE-genes across similar
-                experiments. PowsimR will allow the researcher to distinguish between actual discrepancies and incongruities due to lack of
-                power.
-Version: 1.2.0
+               single-cell resolution and droplet devices make single cell transcriptomics high-throughput, allowing to characterize
+               thousands or even millions of single cells. In powsimR, we have implemented a flexible tool to assess power and sample
+               size requirements for differential expression (DE) analysis of single cell and bulk RNA-seq experiments. For our read
+               count simulations, we (1) reliably model the mean, dispersion and dropout distributions as well as the relationship
+               between those factors from the data. (2) Simulate read counts from the empirical mean-variance and dropout relations,
+               while offering flexible choices of the number of differentially expressed genes, effect sizes and DE testing method. (3)
+               Finally, we evaluate the power over various sample sizes. The number of replicates required to achieve the desired
+               statistical power is mainly determined by technical noise and biological variability and both are considerably larger if
+               the biological replicates are single cells. powsimR can not only estimate sample sizes necessary to achieve a certain
+               power, but also informs about the power to detect DE in a data set at hand. We believe that this type of posterior
+               analysis will become more and more important, if results from different studies are to be compared. Often enough
+               researchers are left to wonder why there is a lack of overlap in DE-genes across similar experiments. PowsimR will allow
+               the researcher to distinguish between actual discrepancies and incongruities due to lack of power.
+Version: 1.2.1
 Imports: bayNorm, baySeq, BiocGenerics, BiocParallel, broom, BPSC, cobs, cowplot, data.table, DECENT, DEDS, DESeq2, doParallel, dplyr,
-                DrImpute, EBSeq, edgeR, fastICA, fitdistrplus, foreach, future, ggplot2, ggpubr, ggstance, grDevices, grid, Hmisc, iCOBRA, IHW,
-                kernlab, limma, Linnorm, magrittr, MASS, MAST, Matrix, matrixStats, methods, minpack.lm, moments, monocle, msir, NBPSeq,
-                NOISeq, nonnest2, parallel, penalized, plotrix, plyr, pscl, qvalue, reshape2, rlang, Rmagic, ROTS, rsvd, Rtsne, RUVSeq,
-                S4Vectors, SAVER, scales, scater, scDD, scde, SCnorm, scone, scran, sctransform, Seurat, SingleCellExperiment, stats,
-                SummarizedExperiment, tibble, tidyr, truncnorm, utils, VGAM, ZIM, zinbwave, zingeR, zoo
-Remotes: nghiavtr/BPSC, cz-ye/DECENT, mohuangx/SAVER, rhondabacher/SCnorm, statOmics/zingeR, bioc::bayNorm, bioc::baySeq, bioc::BiocGenerics,
-                bioc::BiocParallel, bioc::DEDS, bioc::DESeq2, bioc::EBSeq, bioc::edgeR, bioc::iCOBRA, bioc::IHW, bioc::limma, bioc::Linnorm,
-                bioc::MAST, bioc::monocle, bioc::NOISeq, bioc::qvalue, bioc::ROTS, bioc::RUVSeq, bioc::S4Vectors, bioc::scater, bioc::scDD,
-                bioc::scde, bioc::scone, bioc::scran, bioc::SingleCellExperiment, bioc::SummarizedExperiment, bioc::zinbwave
+               DrImpute, EBSeq, edgeR, fastICA, fitdistrplus, foreach, future, ggplot2, ggpubr, ggstance, grDevices, grid, Hmisc, iCOBRA,
+               IHW, kernlab, limma, Linnorm, magrittr, MASS, MAST, Matrix, matrixStats, methods, minpack.lm, moments, monocle, msir,
+               NBPSeq, NOISeq, nonnest2, parallel, penalized, plotrix, plyr, pscl, qvalue, reshape2, rlang, Rmagic, ROTS, rsvd, Rtsne,
+               RUVSeq, S4Vectors, SAVER, scales, scater, scDD, scde, SCnorm, scone, scran, sctransform, Seurat, SingleCellExperiment,
+               stats, SummarizedExperiment, tibble, tidyr, truncnorm, utils, VGAM, ZIM, zinbwave, zingeR, zoo
+Remotes: nghiavtr/BPSC, cz-ye/DECENT, mohuangx/SAVER, rhondabacher/SCnorm, statOmics/zingeR, bioc::bayNorm, bioc::baySeq,
+               bioc::BiocGenerics, bioc::BiocParallel, bioc::DEDS, bioc::DESeq2, bioc::EBSeq, bioc::edgeR, bioc::iCOBRA, bioc::IHW,
+               bioc::limma, bioc::Linnorm, bioc::MAST, bioc::monocle, bioc::NOISeq, bioc::qvalue, bioc::ROTS, bioc::RUVSeq,
+               bioc::S4Vectors, bioc::scater, bioc::scDD, bioc::scde, bioc::scone, bioc::scran, bioc::SingleCellExperiment,
+               bioc::SummarizedExperiment, bioc::zinbwave
 Depends: R (>= 3.6), gamlss.dist
 Suggests: rmdformats, knitr, mvtnorm, MBESS
 LazyData: TRUE
@@ -34,7 +35,7 @@ VignetteBuilder: knitr
 License: Artistic License 2.0
 NeedsCompilation: no
 Author: Beate Vieth
-Date: 2020-02-06
+Date: 2020-02-21
 BugReports: https://github.com/bvieth/powsimR/issues
 URL: https://github.com/bvieth/powsimR
 Maintainer: Beate Vieth <vieth.beate@gmail.com>

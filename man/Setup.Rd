@@ -2,16 +2,16 @@
 % Please edit documentation in R/Setup.R
 \name{Setup}
 \alias{Setup}
-\title{Setup options for RNA-seq count simulations.}
+\title{Setup options for RNA-seq count simulations}
 \usage{
 Setup(ngenes=NULL, nsims=25,
-p.DE = 0.1, pLFC = 1,
+p.DE = 0.1, pLFC = 1, p.G = 1,
 p.B=NULL, bLFC=NULL, bPattern="uncorrelated",
 n1=c(20,50,100), n2=c(30,60,120),
 Thinning = NULL, LibSize='equal',
 estParamRes, estSpikeRes=NULL,
 DropGenes=FALSE,
-sim.seed, verbose = TRUE)
+setup.seed, verbose = TRUE)
 }
 \arguments{
 \item{ngenes}{is a numeric vector specifying the number of genes to simulate.
@@ -33,6 +33,11 @@ it will be sampled with replacement to generate log fold changes;
 e.g. function(x) rnorm(x, mean=0, sd=1.5).
 Default is \code{1}.
 Please note that the fold change should be on \code{\link[base]{log1p}} scale!}
+
+\item{p.G}{Numeric vector indicating the proportion of replicates per group
+that express the phenotypic fold change. Default is \code{1}, this means all show the expressiond difference.
+For example, if \code{0.5} and \code{n1 = 10} and \code{n2 = 8},
+then only 5 replicates in group 1 and 4 replicates in group 2 express the phenotypic fold change.}
 
 \item{p.B}{Numeric vector between 0 and 1 representing the percentage of genes
 being differentially expressed between batches.
@@ -58,7 +63,7 @@ Default is \code{"uncorrelated"}.}
 Default values are n1=c(20,50,100) and n2=c(30,60,120).
 The vectors need to have the same number of entries, i.e. length.}
 
-\item{Thinning}{Integer vector specifying the downsampling.
+\item{Thinning}{Numeric vector specifying the downsampling.
 It has to be the same length and order as the vector \code{n1}.
 This is an implementation of \code{\link[edgeR]{thinCounts}}.
 The vector entries should be a proportion between 0 and 1,
@@ -90,7 +95,7 @@ The dropout genes are defined in \code{\link{estimateParam}} using the \code{Gen
 and can be plotted with \code{\link{plotParam}}.
 Default is \code{FALSE}, i.e. no gene expression dropouts.}
 
-\item{sim.seed}{Simulation seed.}
+\item{setup.seed}{Setup seed.}
 
 \item{verbose}{Logical vector to indicate whether to print function information.
 Default is \code{TRUE}.}
@@ -110,7 +115,7 @@ Thinning parameters (Thinning, thinSpike); Library Size Factors (LibSize);
 \item{estSpikeRes}{A list object containing the spike-in simulation parameters provided.}
 }
 \description{
-This function generates the settings needed for simulateDE().
+This function generates the settings needed for \code{\link{simulateDE}}.
 Firstly a set of differential expressed gene IDs with
 associated fold changes for a given number of genes, simulations and
 fraction of DE genes is generated. There are also a number of options relating
@@ -121,7 +126,8 @@ fraction of DE genes is generated. There are also a number of options relating
 \dontrun{
 # estimate gene parameters
 data("SmartSeq2_Gene_Read_Counts")
-Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_Gene_Read_Counts), "_"), "[[", 1),
+Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_Gene_Read_Counts),
+                                    "_"), "[[", 1),
                      stringsAsFactors = F,
                      row.names = colnames(SmartSeq2_Gene_Read_Counts))
 data("GeneLengths_mm10")
@@ -137,7 +143,8 @@ estparam_gene <- estimateParam(countData = SmartSeq2_Gene_Read_Counts,
 # estimate spike parameters
 data("SmartSeq2_SpikeIns_Read_Counts")
 data("SmartSeq2_SpikeInfo")
-Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_SpikeIns_Read_Counts), "_"), "[[", 1),
+Batches = data.frame(Batch = sapply(strsplit(colnames(SmartSeq2_SpikeIns_Read_Counts),
+                                    "_"), "[[", 1),
                      stringsAsFactors = F,
                      row.names = colnames(SmartSeq2_SpikeIns_Read_Counts))
 estparam_spike <- estimateSpike(spikeData = SmartSeq2_SpikeIns_Read_Counts,
@@ -155,7 +162,7 @@ setupres <- Setup(ngenes = 10000, nsims = 25,
                   estParamRes = estparam_gene,
                   estSpikeRes = estparam_spike,
                   DropGenes = TRUE,
-                  sim.seed = 52679, verbose = TRUE)
+                  setup.seed = 52679, verbose = TRUE)
 }
 }
 \author{

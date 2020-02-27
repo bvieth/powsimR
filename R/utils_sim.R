@@ -3,12 +3,15 @@
 
 # Simulate DE between 2 groups (DE of mean) -------------------------------
 
-#' @importFrom stats model.matrix coef poisson sd
+#' @importFrom stats model.matrix rbinom
 .simRNAseq.2grp <- function(simOptions, n1, n2, verbose) {
+
+  set.seed(simOptions$DESetup$sim.seed)
 
   if(is.null(simOptions$DESetup$bLFC)) {
     ## make group labels for phenotype LFC
-    phenotype <- c(rep(-1, n1), rep(1, n2))
+    phenotype <- c(-stats::rbinom(n=n1, size = 1, prob = simOptions$DESetup$p.G),
+                   stats::rbinom(n=n2, size = 1, prob = simOptions$DESetup$p.G))
     batch <- NULL
     ## make model matrix
     modelmatrix = stats::model.matrix(~-1 + phenotype)
@@ -18,7 +21,8 @@
   if(!is.null(simOptions$DESetup$bLFC)) {
     if(simOptions$DESetup$bPattern=="uncorrelated") {
       # make group labels for phenotype LFC
-      phenotype <- c(rep(-1, n1), rep(1, n2))
+      phenotype <- c(-stats::rbinom(n=n1, size = 1, prob = simOptions$DESetup$p.G),
+                     stats::rbinom(n=n2, size = 1, prob = simOptions$DESetup$p.G))
       # make batch labels for batch LFC
       batch <- rep_len(c(-1,1), n1+n2)
       # make model matrix
@@ -27,7 +31,8 @@
     }
     if(simOptions$DESetup$bPattern=="orthogonal") {
       # make group labels for phenotype LFC
-      phenotype <- c(rep(-1, n1), rep(1, n2))
+      phenotype <- c(-stats::rbinom(n=n1, size = 1, prob = simOptions$DESetup$p.G),
+                     stats::rbinom(n=n2, size = 1, prob = simOptions$DESetup$p.G))
       # make batch labels for batch LFC
       batch <-  1 - 2*rbinom(n1+n2, size=1, prob=0.5)
       # make model matrix
@@ -36,7 +41,8 @@
     }
     if(simOptions$DESetup$bPattern=="correlated") {
       # make group labels for phenotype LFC
-      phenotype <- c(rep(-1, n1), rep(1, n2))
+      phenotype <- c(-stats::rbinom(n=n1, size = 1, prob = simOptions$DESetup$p.G),
+                     stats::rbinom(n=n2, size = 1, prob = simOptions$DESetup$p.G))
       # make batch labels for batch LFC
       flip <- rbinom(n1+n2, size = 1, prob = 0.9)
       batch <- phenotype*flip + -phenotype*(1-flip)

@@ -415,32 +415,26 @@
 }
 # table with numbers of genes and samples
 .estimate_table_print <- function(estParamRes, RNAseq){
-  sample.out = ifelse(RNAseq=="singlecell", "Cell Outliers", "Sample Outliers")
   sample.names = ifelse(RNAseq=="singlecell", "Single Cells", "Bulk Samples")
-  no.dat <- data.frame(c("Provided", "Detected", "All Genes", "Filtered Genes", "Dropout Genes", sample.out),
+  no.dat <- data.frame(c("Provided", "Detected", "All Genes", "Filtered Genes", "Dropout Genes"),
                        c(estParamRes$totalG,
                          estParamRes$detectG,
                          estParamRes$Parameters$Full$ngenes,
                          estParamRes$Parameters$Filtered$ngenes,
                          ifelse(all(!is.na(estParamRes$Parameters$DropGene)),
-                                estParamRes$Parameters$DropGene$ngenes, 0),
-                         ifelse(all(!is.na(estParamRes$Parameters$DropSample)),
-                                estParamRes$Parameters$DropSample$ngenes, 0)),
+                                estParamRes$Parameters$DropGene$ngenes, 0)),
                        c(NA,
                          NA,
                          estParamRes$Fit$Full$estG,
                          estParamRes$Fit$Filtered$estG,
                          ifelse(all(!is.na(estParamRes$Fit$DropGene)),
-                                estParamRes$Fit$DropGene$estG, 0),
-                         NA),
+                                estParamRes$Fit$DropGene$estG, 0)),
                        c(estParamRes$totalS,
                          estParamRes$detectS,
                          estParamRes$Parameters$Full$nsamples,
                          estParamRes$Parameters$Filtered$nsamples,
                          ifelse(all(!is.na(estParamRes$Parameters$DropGene)),
-                                estParamRes$Parameters$DropGene$nsamples, NA),
-                         ifelse(all(!is.na(estParamRes$Parameters$DropSample)),
-                                estParamRes$Parameters$DropSample$nsamples, NA)),
+                                estParamRes$Parameters$DropGene$nsamples, NA)),
                        stringsAsFactors = F )
   colnames(no.dat) <- c("Set", "# Genes", "# Genes for Fit", paste0("# ", sample.names))
   no.table <- ggpubr::ggtexttable(no.dat,
