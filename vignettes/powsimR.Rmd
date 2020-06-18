@@ -89,7 +89,7 @@ ipak <- function(pkg, repository=c('CRAN', 'Bioconductor', 'github')){
 cranpackages <- c("broom", "cobs", "cowplot", 
                   "data.table", "doParallel", "dplyr", "DrImpute", 
                   "fastICA", "fitdistrplus", "foreach", "future",
-                  "gamlss.dist", "ggplot2", "ggpubr", "grDevices",
+                  "gamlss.dist", "ggplot2", "ggpubr", "ggstance", "grDevices",
                   "grid", "Hmisc", "kernlab", "MASS", "magrittr", "MBESS", "Matrix",
                   "matrixStats", "mclust", "methods", "minpack.lm", "moments", "msir", 
                   "NBPSeq", "nonnest2", "parallel", "penalized", "plyr", "pscl",
@@ -99,7 +99,7 @@ ipak(cranpackages, repository='CRAN')
 
 # BIOCONDUCTOR
 biocpackages <- c("bayNorm", "baySeq", "BiocGenerics", "BiocParallel", 
-                  "DEDS", "DESeq2", "EBSeq", "edgeR", "IHW", "iCOBRA",
+                  "DESeq2", "EBSeq", "edgeR", "IHW", "iCOBRA",
                   "limma", "Linnorm", "MAST", "monocle", "NOISeq", "qvalue", "ROTS", "RUVSeq", 
                   "S4Vectors", "scater", "scDD", "scde", "scone", "scran", "SCnorm", 
                   "SingleCellExperiment", "SummarizedExperiment", "zinbwave")
@@ -154,7 +154,7 @@ In this vignette, we illustrate the features of `powsimR` by assessing the power
 
 The basic workflow of `powsimR` is illustrated in Figure \@ref(fig:schematic): A) The mean-dispersion relationship is estimated from RNA-seq data, which can be either single cell or bulk data. The user can provide their own count table or a publicly available one and choose whether to fit a negative binomial or a zero-inflated negative binomial. The plot shows a representative example of the mean-dispersion relation estimated, assuming a negative binomial for the Ziegenhain data, the red line is the loess fit, that we later use for the simulations. B) These distribution parameters are then used to set up the simulations in which the user can freely choose the magnitude and amount of differential expression, the sample size configuration as well as the processing pipeline for DE-testing. C) Finally, the error rates are calculated. These can be either returned as marginal estimates per sample configuration, or stratified according to the estimates of mean expression, dispersion or dropout rate. Furthermore, the user can evaluate the analytical choices (e.g. imputation and normalisation).
 
-```{r schematic, fig.cap="PowsimR schematic overview. We want to investigate the statistical power to detect differential expression in our RNA-seq experiment. Firstly, key expression characteristics of the RNA-seq data are estimated , which can be either single cell or bulk data. The plot shows the mean-dispersion relation, the red line is the loess fit, that we later use for the simulations. The expression of spike-ins can also be modelled. Secondly, we define our desired simulation setup: the number and magnitude of differential expression, the sample size setup as well as the tools to use in our DE-Pipeline. Last, we evaluate the simulated experiment using the error rates of the confusion matrix. Particularly, the power (TPR) and false detection (FDR) are calculated per sample setup configuration.", echo=F, eval=T, include=T}
+```{r schematic, fig.cap="PowsimR schematic overview. We want to investigate the statistical power to detect differential expression in our RNA-seq experiment. Firstly, key expression characteristics of the RNA-seq data, which can be either single cell or bulk data. The plot shows the mean-dispersion estimated, the red line is the loess fit, that we later use for the simulations. The expression of spike-ins can also be modelled. Secondly, we define our desired simulation setup: the number and magnitude of differential expression, the sample size setup as well as the tools to use in our DE-Pipeline. Last, we evaluate the simulated experiment using the error rates of the confusion matrix. Particularly, the power (TPR) and false detection (FDR) are calculated per sample setup configuration.", echo=F, eval=T, include=T}
 knitr::include_graphics("powsimr_workflow.png")
 ```
 
@@ -181,8 +181,10 @@ With the following command, we estimate and plot the parameters for the mouse em
 
 ```{r geneparams, echo=T, eval=F, include=T}
 data("CELseq2_Gene_UMI_Counts")
-Batches <- data.frame(Batch = sapply(strsplit(colnames(CELseq2_Gene_UMI_Counts), "_"), "[[", 1),
-                      stringsAsFactors = FALSE, row.names = colnames(CELseq2_Gene_UMI_Counts))
+batch <- sapply(strsplit(colnames(CELseq2_Gene_UMI_Counts), "_"), "[[", 1)
+Batches <- data.frame(Batch = batch,
+                      stringsAsFactors = FALSE, 
+                      row.names = colnames(CELseq2_Gene_UMI_Counts))
 data("GeneLengths_mm10")
 
 # estimation
@@ -208,7 +210,7 @@ knitr::include_graphics("estparam_gene_celseq2.png")
 We have implemented a count simulation framework assuming either a negative binomial distribution or a zero-inflated negative binomial distribution.
 To predict the dispersion given a random draw of mean expression value observed, we apply a locally weighted polynomial regression fit (solid orange line in Figure \@ref(fig:geneparamsplot) D). To capture the variability of dispersion estimates observed, a local variability prediction band is applied (dashed orange lines in Figure \@ref(fig:geneparamsplot) D).
 
-For bulk RNA-seq experiments, dropouts are less probable but can still occur. To include this phenomenon we sample from the observed dropout rates for genes that have a mean expression value below 5\% dropout probability determined by a decrease constrained B-splines regresssion of dropout rate against mean expression (`cobs`).
+For bulk RNA-seq experiments, dropouts are less probable but can still occur. To include this phenomenon we sample from the observed dropout rates for genes that have a mean expression value below 5\% dropout probability determined by a decrease constrained B-splines regression of dropout rate against mean expression (`cobs`).
 
 For the zero-inflated negative binomial distribution, the mean-dispersion relation is similarly estimated, but based on positive read counts. Furthermore, the dropouts are also predicted based on a locally weighted polynomial regression fit between mean and dropouts. Of note, this fit is done separately for amplified and non-amplified transcripts and similar proportions of genes as observed are also generated in the simulations [@Ziegenhain2017-sf].
 
@@ -233,9 +235,10 @@ With the following command, we estimate the parameters for the spike-ins added d
 ```{r spikeparams, echo=T, eval=F, include=T, warning=F}
 data("CELseq2_SpikeIns_UMI_Counts")
 data("CELseq2_SpikeInfo")
-Batches = data.frame(Batch = sapply(strsplit(colnames(CELseq2_SpikeIns_UMI_Counts), "_"), "[[", 1),
+batch = sapply(strsplit(colnames(CELseq2_SpikeIns_UMI_Counts), "_"), "[[", 1)
+Batches = data.frame(Batch = batch,
                        stringsAsFactors = F,
-                       row.names = colnames(CELseq2_SpikeInfo))
+                       row.names = colnames(CELseq2_SpikeIns_UMI_Counts))
 # estimation
 estparam_spike <- estimateSpike(spikeData = CELseq2_SpikeIns_UMI_Counts,
 spikeInfo = CELseq2_SpikeInfo,
@@ -264,9 +267,10 @@ There is also the possibility to include batch effects, see the Details section 
 knitr::include_graphics("lfcdist.png")
 ```
 
-The number of replicates per group (n1 and n2) are also defined in `Setup` which can be unbalanced. These numbers represent either biological replicates for bulk or number of cells for single cell RNA-seq. In addition, the user can choose to include the simulation of dropout genes so that the resulting count matrix has a percentage of dropouts equal to the rate filtered out during estimation.
+The number of replicates per group (n1 and n2) are also defined in `Setup` which can be unbalanced. In addition the user can choose to include the simulaiton of dropout genes so that the resulting count matrix has a percentage of dropouts equal to the rate filtered out during estimation.
 
-The distribution estimates and these settings are then combined to one object.
+The distribution estimates and these settings are then combined into one object.
+The following command sets up simulations with 10,000 genes, 20\% genes being DE, log fold change sampled from a narrow gamma distribution and parameter estimates based on Smartseq2 libraries in Ziegenhain dataset. Please note that I decreased the number of simulations for this illustration.
 
 The following command sets up simulations with 10,000 genes, 5\% genes being DE, log fold change sample from a narrow gamma distribution and parameter estimates based on CEL-seq2 libraries in Ziegenhain dataset. The spike-ins are only necessary if we wish to apply imputation, normalisation and/or DE-tools that can utilize spike-ins, see the Details section of `estimateParam()` and `simulateDE()`.
 
@@ -279,9 +283,9 @@ setupres <- Setup(ngenes = 10000, nsims = 25,
                   n1 = c(48, 96, 384, 800), n2 = c(48, 96, 384, 800),
                   Thinning = NULL, LibSize = 'equal',
                   estParamRes = estparam_gene,
-                  estSpikeRes = estparam_spike,
+                  estSpikeRes = NULL,
                   DropGenes = TRUE,
-                  sim.seed = 5299, verbose = TRUE)
+                  setup.seed = 5299, verbose = TRUE)
 
 ```
 
@@ -289,8 +293,8 @@ setupres <- Setup(ngenes = 10000, nsims = 25,
 
 With the setup defined, the differential expression simulation is run with `simulateDE`. For this, the user needs to set the following options:
 
-* **DEmethod:** The differential testing method. The user can choose between 20 methods in total.  10 developed for bulk, 9 developed for single cells (see the Details section of `simulateDE`).
-* **Normalisation:** The normalisation method. The user can choose between 10 methods in total.  5 developed for bulk, 5 developed for single cells (see the Details section of `simulateDE`).
+* **DEmethod:** The differential testing method. The user can choose between 20 methods in total. 10 developed for bulk, 9 developed for single cells (see the Details section of `simulateDE`).
+* **Normalisation:** The normalisation method. The user can choose between 10 methods in total. 5 developed for bulk, 5 developed for single cells (see the Details section of `simulateDE`).
 
 There are also additional options: Whether to apply a prefiltering or imputation step prior to normalisation; whether spike-in information should be used (if available). For more information, please consult the Details section of `simulateDE`.
 
@@ -302,7 +306,6 @@ simres <- simulateDE(SetupRes = setupres,
                      NCores = NULL, verbose = TRUE)
 ```
 
-## Simulating gene expression of cell mixtures
 
 # Evaluation {.tabset}
 
@@ -329,16 +332,23 @@ evalderes = evaluateDE(simRes = simres,
 
 The results of the evaluation can be plotted with `plotEvalDE()`.
 
+```{r, echo = TRUE, eval = FALSE}
+plotEvalDE(evalRes = evalderes, rate = 'marginal', quick = TRUE, Annot = TRUE)
+plotEvalDE(evalRes = evalderes, rate = 'conditional', quick = TRUE, Annot = TRUE)
+
+```
+
+
 * **rate:** The user can choose to plot the 'marginal' or 'stratified' error rates. The number of genes per stratum are also summarised.
 * **quick:** If this is set to `TRUE` then only the TPR and FDR will be plotted.
 
-The quick marginal and conditional power assessment for the Ziegenhain data is plotted in Figure \@ref(fig:evaldeplot1) and \@ref(fig:evaldeplot2). As expected the power (TPR) to detect differential expression increases with sample size Figure \@ref(fig:evaldeplot1). On the other hand, the ability to control the false detection (FDR) at the chosen nominal level depends on the average expression of DE genes (Figure \@ref(fig:evaldeplot2)). In addition, the detection of true positives with small average expression needs far more replicates per group.
+The quick marginal and conditional power assessment for the Ziegenhain data is plotted in Figure \@ref(fig:evaldeplot1) and \@ref(fig:evaldeplot2). As expected the power (TPR) to detect differential expression increases with sample size (Figure \@ref(fig:evaldeplot1)). On the other hand, the ability to control the false detection (FDR) at the chosen nominal level depends on the average expression of DE genes (Figure \@ref(fig:evaldeplot2)). In addition, the detection of true positives with small mean expression needs far more replicates per group.
 
-```{r evaldeplot1, echo=F, eval=T, fig.cap="Marginal Error Rates. (A) Marginal TPR and FDR per sample size comparison. (B) Marginal TPR and FDR per sample size comparison with dashed line indicating nominal alpha level (type I error) and nominal 1-beta level, i.e. 80% power (type II error)."}
+```{r evaldeplot1, echo=F, eval=T, fig.cap="Marginal Error Rates. (A) Marginal FDR and TPR per sample size comparison. (B) Marginal FDR and TPR per sample size comparison with dashed line indicating nominal alpha level (type I error) and nominal 1-beta level, i.e. 80% power (type II error)."}
 knitr::include_graphics("evalderes_marginal_celseq2.png")
 ```
 
-```{r evaldeplot2, echo=F, eval=T, fig.cap="Stratified Error Rates. (A) Conditional TPR and FDR per sample size comparison per stratum. (B) Number of equally (EE) and differentially expressed (DE) genes per stratum."}
+```{r evaldeplot2, echo=F, eval=T, fig.cap="Stratified Error Rates. (A) Conditional FDR and TPR per sample size comparison per stratum. (B) Number of equally (EE) and differentially expressed (DE) genes per stratum."}
 knitr::include_graphics("evalderes_conditional_celseq2.png")
 ```
 
@@ -450,21 +460,27 @@ knitr::include_graphics("evaldist_smartseq2.png")
 
 ## Simulation Settings
 
+### Replicates with partial phenotypic differences
+
+By default, all replicates per group express the phenotypic differences in gene expression defined by `pLFC`. If the user wishes for a more varied expression profile, i.e. only a proportion of replicates per group with a difference in expression, these patterns can be defined by changing `p.G` (see Details section of `Setup()`). 
+
 ### Include differences in library sizes
 
-By default, there is no difference in library sizes between the samples. If the user wishes for a more realistic, i.e. more variable distribution of read counts across samples, the library sizes can be sampled from observed, vector or function. See the Details section of `Setup()`.
+By default, there is no difference in library sizes between the samples. If the user wishes for a more realistic, i.e. more variable distribution of read counts across samples, the library sizes can be sampled from observed, vector or function (see Details section of `Setup()`).
 
 ### Downsample simulated count matrices by binomial thinning
 
-There is the additional option to downsample simulated count matrices with the option `Thinning` in `Setup` in order to know in how far a shallower sequencing depth affects the power to detect differential expression. For example, the estimation was done using 500 cells and in the simulations we would like to compare two groups with a total of 1000 cells but do not want to increase the sequencing depth compared to the pilot data. Thus we can set the Thinning parameters to 0.5 to half the number of counts per cell. Please note, that the thinning assumes that the count matrix is based on reads, not UMIs. For UMI-methods, please supply the UMI count matrix as `countData` in `estimateParam()` and the raw read count matrix without UMI deduplication as `readData`. For more information, please check out the help page of `estimateParam()`.
+There is the additional option to downsample simulated count matrices with the option `Thinning` in `Setup()` in order to know in how far a shallower sequencing depth affects the power to detect differential expression. For example, the estimation was done using 500 cells and in the simulations we would like to compare two groups with a total of 1000 cells but do not want to increase the sequencing depth compared to the pilot data. Thus we can set the Thinning parameters to 0.5 to half the number of counts per cell. Please note, that the thinning assumes that the count matrix is based on reads, not UMIs. For UMI-methods, please supply the UMI count matrix as `countData` in `estimateParam()` and the raw read count matrix without UMI deduplication as `readData`. For more information, please check out the help page of `estimateParam()`.
 
 Below you can find an example script using the CELSeq2 libraries from Ziegenhain et al.:
 
 ```{r thinning, echo = TRUE, eval = FALSE}
 data("CELseq2_Gene_UMI_Counts")
 data("CELseq2_Gene_Read_Counts")
-Batches <- data.frame(Batch = sapply(strsplit(colnames(CELseq2_Gene_UMI_Counts), "_"), "[[", 1),
-                      stringsAsFactors = FALSE, row.names = colnames(CELseq2_Gene_UMI_Counts))
+batch <- sapply(strsplit(colnames(CELseq2_Gene_UMI_Counts), "_"), "[[", 1)
+Batches <- data.frame(Batch = batch,
+                      stringsAsFactors = FALSE, 
+                      row.names = colnames(CELseq2_Gene_UMI_Counts))
 data("GeneLengths_mm10")
 
 # estimation
@@ -492,7 +508,7 @@ setupres <- Setup(ngenes = 10000, nsims = 25,
                   estParamRes = estparam_gene,
                   estSpikeRes = NULL,
                   DropGenes = TRUE,
-                  sim.seed = 5299, verbose = TRUE)
+                  setup.seed = 5299, verbose = TRUE)
 
 # run simulations
 simres <- simulateDE(SetupRes = setupres,

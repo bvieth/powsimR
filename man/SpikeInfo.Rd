@@ -4,7 +4,9 @@
 \name{SpikeInfo}
 \alias{SpikeInfo}
 \title{Ziegenhain et al. 2017: Spike-Ins Information}
-\format{An object of class \code{"data.frame"}, with spike-in IDs, number of spike-in molecules and lengths of spike-ins.}
+\format{
+An object of class \code{"data.frame"}, with spike-in IDs, number of spike-in molecules and lengths of spike-ins.
+}
 \source{
 \url{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE75790}.
 }

@@ -275,7 +275,7 @@ plotSpike <- function(estSpike, Annot = TRUE) {
     ggplot2::geom_point(data = cal.info.dat,
                         ggplot2::aes_(x=quote(LSpikeInput),
                                       y=quote(LExpectation))) +
-    ggplot2::geom_smooth(method='lm',formula=y~x) +
+    ggplot2::geom_smooth(method=lm,formula=y~x) +
     ggplot2::annotate("text", label = paste0("italic(R) ^ 2 == ",
                                              round(Calibration$Rsquared, digits = 2),
                                              "%+-%",
@@ -298,7 +298,7 @@ plotSpike <- function(estSpike, Annot = TRUE) {
                                   ggplot2::aes_(x=quote(LSpikeInput),
                                                y=quote(p_success))) +
     ggplot2::geom_point() +
-    ggplot2::geom_smooth(method="glm",
+    ggplot2::geom_smooth(method=glm,
                          method.args = list(family = "binomial"), se=T) +
     ggplot2::scale_x_log10(labels=c("0.1","1","10","100","1,000"),breaks=c(0.1,1,10,100,1000)) +
     ggplot2::annotation_logticks(sides = "b") +
@@ -443,7 +443,7 @@ plotEvalDE <- function(evalRes, rate=c('marginal', 'conditional'), quick=TRUE, A
                                            y = quote(value),
                                            group = quote(L1),
                                            color = quote(L1)),
-                              fun.y = mean, geom="line") +
+                              fun = mean, geom="line") +
         ggplot2::geom_hline(data = refval,
                             ggplot2::aes_(yintercept = quote(ref)),
                             linetype="dashed",
@@ -515,7 +515,7 @@ plotEvalDE <- function(evalRes, rate=c('marginal', 'conditional'), quick=TRUE, A
                                          y = quote(value),
                                          group = quote(Var2),
                                          color = quote(Var2)),
-                            fun.y = mean, geom="line") +
+                            fun = mean, geom="line") +
       ggplot2::geom_hline(data = refval,
                           ggplot2::aes_(yintercept = quote(ref)),
                           linetype="dashed",

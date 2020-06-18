@@ -594,11 +594,11 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
   fdr = simRes$SimulateRes$fdr
 
   ## calculate strata
-  tmp.ecdf.mean = stats::ecdf(log1p(estmeans))
+  tmp.ecdf.mean = stats::ecdf(log2(estmeans+1))
   tmp.quantile.mean = stats::quantile(tmp.ecdf.mean, probs=strata.probs)
   strata.mean = unique(c(0,unname(tmp.quantile.mean),Inf))
   strata.mean = unique(round(strata.mean, digits=2))
-  tmp.ecdf.disps = stats::ecdf(log1p(estdisps))
+  tmp.ecdf.disps = stats::ecdf(log2(estdisps+1))
   tmp.quantile.disps = stats::quantile(tmp.ecdf.disps, probs=strata.probs)
   strata.disps = unique(c(0,unname(tmp.quantile.disps),Inf))
   strata.disps = unique(round(strata.disps, digits=2))
@@ -670,13 +670,13 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
       # mean
       X.bar1 = mu[,j,i]
       ix.keep.mean = which(!is.na(X.bar1))
-      xgr.mean = cut(log1p(X.bar1[ix.keep.mean]), strata.mean)
-      xgrd.mean = cut(log1p(X.bar1[DEid]), strata.mean)
+      xgr.mean = cut(log2(X.bar1[ix.keep.mean]+1), strata.mean)
+      xgrd.mean = cut(log2(X.bar1[DEid]+1), strata.mean)
       # dispersion
       X.disp1 = disp[,j,i]
       ix.keep.disps = which(!is.na(X.disp1))
-      xgr.disps = cut(log1p(X.disp1[ix.keep.disps]), strata.disps)
-      xgrd.disps = cut(log1p(X.disp1[DEid]), strata.disps)
+      xgr.disps = cut(log2(X.disp1[ix.keep.disps]+1), strata.disps)
+      xgrd.disps = cut(log2(X.disp1[DEid]+1), strata.disps)
       # dropout
       X.drop1 = dropout[,j,i]
       ix.keep.drop = which(!is.na(X.drop1))
@@ -698,8 +698,8 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
           fix.keep.mean = ix.keep.mean[!(xgr.mean %in% lev.mean[strata.filt.mean])]
           fix.dekeep.mean = intersect(fix.keep.mean, DEid)
           # recut
-          fxgr.mean = cut(log1p(X.bar1[fix.keep.mean]), strata.mean[-strata.filt.mean])
-          fxgrd.mean = cut(log1p(X.bar1[fix.dekeep.mean]), strata.mean[-strata.filt.mean])
+          fxgr.mean = cut(log2(X.bar1[fix.keep.mean]+1), strata.mean[-strata.filt.mean])
+          fxgrd.mean = cut(log2(X.bar1[fix.dekeep.mean]+1), strata.mean[-strata.filt.mean])
         }
         if(filter.by == "dispersion") {
           lev.disps = levels(xgr.disps)
@@ -707,8 +707,8 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
           fix.keep.mean = ix.keep.mean[!(xgr.disps %in% lev.disps[strata.filt.disps])]
           fix.dekeep.mean = intersect(fix.keep.mean, DEid)
           # recut
-          fxgr.mean = cut(log1p(X.bar1[fix.keep.mean]), strata.mean)
-          fxgrd.mean = cut(log1p(X.bar1[fix.dekeep.mean]), strata.mean)
+          fxgr.mean = cut(log2(X.bar1[fix.keep.mean]+1), strata.mean)
+          fxgrd.mean = cut(log2(X.bar1[fix.dekeep.mean]+1), strata.mean)
         }
         if(filter.by == "dropout") {
           lev.drop = levels(xgr.drop)
@@ -716,8 +716,8 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
           fix.keep.mean = ix.keep.mean[!(xgr.drop %in% lev.drop[strata.filt.drop])]
           fix.dekeep.mean = intersect(fix.keep.mean, DEid)
           # recut
-          fxgr.mean = cut(log1p(X.bar1[fix.keep.mean]), strata.mean)
-          fxgrd.mean = cut(log1p(X.bar1[fix.dekeep.mean]), strata.mean)
+          fxgr.mean = cut(log2(X.bar1[fix.keep.mean]+1), strata.mean)
+          fxgrd.mean = cut(log2(X.bar1[fix.dekeep.mean]+1), strata.mean)
         }
         if(filter.by == "none") {
           fix.keep.mean = ix.keep.mean
@@ -733,8 +733,8 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
           fix.keep.disps = ix.keep.disps[!(xgr.mean %in% lev.mean[strata.filt.mean])]
           fix.dekeep.disps = intersect(fix.keep.disps, DEid)
           # recut
-          fxgr.disps = cut(log1p(X.disp1[fix.keep.disps]), strata.disps)
-          fxgrd.disps = cut(log1p(X.disp1[fix.dekeep.disps]), strata.disps)
+          fxgr.disps = cut(log2(X.disp1[fix.keep.disps]+1), strata.disps)
+          fxgrd.disps = cut(log2(X.disp1[fix.dekeep.disps]+1), strata.disps)
         }
         if(filter.by == "dispersion") {
           lev.disps = levels(xgr.disps)
@@ -743,8 +743,8 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
           fix.dekeep.disps = intersect(fix.keep.disps, DEid)
           strata.filt.disps = length(strata.disps) - strata.filtered
           # recut
-          fxgr.disps = cut(log1p(X.disp1[fix.keep.disps]), strata.disps[1:strata.filt.disps])
-          fxgrd.disps = cut(log1p(X.disp1[fix.dekeep.disps]), strata.disps[1:strata.filt.disps])
+          fxgr.disps = cut(log2(X.disp1[fix.keep.disps]+1), strata.disps[1:strata.filt.disps])
+          fxgrd.disps = cut(log2(X.disp1[fix.dekeep.disps]+1), strata.disps[1:strata.filt.disps])
         }
         if(filter.by == "dropout") {
           lev.drop = levels(xgr.drop)
@@ -879,7 +879,7 @@ evaluateDE <- function(simRes, alpha.type=c("adjusted","raw"),
                            "DESeq2", "ROTS", "MAST", "scde", "BPSC", "scDD", "monocle", "DECENT",
                            "edgeR-zingeR", "edgeR-ZINB-WaVE", "DESeq2-zingeR", "DESeq2-ZINB-WaVE")) {
           pval = pvalue[ix.keep,j,i]
-          meanexpr = log1p(mu[ix.keep,j,i])
+          meanexpr = log2(mu[ix.keep,j,i]+1)
           if(MTC %in% stats::p.adjust.methods) {
             x = stats::p.adjust(pval, method = MTC)
             x[is.na(x)] = 1

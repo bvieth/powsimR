@@ -4,7 +4,9 @@
 \name{GeneLengths_mm10}
 \alias{GeneLengths_mm10}
 \title{Ziegenhain et al. 2017: Gene Lengths}
-\format{A named vector of gene lengths.}
+\format{
+A named vector of gene lengths.
+}
 \source{
 \url{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE75790}.
 }

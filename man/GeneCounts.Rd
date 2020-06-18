@@ -4,7 +4,9 @@
 \name{GeneCounts}
 \alias{GeneCounts}
 \title{Ziegenhain et al. 2017: Gene Expression Matrices}
-\format{An object of class \code{"data.frame"}, with genes per row and cells per column.}
+\format{
+An object of class \code{"data.frame"}, with genes per row and cells per column.
+}
 \source{
 \url{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE75790}.
 }

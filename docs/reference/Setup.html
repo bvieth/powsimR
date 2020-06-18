@@ -6,27 +6,31 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Setup options for RNA-seq count simulations. — Setup • powsimR</title>
+<title>Setup options for RNA-seq count simulations — Setup • powsimR</title>
 
 
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha256-bZLfwXAP04zRMK2BjiO8iu9pf4FbLqX6zitd+tIvLhE=" crossorigin="anonymous" />
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
 <!-- headroom.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -35,14 +39,13 @@
 
 
 
-<meta property="og:title" content="Setup options for RNA-seq count simulations. — Setup" />
-<meta property="og:description" content="This function generates the settings needed for simulateDE().
+<meta property="og:title" content="Setup options for RNA-seq count simulations — Setup" />
+<meta property="og:description" content="This function generates the settings needed for simulateDE.
 Firstly a set of differential expressed gene IDs with
 associated fold changes for a given number of genes, simulations and
 fraction of DE genes is generated. There are also a number of options relating
  to count simulations such as downsampling.
  Secondly, the estimated parameters for count simulations of genes (and spikes) are added." />
-<meta name="twitter:card" content="summary" />
 
 
 
@@ -60,7 +63,7 @@ fraction of DE genes is generated. There are also a number of options relating
 
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -74,7 +77,7 @@ fraction of DE genes is generated. There are also a number of options relating
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">powsimR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.2</span>
       </span>
     </div>
 
@@ -98,7 +101,7 @@ fraction of DE genes is generated. There are also a number of options relating
       </ul>
       <ul class="nav navbar-nav navbar-right">
         <li>
-  <a href="https://github.com/bvieth/powsimR">
+  <a href="https://github.com/bvieth/powsimR/">
     <span class="fab fa fab fa-github fa-lg"></span>
      
   </a>
@@ -116,13 +119,13 @@ fraction of DE genes is generated. There are also a number of options relating
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Setup options for RNA-seq count simulations.</h1>
+    <h1>Setup options for RNA-seq count simulations</h1>
     <small class="dont-index">Source: <a href='https://github.com/bvieth/powsimR/blob/master/R/Setup.R'><code>R/Setup.R</code></a></small>
     <div class="hidden name"><code>Setup.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>This function generates the settings needed for simulateDE().
+    <p>This function generates the settings needed for <code><a href='simulateDE.html'>simulateDE</a></code>.
 Firstly a set of differential expressed gene IDs with
 associated fold changes for a given number of genes, simulations and
 fraction of DE genes is generated. There are also a number of options relating
@@ -131,13 +134,13 @@ fraction of DE genes is generated. There are also a number of options relating
     </div>
 
     <pre class="usage"><span class='fu'>Setup</span>(<span class='kw'>ngenes</span><span class='kw'>=</span><span class='kw'>NULL</span>, <span class='kw'>nsims</span><span class='kw'>=</span><span class='fl'>25</span>,
-<span class='kw'>p.DE</span> <span class='kw'>=</span> <span class='fl'>0.1</span>, <span class='kw'>pLFC</span> <span class='kw'>=</span> <span class='fl'>1</span>,
+<span class='kw'>p.DE</span> <span class='kw'>=</span> <span class='fl'>0.1</span>, <span class='kw'>pLFC</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>p.G</span> <span class='kw'>=</span> <span class='fl'>1</span>,
 <span class='kw'>p.B</span><span class='kw'>=</span><span class='kw'>NULL</span>, <span class='kw'>bLFC</span><span class='kw'>=</span><span class='kw'>NULL</span>, <span class='kw'>bPattern</span><span class='kw'>=</span><span class='st'>"uncorrelated"</span>,
 <span class='kw'>n1</span><span class='kw'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>20</span>,<span class='fl'>50</span>,<span class='fl'>100</span>), <span class='kw'>n2</span><span class='kw'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>30</span>,<span class='fl'>60</span>,<span class='fl'>120</span>),
 <span class='kw'>Thinning</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>LibSize</span><span class='kw'>=</span><span class='st'>'equal'</span>,
 <span class='no'>estParamRes</span>, <span class='kw'>estSpikeRes</span><span class='kw'>=</span><span class='kw'>NULL</span>,
 <span class='kw'>DropGenes</span><span class='kw'>=</span><span class='fl'>FALSE</span>,
-<span class='no'>sim.seed</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)</pre>
+<span class='no'>setup.seed</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -168,7 +171,14 @@ it will be sampled with replacement to generate log fold changes;
 (3) a function that takes an integer n, and generates a vector of length n,
 e.g. function(x) rnorm(x, mean=0, sd=1.5).
 Default is <code>1</code>.
-Please note that the fold change should be on <code><a href='https://rdrr.io/r/base/Log.html'>log1p</a></code> scale!</p></td>
+Please note that the fold change should be on <code><a href='https://rdrr.io/r/base/Log.html'>log2</a></code> scale!</p></td>
+    </tr>
+    <tr>
+      <th>p.G</th>
+      <td><p>Numeric vector indicating the proportion of replicates per group
+that express the phenotypic fold change. Default is <code>1</code>, this means all show the expressiond difference.
+For example, if <code>0.5</code> and <code>n1 = 10</code> and <code>n2 = 8</code>,
+then only 5 replicates in group 1 and 4 replicates in group 2 express the phenotypic fold change.</p></td>
     </tr>
     <tr>
       <th>p.B</th>
@@ -187,7 +197,7 @@ If the input is a vector and the length is not the number of total genes,
  e.g. function(x) rnorm(x, mean=0, sd=1.5).
 Note that the simulations of only two batches is implemented.
 Default is <code>NULL</code>, i.e. no batch effect.
-Please note that the fold change should be on <code><a href='https://rdrr.io/r/base/Log.html'>log1p</a></code> scale!</p></td>
+Please note that the fold change should be on <code><a href='https://rdrr.io/r/base/Log.html'>log2</a></code> scale!</p></td>
     </tr>
     <tr>
       <th>bPattern</th>
@@ -204,7 +214,7 @@ The vectors need to have the same number of entries, i.e. length.</p></td>
     </tr>
     <tr>
       <th>Thinning</th>
-      <td><p>Integer vector specifying the downsampling.
+      <td><p>Numeric vector specifying the downsampling.
 It has to be the same length and order as the vector <code>n1</code>.
 This is an implementation of <code><a href='https://rdrr.io/pkg/edgeR/man/thinCounts.html'>thinCounts</a></code>.
 The vector entries should be a proportion between 0 and 1,
@@ -245,8 +255,8 @@ and can be plotted with <code><a href='plotParam.html'>plotParam</a></code>.
 Default is <code>FALSE</code>, i.e. no gene expression dropouts.</p></td>
     </tr>
     <tr>
-      <th>sim.seed</th>
-      <td><p>Simulation seed.</p></td>
+      <th>setup.seed</th>
+      <td><p>Setup seed.</p></td>
     </tr>
     <tr>
       <th>verbose</th>
@@ -275,7 +285,8 @@ Thinning parameters (Thinning, thinSpike); Library Size Factors (LibSize);
     <pre class="examples"><div class='input'><span class='kw'>if</span> (<span class='fl'>FALSE</span>) {
 <span class='co'># estimate gene parameters</span>
 <span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='st'>"SmartSeq2_Gene_Read_Counts"</span>)
-<span class='no'>Batches</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span>(<span class='kw'>Batch</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/lapply.html'>sapply</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/strsplit.html'>strsplit</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>SmartSeq2_Gene_Read_Counts</span>), <span class='st'>"_"</span>), <span class='st'>"[["</span>, <span class='fl'>1</span>),
+<span class='no'>Batches</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span>(<span class='kw'>Batch</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/lapply.html'>sapply</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/strsplit.html'>strsplit</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>SmartSeq2_Gene_Read_Counts</span>),
+                                    <span class='st'>"_"</span>), <span class='st'>"[["</span>, <span class='fl'>1</span>),
                      <span class='kw'>stringsAsFactors</span> <span class='kw'>=</span> <span class='no'>F</span>,
                      <span class='kw'>row.names</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>SmartSeq2_Gene_Read_Counts</span>))
 <span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='st'>"GeneLengths_mm10"</span>)
@@ -291,7 +302,8 @@ Thinning parameters (Thinning, thinSpike); Library Size Factors (LibSize);
 <span class='co'># estimate spike parameters</span>
 <span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='st'>"SmartSeq2_SpikeIns_Read_Counts"</span>)
 <span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='st'>"SmartSeq2_SpikeInfo"</span>)
-<span class='no'>Batches</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span>(<span class='kw'>Batch</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/lapply.html'>sapply</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/strsplit.html'>strsplit</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>SmartSeq2_SpikeIns_Read_Counts</span>), <span class='st'>"_"</span>), <span class='st'>"[["</span>, <span class='fl'>1</span>),
+<span class='no'>Batches</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span>(<span class='kw'>Batch</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/lapply.html'>sapply</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/strsplit.html'>strsplit</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>SmartSeq2_SpikeIns_Read_Counts</span>),
+                                    <span class='st'>"_"</span>), <span class='st'>"[["</span>, <span class='fl'>1</span>),
                      <span class='kw'>stringsAsFactors</span> <span class='kw'>=</span> <span class='no'>F</span>,
                      <span class='kw'>row.names</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>SmartSeq2_SpikeIns_Read_Counts</span>))
 <span class='no'>estparam_spike</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='estimateSpike.html'>estimateSpike</a></span>(<span class='kw'>spikeData</span> <span class='kw'>=</span> <span class='no'>SmartSeq2_SpikeIns_Read_Counts</span>,
@@ -309,19 +321,13 @@ Thinning parameters (Thinning, thinSpike); Library Size Factors (LibSize);
                   <span class='kw'>estParamRes</span> <span class='kw'>=</span> <span class='no'>estparam_gene</span>,
                   <span class='kw'>estSpikeRes</span> <span class='kw'>=</span> <span class='no'>estparam_spike</span>,
                   <span class='kw'>DropGenes</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-                  <span class='kw'>sim.seed</span> <span class='kw'>=</span> <span class='fl'>52679</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+                  <span class='kw'>setup.seed</span> <span class='kw'>=</span> <span class='fl'>52679</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
 }</div></pre>
   </div>
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2>Contents</h2>
-    <ul class="nav nav-pills nav-stacked">
-      <li><a href="#arguments">Arguments</a></li>
-      <li><a href="#value">Value</a></li>
-      <li><a href="#examples">Examples</a></li>
-    </ul>
-
-    <h2>Author</h2>
-    <p>Beate Vieth</p>
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 </div>
 
@@ -332,7 +338,7 @@ Thinning parameters (Thinning, thinSpike); Library Size Factors (LibSize);
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>

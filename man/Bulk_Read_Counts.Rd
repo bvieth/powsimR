@@ -4,7 +4,9 @@
 \name{Bulk_Read_Counts}
 \alias{Bulk_Read_Counts}
 \title{Parekh et al. 2016: Gene Expression Matrices}
-\format{An object of class \code{data.frame} with 57773 rows and 10 columns.}
+\format{
+An object of class \code{data.frame} with 57773 rows and 10 columns.
+}
 \source{
 \url{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE75823}.
 }

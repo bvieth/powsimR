@@ -10,23 +10,27 @@
 
 
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha256-bZLfwXAP04zRMK2BjiO8iu9pf4FbLqX6zitd+tIvLhE=" crossorigin="anonymous" />
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
 <!-- headroom.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -41,7 +45,6 @@ The simulation parameters are specified with Setup.
 The user now needs to specify the RNA-seq Analysis Pipeline including preprocessing, normalisation and differential testing method.
 The return object contains DE test results from all simulations as well as descriptive statistics.
 The error matrix calculations will be conducted with evaluateDE." />
-<meta name="twitter:card" content="summary" />
 
 
 
@@ -59,7 +62,7 @@ The error matrix calculations will be conducted with evaluateDE." />
 
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -73,7 +76,7 @@ The error matrix calculations will be conducted with evaluateDE." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">powsimR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.2</span>
       </span>
     </div>
 
@@ -97,7 +100,7 @@ The error matrix calculations will be conducted with evaluateDE." />
       </ul>
       <ul class="nav navbar-nav navbar-right">
         <li>
-  <a href="https://github.com/bvieth/powsimR">
+  <a href="https://github.com/bvieth/powsimR/">
     <span class="fab fa fab fa-github fa-lg"></span>
      
   </a>
@@ -142,6 +145,7 @@ The error matrix calculations will be conducted with <code><a href='evaluateDE.h
 <span class='st'>"ROTS"</span>, <span class='st'>"baySeq"</span>, <span class='st'>"NOISeq"</span>, <span class='st'>"EBSeq"</span>,
 <span class='st'>"MAST"</span>, <span class='st'>"BPSC"</span>, <span class='st'>"scDD"</span>, <span class='st'>"DECENT"</span>),
 <span class='kw'>DEFilter</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+<span class='kw'>Counts</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
 <span class='kw'>NCores</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
 <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)</pre>
 
@@ -195,6 +199,12 @@ filtered and/or imputed count data.
 Default is <code>FALSE</code>.</p></td>
     </tr>
     <tr>
+      <th>Counts</th>
+      <td><p>A logical vector indicating whether the simulated count matrix is also provided as output.
+Default is <code>FALSE</code> since the output can be quite large. Note that if DEFilter is <code>TRUE</code>,
+then the returned count matrix will countain the filtered and/or imputed count data.</p></td>
+    </tr>
+    <tr>
       <th>NCores</th>
       <td><p>integer positive number of cores for parallel processing.
 Default is <code>NULL</code>, i.e. 1 core.</p></td>
@@ -208,8 +218,7 @@ Default is <code>TRUE</code>.</p></td>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>A list of list objects complex list where the list named "SimulateRes" contains the results of simulations:
-<strong>SimulateRes: Results of DE simulations</strong></p><dl class='dl-horizontal'>
+    <p><strong>SimulateRes: Results of DE simulations</strong></p><dl'>
 <dt>pvalue, fdr</dt><dd><p>3D array (ngenes * N * nsims) for p-values and FDR from each simulation.
 Note that FDR values will be empty and the calculation will be done by <code><a href='evaluateDE.html'>evaluateDE</a></code> whenever applicable.</p></dd>
 <dt>mu,disp,dropout</dt><dd><p>3D (ngenes * N * nsims) array for mean, dispersion and dropout of library size factor normalized read counts.</p></dd>
@@ -221,33 +230,38 @@ Note that FDR values will be empty and the calculation will be done by <code><a 
 elfc is for the DE tool estimated LFC; rlfc is for the LFC estimated from the normalised read counts.</p></dd>
 <dt>time.taken</dt><dd><p>The time taken given by <code><a href='https://rdrr.io/r/base/proc.time.html'>proc.time</a></code> for each simulation, given for preprocessing, normalisation, differential expression testing and moment estimation.</p></dd>
 
-</dl><p><strong>SetupRes: Simulation specifications</strong></p>
+</dl><p><strong>SetupRes: Simulation specifications</strong></p><dl'>
+<dt>DESetup - ... - estSpikeRes</dt><dd><p>Reiterating the simulated setup defined by <code><a href='Setup.html'>Setup</a></code>.</p></dd>
+<dt>Pipeline</dt><dd><p>A list of chosen pipeline tools defined by above arguments.</p></dd>
+
+</dl><p><strong>Counts: Simulated Count Matrices</strong></p><dl'>
+<dt>Counts</dt><dd><p>List of lists object where <code>Counts[[Sample Size Setup]][[Simulation Run]]</code> containing simulated counts. Note that this will only be returned when <code>Counts</code> is <code>TRUE</code>. In addition, if <code>DEFilter</code> is <code>TRUE</code> then the filtered/imputed counts are returned.</p></dd>
+
+</dl>
+
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
     <p>Here you can find detailed information about preprocessing, imputation, normalisation and differential testing choices.
 For recommendations concerning single cell RNA-sequencing pipelines,
-we kindly refer the user to (<a href='https://www.nature.com/articles/s41467-019-12266-7'>Vieth, et al (2019). A systematic evaluation of single cell RNA-seq analysis pipelines. Nature Communications, 10(1), 4667.</a>).</p>
-    <h2 class="hasAnchor" id="prefiltering-prior-to-imputation-normalisation"><a class="anchor" href="#prefiltering-prior-to-imputation-normalisation"></a>Prefiltering prior to imputation/normalisation</h2>
-
-    
-
-<dl class='dl-horizontal'>
+we kindly refer the user to <a href='https://www.nature.com/articles/s41467-019-12266-7'>Vieth, et al (2019). A systematic evaluation of single cell RNA-seq analysis pipelines. Nature Communications, 10(1), 4667</a>.<br />
+<strong>Prefiltering</strong><br /></p><dl'>
 <dt>CountFilter</dt><dd><p>removes genes that have a mean expression below 0.2.</p></dd>
-<dt>FreqFilter</dt><dd><p>removes genes that have more than 80 percent dropouts.</p></dd>
+<dt>FreqFilter</dt><dd><p>removes genes that have more than 80 % dropouts.</p></dd>
 
-</dl>
+</dl><p><strong>Imputation</strong><br /></p><dl'>
+<dt>scImpute</dt><dd><p>apply the imputation as implemented in <code><a href='https://rdrr.io/pkg/scImpute/man/scimpute.html'>scimpute</a></code></p></dd>
+<dt>DrImpute</dt><dd><p>apply the imputation as implemented in <code><a href='https://rdrr.io/pkg/DrImpute/man/DrImpute.html'>DrImpute</a></code>.</p></dd>
+<dt>SAVER</dt><dd><p>apply the imputation as implemented in <code><a href='https://rdrr.io/pkg/SAVER/man/saver.html'>saver</a></code>.</p></dd>
+<dt>scone</dt><dd><p>apply the imputation as implemented in <code><a href='https://rdrr.io/pkg/scone/man/scone.html'>scone</a></code>, defining 'house keeping genes' for the FNR model estimation as those that have less than 20 % dropouts and small variance (i.e. in the lower 20th quartile). If less than 25 genes could be identified, the genes with less than 5 % dropouts are used. If spike-in data is provided then these are used for the FNR model estimation.</p></dd>
+<dt>MAGIC</dt><dd><p>apply the imputation as implemented in <code><a href='https://rdrr.io/pkg/Rmagic/man/magic.html'>magic</a></code>. Please note that the python package MAGIC needs to be installed to use this implementation.</p></dd>
 
-    <h2 class="hasAnchor" id="imputation-prior-to-normalisation"><a class="anchor" href="#imputation-prior-to-normalisation"></a>Imputation prior to normalisation</h2>
-
-    
-
-<dl class='dl-horizontal'>
+</dl><p><strong>Normalisation</strong><br /></p><dl'>
 <dt>TMM, UQ</dt><dd><p>employ the edgeR style normalization of weighted trimmed mean of M-values and upperquartile
 as implemented in <code><a href='https://rdrr.io/pkg/edgeR/man/calcNormFactors.html'>calcNormFactors</a></code>, respectively.</p></dd>
 <dt>MR, PosCounts</dt><dd><p>employ the DESeq2 style normalization of median ratio method and a modified geometric mean method
 as implemented in <code><a href='https://rdrr.io/pkg/DESeq2/man/estimateSizeFactors.html'>estimateSizeFactors</a></code>, respectively.</p></dd>
 <dt>scran, SCnorm</dt><dd><p>apply the deconvolution and quantile regression normalization methods developed for sparse RNA-seq data
-as implemented in <code><a href='https://rdrr.io/pkg/scran/man/computeSumFactors.html'>computeSumFactors</a></code> and <code><a href='https://rdrr.io/pkg/SCnorm/man/SCnorm.html'>SCnorm</a></code>, respectively. Spike-ins can also be supplied for both methods via <code>spikeData</code>. Note, however that this means for scran that the normalisation as implemented in <code><a href='https://rdrr.io/pkg/scran/man/computeSpikeFactors.html'>computeSpikeFactors</a></code> is also applied to genes (<code>general.use=TRUE</code>).</p></dd>
+as implemented in <code><a href='https://rdrr.io/pkg/scran/man/computeSumFactors.html'>computeSumFactors</a></code> and <code><a href='https://rdrr.io/pkg/SCnorm/man/SCnorm.html'>SCnorm</a></code>, respectively. Spike-ins can also be supplied for both methods via <code>spikeData</code>. Note, however that this means for scran that the normalisation as implemented in <code><a href='https://rdrr.io/pkg/scran/man/computeSumFactors.html'>calculateSumFactors</a></code> is also applied to genes (<code>general.use=TRUE</code>).</p></dd>
 <dt>Linnorm</dt><dd><p>apply the normalization method for sparse RNA-seq data
 as implemented in <code><a href='https://rdrr.io/pkg/Linnorm/man/Linnorm.Norm.html'>Linnorm.Norm</a></code>.
 For <code>Linnorm</code>, the user can also supply <code>spikeData</code>.</p></dd>
@@ -258,23 +272,17 @@ Census at least needs <code>Lengths</code> for single-end data and preferably <c
 The authors state that Census should not be used for UMI data.</p></dd>
 <dt>depth</dt><dd><p>Sequencing depth normalisation.</p></dd>
 
-</dl>
-
-    <h2 class="hasAnchor" id="differential-testing-using-raw-read-count-matrix"><a class="anchor" href="#differential-testing-using-raw-read-count-matrix"></a>Differential testing using raw read count matrix</h2>
-
-    
-
-<dl class='dl-horizontal'>
-<dt>T-Test</dt><dd><p>A T-Test per gene is applied using log2 transformed and normalized expression values (i.e. CPM or TPM).</p></dd>
+</dl><p><strong>Differential testing</strong><br /></p><dl'>
+<dt>T-Test</dt><dd><p>A T-Test per gene is applied using log transformed and normalized expression values (i.e. CPM or TPM).</p></dd>
 <dt>limma-trend, limma-voom</dt><dd><p>apply differential testing as implemented in <code><a href='https://rdrr.io/pkg/limma/man/lmFit.html'>lmFit</a></code>
-followed by <code><a href='https://rdrr.io/pkg/limma/man/ebayes.html'>eBayes</a></code> on counts transformed by <code><a href='https://rdrr.io/pkg/limma/man/voom.html'>voom</a></code> or by applying mean-variance trend on log2 CPM values in <code><a href='https://rdrr.io/pkg/limma/man/ebayes.html'>eBayes</a></code>.</p></dd>
+followed by <code><a href='https://rdrr.io/pkg/limma/man/ebayes.html'>eBayes</a></code> on counts transformed by <code><a href='https://rdrr.io/pkg/limma/man/voom.html'>voom</a></code> or by applying mean-variance trend on log CPM values in <code><a href='https://rdrr.io/pkg/limma/man/ebayes.html'>eBayes</a></code>.</p></dd>
 <dt>edgeR-LRT, edgeR-QL</dt><dd><p>apply differential testing as implemented in <code><a href='https://rdrr.io/pkg/edgeR/man/glmfit.html'>glmFit</a></code>, <code><a href='https://rdrr.io/pkg/edgeR/man/glmfit.html'>glmLRT</a></code> and<code><a href='https://rdrr.io/pkg/edgeR/man/glmQLFTest.html'>glmQLFit</a></code>, <code><a href='https://rdrr.io/pkg/edgeR/man/glmQLFTest.html'>glmQLFTest</a></code>, respectively.</p></dd>
 <dt>DESeq2</dt><dd><p>applies differential testing as implemented in <code><a href='https://rdrr.io/pkg/DESeq2/man/DESeq.html'>DESeq</a></code>.</p></dd>
 <dt>ROTS</dt><dd><p>applies differential testing as implemented in <code><a href='https://rdrr.io/pkg/ROTS/man/ROTS.html'>ROTS</a></code> with 100 permutations on transformed counts (<code><a href='https://rdrr.io/pkg/limma/man/voom.html'>voom</a></code>).</p></dd>
 <dt>baySeq</dt><dd><p>applies differential testing as implemented in <code><a href='https://rdrr.io/pkg/baySeq/man/getLikelihoods.html'>getLikelihoods</a></code> based on negative binomial prior estimates (<code><a href='https://rdrr.io/pkg/baySeq/man/getPriors.html'>getPriors.NB</a></code>).</p></dd>
 <dt>NOISeq</dt><dd><p>applies differential testing as implemented in <code><a href='https://rdrr.io/pkg/NOISeq/man/noiseqbio.html'>noiseqbio</a></code> based on CPM values.</p></dd>
 <dt>EBSeq</dt><dd><p>applies differential testing as implemented in <code><a href='https://rdrr.io/pkg/EBSeq/man/EBTest.html'>EBTest</a></code>.</p></dd>
-<dt>MAST</dt><dd><p>applies differential testing as implemented in <code><a href='https://rdrr.io/pkg/MAST/man/zlm.html'>zlm</a></code> for zero-inflated model fitting followed by <code><a href='https://rdrr.io/pkg/MAST/man/lrTest.html'>lrTest</a></code> on log2 CPM values.</p></dd>
+<dt>MAST</dt><dd><p>applies differential testing as implemented in <code><a href='https://rdrr.io/pkg/MAST/man/zlm.html'>zlm</a></code> for zero-inflated model fitting followed by <code><a href='https://rdrr.io/pkg/MAST/man/lrTest.html'>lrTest</a></code> on log CPM values.</p></dd>
 <dt>BPSC</dt><dd><p>applies differential testing as implemented in <code><a href='https://rdrr.io/pkg/BPSC/man/BPglm.html'>BPglm</a></code> on CPM values.</p></dd>
 <dt>scDD</dt><dd><p>applies differential testing as implemented in <code><a href='https://rdrr.io/pkg/scDD/man/scDD.html'>scDD</a></code> on CPM values.</p></dd>
 <dt>DECENT</dt><dd><p>applies differential testing as implemented in <code><a href='https://rdrr.io/pkg/DECENT/man/decent.html'>decent</a></code>.</p></dd>
@@ -285,15 +293,16 @@ followed by <code><a href='https://rdrr.io/pkg/limma/man/ebayes.html'>eBayes</a>
 
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
-    <div class='dont-index'><p><code><a href='estimateParam.html'>estimateParam</a></code>,  for parameter specifications;<br />
+    <div class='dont-index'><p><code><a href='estimateParam.html'>estimateParam</a></code> and <code><a href='estimateSpike.html'>estimateSpike</a></code>,  for parameter specifications;<br />
  <code><a href='Setup.html'>Setup</a></code> for simulation setup;<br />
- <code><a href='evaluateDE.html'>evaluateDE</a></code> for DE evaluation.</p></div>
+ <code><a href='evaluateDE.html'>evaluateDE</a></code>, <code><a href='evaluateROC.html'>evaluateROC</a></code> and <code><a href='evaluateSim.html'>evaluateSim</a></code> for evaluation of simulation results.</p></div>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='kw'>if</span> (<span class='fl'>FALSE</span>) {
 <span class='co'># estimate gene parameters</span>
 <span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='st'>"SmartSeq2_Gene_Read_Counts"</span>)
-<span class='no'>Batches</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span>(<span class='kw'>Batch</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/lapply.html'>sapply</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/strsplit.html'>strsplit</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>SmartSeq2_Gene_Read_Counts</span>), <span class='st'>"_"</span>), <span class='st'>"[["</span>, <span class='fl'>1</span>),
+<span class='no'>Batches</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span>(<span class='kw'>Batch</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/lapply.html'>sapply</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/strsplit.html'>strsplit</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>SmartSeq2_Gene_Read_Counts</span>),
+                                    <span class='st'>"_"</span>), <span class='st'>"[["</span>, <span class='fl'>1</span>),
                      <span class='kw'>stringsAsFactors</span> <span class='kw'>=</span> <span class='no'>F</span>,
                      <span class='kw'>row.names</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>SmartSeq2_Gene_Read_Counts</span>))
 <span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='st'>"GeneLengths_mm10"</span>)
@@ -309,7 +318,8 @@ followed by <code><a href='https://rdrr.io/pkg/limma/man/ebayes.html'>eBayes</a>
 <span class='co'># estimate spike parameters</span>
 <span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='st'>"SmartSeq2_SpikeIns_Read_Counts"</span>)
 <span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='st'>"SmartSeq2_SpikeInfo"</span>)
-<span class='no'>Batches</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span>(<span class='kw'>Batch</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/lapply.html'>sapply</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/strsplit.html'>strsplit</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>SmartSeq2_SpikeIns_Read_Counts</span>), <span class='st'>"_"</span>), <span class='st'>"[["</span>, <span class='fl'>1</span>),
+<span class='no'>Batches</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span>(<span class='kw'>Batch</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/lapply.html'>sapply</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/strsplit.html'>strsplit</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>SmartSeq2_SpikeIns_Read_Counts</span>),
+                                    <span class='st'>"_"</span>), <span class='st'>"[["</span>, <span class='fl'>1</span>),
                      <span class='kw'>stringsAsFactors</span> <span class='kw'>=</span> <span class='no'>F</span>,
                      <span class='kw'>row.names</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>SmartSeq2_SpikeIns_Read_Counts</span>))
 <span class='no'>estparam_spike</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='estimateSpike.html'>estimateSpike</a></span>(<span class='kw'>spikeData</span> <span class='kw'>=</span> <span class='no'>SmartSeq2_SpikeIns_Read_Counts</span>,
@@ -317,7 +327,7 @@ followed by <code><a href='https://rdrr.io/pkg/limma/man/ebayes.html'>eBayes</a>
                                 <span class='kw'>MeanFragLength</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
                                 <span class='kw'>batchData</span> <span class='kw'>=</span> <span class='no'>Batches</span>,
                                 <span class='kw'>Normalisation</span> <span class='kw'>=</span> <span class='st'>'depth'</span>)
-<span class='co'># define log2 fold change</span>
+<span class='co'># define log fold change</span>
 <span class='no'>p.lfc</span> <span class='kw'>&lt;-</span> <span class='kw'>function</span>(<span class='no'>x</span>) <span class='fu'><a href='https://rdrr.io/r/base/sample.html'>sample</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(-<span class='fl'>1</span>,<span class='fl'>1</span>), <span class='kw'>size</span><span class='kw'>=</span><span class='no'>x</span>,<span class='kw'>replace</span><span class='kw'>=</span><span class='no'>T</span>)*<span class='fu'><a href='https://rdrr.io/r/stats/GammaDist.html'>rgamma</a></span>(<span class='no'>x</span>, <span class='kw'>shape</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>rate</span> <span class='kw'>=</span> <span class='fl'>2</span>)
 <span class='co'># set up simulations</span>
 <span class='no'>setupres</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='Setup.html'>Setup</a></span>(<span class='kw'>ngenes</span> <span class='kw'>=</span> <span class='fl'>10000</span>, <span class='kw'>nsims</span> <span class='kw'>=</span> <span class='fl'>10</span>,
@@ -341,21 +351,10 @@ followed by <code><a href='https://rdrr.io/pkg/limma/man/ebayes.html'>eBayes</a>
            <span class='kw'>quick</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>Annot</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
 }</div></pre>
   </div>
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2>Contents</h2>
-    <ul class="nav nav-pills nav-stacked">
-      <li><a href="#arguments">Arguments</a></li>
-      <li><a href="#value">Value</a></li>
-      <li><a href="#details">Details</a></li>
-      <li><a href="#prefiltering-prior-to-imputation-normalisation">Prefiltering prior to imputation/normalisation</a></li>
-      <li><a href="#imputation-prior-to-normalisation">Imputation prior to normalisation</a></li>
-      <li><a href="#differential-testing-using-raw-read-count-matrix">Differential testing using raw read count matrix</a></li>
-      <li><a href="#see-also">See also</a></li>
-      <li><a href="#examples">Examples</a></li>
-    </ul>
-
-    <h2>Author</h2>
-    <p>Beate Vieth</p>
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 </div>
 
@@ -366,7 +365,7 @@ followed by <code><a href='https://rdrr.io/pkg/limma/man/ebayes.html'>eBayes</a>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>

@@ -1,7 +1,7 @@
 # checkup -----------------------------------------------------------------
 
 #' @importFrom SingleCellExperiment SingleCellExperiment
-#' @importFrom scater isOutlier calcAverage
+#' @importFrom scater isOutlier
 #' @importFrom BiocGenerics counts
 .run.checkup <- function(countData,
                          readData,
@@ -577,7 +577,6 @@
   return(res)
 }
 
-#' @importFrom DEDS comp.FC
 .run.params <- function(countData, normData, group) {
 
   if (attr(normData, 'normFramework') %in% c('SCnorm', "Linnorm")) {
@@ -606,8 +605,7 @@
 
 
   # calculate log fold changes
-  fc.foo = DEDS::comp.FC(L=group, is.log = T, FUN = mean)
-  lfc = fc.foo(log1p(norm.counts))
+  lfc = .comp.FC(X = log2(norm.counts+1), L=group, is.log = T, FUN = mean)
 
   res = data.frame(geneIndex=rownames(countData),
                    means=means,
@@ -616,6 +614,17 @@
                    lfcs=lfc,
                    stringsAsFactors = F)
   return(res)
+}
+
+.comp.FC <- function(X, L, is.log=TRUE, FUN=mean) {
+    if (is.vector(X)) X <- matrix(X, byrow=TRUE)
+    G1 <- X[, L == 1]
+    G2 <- X[, L == -1]
+    m1 <- apply(G1,1,FUN,na.rm=TRUE)
+    m2 <- apply(G2,1,FUN,na.rm=TRUE)
+    if (is.log) fc <- m1-m2
+    else fc <- m1/m2
+    return(fc)
 }
 
 # Fitting -----------------------------------------------------------------
@@ -689,9 +698,9 @@
   disp = disp[sharedgenes]
   size = size[sharedgenes]
 
-  ldisp = log1p(disp)
-  lsize = log1p(size)
-  lmu = log1p(mu)
+  ldisp = log2(disp+1)
+  lsize = log2(size+1)
+  lmu = log2(mu+1)
 
   estG <- length(sharedgenes)
   estS <- ParamData$nsamples
@@ -761,9 +770,9 @@
   disp = disp[sharedgenes]
   size = size[sharedgenes]
 
-  ldisp = log1p(disp)
-  lsize = log1p(size)
-  lmu = log1p(mu)
+  ldisp = log2(disp+1)
+  lsize = log2(size+1)
+  lmu = log2(mu+1)
 
   estG <- length(sharedgenes)
   estS <- ParamData$nsamples
@@ -879,7 +888,7 @@
     cobs.predict.nonamplified <- as.data.frame(stats::predict(cobs.fit.nonamplified, cobs.sim.nonamplified))
     cobs.predict.nonamplified[,"fit"] <- ifelse(cobs.predict.nonamplified$fit < 0, 0, cobs.predict.nonamplified[,"fit"])
     cobs.predict.nonamplified <- cobs.predict.nonamplified[cobs.predict.nonamplified[,'fit'] < 0.05,]
-    g0.cut.nonamplified <- log1p(10)
+    g0.cut.nonamplified <- log2(10)
     nonamplified.dat <- cbind.data.frame(lmu.nonamplified, g0.nonamplified)
     nonamplified.dat <- nonamplified.dat[stats::complete.cases(nonamplified.dat),]
     nonamplified.dat <- nonamplified.dat[nonamplified.dat$lmu.nonamplified<g0.cut.nonamplified,]

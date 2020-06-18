@@ -1,4 +1,10 @@
 
+# Version 1.2.2 (2020-6-18)
+
+* Ensuring compability with R version 4.0 (e.g. deprecated DEDS Bioconductor package)
+* Adapt log fold change model matrix addition
+* Adding log fold changes to fraction of replicates per group (option `p.G` in `Setup()`)
+
 # Version 1.2.0 (2019-7-30)
 
 * Downsampling of count matrices using binomial thinning implemented in `estimateParam()` (UMI-read ratio estimation) and `simulateDE()`.

@@ -45,7 +45,7 @@ opts_knit$set(width = 75)
 #  cranpackages <- c("broom", "cobs", "cowplot",
 #                    "data.table", "doParallel", "dplyr", "DrImpute",
 #                    "fastICA", "fitdistrplus", "foreach", "future",
-#                    "gamlss.dist", "ggplot2", "ggpubr", "grDevices",
+#                    "gamlss.dist", "ggplot2", "ggpubr", "ggstance", "grDevices",
 #                    "grid", "Hmisc", "kernlab", "MASS", "magrittr", "MBESS", "Matrix",
 #                    "matrixStats", "mclust", "methods", "minpack.lm", "moments", "msir",
 #                    "NBPSeq", "nonnest2", "parallel", "penalized", "plyr", "pscl",
@@ -55,7 +55,7 @@ opts_knit$set(width = 75)
 #  
 #  # BIOCONDUCTOR
 #  biocpackages <- c("bayNorm", "baySeq", "BiocGenerics", "BiocParallel",
-#                    "DEDS", "DESeq2", "EBSeq", "edgeR", "IHW", "iCOBRA",
+#                    "DESeq2", "EBSeq", "edgeR", "IHW", "iCOBRA",
 #                    "limma", "Linnorm", "MAST", "monocle", "NOISeq", "qvalue", "ROTS", "RUVSeq",
 #                    "S4Vectors", "scater", "scDD", "scde", "scone", "scran", "SCnorm",
 #                    "SingleCellExperiment", "SummarizedExperiment", "zinbwave")
@@ -95,8 +95,10 @@ knitr::include_graphics("powsimr_workflow.png")
 
 ## ----geneparams, echo=T, eval=F, include=T------------------------------------
 #  data("CELseq2_Gene_UMI_Counts")
-#  Batches <- data.frame(Batch = sapply(strsplit(colnames(CELseq2_Gene_UMI_Counts), "_"), "[[", 1),
-#                        stringsAsFactors = FALSE, row.names = colnames(CELseq2_Gene_UMI_Counts))
+#  batch <- sapply(strsplit(colnames(CELseq2_Gene_UMI_Counts), "_"), "[[", 1)
+#  Batches <- data.frame(Batch = batch,
+#                        stringsAsFactors = FALSE,
+#                        row.names = colnames(CELseq2_Gene_UMI_Counts))
 #  data("GeneLengths_mm10")
 #  
 #  # estimation
@@ -120,9 +122,10 @@ knitr::include_graphics("estparam_gene_celseq2.png")
 ## ----spikeparams, echo=T, eval=F, include=T, warning=F------------------------
 #  data("CELseq2_SpikeIns_UMI_Counts")
 #  data("CELseq2_SpikeInfo")
-#  Batches = data.frame(Batch = sapply(strsplit(colnames(CELseq2_SpikeIns_UMI_Counts), "_"), "[[", 1),
+#  batch = sapply(strsplit(colnames(CELseq2_SpikeIns_UMI_Counts), "_"), "[[", 1)
+#  Batches = data.frame(Batch = batch,
 #                         stringsAsFactors = F,
-#                         row.names = colnames(CELseq2_SpikeInfo))
+#                         row.names = colnames(CELseq2_SpikeIns_UMI_Counts))
 #  # estimation
 #  estparam_spike <- estimateSpike(spikeData = CELseq2_SpikeIns_UMI_Counts,
 #  spikeInfo = CELseq2_SpikeInfo,
@@ -149,9 +152,9 @@ knitr::include_graphics("lfcdist.png")
 #                    n1 = c(48, 96, 384, 800), n2 = c(48, 96, 384, 800),
 #                    Thinning = NULL, LibSize = 'equal',
 #                    estParamRes = estparam_gene,
-#                    estSpikeRes = estparam_spike,
+#                    estSpikeRes = NULL,
 #                    DropGenes = TRUE,
-#                    sim.seed = 5299, verbose = TRUE)
+#                    setup.seed = 5299, verbose = TRUE)
 #  
 
 ## ----simrun, eval=F, echo=T---------------------------------------------------
@@ -172,10 +175,15 @@ knitr::include_graphics("lfcdist.png")
 #                       target.by = 'lfc',
 #                       delta = 0)
 
-## ----evaldeplot1, echo=F, eval=T, fig.cap="Marginal Error Rates. (A) Marginal TPR and FDR per sample size comparison. (B) Marginal TPR and FDR per sample size comparison with dashed line indicating nominal alpha level (type I error) and nominal 1-beta level, i.e. 80% power (type II error)."----
+## ---- echo = TRUE, eval = FALSE-----------------------------------------------
+#  plotEvalDE(evalRes = evalderes, rate = 'marginal', quick = TRUE, Annot = TRUE)
+#  plotEvalDE(evalRes = evalderes, rate = 'conditional', quick = TRUE, Annot = TRUE)
+#  
+
+## ----evaldeplot1, echo=F, eval=T, fig.cap="Marginal Error Rates. (A) Marginal FDR and TPR per sample size comparison. (B) Marginal FDR and TPR per sample size comparison with dashed line indicating nominal alpha level (type I error) and nominal 1-beta level, i.e. 80% power (type II error)."----
 knitr::include_graphics("evalderes_marginal_celseq2.png")
 
-## ----evaldeplot2, echo=F, eval=T, fig.cap="Stratified Error Rates. (A) Conditional TPR and FDR per sample size comparison per stratum. (B) Number of equally (EE) and differentially expressed (DE) genes per stratum."----
+## ----evaldeplot2, echo=F, eval=T, fig.cap="Stratified Error Rates. (A) Conditional FDR and TPR per sample size comparison per stratum. (B) Number of equally (EE) and differentially expressed (DE) genes per stratum."----
 knitr::include_graphics("evalderes_conditional_celseq2.png")
 
 ## ----evalrocres, echo = T, eval=F---------------------------------------------
@@ -243,8 +251,10 @@ knitr::include_graphics("evaldist_smartseq2.png")
 ## ----thinning, echo = TRUE, eval = FALSE--------------------------------------
 #  data("CELseq2_Gene_UMI_Counts")
 #  data("CELseq2_Gene_Read_Counts")
-#  Batches <- data.frame(Batch = sapply(strsplit(colnames(CELseq2_Gene_UMI_Counts), "_"), "[[", 1),
-#                        stringsAsFactors = FALSE, row.names = colnames(CELseq2_Gene_UMI_Counts))
+#  batch <- sapply(strsplit(colnames(CELseq2_Gene_UMI_Counts), "_"), "[[", 1)
+#  Batches <- data.frame(Batch = batch,
+#                        stringsAsFactors = FALSE,
+#                        row.names = colnames(CELseq2_Gene_UMI_Counts))
 #  data("GeneLengths_mm10")
 #  
 #  # estimation
@@ -272,7 +282,7 @@ knitr::include_graphics("evaldist_smartseq2.png")
 #                    estParamRes = estparam_gene,
 #                    estSpikeRes = NULL,
 #                    DropGenes = TRUE,
-#                    sim.seed = 5299, verbose = TRUE)
+#                    setup.seed = 5299, verbose = TRUE)
 #  
 #  # run simulations
 #  simres <- simulateDE(SetupRes = setupres,

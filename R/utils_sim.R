@@ -10,8 +10,9 @@
 
   if(is.null(simOptions$DESetup$bLFC)) {
     ## make group labels for phenotype LFC
-    phenotype <- c(-stats::rbinom(n=n1, size = 1, prob = simOptions$DESetup$p.G),
-                   stats::rbinom(n=n2, size = 1, prob = simOptions$DESetup$p.G))
+    designs <- c(-stats::rbinom(n = n1, size = 1, prob = simOptions$DESetup$p.G),
+                   stats::rbinom(n = n2, size = 1, prob = simOptions$DESetup$p.G))
+    phenotype <- ifelse(designs == -1, 0, designs)
     batch <- NULL
     ## make model matrix
     modelmatrix = stats::model.matrix(~-1 + phenotype)
@@ -21,31 +22,35 @@
   if(!is.null(simOptions$DESetup$bLFC)) {
     if(simOptions$DESetup$bPattern=="uncorrelated") {
       # make group labels for phenotype LFC
-      phenotype <- c(-stats::rbinom(n=n1, size = 1, prob = simOptions$DESetup$p.G),
-                     stats::rbinom(n=n2, size = 1, prob = simOptions$DESetup$p.G))
+      designs <- c(-stats::rbinom(n = n1, size = 1, prob = simOptions$DESetup$p.G),
+                   stats::rbinom(n = n2, size = 1, prob = simOptions$DESetup$p.G))
+      phenotype <- ifelse(designs == -1, 0, designs)
       # make batch labels for batch LFC
-      batch <- rep_len(c(-1,1), n1+n2)
+      batch <- rep_len(c(0,1), n1+n2)
       # make model matrix
       modelmatrix = stats::model.matrix(~-1 + phenotype + batch)
       coef.dat = cbind(simOptions$DESetup$pLFC, simOptions$DESetup$bLFC)
     }
     if(simOptions$DESetup$bPattern=="orthogonal") {
       # make group labels for phenotype LFC
-      phenotype <- c(-stats::rbinom(n=n1, size = 1, prob = simOptions$DESetup$p.G),
-                     stats::rbinom(n=n2, size = 1, prob = simOptions$DESetup$p.G))
+      designs <- c(-stats::rbinom(n = n1, size = 1, prob = simOptions$DESetup$p.G),
+                   stats::rbinom(n = n2, size = 1, prob = simOptions$DESetup$p.G))
+      phenotype <- ifelse(designs == -1, 0, designs)
       # make batch labels for batch LFC
-      batch <-  1 - 2*rbinom(n1+n2, size=1, prob=0.5)
+      batch <-  1 - rbinom(n1+n2, size=1, prob=0.5)
       # make model matrix
       modelmatrix = stats::model.matrix(~-1 + phenotype + batch)
       coef.dat = cbind(simOptions$DESetup$pLFC, simOptions$DESetup$bLFC)
     }
     if(simOptions$DESetup$bPattern=="correlated") {
       # make group labels for phenotype LFC
-      phenotype <- c(-stats::rbinom(n=n1, size = 1, prob = simOptions$DESetup$p.G),
-                     stats::rbinom(n=n2, size = 1, prob = simOptions$DESetup$p.G))
+      designs <- c(-stats::rbinom(n = n1, size = 1, prob = simOptions$DESetup$p.G),
+                   stats::rbinom(n = n2, size = 1, prob = simOptions$DESetup$p.G))
+      phenotype <- ifelse(designs == -1, 0, designs)
       # make batch labels for batch LFC
       flip <- rbinom(n1+n2, size = 1, prob = 0.9)
       batch <- phenotype*flip + -phenotype*(1-flip)
+      batch <- ifelse(batch == -1, 0, batch)
       # make model matrix
       modelmatrix = stats::model.matrix(~-1 + phenotype + batch)
       coef.dat = cbind(simOptions$DESetup$pLFC, simOptions$DESetup$bLFC)
@@ -76,7 +81,7 @@
   disps = sim.data$disps
   drops = sim.data$drops
 
-  sim.counts <- apply(sim.counts,2,function(x) {storage.mode(x) <- 'integer'; x})
+  sim.counts <- apply(sim.counts, 2, function(x) {storage.mode(x) <- 'integer'; x})
 
   # fill in gene pseudonames if missing (only true for in silico)
   if (is.null(rownames(sim.counts))) {
@@ -103,7 +108,7 @@
        mus=mus,
        disps=disps,
        drops=drops,
-       designs = phenotype,
+       designs = designs,
        sf = sf.value,
        simOptions = simOptions)
 }
@@ -138,7 +143,7 @@
   true.means = means[index]
 
   # estimate size parameter associated with true mean values
-  lmu = log1p(true.means)
+  lmu = log2(true.means+1)
   predsize.mean = suppressWarnings(approx(meansizefit$x,
                                           meansizefit$y,
                                           xout = lmu, rule=2)$y)
@@ -177,14 +182,14 @@
   ind = !apply(modelmatrix, 2, function(x) { all(x == 1) })
   mod = cbind(modelmatrix[, ind])
   beta = cbind(coef.dat[, ind])
-  mumat = log1p(effective.means) + beta %*% t(mod)
-  mumat[mumat < 0] = min(log1p(effective.means))
+  mumat = log2(effective.means+1) + beta %*% t(mod)
+  mumat[mumat < 0] = min(log2(effective.means+1))
 
   # result count matrix
   counts = matrix(
     stats::rnbinom(nsamples * ngenes,
-                   mu = expm1(mumat),
-                   size = expm1(sizevec)),
+                   mu = 2^mumat-1,
+                   size = 2^sizevec-1),
     ncol = nsamples,
     nrow = ngenes,
     dimnames = list(paste0(rownames(mumat),"_", seq_len(ngenes)),
@@ -197,7 +202,8 @@
   return(list(counts=counts,
               sf=all.facs,
               mus=true.means,
-              disps=sizevec,
+              disps=1/sizevec,
+              sizes=sizevec,
               drops=dropout))
 }
 
@@ -231,7 +237,7 @@
   true.means = pos.means[index]
 
   # estimate size parameter associated with true mean values
-  lmu = log1p(true.means)
+  lmu = log2(true.means+1)
   predsize.mean = suppressWarnings(approx(meansizefit$x,
                                           meansizefit$y,
                                           xout = lmu, rule=2)$y)
@@ -270,8 +276,8 @@
   ind = !apply(modelmatrix, 2, function(x) { all(x == 1) })
   mod = cbind(modelmatrix[, ind])
   beta = cbind(coef.dat[, ind])
-  mumat = log1p(effective.means) + beta %*% t(mod)
-  mumat[mumat < 0] = min(log1p(effective.means))
+  mumat = log2(effective.means+1) + beta %*% t(mod)
+  mumat[mumat < 0] = min(log2(effective.means+1))
 
   meang0fit.nonamplified = simOptions$estParamRes$Fit[[simOptions$DESetup$Draw$Fit]]$meang0fit.nonamplified
   meang0fit.amplified = simOptions$estParamRes$Fit[[simOptions$DESetup$Draw$Fit]]$meang0fit.amplified
@@ -366,8 +372,8 @@
   # make the count matrix
     counts.nb = matrix(
       stats::rnbinom(nsamples * ngenes,
-                     mu = expm1(mumat),
-                     size = expm1(sizevec)),
+                     mu = 2^mumat-1,
+                     size = 2^sizevec-1),
       ncol = nsamples,
       nrow = ngenes)
 
@@ -458,7 +464,7 @@
   true.means = means[index]
 
   # estimate size parameter associated with true mean values
-  lmu = log1p(true.means)
+  lmu = log2(true.means+1)
   predsize.mean = suppressWarnings(approx(meansizefit$x,
                                           meansizefit$y,
                                           xout = lmu, rule=2)$y)
@@ -482,8 +488,8 @@
   dcounts = simData$counts
   dcounts[d.index,] = suppressWarnings(
     matrix(stats::rnbinom(nsamples * ndrop,
-                           mu = expm1(effective.means),
-                           size = expm1(sizevec)),
+                           mu = 2^effective.means-1,
+                           size = 2^sizevec-1),
             ncol = nsamples,
             nrow = ndrop)
     )

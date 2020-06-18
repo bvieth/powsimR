@@ -32,7 +32,7 @@ it will be sampled with replacement to generate log fold changes;
 (3) a function that takes an integer n, and generates a vector of length n,
 e.g. function(x) rnorm(x, mean=0, sd=1.5).
 Default is \code{1}.
-Please note that the fold change should be on \code{\link[base]{log1p}} scale!}
+Please note that the fold change should be on \code{\link[base]{log2}} scale!}
 
 \item{p.G}{Numeric vector indicating the proportion of replicates per group
 that express the phenotypic fold change. Default is \code{1}, this means all show the expressiond difference.
@@ -52,7 +52,7 @@ If the input is a vector and the length is not the number of total genes,
  e.g. function(x) rnorm(x, mean=0, sd=1.5).
 Note that the simulations of only two batches is implemented.
 Default is \code{NULL}, i.e. no batch effect.
-Please note that the fold change should be on \code{\link[base]{log1p}} scale!}
+Please note that the fold change should be on \code{\link[base]{log2}} scale!}
 
 \item{bPattern}{Character vector for batch effect pattern if \code{p.B} is non-null.
 Possible options include:

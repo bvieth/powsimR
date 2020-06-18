@@ -6,32 +6,35 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Power Simulations for RNA-sequencing • powsimR</title>
-<!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script><!-- Bootstrap --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous">
-<!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="pkgdown.css" rel="stylesheet">
+<!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script><!-- Bootstrap --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha256-bZLfwXAP04zRMK2BjiO8iu9pf4FbLqX6zitd+tIvLhE=" crossorigin="anonymous">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script><!-- bootstrap-toc --><link rel="stylesheet" href="bootstrap-toc.css">
+<script src="bootstrap-toc.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
+<!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="pkgdown.css" rel="stylesheet">
 <script src="pkgdown.js"></script><meta property="og:title" content="Power Simulations for RNA-sequencing">
-<meta property="og:description" content="Recent development of very sensitive RNA-seq protocols, such as Smart-seq2 and CEL-seq allows transcriptional profiling at
-                single-cell resolution and droplet devices make single cell transcriptomics high-throughput, allowing to characterize thousands
-                or even millions of single cells. In powsimR, we have implemented a flexible tool to assess power and sample size requirements
-                for differential expression (DE) analysis of single cell and bulk RNA-seq experiments. For our read count simulations, we (1)
-                reliably model the mean, dispersion and dropout distributions as well as the relationship between those factors from the data.
-                (2) Simulate read counts from the empirical mean-variance and dropout relations, while offering flexible choices of the number
-                of differentially expressed genes, effect sizes and DE testing method. (3) Finally, we evaluate the power over various sample
-                sizes. The number of replicates required to achieve the desired statistical power is mainly determined by technical noise and
-                biological variability and both are considerably larger if the biological replicates are single cells. powsimR can not only
-                estimate sample sizes necessary to achieve a certain power, but also informs about the power to detect DE in a data set at
-                hand. We believe that this type of posterior analysis will become more and more important, if results from different studies
-                are to be compared. Often enough researchers are left to wonder why there is a lack of overlap in DE-genes across similar
-                experiments. PowsimR will allow the researcher to distinguish between actual discrepancies and incongruities due to lack of
-                power.">
-<meta name="twitter:card" content="summary">
+<meta property="og:description" content="Recent development of very sensitive RNA-seq protocols, such as Smart-seq2 and CEL-seq allows
+            transcriptional profiling at single-cell resolution and droplet devices make single cell
+            transcriptomics high-throughput, allowing to characterize thousands or even millions of single
+            cells. In powsimR, we have implemented a flexible tool to assess power and sample size requirements
+            for differential expression (DE) analysis of single cell and bulk RNA-seq experiments. For our read
+            count simulations, we (1) reliably model the mean, dispersion and dropout distributions as well as
+            the relationship between those factors from the data. (2) Simulate read counts from the empirical
+            mean-variance and dropout relations, while offering flexible choices of the number of differentially
+            expressed genes, effect sizes and DE testing method. (3) Finally, we evaluate the power over various
+            sample sizes. The number of replicates required to achieve the desired statistical power is mainly
+            determined by technical noise and biological variability and both are considerably larger if the
+            biological replicates are single cells. powsimR can not only estimate sample sizes necessary to
+            achieve a certain power, but also informs about the power to detect DE in a data set at hand. We
+            believe that this type of posterior analysis will become more and more important, if results from
+            different studies are to be compared. Often enough researchers are left to wonder why there is a
+            lack of overlap in DE-genes across similar experiments. PowsimR will allow the researcher to
+            distinguish between actual discrepancies and incongruities due to lack of power.">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
 </head>
-<body>
+<body data-spy="scroll" data-target="#toc">
     <div class="container template-home">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -44,7 +47,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">powsimR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.2</span>
       </span>
     </div>
 
@@ -68,7 +71,7 @@
       </ul>
 <ul class="nav navbar-nav navbar-right">
 <li>
-  <a href="https://github.com/bvieth/powsimR">
+  <a href="https://github.com/bvieth/powsimR/">
     <span class="fab fa fab fa-github fa-lg"></span>
      
   </a>
@@ -87,84 +90,86 @@
   <div class="contents col-md-9">
 <div id="powsimr-power-analysis-for-bulk-and-single-cell-rna-seq-experiments" class="section level1">
 <div class="page-header"><h1 class="hasAnchor">
-<a href="#powsimr-power-analysis-for-bulk-and-single-cell-rna-seq-experiments" class="anchor"></a>powsimR: Power analysis for bulk and single cell RNA-seq experiments</h1></div>
+<a href="#powsimr-power-analysis-for-bulk-and-single-cell-rna-seq-experiments" class="anchor"></a><code>powsimR</code> <br> Power analysis for bulk and <br> single cell RNA-seq experiments <img src="articles/powsimR.png" align="right" width="200">
+</h1></div>
 <p>Please also consult my Github Page of <a href="https://bvieth.github.io/powsimR/">powsimR</a> made with <a href="http://pkgdown.r-lib.org/index.html">pkgdown</a>!</p>
-<div id="installation-guide" class="section level2">
+<div id="arrow_double_down-installation-guide" class="section level2">
 <h2 class="hasAnchor">
-<a href="#installation-guide" class="anchor"></a>Installation Guide</h2>
+<a href="#arrow_double_down-installation-guide" class="anchor"></a>:arrow_double_down: Installation Guide</h2>
 <p>For the installation, the R package <code>devtools</code> is needed.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span>(<span class="st">"devtools"</span>)</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span>(devtools)</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="r"><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span>(<span class="st">"devtools"</span>)
+<span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">devtools</span>)</pre></div>
 <p>I recommend to install first the dependencies manually and then powsimR. If you plan to use MAGIC for imputation, then please follow their <a href="https://github.com/KrishnaswamyLab/MAGIC">instruction</a> to install the python implementation before installing powsimR.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" data-line-number="1">ipak &lt;-<span class="st"> </span><span class="cf">function</span>(pkg, <span class="dt">repository =</span> <span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"CRAN"</span>, <span class="st">"Bioconductor"</span>, <span class="st">"github"</span>)) {</a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">    new.pkg &lt;-<span class="st"> </span>pkg[<span class="op">!</span>(pkg <span class="op">%in%</span><span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/utils/installed.packages.html">installed.packages</a></span>()[, <span class="st">"Package"</span>])]</a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">    <span class="co"># new.pkg &lt;- pkg</span></a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">    <span class="cf">if</span> (<span class="kw"><a href="https://rdrr.io/r/base/length.html">length</a></span>(new.pkg)) {</a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">        <span class="cf">if</span> (repository <span class="op">==</span><span class="st"> "CRAN"</span>) {</a>
-<a class="sourceLine" id="cb2-6" data-line-number="6">            <span class="kw"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span>(new.pkg, <span class="dt">dependencies =</span> <span class="ot">TRUE</span>)</a>
-<a class="sourceLine" id="cb2-7" data-line-number="7">        }</a>
-<a class="sourceLine" id="cb2-8" data-line-number="8">        <span class="cf">if</span> (repository <span class="op">==</span><span class="st"> "Bioconductor"</span>) {</a>
-<a class="sourceLine" id="cb2-9" data-line-number="9">            <span class="cf">if</span> (<span class="kw"><a href="https://rdrr.io/r/base/strsplit.html">strsplit</a></span>(version[[<span class="st">"version.string"</span>]], <span class="st">" "</span>)[[<span class="dv">1</span>]][<span class="dv">3</span>] <span class="op">&gt;</span><span class="st"> "3.6.0"</span>) {</a>
-<a class="sourceLine" id="cb2-10" data-line-number="10">                <span class="cf">if</span> (<span class="op">!</span><span class="kw"><a href="https://rdrr.io/r/base/ns-load.html">requireNamespace</a></span>(<span class="st">"BiocManager"</span>)) {</a>
-<a class="sourceLine" id="cb2-11" data-line-number="11">                  <span class="kw"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span>(<span class="st">"BiocManager"</span>)</a>
-<a class="sourceLine" id="cb2-12" data-line-number="12">                }</a>
-<a class="sourceLine" id="cb2-13" data-line-number="13">                BiocManager<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/BiocManager/man/install.html">install</a></span>(new.pkg, <span class="dt">dependencies =</span> <span class="ot">TRUE</span>, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</a>
-<a class="sourceLine" id="cb2-14" data-line-number="14">            }</a>
-<a class="sourceLine" id="cb2-15" data-line-number="15">            <span class="cf">if</span> (<span class="kw"><a href="https://rdrr.io/r/base/strsplit.html">strsplit</a></span>(version[[<span class="st">"version.string"</span>]], <span class="st">" "</span>)[[<span class="dv">1</span>]][<span class="dv">3</span>] <span class="op">&lt;</span><span class="st"> "3.6.0"</span>) {</a>
-<a class="sourceLine" id="cb2-16" data-line-number="16">                <span class="kw"><a href="https://rdrr.io/r/base/stop.html">stop</a></span>(<span class="kw"><a href="https://rdrr.io/r/base/message.html">message</a></span>(<span class="st">"powsimR depends on packages that are only available in R 3.6.0 and higher."</span>))</a>
-<a class="sourceLine" id="cb2-17" data-line-number="17">            }</a>
-<a class="sourceLine" id="cb2-18" data-line-number="18">        }</a>
-<a class="sourceLine" id="cb2-19" data-line-number="19">        <span class="cf">if</span> (repository <span class="op">==</span><span class="st"> "github"</span>) {</a>
-<a class="sourceLine" id="cb2-20" data-line-number="20">            devtools<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/devtools/man/remote-reexports.html">install_github</a></span>(new.pkg, <span class="dt">build_vignettes =</span> <span class="ot">FALSE</span>, <span class="dt">force =</span> <span class="ot">FALSE</span>, </a>
-<a class="sourceLine" id="cb2-21" data-line-number="21">                <span class="dt">dependencies =</span> <span class="ot">TRUE</span>)</a>
-<a class="sourceLine" id="cb2-22" data-line-number="22">        }</a>
-<a class="sourceLine" id="cb2-23" data-line-number="23">    }</a>
-<a class="sourceLine" id="cb2-24" data-line-number="24">}</a>
-<a class="sourceLine" id="cb2-25" data-line-number="25"></a>
-<a class="sourceLine" id="cb2-26" data-line-number="26"><span class="co"># CRAN PACKAGES</span></a>
-<a class="sourceLine" id="cb2-27" data-line-number="27">cranpackages &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"broom"</span>, <span class="st">"cobs"</span>, <span class="st">"cowplot"</span>, <span class="st">"data.table"</span>, <span class="st">"doParallel"</span>, <span class="st">"dplyr"</span>, </a>
-<a class="sourceLine" id="cb2-28" data-line-number="28">    <span class="st">"DrImpute"</span>, <span class="st">"fastICA"</span>, <span class="st">"fitdistrplus"</span>, <span class="st">"foreach"</span>, <span class="st">"future"</span>, <span class="st">"gamlss.dist"</span>, <span class="st">"ggplot2"</span>, </a>
-<a class="sourceLine" id="cb2-29" data-line-number="29">    <span class="st">"ggpubr"</span>, <span class="st">"grDevices"</span>, <span class="st">"grid"</span>, <span class="st">"Hmisc"</span>, <span class="st">"kernlab"</span>, <span class="st">"MASS"</span>, <span class="st">"magrittr"</span>, <span class="st">"MBESS"</span>, </a>
-<a class="sourceLine" id="cb2-30" data-line-number="30">    <span class="st">"Matrix"</span>, <span class="st">"matrixStats"</span>, <span class="st">"mclust"</span>, <span class="st">"methods"</span>, <span class="st">"minpack.lm"</span>, <span class="st">"moments"</span>, <span class="st">"msir"</span>, </a>
-<a class="sourceLine" id="cb2-31" data-line-number="31">    <span class="st">"NBPSeq"</span>, <span class="st">"nonnest2"</span>, <span class="st">"parallel"</span>, <span class="st">"penalized"</span>, <span class="st">"plyr"</span>, <span class="st">"pscl"</span>, <span class="st">"reshape2"</span>, <span class="st">"Rmagic"</span>, </a>
-<a class="sourceLine" id="cb2-32" data-line-number="32">    <span class="st">"rsvd"</span>, <span class="st">"Rtsne"</span>, <span class="st">"scales"</span>, <span class="st">"Seurat"</span>, <span class="st">"snow"</span>, <span class="st">"sctransform"</span>, <span class="st">"stats"</span>, <span class="st">"tibble"</span>, </a>
-<a class="sourceLine" id="cb2-33" data-line-number="33">    <span class="st">"tidyr"</span>, <span class="st">"truncnorm"</span>, <span class="st">"VGAM"</span>, <span class="st">"ZIM"</span>, <span class="st">"zoo"</span>)</a>
-<a class="sourceLine" id="cb2-34" data-line-number="34"><span class="kw">ipak</span>(cranpackages, <span class="dt">repository =</span> <span class="st">"CRAN"</span>)</a>
-<a class="sourceLine" id="cb2-35" data-line-number="35"></a>
-<a class="sourceLine" id="cb2-36" data-line-number="36"><span class="co"># BIOCONDUCTOR</span></a>
-<a class="sourceLine" id="cb2-37" data-line-number="37">biocpackages &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"bayNorm"</span>, <span class="st">"baySeq"</span>, <span class="st">"BiocGenerics"</span>, <span class="st">"BiocParallel"</span>, <span class="st">"DEDS"</span>, <span class="st">"DESeq2"</span>, </a>
-<a class="sourceLine" id="cb2-38" data-line-number="38">    <span class="st">"EBSeq"</span>, <span class="st">"edgeR"</span>, <span class="st">"IHW"</span>, <span class="st">"iCOBRA"</span>, <span class="st">"limma"</span>, <span class="st">"Linnorm"</span>, <span class="st">"MAST"</span>, <span class="st">"monocle"</span>, <span class="st">"NOISeq"</span>, </a>
-<a class="sourceLine" id="cb2-39" data-line-number="39">    <span class="st">"qvalue"</span>, <span class="st">"ROTS"</span>, <span class="st">"RUVSeq"</span>, <span class="st">"S4Vectors"</span>, <span class="st">"scater"</span>, <span class="st">"scDD"</span>, <span class="st">"scde"</span>, <span class="st">"scone"</span>, <span class="st">"scran"</span>, </a>
-<a class="sourceLine" id="cb2-40" data-line-number="40">    <span class="st">"SCnorm"</span>, <span class="st">"SingleCellExperiment"</span>, <span class="st">"SummarizedExperiment"</span>, <span class="st">"zinbwave"</span>)</a>
-<a class="sourceLine" id="cb2-41" data-line-number="41"><span class="kw">ipak</span>(biocpackages, <span class="dt">repository =</span> <span class="st">"Bioconductor"</span>)</a>
-<a class="sourceLine" id="cb2-42" data-line-number="42"></a>
-<a class="sourceLine" id="cb2-43" data-line-number="43"><span class="co"># GITHUB</span></a>
-<a class="sourceLine" id="cb2-44" data-line-number="44">githubpackages &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"nghiavtr/BPSC"</span>, <span class="st">"cz-ye/DECENT"</span>, <span class="st">"mohuangx/SAVER"</span>, <span class="st">"statOmics/zingeR"</span>)</a>
-<a class="sourceLine" id="cb2-45" data-line-number="45"><span class="kw">ipak</span>(githubpackages, <span class="dt">repository =</span> <span class="st">"github"</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="r"><span class="no">ipak</span> <span class="kw">&lt;-</span> <span class="kw">function</span>(<span class="no">pkg</span>, <span class="no">repository</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"CRAN"</span>, <span class="st">"Bioconductor"</span>, <span class="st">"github"</span>)) {
+    <span class="no">new.pkg</span> <span class="kw">&lt;-</span> <span class="no">pkg</span>[!(<span class="no">pkg</span> <span class="kw">%in%</span> <span class="fu"><a href="https://rdrr.io/r/utils/installed.packages.html">installed.packages</a></span>()[, <span class="st">"Package"</span>])]
+    <span class="co"># new.pkg &lt;- pkg</span>
+    <span class="kw">if</span> (<span class="fu"><a href="https://rdrr.io/r/base/length.html">length</a></span>(<span class="no">new.pkg</span>)) {
+        <span class="kw">if</span> (<span class="no">repository</span> <span class="kw">==</span> <span class="st">"CRAN"</span>) {
+            <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span>(<span class="no">new.pkg</span>, <span class="kw">dependencies</span> <span class="kw">=</span> <span class="fl">TRUE</span>)
+        }
+        <span class="kw">if</span> (<span class="no">repository</span> <span class="kw">==</span> <span class="st">"Bioconductor"</span>) {
+            <span class="kw">if</span> (<span class="fu"><a href="https://rdrr.io/r/base/strsplit.html">strsplit</a></span>(<span class="no">version</span><span class="kw">[[</span><span class="st">"version.string"</span>]], <span class="st">" "</span>)<span class="kw">[[</span><span class="fl">1</span>]][<span class="fl">3</span>] <span class="kw">&gt;</span> <span class="st">"4.0.0"</span>) {
+                <span class="kw">if</span> (!<span class="fu"><a href="https://rdrr.io/r/base/ns-load.html">requireNamespace</a></span>(<span class="st">"BiocManager"</span>)) {
+                  <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span>(<span class="st">"BiocManager"</span>)
+                }
+                <span class="kw pkg">BiocManager</span><span class="kw ns">::</span><span class="fu"><a href="https://rdrr.io/pkg/BiocManager/man/install.html">install</a></span>(<span class="no">new.pkg</span>, <span class="kw">dependencies</span> <span class="kw">=</span> <span class="fl">TRUE</span>, <span class="kw">ask</span> <span class="kw">=</span> <span class="fl">FALSE</span>)
+            }
+            <span class="kw">if</span> (<span class="fu"><a href="https://rdrr.io/r/base/strsplit.html">strsplit</a></span>(<span class="no">version</span><span class="kw">[[</span><span class="st">"version.string"</span>]], <span class="st">" "</span>)<span class="kw">[[</span><span class="fl">1</span>]][<span class="fl">3</span>] <span class="kw">&lt;</span> <span class="st">"3.6.0"</span>) {
+                <span class="fu"><a href="https://rdrr.io/r/base/stop.html">stop</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/message.html">message</a></span>(<span class="st">"powsimR depends on packages and functions that are only available in R 4.0.0 and higher."</span>))
+            }
+        }
+        <span class="kw">if</span> (<span class="no">repository</span> <span class="kw">==</span> <span class="st">"github"</span>) {
+            <span class="kw pkg">devtools</span><span class="kw ns">::</span><span class="fu"><a href="https://devtools.r-lib.org//reference/remote-reexports.html">install_github</a></span>(<span class="no">new.pkg</span>, <span class="kw">build_vignettes</span> <span class="kw">=</span> <span class="fl">FALSE</span>, <span class="kw">force</span> <span class="kw">=</span> <span class="fl">FALSE</span>,
+                <span class="kw">dependencies</span> <span class="kw">=</span> <span class="fl">TRUE</span>)
+        }
+    }
+}
+
+<span class="co"># CRAN PACKAGES</span>
+<span class="no">cranpackages</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"broom"</span>, <span class="st">"cobs"</span>, <span class="st">"cowplot"</span>, <span class="st">"data.table"</span>, <span class="st">"doParallel"</span>, <span class="st">"dplyr"</span>,
+    <span class="st">"DrImpute"</span>, <span class="st">"fastICA"</span>, <span class="st">"fitdistrplus"</span>, <span class="st">"foreach"</span>, <span class="st">"future"</span>, <span class="st">"gamlss.dist"</span>, <span class="st">"ggplot2"</span>,
+    <span class="st">"ggpubr"</span>, <span class="st">"ggstance"</span>, <span class="st">"grDevices"</span>, <span class="st">"grid"</span>, <span class="st">"Hmisc"</span>, <span class="st">"kernlab"</span>, <span class="st">"MASS"</span>, <span class="st">"magrittr"</span>,
+    <span class="st">"MBESS"</span>, <span class="st">"Matrix"</span>, <span class="st">"matrixStats"</span>, <span class="st">"mclust"</span>, <span class="st">"methods"</span>, <span class="st">"minpack.lm"</span>, <span class="st">"moments"</span>,
+    <span class="st">"msir"</span>, <span class="st">"NBPSeq"</span>, <span class="st">"nonnest2"</span>, <span class="st">"parallel"</span>, <span class="st">"penalized"</span>, <span class="st">"plyr"</span>, <span class="st">"pscl"</span>, <span class="st">"reshape2"</span>,
+    <span class="st">"Rmagic"</span>, <span class="st">"rsvd"</span>, <span class="st">"Rtsne"</span>, <span class="st">"scales"</span>, <span class="st">"Seurat"</span>, <span class="st">"snow"</span>, <span class="st">"sctransform"</span>, <span class="st">"stats"</span>,
+    <span class="st">"tibble"</span>, <span class="st">"tidyr"</span>, <span class="st">"truncnorm"</span>, <span class="st">"VGAM"</span>, <span class="st">"ZIM"</span>, <span class="st">"zoo"</span>)
+<span class="fu">ipak</span>(<span class="no">cranpackages</span>, <span class="kw">repository</span> <span class="kw">=</span> <span class="st">"CRAN"</span>)
+
+<span class="co"># BIOCONDUCTOR</span>
+<span class="no">biocpackages</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"bayNorm"</span>, <span class="st">"baySeq"</span>, <span class="st">"BiocGenerics"</span>, <span class="st">"BiocParallel"</span>, <span class="st">"DESeq2"</span>,
+    <span class="st">"EBSeq"</span>, <span class="st">"edgeR"</span>, <span class="st">"IHW"</span>, <span class="st">"iCOBRA"</span>, <span class="st">"limma"</span>, <span class="st">"Linnorm"</span>, <span class="st">"MAST"</span>, <span class="st">"monocle"</span>, <span class="st">"NOISeq"</span>,
+    <span class="st">"qvalue"</span>, <span class="st">"ROTS"</span>, <span class="st">"RUVSeq"</span>, <span class="st">"S4Vectors"</span>, <span class="st">"scater"</span>, <span class="st">"scDD"</span>, <span class="st">"scde"</span>, <span class="st">"scone"</span>, <span class="st">"scran"</span>,
+    <span class="st">"SCnorm"</span>, <span class="st">"SingleCellExperiment"</span>, <span class="st">"SummarizedExperiment"</span>, <span class="st">"zinbwave"</span>)
+<span class="fu">ipak</span>(<span class="no">biocpackages</span>, <span class="kw">repository</span> <span class="kw">=</span> <span class="st">"Bioconductor"</span>)
+
+<span class="co"># GITHUB</span>
+<span class="no">githubpackages</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"cz-ye/DECENT"</span>, <span class="st">"nghiavtr/BPSC"</span>, <span class="st">"mohuangx/SAVER"</span>, <span class="st">"statOmics/zingeR"</span>,
+    <span class="st">"Vivianstats/scImpute"</span>)
+<span class="fu">ipak</span>(<span class="no">githubpackages</span>, <span class="kw">repository</span> <span class="kw">=</span> <span class="st">"github"</span>)</pre></div>
 <p>To check whether all dependencies are installed, you can run the following lines:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1"></a>
-<a class="sourceLine" id="cb3-2" data-line-number="2">powsimRdeps &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span>(<span class="dt">Package =</span> <span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(cranpackages, </a>
-<a class="sourceLine" id="cb3-3" data-line-number="3">                                      biocpackages, </a>
-<a class="sourceLine" id="cb3-4" data-line-number="4">                                      <span class="kw"><a href="https://rdrr.io/r/base/lapply.html">sapply</a></span>(<span class="kw"><a href="https://rdrr.io/r/base/strsplit.html">strsplit</a></span>(githubpackages, <span class="st">"/"</span>), <span class="st">"[["</span>, <span class="dv">2</span>)), </a>
-<a class="sourceLine" id="cb3-5" data-line-number="5">                          <span class="dt">stringsAsFactors =</span> F)</a>
-<a class="sourceLine" id="cb3-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb3-7" data-line-number="7">ip &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/as.data.frame.html">as.data.frame</a></span>(<span class="kw"><a href="https://rdrr.io/r/utils/installed.packages.html">installed.packages</a></span>()[,<span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="dv">1</span>,<span class="dv">3</span><span class="op">:</span><span class="dv">4</span>)], <span class="dt">stringsAsFactors =</span> F)</a>
-<a class="sourceLine" id="cb3-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb3-9" data-line-number="9">ip.check &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/cbind.html">cbind</a></span>(powsimRdeps, </a>
-<a class="sourceLine" id="cb3-10" data-line-number="10">                  <span class="dt">Version =</span> ip[<span class="kw"><a href="https://rdrr.io/r/base/match.html">match</a></span>(powsimRdeps<span class="op">$</span>Package, <span class="kw"><a href="https://rdrr.io/r/base/colnames.html">rownames</a></span>(ip)),<span class="st">"Version"</span>]) </a>
-<a class="sourceLine" id="cb3-11" data-line-number="11"></a>
-<a class="sourceLine" id="cb3-12" data-line-number="12"><span class="kw"><a href="https://rdrr.io/r/base/table.html">table</a></span>(<span class="kw"><a href="https://rdrr.io/r/base/NA.html">is.na</a></span>(ip.check<span class="op">$</span>Version))  <span class="co"># all should be FALSE</span></a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="r">
+<span class="no">powsimRdeps</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span>(<span class="kw">Package</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="no">cranpackages</span>,
+                                      <span class="no">biocpackages</span>,
+                                      <span class="fu"><a href="https://rdrr.io/r/base/lapply.html">sapply</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/strsplit.html">strsplit</a></span>(<span class="no">githubpackages</span>, <span class="st">"/"</span>), <span class="st">"[["</span>, <span class="fl">2</span>)),
+                          <span class="kw">stringsAsFactors</span> <span class="kw">=</span> <span class="no">F</span>)
+
+<span class="no">ip</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html">as.data.frame</a></span>(<span class="fu"><a href="https://rdrr.io/r/utils/installed.packages.html">installed.packages</a></span>()[,<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">1</span>,<span class="fl">3</span>:<span class="fl">4</span>)], <span class="kw">stringsAsFactors</span> <span class="kw">=</span> <span class="no">F</span>)
+
+<span class="no">ip.check</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html">cbind</a></span>(<span class="no">powsimRdeps</span>,
+                  <span class="kw">Version</span> <span class="kw">=</span> <span class="no">ip</span>[<span class="fu"><a href="https://rdrr.io/r/base/match.html">match</a></span>(<span class="no">powsimRdeps</span>$<span class="no">Package</span>, <span class="fu"><a href="https://rdrr.io/r/base/colnames.html">rownames</a></span>(<span class="no">ip</span>)),<span class="st">"Version"</span>])
+
+<span class="fu"><a href="https://rdrr.io/r/base/table.html">table</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/NA.html">is.na</a></span>(<span class="no">ip.check</span>$<span class="no">Version</span>))  <span class="co"># all should be FALSE</span></pre></div>
 <p>After installing the dependencies, powsimR can be installed by using devtools as well.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" data-line-number="1">devtools<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/devtools/man/remote-reexports.html">install_github</a></span>(<span class="st">"bvieth/powsimR"</span>, <span class="dt">build_vignettes =</span> <span class="ot">TRUE</span>, <span class="dt">dependencies =</span> <span class="ot">FALSE</span>)</a>
-<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="st">"powsimR"</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="r"><span class="kw pkg">devtools</span><span class="kw ns">::</span><span class="fu"><a href="https://devtools.r-lib.org//reference/remote-reexports.html">install_github</a></span>(<span class="st">"bvieth/powsimR"</span>, <span class="kw">build_vignettes</span> <span class="kw">=</span> <span class="fl">TRUE</span>, <span class="kw">dependencies</span> <span class="kw">=</span> <span class="fl">FALSE</span>)
+<span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="st">"powsimR"</span>)</pre></div>
 <p>Alternative, you can try to install powsimR and its dependencies directly using devtools:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" data-line-number="1">devtools<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/devtools/man/remote-reexports.html">install_github</a></span>(<span class="st">"bvieth/powsimR"</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="r"><span class="kw pkg">devtools</span><span class="kw ns">::</span><span class="fu"><a href="https://devtools.r-lib.org//reference/remote-reexports.html">install_github</a></span>(<span class="st">"bvieth/powsimR"</span>)</pre></div>
 </div>
 <div id="user-guide" class="section level2">
 <h2 class="hasAnchor">
-<a href="#user-guide" class="anchor"></a>User Guide</h2>
+<a href="#user-guide" class="anchor"></a><span class="emoji" data-emoji="book">📖</span> User Guide</h2>
 <p>For examples and tips on using the package, please consult the vignette after successful installation by</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="kw"><a href="https://rdrr.io/r/utils/browseVignettes.html">browseVignettes</a></span>(<span class="st">"powsimR"</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="r"><span class="fu"><a href="https://rdrr.io/r/utils/browseVignettes.html">browseVignettes</a></span>(<span class="st">"powsimR"</span>)</pre></div>
 <p>Some users have experienced issues installing powsimR due to vignette compilation errors. If that is the case, you can leave out building the vignette (by setting build_vignettes to FALSE) and read it on my Github Page of <a href="https://bvieth.github.io/powsimR/articles/powsimR.html">powsimR</a> or download it as a html file <a href="https://github.com/bvieth/powsimR/tree/master/inst/doc/powsimR.html">here</a>.</p>
 <div id="dlls-and-ulimit" class="section level3">
 <h3 class="hasAnchor">
@@ -175,201 +180,210 @@
 </div>
 <div id="citation" class="section level2">
 <h2 class="hasAnchor">
-<a href="#citation" class="anchor"></a>Citation</h2>
+<a href="#citation" class="anchor"></a><span class="emoji" data-emoji="scroll">📜</span> Citation</h2>
 <p>Please use the following entry for citing powsimR.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="kw"><a href="https://rdrr.io/r/utils/citation.html">citation</a></span>(<span class="st">"powsimR"</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="r"><span class="fu"><a href="https://rdrr.io/r/utils/citation.html">citation</a></span>(<span class="st">"powsimR"</span>)</pre></div>
 <p>powsimR is published in <a href="https://doi.org/10.1093/bioinformatics/btx435">Bioinformatics</a>. A preprint paper is also on <a href="https://doi.org/10.1101/117150">bioRxiv</a>.</p>
 </div>
-<div id="notes" class="section level2">
+<div id="incoming_envelope-notes" class="section level2">
 <h2 class="hasAnchor">
-<a href="#notes" class="anchor"></a>Notes</h2>
-<p>Please send bug reports and feature requests by opening a new issue on <a href="https://github.com/bvieth/powsimR/issues">this page</a>.</p>
+<a href="#incoming_envelope-notes" class="anchor"></a>:incoming_envelope: Notes</h2>
+<p>Please send bug reports and feature requests by opening a new issue on <a href="https://github.com/bvieth/powsimR/issues">this page</a>. I try to keep up to date with new developments / changes of methods implemented in powsimR, but if you encounter run errors while using a certain tool (e.g. for imputation), then I appreciate if you can post this as an <a href="https://github.com/bvieth/powsimR/issues">issue</a>.</p>
 </div>
 <div id="r-session-info" class="section level2">
 <h2 class="hasAnchor">
-<a href="#r-session-info" class="anchor"></a>R Session Info</h2>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span>(powsimR)</a>
-<a class="sourceLine" id="cb8-2" data-line-number="2"><span class="co">#&gt; Loading required package: gamlss.dist</span></a>
-<a class="sourceLine" id="cb8-3" data-line-number="3"><span class="co">#&gt; Loading required package: MASS</span></a>
-<a class="sourceLine" id="cb8-4" data-line-number="4"><span class="co">#&gt; Warning: replacing previous import 'DECENT::lrTest' by 'MAST::lrTest' when</span></a>
-<a class="sourceLine" id="cb8-5" data-line-number="5"><span class="co">#&gt; loading 'powsimR'</span></a>
-<a class="sourceLine" id="cb8-6" data-line-number="6"><span class="co">#&gt; Warning: replacing previous import 'penalized::predict' by 'stats::predict' when</span></a>
-<a class="sourceLine" id="cb8-7" data-line-number="7"><span class="co">#&gt; loading 'powsimR'</span></a>
-<a class="sourceLine" id="cb8-8" data-line-number="8"><span class="co">#&gt; Warning: replacing previous import 'zinbwave::glmWeightedF' by</span></a>
-<a class="sourceLine" id="cb8-9" data-line-number="9"><span class="co">#&gt; 'zingeR::glmWeightedF' when loading 'powsimR'</span></a>
-<a class="sourceLine" id="cb8-10" data-line-number="10"><span class="kw"><a href="https://rdrr.io/r/utils/sessionInfo.html">sessionInfo</a></span>()</a>
-<a class="sourceLine" id="cb8-11" data-line-number="11"><span class="co">#&gt; R version 3.6.2 (2019-12-12)</span></a>
-<a class="sourceLine" id="cb8-12" data-line-number="12"><span class="co">#&gt; Platform: x86_64-pc-linux-gnu (64-bit)</span></a>
-<a class="sourceLine" id="cb8-13" data-line-number="13"><span class="co">#&gt; Running under: Ubuntu 18.04.4 LTS</span></a>
-<a class="sourceLine" id="cb8-14" data-line-number="14"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb8-15" data-line-number="15"><span class="co">#&gt; Matrix products: default</span></a>
-<a class="sourceLine" id="cb8-16" data-line-number="16"><span class="co">#&gt; BLAS:   /usr/lib/x86_64-linux-gnu/openblas/libblas.so.3</span></a>
-<a class="sourceLine" id="cb8-17" data-line-number="17"><span class="co">#&gt; LAPACK: /usr/lib/x86_64-linux-gnu/libopenblasp-r0.2.20.so</span></a>
-<a class="sourceLine" id="cb8-18" data-line-number="18"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb8-19" data-line-number="19"><span class="co">#&gt; locale:</span></a>
-<a class="sourceLine" id="cb8-20" data-line-number="20"><span class="co">#&gt;  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              </span></a>
-<a class="sourceLine" id="cb8-21" data-line-number="21"><span class="co">#&gt;  [3] LC_TIME=de_DE.UTF-8        LC_COLLATE=en_US.UTF-8    </span></a>
-<a class="sourceLine" id="cb8-22" data-line-number="22"><span class="co">#&gt;  [5] LC_MONETARY=de_DE.UTF-8    LC_MESSAGES=en_US.UTF-8   </span></a>
-<a class="sourceLine" id="cb8-23" data-line-number="23"><span class="co">#&gt;  [7] LC_PAPER=de_DE.UTF-8       LC_NAME=C                 </span></a>
-<a class="sourceLine" id="cb8-24" data-line-number="24"><span class="co">#&gt;  [9] LC_ADDRESS=C               LC_TELEPHONE=C            </span></a>
-<a class="sourceLine" id="cb8-25" data-line-number="25"><span class="co">#&gt; [11] LC_MEASUREMENT=de_DE.UTF-8 LC_IDENTIFICATION=C       </span></a>
-<a class="sourceLine" id="cb8-26" data-line-number="26"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb8-27" data-line-number="27"><span class="co">#&gt; attached base packages:</span></a>
-<a class="sourceLine" id="cb8-28" data-line-number="28"><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></a>
-<a class="sourceLine" id="cb8-29" data-line-number="29"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb8-30" data-line-number="30"><span class="co">#&gt; other attached packages:</span></a>
-<a class="sourceLine" id="cb8-31" data-line-number="31"><span class="co">#&gt; [1] powsimR_1.2.0     gamlss.dist_5.1-6 MASS_7.3-51.5    </span></a>
-<a class="sourceLine" id="cb8-32" data-line-number="32"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb8-33" data-line-number="33"><span class="co">#&gt; loaded via a namespace (and not attached):</span></a>
-<a class="sourceLine" id="cb8-34" data-line-number="34"><span class="co">#&gt;   [1] mixtools_1.2.0              softImpute_1.4             </span></a>
-<a class="sourceLine" id="cb8-35" data-line-number="35"><span class="co">#&gt;   [3] minpack.lm_1.2-1            lattice_0.20-38            </span></a>
-<a class="sourceLine" id="cb8-36" data-line-number="36"><span class="co">#&gt;   [5] vctrs_0.2.2                 fastICA_1.2-2              </span></a>
-<a class="sourceLine" id="cb8-37" data-line-number="37"><span class="co">#&gt;   [7] mgcv_1.8-31                 penalized_0.9-51           </span></a>
-<a class="sourceLine" id="cb8-38" data-line-number="38"><span class="co">#&gt;   [9] blob_1.2.1                  survival_3.1-8             </span></a>
-<a class="sourceLine" id="cb8-39" data-line-number="39"><span class="co">#&gt;  [11] Rmagic_2.0.3                later_1.0.0                </span></a>
-<a class="sourceLine" id="cb8-40" data-line-number="40"><span class="co">#&gt;  [13] nloptr_1.2.1                DBI_1.1.0                  </span></a>
-<a class="sourceLine" id="cb8-41" data-line-number="41"><span class="co">#&gt;  [15] R.utils_2.9.2               SingleCellExperiment_1.8.0 </span></a>
-<a class="sourceLine" id="cb8-42" data-line-number="42"><span class="co">#&gt;  [17] rappdirs_0.3.1              Linnorm_2.10.0             </span></a>
-<a class="sourceLine" id="cb8-43" data-line-number="43"><span class="co">#&gt;  [19] dqrng_0.2.1                 jpeg_0.1-8.1               </span></a>
-<a class="sourceLine" id="cb8-44" data-line-number="44"><span class="co">#&gt;  [21] zlibbioc_1.32.0             MatrixModels_0.4-1         </span></a>
-<a class="sourceLine" id="cb8-45" data-line-number="45"><span class="co">#&gt;  [23] htmlwidgets_1.5.1           mvtnorm_1.0-12             </span></a>
-<a class="sourceLine" id="cb8-46" data-line-number="46"><span class="co">#&gt;  [25] future_1.16.0               UpSetR_1.4.0               </span></a>
-<a class="sourceLine" id="cb8-47" data-line-number="47"><span class="co">#&gt;  [27] parallel_3.6.2              scater_1.14.6              </span></a>
-<a class="sourceLine" id="cb8-48" data-line-number="48"><span class="co">#&gt;  [29] irlba_2.3.3                 DEoptimR_1.0-8             </span></a>
-<a class="sourceLine" id="cb8-49" data-line-number="49"><span class="co">#&gt;  [31] Rcpp_1.0.3                  KernSmooth_2.23-16         </span></a>
-<a class="sourceLine" id="cb8-50" data-line-number="50"><span class="co">#&gt;  [33] DT_0.12                     promises_1.1.0             </span></a>
-<a class="sourceLine" id="cb8-51" data-line-number="51"><span class="co">#&gt;  [35] gdata_2.18.0                DDRTree_0.1.5              </span></a>
-<a class="sourceLine" id="cb8-52" data-line-number="52"><span class="co">#&gt;  [37] DelayedArray_0.12.2         limma_3.42.2               </span></a>
-<a class="sourceLine" id="cb8-53" data-line-number="53"><span class="co">#&gt;  [39] vegan_2.5-6                 Hmisc_4.3-1                </span></a>
-<a class="sourceLine" id="cb8-54" data-line-number="54"><span class="co">#&gt;  [41] ShortRead_1.44.3            apcluster_1.4.8            </span></a>
-<a class="sourceLine" id="cb8-55" data-line-number="55"><span class="co">#&gt;  [43] RSpectra_0.16-0             msir_1.3.2                 </span></a>
-<a class="sourceLine" id="cb8-56" data-line-number="56"><span class="co">#&gt;  [45] mnormt_1.5-6                digest_0.6.23              </span></a>
-<a class="sourceLine" id="cb8-57" data-line-number="57"><span class="co">#&gt;  [47] png_0.1-7                   qlcMatrix_0.9.7            </span></a>
-<a class="sourceLine" id="cb8-58" data-line-number="58"><span class="co">#&gt;  [49] sctransform_0.2.1           cowplot_1.0.0              </span></a>
-<a class="sourceLine" id="cb8-59" data-line-number="59"><span class="co">#&gt;  [51] pkgconfig_2.0.3             docopt_0.6.1               </span></a>
-<a class="sourceLine" id="cb8-60" data-line-number="60"><span class="co">#&gt;  [53] DelayedMatrixStats_1.8.0    ggbeeswarm_0.6.0           </span></a>
-<a class="sourceLine" id="cb8-61" data-line-number="61"><span class="co">#&gt;  [55] iterators_1.0.12            minqa_1.2.4                </span></a>
-<a class="sourceLine" id="cb8-62" data-line-number="62"><span class="co">#&gt;  [57] lavaan_0.6-5                reticulate_1.14            </span></a>
-<a class="sourceLine" id="cb8-63" data-line-number="63"><span class="co">#&gt;  [59] SummarizedExperiment_1.16.1 spam_2.5-1                 </span></a>
-<a class="sourceLine" id="cb8-64" data-line-number="64"><span class="co">#&gt;  [61] beeswarm_0.2.3              modeltools_0.2-22          </span></a>
-<a class="sourceLine" id="cb8-65" data-line-number="65"><span class="co">#&gt;  [63] xfun_0.12                   zoo_1.8-7                  </span></a>
-<a class="sourceLine" id="cb8-66" data-line-number="66"><span class="co">#&gt;  [65] tidyselect_1.0.0            ZIM_1.1.0                  </span></a>
-<a class="sourceLine" id="cb8-67" data-line-number="67"><span class="co">#&gt;  [67] reshape2_1.4.3              purrr_0.3.3                </span></a>
-<a class="sourceLine" id="cb8-68" data-line-number="68"><span class="co">#&gt;  [69] kernlab_0.9-29              EDASeq_2.20.0              </span></a>
-<a class="sourceLine" id="cb8-69" data-line-number="69"><span class="co">#&gt;  [71] viridisLite_0.3.0           snow_0.4-3                 </span></a>
-<a class="sourceLine" id="cb8-70" data-line-number="70"><span class="co">#&gt;  [73] rtracklayer_1.46.0          rlang_0.4.4                </span></a>
-<a class="sourceLine" id="cb8-71" data-line-number="71"><span class="co">#&gt;  [75] hexbin_1.28.1               glue_1.3.1                 </span></a>
-<a class="sourceLine" id="cb8-72" data-line-number="72"><span class="co">#&gt;  [77] RColorBrewer_1.1-2          fpc_2.2-5                  </span></a>
-<a class="sourceLine" id="cb8-73" data-line-number="73"><span class="co">#&gt;  [79] matrixStats_0.55.0          stringr_1.4.0              </span></a>
-<a class="sourceLine" id="cb8-74" data-line-number="74"><span class="co">#&gt;  [81] fields_10.3                 ggsignif_0.6.0             </span></a>
-<a class="sourceLine" id="cb8-75" data-line-number="75"><span class="co">#&gt;  [83] DESeq2_1.26.0               SparseM_1.78               </span></a>
-<a class="sourceLine" id="cb8-76" data-line-number="76"><span class="co">#&gt;  [85] httpuv_1.5.2                class_7.3-15               </span></a>
-<a class="sourceLine" id="cb8-77" data-line-number="77"><span class="co">#&gt;  [87] BPSC_0.99.2                 BiocNeighbors_1.4.1        </span></a>
-<a class="sourceLine" id="cb8-78" data-line-number="78"><span class="co">#&gt;  [89] annotate_1.64.0             jsonlite_1.6.1             </span></a>
-<a class="sourceLine" id="cb8-79" data-line-number="79"><span class="co">#&gt;  [91] XVector_0.26.0              bit_1.1-15.1               </span></a>
-<a class="sourceLine" id="cb8-80" data-line-number="80"><span class="co">#&gt;  [93] mime_0.9                    gridExtra_2.3              </span></a>
-<a class="sourceLine" id="cb8-81" data-line-number="81"><span class="co">#&gt;  [95] gplots_3.0.1.2              Rsamtools_2.2.1            </span></a>
-<a class="sourceLine" id="cb8-82" data-line-number="82"><span class="co">#&gt;  [97] zingeR_0.1.0                stringi_1.4.5              </span></a>
-<a class="sourceLine" id="cb8-83" data-line-number="83"><span class="co">#&gt;  [99] gmodels_2.18.1              bitops_1.0-6               </span></a>
-<a class="sourceLine" id="cb8-84" data-line-number="84"><span class="co">#&gt; [101] maps_3.3.0                  RSQLite_2.2.0              </span></a>
-<a class="sourceLine" id="cb8-85" data-line-number="85"><span class="co">#&gt; [103] tidyr_1.0.2                 pheatmap_1.0.12            </span></a>
-<a class="sourceLine" id="cb8-86" data-line-number="86"><span class="co">#&gt; [105] data.table_1.12.8           DEDS_1.60.0                </span></a>
-<a class="sourceLine" id="cb8-87" data-line-number="87"><span class="co">#&gt; [107] rstudioapi_0.11             GenomicAlignments_1.22.1   </span></a>
-<a class="sourceLine" id="cb8-88" data-line-number="88"><span class="co">#&gt; [109] nlme_3.1-144                qvalue_2.18.0              </span></a>
-<a class="sourceLine" id="cb8-89" data-line-number="89"><span class="co">#&gt; [111] scran_1.14.6                fastcluster_1.1.25         </span></a>
-<a class="sourceLine" id="cb8-90" data-line-number="90"><span class="co">#&gt; [113] locfit_1.5-9.1              scone_1.10.0               </span></a>
-<a class="sourceLine" id="cb8-91" data-line-number="91"><span class="co">#&gt; [115] listenv_0.8.0               cobs_1.3-4                 </span></a>
-<a class="sourceLine" id="cb8-92" data-line-number="92"><span class="co">#&gt; [117] R.oo_1.23.0                 prabclus_2.3-2             </span></a>
-<a class="sourceLine" id="cb8-93" data-line-number="93"><span class="co">#&gt; [119] dbplyr_1.4.2                segmented_1.1-0            </span></a>
-<a class="sourceLine" id="cb8-94" data-line-number="94"><span class="co">#&gt; [121] BiocGenerics_0.32.0         lifecycle_0.1.0            </span></a>
-<a class="sourceLine" id="cb8-95" data-line-number="95"><span class="co">#&gt; [123] ROTS_1.14.0                 munsell_0.5.0              </span></a>
-<a class="sourceLine" id="cb8-96" data-line-number="96"><span class="co">#&gt; [125] R.methodsS3_1.7.1           moments_0.14               </span></a>
-<a class="sourceLine" id="cb8-97" data-line-number="97"><span class="co">#&gt; [127] hwriter_1.3.2               caTools_1.18.0             </span></a>
-<a class="sourceLine" id="cb8-98" data-line-number="98"><span class="co">#&gt; [129] codetools_0.2-16            coda_0.19-3                </span></a>
-<a class="sourceLine" id="cb8-99" data-line-number="99"><span class="co">#&gt; [131] Biobase_2.46.0              GenomeInfoDb_1.22.0        </span></a>
-<a class="sourceLine" id="cb8-100" data-line-number="100"><span class="co">#&gt; [133] vipor_0.4.5                 htmlTable_1.13.3           </span></a>
-<a class="sourceLine" id="cb8-101" data-line-number="101"><span class="co">#&gt; [135] bayNorm_1.4.14              lsei_1.2-0                 </span></a>
-<a class="sourceLine" id="cb8-102" data-line-number="102"><span class="co">#&gt; [137] rARPACK_0.11-0              xtable_1.8-4               </span></a>
-<a class="sourceLine" id="cb8-103" data-line-number="103"><span class="co">#&gt; [139] SAVER_1.1.2                 ROCR_1.0-7                 </span></a>
-<a class="sourceLine" id="cb8-104" data-line-number="104"><span class="co">#&gt; [141] diptest_0.75-7              formatR_1.7                </span></a>
-<a class="sourceLine" id="cb8-105" data-line-number="105"><span class="co">#&gt; [143] lpsymphony_1.14.0           abind_1.4-5                </span></a>
-<a class="sourceLine" id="cb8-106" data-line-number="106"><span class="co">#&gt; [145] FNN_1.1.3                   RANN_2.6.1                 </span></a>
-<a class="sourceLine" id="cb8-107" data-line-number="107"><span class="co">#&gt; [147] askpass_1.1                 sparsesvd_0.2              </span></a>
-<a class="sourceLine" id="cb8-108" data-line-number="108"><span class="co">#&gt; [149] CompQuadForm_1.4.3          GenomicRanges_1.38.0       </span></a>
-<a class="sourceLine" id="cb8-109" data-line-number="109"><span class="co">#&gt; [151] tibble_2.1.3                ggdendro_0.1-20            </span></a>
-<a class="sourceLine" id="cb8-110" data-line-number="110"><span class="co">#&gt; [153] cluster_2.1.0               future.apply_1.4.0         </span></a>
-<a class="sourceLine" id="cb8-111" data-line-number="111"><span class="co">#&gt; [155] Matrix_1.2-18               prettyunits_1.1.1          </span></a>
-<a class="sourceLine" id="cb8-112" data-line-number="112"><span class="co">#&gt; [157] shinyBS_0.61                NOISeq_2.30.0              </span></a>
-<a class="sourceLine" id="cb8-113" data-line-number="113"><span class="co">#&gt; [159] shinydashboard_0.7.1        mclust_5.4.5               </span></a>
-<a class="sourceLine" id="cb8-114" data-line-number="114"><span class="co">#&gt; [161] igraph_1.2.4.2              ggstance_0.3.3             </span></a>
-<a class="sourceLine" id="cb8-115" data-line-number="115"><span class="co">#&gt; [163] slam_0.1-47                 testthat_2.3.1             </span></a>
-<a class="sourceLine" id="cb8-116" data-line-number="116"><span class="co">#&gt; [165] doSNOW_1.0.18               htmltools_0.4.0            </span></a>
-<a class="sourceLine" id="cb8-117" data-line-number="117"><span class="co">#&gt; [167] BiocFileCache_1.10.2        yaml_2.2.1                 </span></a>
-<a class="sourceLine" id="cb8-118" data-line-number="118"><span class="co">#&gt; [169] GenomicFeatures_1.38.1      XML_3.99-0.3               </span></a>
-<a class="sourceLine" id="cb8-119" data-line-number="119"><span class="co">#&gt; [171] ggpubr_0.2.4                DrImpute_1.0               </span></a>
-<a class="sourceLine" id="cb8-120" data-line-number="120"><span class="co">#&gt; [173] foreign_0.8-75              fitdistrplus_1.0-14        </span></a>
-<a class="sourceLine" id="cb8-121" data-line-number="121"><span class="co">#&gt; [175] BiocParallel_1.20.1         aroma.light_3.16.0         </span></a>
-<a class="sourceLine" id="cb8-122" data-line-number="122"><span class="co">#&gt; [177] bit64_0.9-7                 rngtools_1.5               </span></a>
-<a class="sourceLine" id="cb8-123" data-line-number="123"><span class="co">#&gt; [179] doRNG_1.8.2                 foreach_1.4.8              </span></a>
-<a class="sourceLine" id="cb8-124" data-line-number="124"><span class="co">#&gt; [181] robustbase_0.93-5           outliers_0.14              </span></a>
-<a class="sourceLine" id="cb8-125" data-line-number="125"><span class="co">#&gt; [183] Biostrings_2.54.0           combinat_0.0-8             </span></a>
-<a class="sourceLine" id="cb8-126" data-line-number="126"><span class="co">#&gt; [185] rsvd_1.0.2                  iCOBRA_1.14.0              </span></a>
-<a class="sourceLine" id="cb8-127" data-line-number="127"><span class="co">#&gt; [187] memoise_1.1.0               evaluate_0.14              </span></a>
-<a class="sourceLine" id="cb8-128" data-line-number="128"><span class="co">#&gt; [189] VGAM_1.1-2                  nonnest2_0.5-2             </span></a>
-<a class="sourceLine" id="cb8-129" data-line-number="129"><span class="co">#&gt; [191] geneplotter_1.64.0          permute_0.9-5              </span></a>
-<a class="sourceLine" id="cb8-130" data-line-number="130"><span class="co">#&gt; [193] curl_4.3                    fdrtool_1.2.15             </span></a>
-<a class="sourceLine" id="cb8-131" data-line-number="131"><span class="co">#&gt; [195] acepack_1.4.1               edgeR_3.28.0               </span></a>
-<a class="sourceLine" id="cb8-132" data-line-number="132"><span class="co">#&gt; [197] checkmate_2.0.0             npsurv_0.4-0               </span></a>
-<a class="sourceLine" id="cb8-133" data-line-number="133"><span class="co">#&gt; [199] truncnorm_1.0-8             DECENT_1.1.0               </span></a>
-<a class="sourceLine" id="cb8-134" data-line-number="134"><span class="co">#&gt; [201] tensorA_0.36.1              ellipse_0.4.1              </span></a>
-<a class="sourceLine" id="cb8-135" data-line-number="135"><span class="co">#&gt; [203] ggplot2_3.2.1               ggrepel_0.8.1              </span></a>
-<a class="sourceLine" id="cb8-136" data-line-number="136"><span class="co">#&gt; [205] scDD_1.10.0                 tools_3.6.2                </span></a>
-<a class="sourceLine" id="cb8-137" data-line-number="137"><span class="co">#&gt; [207] sandwich_2.5-1              magrittr_1.5               </span></a>
-<a class="sourceLine" id="cb8-138" data-line-number="138"><span class="co">#&gt; [209] RCurl_1.98-1.1              pbivnorm_0.6.0             </span></a>
-<a class="sourceLine" id="cb8-139" data-line-number="139"><span class="co">#&gt; [211] bayesm_3.1-4                EBSeq_1.26.0               </span></a>
-<a class="sourceLine" id="cb8-140" data-line-number="140"><span class="co">#&gt; [213] httr_1.4.1                  assertthat_0.2.1           </span></a>
-<a class="sourceLine" id="cb8-141" data-line-number="141"><span class="co">#&gt; [215] rmarkdown_2.1               boot_1.3-24                </span></a>
-<a class="sourceLine" id="cb8-142" data-line-number="142"><span class="co">#&gt; [217] globals_0.12.5              R6_2.4.1                   </span></a>
-<a class="sourceLine" id="cb8-143" data-line-number="143"><span class="co">#&gt; [219] Rhdf5lib_1.8.0              nnet_7.3-12                </span></a>
-<a class="sourceLine" id="cb8-144" data-line-number="144"><span class="co">#&gt; [221] progress_1.2.2              genefilter_1.68.0          </span></a>
-<a class="sourceLine" id="cb8-145" data-line-number="145"><span class="co">#&gt; [223] gtools_3.8.1                statmod_1.4.33             </span></a>
-<a class="sourceLine" id="cb8-146" data-line-number="146"><span class="co">#&gt; [225] BiocSingular_1.2.1          rhdf5_2.30.1               </span></a>
-<a class="sourceLine" id="cb8-147" data-line-number="147"><span class="co">#&gt; [227] splines_3.6.2               colorspace_1.4-1           </span></a>
-<a class="sourceLine" id="cb8-148" data-line-number="148"><span class="co">#&gt; [229] amap_0.8-18                 generics_0.0.2             </span></a>
-<a class="sourceLine" id="cb8-149" data-line-number="149"><span class="co">#&gt; [231] stats4_3.6.2                NBPSeq_0.3.0               </span></a>
-<a class="sourceLine" id="cb8-150" data-line-number="150"><span class="co">#&gt; [233] base64enc_0.1-3             compositions_1.40-3        </span></a>
-<a class="sourceLine" id="cb8-151" data-line-number="151"><span class="co">#&gt; [235] baySeq_2.20.0               pillar_1.4.3               </span></a>
-<a class="sourceLine" id="cb8-152" data-line-number="152"><span class="co">#&gt; [237] HSMMSingleCell_1.6.0        GenomeInfoDbData_1.2.2     </span></a>
-<a class="sourceLine" id="cb8-153" data-line-number="153"><span class="co">#&gt; [239] plyr_1.8.5                  dotCall64_1.0-0            </span></a>
-<a class="sourceLine" id="cb8-154" data-line-number="154"><span class="co">#&gt; [241] gtable_0.3.0                SCnorm_1.8.2               </span></a>
-<a class="sourceLine" id="cb8-155" data-line-number="155"><span class="co">#&gt; [243] monocle_2.14.0              knitr_1.28                 </span></a>
-<a class="sourceLine" id="cb8-156" data-line-number="156"><span class="co">#&gt; [245] RcppArmadillo_0.9.850.1.0   latticeExtra_0.6-29        </span></a>
-<a class="sourceLine" id="cb8-157" data-line-number="157"><span class="co">#&gt; [247] biomaRt_2.42.0              IRanges_2.20.2             </span></a>
-<a class="sourceLine" id="cb8-158" data-line-number="158"><span class="co">#&gt; [249] fastmap_1.0.1               doParallel_1.0.15          </span></a>
-<a class="sourceLine" id="cb8-159" data-line-number="159"><span class="co">#&gt; [251] pscl_1.5.2                  flexmix_2.3-15             </span></a>
-<a class="sourceLine" id="cb8-160" data-line-number="160"><span class="co">#&gt; [253] quantreg_5.54               AnnotationDbi_1.48.0       </span></a>
-<a class="sourceLine" id="cb8-161" data-line-number="161"><span class="co">#&gt; [255] broom_0.5.4                 openssl_1.4.1              </span></a>
-<a class="sourceLine" id="cb8-162" data-line-number="162"><span class="co">#&gt; [257] scales_1.1.0                arm_1.10-1                 </span></a>
-<a class="sourceLine" id="cb8-163" data-line-number="163"><span class="co">#&gt; [259] backports_1.1.5             plotrix_3.7-7              </span></a>
-<a class="sourceLine" id="cb8-164" data-line-number="164"><span class="co">#&gt; [261] IHW_1.14.0                  S4Vectors_0.24.3           </span></a>
-<a class="sourceLine" id="cb8-165" data-line-number="165"><span class="co">#&gt; [263] densityClust_0.3            lme4_1.1-21                </span></a>
-<a class="sourceLine" id="cb8-166" data-line-number="166"><span class="co">#&gt; [265] hms_0.5.3                   DESeq_1.38.0               </span></a>
-<a class="sourceLine" id="cb8-167" data-line-number="167"><span class="co">#&gt; [267] Rtsne_0.15                  dplyr_0.8.4                </span></a>
-<a class="sourceLine" id="cb8-168" data-line-number="168"><span class="co">#&gt; [269] shiny_1.4.0                 grid_3.6.2                 </span></a>
-<a class="sourceLine" id="cb8-169" data-line-number="169"><span class="co">#&gt; [271] lazyeval_0.2.2              Formula_1.2-3              </span></a>
-<a class="sourceLine" id="cb8-170" data-line-number="170"><span class="co">#&gt; [273] blockmodeling_0.3.4         crayon_1.3.4               </span></a>
-<a class="sourceLine" id="cb8-171" data-line-number="171"><span class="co">#&gt; [275] MAST_1.12.0                 RUVSeq_1.20.0              </span></a>
-<a class="sourceLine" id="cb8-172" data-line-number="172"><span class="co">#&gt; [277] viridis_0.5.1               rpart_4.1-15               </span></a>
-<a class="sourceLine" id="cb8-173" data-line-number="173"><span class="co">#&gt; [279] zinbwave_1.8.0              compiler_3.6.2</span></a></code></pre></div>
+<a href="#r-session-info" class="anchor"></a><code>R</code> Session Info</h2>
+<div class="sourceCode" id="cb8"><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">powsimR</span>)
+<span class="co">#&gt; Loading required package: gamlss.dist</span>
+<span class="co">#&gt; Loading required package: MASS</span>
+<span class="co">#&gt; Warning: replacing previous import 'DECENT::lrTest' by 'MAST::lrTest' when</span>
+<span class="co">#&gt; loading 'powsimR'</span>
+<span class="co">#&gt; Registered S3 methods overwritten by 'lme4':</span>
+<span class="co">#&gt;   method                          from</span>
+<span class="co">#&gt;   cooks.distance.influence.merMod car </span>
+<span class="co">#&gt;   influence.merMod                car </span>
+<span class="co">#&gt;   dfbeta.influence.merMod         car </span>
+<span class="co">#&gt;   dfbetas.influence.merMod        car</span>
+<span class="co">#&gt; Warning: replacing previous import 'penalized::predict' by 'stats::predict' when</span>
+<span class="co">#&gt; loading 'powsimR'</span>
+<span class="co">#&gt; Warning: replacing previous import 'zinbwave::glmWeightedF' by</span>
+<span class="co">#&gt; 'zingeR::glmWeightedF' when loading 'powsimR'</span>
+<span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html">sessionInfo</a></span>()
+<span class="co">#&gt; R version 4.0.1 (2020-06-06)</span>
+<span class="co">#&gt; Platform: x86_64-pc-linux-gnu (64-bit)</span>
+<span class="co">#&gt; Running under: Ubuntu 18.04.4 LTS</span>
+<span class="co">#&gt; </span>
+<span class="co">#&gt; Matrix products: default</span>
+<span class="co">#&gt; BLAS:   /usr/lib/x86_64-linux-gnu/openblas/libblas.so.3</span>
+<span class="co">#&gt; LAPACK: /usr/lib/x86_64-linux-gnu/libopenblasp-r0.2.20.so</span>
+<span class="co">#&gt; </span>
+<span class="co">#&gt; locale:</span>
+<span class="co">#&gt;  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              </span>
+<span class="co">#&gt;  [3] LC_TIME=de_DE.UTF-8        LC_COLLATE=en_US.UTF-8    </span>
+<span class="co">#&gt;  [5] LC_MONETARY=de_DE.UTF-8    LC_MESSAGES=en_US.UTF-8   </span>
+<span class="co">#&gt;  [7] LC_PAPER=de_DE.UTF-8       LC_NAME=C                 </span>
+<span class="co">#&gt;  [9] LC_ADDRESS=C               LC_TELEPHONE=C            </span>
+<span class="co">#&gt; [11] LC_MEASUREMENT=de_DE.UTF-8 LC_IDENTIFICATION=C       </span>
+<span class="co">#&gt; </span>
+<span class="co">#&gt; attached base packages:</span>
+<span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span>
+<span class="co">#&gt; </span>
+<span class="co">#&gt; other attached packages:</span>
+<span class="co">#&gt; [1] powsimR_1.2.2     gamlss.dist_5.1-6 MASS_7.3-51.6    </span>
+<span class="co">#&gt; </span>
+<span class="co">#&gt; loaded via a namespace (and not attached):</span>
+<span class="co">#&gt;   [1] mixtools_1.2.0              softImpute_1.4             </span>
+<span class="co">#&gt;   [3] minpack.lm_1.2-1            lattice_0.20-41            </span>
+<span class="co">#&gt;   [5] haven_2.3.1                 vctrs_0.3.1                </span>
+<span class="co">#&gt;   [7] fastICA_1.2-2               mgcv_1.8-31                </span>
+<span class="co">#&gt;   [9] penalized_0.9-51            blob_1.2.1                 </span>
+<span class="co">#&gt;  [11] survival_3.2-3              Rmagic_2.0.3               </span>
+<span class="co">#&gt;  [13] later_1.1.0.1               nloptr_1.2.2.1             </span>
+<span class="co">#&gt;  [15] DBI_1.1.0                   R.utils_2.9.2              </span>
+<span class="co">#&gt;  [17] SingleCellExperiment_1.10.1 rappdirs_0.3.1             </span>
+<span class="co">#&gt;  [19] Linnorm_2.12.0              dqrng_0.2.1                </span>
+<span class="co">#&gt;  [21] jpeg_0.1-8.1                zlibbioc_1.34.0            </span>
+<span class="co">#&gt;  [23] MatrixModels_0.4-1          htmlwidgets_1.5.1          </span>
+<span class="co">#&gt;  [25] mvtnorm_1.1-1               future_1.17.0              </span>
+<span class="co">#&gt;  [27] UpSetR_1.4.0                parallel_4.0.1             </span>
+<span class="co">#&gt;  [29] scater_1.16.1               irlba_2.3.3                </span>
+<span class="co">#&gt;  [31] DEoptimR_1.0-8              Rcpp_1.0.4.6               </span>
+<span class="co">#&gt;  [33] KernSmooth_2.23-17          DT_0.13                    </span>
+<span class="co">#&gt;  [35] promises_1.1.1              gdata_2.18.0               </span>
+<span class="co">#&gt;  [37] DDRTree_0.1.5               DelayedArray_0.14.0        </span>
+<span class="co">#&gt;  [39] limma_3.44.3                vegan_2.5-6                </span>
+<span class="co">#&gt;  [41] Hmisc_4.4-0                 ShortRead_1.46.0           </span>
+<span class="co">#&gt;  [43] apcluster_1.4.8             RSpectra_0.16-0            </span>
+<span class="co">#&gt;  [45] msir_1.3.2                  mnormt_2.0.0               </span>
+<span class="co">#&gt;  [47] digest_0.6.25               png_0.1-7                  </span>
+<span class="co">#&gt;  [49] qlcMatrix_0.9.7             sctransform_0.2.1          </span>
+<span class="co">#&gt;  [51] cowplot_1.0.0               pkgconfig_2.0.3            </span>
+<span class="co">#&gt;  [53] docopt_0.6.1                DelayedMatrixStats_1.10.0  </span>
+<span class="co">#&gt;  [55] ggbeeswarm_0.6.0            iterators_1.0.12           </span>
+<span class="co">#&gt;  [57] minqa_1.2.4                 lavaan_0.6-6               </span>
+<span class="co">#&gt;  [59] reticulate_1.16             SummarizedExperiment_1.18.1</span>
+<span class="co">#&gt;  [61] spam_2.5-1                  beeswarm_0.2.3             </span>
+<span class="co">#&gt;  [63] modeltools_0.2-23           xfun_0.14                  </span>
+<span class="co">#&gt;  [65] zoo_1.8-8                   tidyselect_1.1.0           </span>
+<span class="co">#&gt;  [67] ZIM_1.1.0                   reshape2_1.4.4             </span>
+<span class="co">#&gt;  [69] purrr_0.3.4                 kernlab_0.9-29             </span>
+<span class="co">#&gt;  [71] EDASeq_2.22.0               viridisLite_0.3.0          </span>
+<span class="co">#&gt;  [73] snow_0.4-3                  rtracklayer_1.48.0         </span>
+<span class="co">#&gt;  [75] rlang_0.4.6                 hexbin_1.28.1              </span>
+<span class="co">#&gt;  [77] glue_1.4.1                  RColorBrewer_1.1-2         </span>
+<span class="co">#&gt;  [79] fpc_2.2-5                   matrixStats_0.56.0         </span>
+<span class="co">#&gt;  [81] stringr_1.4.0               fields_10.3                </span>
+<span class="co">#&gt;  [83] ggsignif_0.6.0              DESeq2_1.28.1              </span>
+<span class="co">#&gt;  [85] SparseM_1.78                httpuv_1.5.4               </span>
+<span class="co">#&gt;  [87] class_7.3-17                BPSC_0.99.2                </span>
+<span class="co">#&gt;  [89] BiocNeighbors_1.6.0         annotate_1.66.0            </span>
+<span class="co">#&gt;  [91] jsonlite_1.6.1              XVector_0.28.0             </span>
+<span class="co">#&gt;  [93] tmvnsim_1.0-2               bit_1.1-15.2               </span>
+<span class="co">#&gt;  [95] mime_0.9                    gridExtra_2.3              </span>
+<span class="co">#&gt;  [97] gplots_3.0.3                Rsamtools_2.4.0            </span>
+<span class="co">#&gt;  [99] zingeR_0.1.0                stringi_1.4.6              </span>
+<span class="co">#&gt; [101] gmodels_2.18.1              bitops_1.0-6               </span>
+<span class="co">#&gt; [103] maps_3.3.0                  RSQLite_2.2.0              </span>
+<span class="co">#&gt; [105] tidyr_1.1.0                 pheatmap_1.0.12            </span>
+<span class="co">#&gt; [107] data.table_1.12.8           rstudioapi_0.11            </span>
+<span class="co">#&gt; [109] GenomicAlignments_1.24.0    nlme_3.1-148               </span>
+<span class="co">#&gt; [111] qvalue_2.20.0               scran_1.16.0               </span>
+<span class="co">#&gt; [113] fastcluster_1.1.25          locfit_1.5-9.4             </span>
+<span class="co">#&gt; [115] scone_1.12.0                listenv_0.8.0              </span>
+<span class="co">#&gt; [117] cobs_1.3-4                  R.oo_1.23.0                </span>
+<span class="co">#&gt; [119] prabclus_2.3-2              dbplyr_1.4.4               </span>
+<span class="co">#&gt; [121] segmented_1.1-0             BiocGenerics_0.34.0        </span>
+<span class="co">#&gt; [123] readxl_1.3.1                lifecycle_0.2.0            </span>
+<span class="co">#&gt; [125] ROTS_1.16.0                 munsell_0.5.0              </span>
+<span class="co">#&gt; [127] cellranger_1.1.0            R.methodsS3_1.8.0          </span>
+<span class="co">#&gt; [129] moments_0.14                hwriter_1.3.2              </span>
+<span class="co">#&gt; [131] caTools_1.18.0              codetools_0.2-16           </span>
+<span class="co">#&gt; [133] coda_0.19-3                 Biobase_2.48.0             </span>
+<span class="co">#&gt; [135] GenomeInfoDb_1.24.2         vipor_0.4.5                </span>
+<span class="co">#&gt; [137] htmlTable_1.13.3            bayNorm_1.6.0              </span>
+<span class="co">#&gt; [139] rARPACK_0.11-0              xtable_1.8-4               </span>
+<span class="co">#&gt; [141] SAVER_1.1.2                 ROCR_1.0-11                </span>
+<span class="co">#&gt; [143] diptest_0.75-7              formatR_1.7                </span>
+<span class="co">#&gt; [145] lpsymphony_1.16.0           abind_1.4-5                </span>
+<span class="co">#&gt; [147] FNN_1.1.3                   RANN_2.6.1                 </span>
+<span class="co">#&gt; [149] askpass_1.1                 sparsesvd_0.2              </span>
+<span class="co">#&gt; [151] CompQuadForm_1.4.3          GenomicRanges_1.40.0       </span>
+<span class="co">#&gt; [153] tibble_3.0.1                ggdendro_0.1-20            </span>
+<span class="co">#&gt; [155] cluster_2.1.0               future.apply_1.5.0         </span>
+<span class="co">#&gt; [157] Matrix_1.2-18               ellipsis_0.3.1             </span>
+<span class="co">#&gt; [159] prettyunits_1.1.1           shinyBS_0.61               </span>
+<span class="co">#&gt; [161] NOISeq_2.31.0               shinydashboard_0.7.1       </span>
+<span class="co">#&gt; [163] mclust_5.4.6                igraph_1.2.5               </span>
+<span class="co">#&gt; [165] ggstance_0.3.4              slam_0.1-47                </span>
+<span class="co">#&gt; [167] testthat_2.3.2              doSNOW_1.0.18              </span>
+<span class="co">#&gt; [169] htmltools_0.5.0             BiocFileCache_1.12.0       </span>
+<span class="co">#&gt; [171] yaml_2.2.1                  GenomicFeatures_1.40.0     </span>
+<span class="co">#&gt; [173] XML_3.99-0.3                ggpubr_0.3.0               </span>
+<span class="co">#&gt; [175] DrImpute_1.0                foreign_0.8-80             </span>
+<span class="co">#&gt; [177] fitdistrplus_1.1-1          BiocParallel_1.22.0        </span>
+<span class="co">#&gt; [179] aroma.light_3.18.0          bit64_0.9-7                </span>
+<span class="co">#&gt; [181] foreach_1.5.0               robustbase_0.93-6          </span>
+<span class="co">#&gt; [183] outliers_0.14               Biostrings_2.56.0          </span>
+<span class="co">#&gt; [185] combinat_0.0-8              rsvd_1.0.3                 </span>
+<span class="co">#&gt; [187] iCOBRA_1.16.0               memoise_1.1.0              </span>
+<span class="co">#&gt; [189] evaluate_0.14               VGAM_1.1-3                 </span>
+<span class="co">#&gt; [191] nonnest2_0.5-3              forcats_0.5.0              </span>
+<span class="co">#&gt; [193] rio_0.5.16                  geneplotter_1.66.0         </span>
+<span class="co">#&gt; [195] permute_0.9-5               curl_4.3                   </span>
+<span class="co">#&gt; [197] fdrtool_1.2.15              acepack_1.4.1              </span>
+<span class="co">#&gt; [199] edgeR_3.30.3                checkmate_2.0.0            </span>
+<span class="co">#&gt; [201] truncnorm_1.0-8             DECENT_1.1.0               </span>
+<span class="co">#&gt; [203] tensorA_0.36.1              ellipse_0.4.2              </span>
+<span class="co">#&gt; [205] ggplot2_3.3.1               openxlsx_4.1.5             </span>
+<span class="co">#&gt; [207] rstatix_0.5.0               ggrepel_0.8.2              </span>
+<span class="co">#&gt; [209] scDD_1.12.0                 tools_4.0.1                </span>
+<span class="co">#&gt; [211] sandwich_2.5-1              magrittr_1.5               </span>
+<span class="co">#&gt; [213] RCurl_1.98-1.2              car_3.0-8                  </span>
+<span class="co">#&gt; [215] pbivnorm_0.6.0              bayesm_3.1-4               </span>
+<span class="co">#&gt; [217] EBSeq_1.28.0                httr_1.4.1                 </span>
+<span class="co">#&gt; [219] assertthat_0.2.1            rmarkdown_2.2              </span>
+<span class="co">#&gt; [221] boot_1.3-25                 globals_0.12.5             </span>
+<span class="co">#&gt; [223] R6_2.4.1                    Rhdf5lib_1.10.0            </span>
+<span class="co">#&gt; [225] nnet_7.3-14                 progress_1.2.2             </span>
+<span class="co">#&gt; [227] genefilter_1.70.0           gtools_3.8.2               </span>
+<span class="co">#&gt; [229] statmod_1.4.34              BiocSingular_1.4.0         </span>
+<span class="co">#&gt; [231] rhdf5_2.32.0                splines_4.0.1              </span>
+<span class="co">#&gt; [233] carData_3.0-4               colorspace_1.4-1           </span>
+<span class="co">#&gt; [235] amap_0.8-18                 generics_0.0.2             </span>
+<span class="co">#&gt; [237] stats4_4.0.1                NBPSeq_0.3.0               </span>
+<span class="co">#&gt; [239] base64enc_0.1-3             compositions_1.40-5        </span>
+<span class="co">#&gt; [241] baySeq_2.22.0               pillar_1.4.4               </span>
+<span class="co">#&gt; [243] HSMMSingleCell_1.8.0        GenomeInfoDbData_1.2.3     </span>
+<span class="co">#&gt; [245] plyr_1.8.6                  dotCall64_1.0-0            </span>
+<span class="co">#&gt; [247] gtable_0.3.0                zip_2.0.4                  </span>
+<span class="co">#&gt; [249] SCnorm_1.10.0               monocle_2.16.0             </span>
+<span class="co">#&gt; [251] knitr_1.28                  RcppArmadillo_0.9.900.1.0  </span>
+<span class="co">#&gt; [253] latticeExtra_0.6-29         biomaRt_2.44.0             </span>
+<span class="co">#&gt; [255] IRanges_2.22.2              fastmap_1.0.1              </span>
+<span class="co">#&gt; [257] doParallel_1.0.15           pscl_1.5.5                 </span>
+<span class="co">#&gt; [259] flexmix_2.3-15              quantreg_5.55              </span>
+<span class="co">#&gt; [261] AnnotationDbi_1.50.0        broom_0.5.6                </span>
+<span class="co">#&gt; [263] openssl_1.4.1               scales_1.1.1               </span>
+<span class="co">#&gt; [265] arm_1.11-1                  backports_1.1.8            </span>
+<span class="co">#&gt; [267] plotrix_3.7-8               IHW_1.16.0                 </span>
+<span class="co">#&gt; [269] S4Vectors_0.26.1            densityClust_0.3           </span>
+<span class="co">#&gt; [271] lme4_1.1-23                 hms_0.5.3                  </span>
+<span class="co">#&gt; [273] DESeq_1.39.0                Rtsne_0.15                 </span>
+<span class="co">#&gt; [275] dplyr_1.0.0                 shiny_1.4.0.2              </span>
+<span class="co">#&gt; [277] grid_4.0.1                  Formula_1.2-3              </span>
+<span class="co">#&gt; [279] blockmodeling_0.3.6         crayon_1.3.4               </span>
+<span class="co">#&gt; [281] MAST_1.14.0                 RUVSeq_1.22.0              </span>
+<span class="co">#&gt; [283] viridis_0.5.1               rpart_4.1-15               </span>
+<span class="co">#&gt; [285] zinbwave_1.10.0             compiler_4.0.1</span></pre></div>
 </div>
 </div>
   </div>
 
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <div class="links">
 <h2>Links</h2>
 <ul class="list-unstyled">
-<li>Browse source code at <br><a href="https://github.com/bvieth/powsimR">https://​github.com/​bvieth/​powsimR</a>
+<li>Browse source code at <br><a href="https://github.com/bvieth/powsimR/">https://​github.com/​bvieth/​powsimR/​</a>
 </li>
 <li>Report a bug at <br><a href="https://github.com/bvieth/powsimR/issues">https://​github.com/​bvieth/​powsimR/​issues</a>
 </li>
@@ -379,7 +393,7 @@
 <h2>License</h2>
 <ul class="list-unstyled">
 <li><a href="LICENSE.html">Full license</a></li>
-<li><small>Artistic License 2.0</small></li>
+<li><small>GPL</small></li>
 </ul>
 </div>
 <div class="citation">
@@ -404,7 +418,7 @@
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>

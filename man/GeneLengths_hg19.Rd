@@ -4,7 +4,9 @@
 \name{GeneLengths_hg19}
 \alias{GeneLengths_hg19}
 \title{Parekh et al. 2016: Gene Lengths}
-\format{A named vector of gene lengths.}
+\format{
+A named vector of gene lengths.
+}
 \source{
 \url{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE75823}.
 }

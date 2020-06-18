@@ -952,7 +952,7 @@
 
 # MAST --------------------------------------------------------------------
 
-#' @importFrom MAST FromMatrix zlm.SingleCellAssay lrTest summary
+#' @importFrom MAST FromMatrix lrTest summary
 #' @importFrom S4Vectors mcols
 # #' @importFrom AnnotationDbi as.list
 #' @importFrom edgeR DGEList

@@ -207,9 +207,9 @@
                            fill = "grey90", width = 0.8, color = "black") +
       ggplot2::stat_summary(data = sf.dat,
                             ggplot2::aes_(x = 1, y=quote(SizeFactor)),
-                            fun.y = median,
-                            fun.ymin = median,
-                            fun.ymax = median,
+                            fun = median,
+                            fun.min = median,
+                            fun.max = median,
                             color = "black",
                             width = 0.5,
                             geom = "crossbar") +
@@ -229,9 +229,9 @@
                             fill = "grey75") +
       ggplot2::stat_summary(data = sf.dat,
                             ggplot2::aes_(x = 1, y=quote(SizeFactor)),
-                            fun.y = median,
-                            fun.ymin = median,
-                            fun.ymax = median,
+                            fun = median,
+                            fun.min = median,
+                            fun.max = median,
                             color = "black",
                             width = 0.5,
                             geom = "crossbar") +
@@ -339,9 +339,9 @@
                             dotsize=0.75) +
       ggplot2::stat_summary(data = genespike.dat,
                             ggplot2::aes_(x = 1, y=quote(Ratio)),
-                            fun.y = median,
-                            fun.ymin = median,
-                            fun.ymax = median,
+                            fun = median,
+                            fun.min = median,
+                            fun.max = median,
                             color = "black",
                             width = 0.5,
                             geom = "crossbar") +
@@ -373,8 +373,8 @@
                         `Dropout` = "Gene Dropout Rate")
     margs.L <- sapply(param.names, function(i){
       tmp <- estParamRes$Parameters[[i]]
-      data.frame(Mean=log1p(tmp$means),
-                 Dispersion=log1p(tmp$dispersion),
+      data.frame(Mean=log2(tmp$means+1),
+                 Dispersion=log2(tmp$dispersion+1),
                  Dropout=tmp$gene.dropout)
     }, simplify = F, USE.NAMES = T)
   }
@@ -384,8 +384,8 @@
                         `Dropout` = "Gene Dropout Rate")
     margs.L <- sapply(param.names, function(i){
       tmp <- estParamRes$Parameters[[i]]
-      data.frame(Mean=log1p(tmp$pos.means),
-                 Dispersion=log1p(tmp$pos.dispersion),
+      data.frame(Mean=log2(tmp$pos.means+1),
+                 Dispersion=log2(tmp$pos.dispersion+1),
                  Dropout=tmp$gene.dropout)
     }, simplify = F, USE.NAMES = T)
   }
@@ -395,9 +395,9 @@
   margs.plot <- ggplot2::ggplot(margs.dat,
                                 ggplot2::aes_(x=quote(Set), y=quote(value))) +
     ggplot2::geom_violin(fill = "#597EB5", alpha = 0.5) +
-    ggplot2::stat_summary(fun.y = median,
-                          fun.ymin = median,
-                          fun.ymax = median,
+    ggplot2::stat_summary(fun = median,
+                          fun.min = median,
+                          fun.max = median,
                           color = "black",
                           width = 0.5,
                           geom = "crossbar") +
@@ -458,12 +458,12 @@
   if(Distribution == "NB"){
     mean.name <- "Log Mean"
     disp.name <- "Log Dispersion"
-    cdisp <- log1p(estParamRes$Parameters$Filtered$common.dispersion)
+    cdisp <- log2(estParamRes$Parameters$Filtered$common.dispersion+1)
   }
   if(Distribution == "ZINB"){
     mean.name <- "Log Positive Mean"
     disp.name <- "Log Positive Dispersion"
-    cdisp <- log1p(estParamRes$Parameters$Filtered$pos.common.dispersion)
+    cdisp <- log2(estParamRes$Parameters$Filtered$pos.common.dispersion+1)
   }
 
   meanvsdisp.plot <- ggplot2::ggplot(data=meanvsdisp.dat,
@@ -493,14 +493,14 @@
 .meanvsdrop_plot <- function(estParamRes, Distribution, RNAseq){
   ..density.. = NULL
   if(Distribution == "NB"){
-    meanvsp0.dat <- data.frame(Mean=log1p(estParamRes$Parameters$Filtered$means),
+    meanvsp0.dat <- data.frame(Mean=log2(estParamRes$Parameters$Filtered$means+1),
                                Dropout=estParamRes$Parameters$Filtered$gene.dropout)
     mean.name <- "Log Mean"
   }
   if(Distribution == "ZINB"){
     meanvsp0fit.dat <- data.frame(Mean=estParamRes$Fit$Filtered$meang0fit$x,
                                   Dropout=estParamRes$Fit$Filtered$meang0fit$y)
-    meanvsp0.dat <- data.frame(Mean=log1p(estParamRes$Parameters$Filtered$pos.means),
+    meanvsp0.dat <- data.frame(Mean=log2(estParamRes$Parameters$Filtered$pos.means+1),
                                Dropout=estParamRes$Parameters$Filtered$gene.dropout)
     mean.name <- "Log Positive Mean"
   }
@@ -577,7 +577,7 @@
 # PlotEvalROC -------------------------------------------------------------
 
 #' @importFrom reshape2 melt
-#' @importFrom ggplot2 ggplot aes_ labs theme scale_y_continuous geom_line geom_hline geom_pointrange facet_wrap geom_boxplot position_dodge scale_fill_manual geom_bar theme_minimal
+#' @importFrom ggplot2 ggplot aes_ labs theme scale_y_continuous geom_line geom_hline geom_pointrange facet_wrap geom_boxplot position_dodge scale_fill_manual geom_bar theme_minimal expansion
 #' @importFrom ggstance geom_linerangeh
 #' @importFrom grid unit
 #' @importFrom scales percent
@@ -596,9 +596,9 @@
                          size = 0.75,
                          linetype = "dashed") +
     ggplot2::scale_x_continuous(limits = c(0,1),
-                                expand = ggplot2::expand_scale(mult = c(0.01, 0.01))) +
+                                expand = ggplot2::expansion(mult = c(0.01, 0.01))) +
     ggplot2::scale_y_continuous(limits = c(0,1),
-                                expand = ggplot2::expand_scale(mult = c(0.01, 0.01))) +
+                                expand = ggplot2::expansion(mult = c(0.01, 0.01))) +
     ggplot2::labs(x = "1 - Specificity (FPR)",
                   y = "Sensitivity (TPR)") +
     .theme_eval_roc()
@@ -615,9 +615,9 @@
                                      color = quote(Samples)),
                        size = 1) +
     ggplot2::scale_x_continuous(limits = c(0,1),
-                                expand = ggplot2::expand_scale(mult = c(0.01, 0.01))) +
+                                expand = ggplot2::expansion(mult = c(0.01, 0.01))) +
     ggplot2::scale_y_continuous(limits = c(0,1),
-                                expand = ggplot2::expand_scale(mult = c(0.01, 0.01))) +
+                                expand = ggplot2::expansion(mult = c(0.01, 0.01))) +
     ggplot2::labs(x = "Recall (TPR)", y = "Precision (PPV)") +
     .theme_eval_roc()
 
@@ -665,8 +665,8 @@
                                             color = quote(Samples))) +
     ggplot2::scale_fill_manual(values = ) +
     ggplot2::scale_x_continuous(limits = c(0,upperlimit),
-                                expand = ggplot2::expand_scale(mult = c(0.01, 0.01))) +
-    ggplot2::scale_y_continuous(expand = ggplot2::expand_scale(mult = c(0.01, 0.01))) +
+                                expand = ggplot2::expansion(mult = c(0.01, 0.01))) +
+    ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = c(0.01, 0.01))) +
     ggplot2::labs(y = "TPR",
                   x = "observed FDR") +
     ggplot2::guides() +
