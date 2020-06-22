@@ -698,8 +698,8 @@
   disp = disp[sharedgenes]
   size = size[sharedgenes]
 
-  ldisp = log2(disp+1)
-  lsize = log2(size+1)
+  ldisp = log2(disp)
+  lsize = log2(size)
   lmu = log2(mu+1)
 
   estG <- length(sharedgenes)
@@ -770,8 +770,8 @@
   disp = disp[sharedgenes]
   size = size[sharedgenes]
 
-  ldisp = log2(disp+1)
-  lsize = log2(size+1)
+  ldisp = log2(disp)
+  lsize = log2(size)
   lmu = log2(mu+1)
 
   estG <- length(sharedgenes)

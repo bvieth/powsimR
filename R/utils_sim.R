@@ -153,8 +153,8 @@
                                         xout = lmu, rule=2)$y)
   predsize.sd[predsize.sd==0] = min(predsize.sd > 0, na.rm = TRUE)
   sizevec = truncnorm::rtruncnorm(n = length(lmu),
-                                  a = min(sizes, na.rm = TRUE),
-                                  b = Inf,
+                                  a = min(log2(sizes), na.rm = TRUE),
+                                  b = max(log2(sizes), na.rm = TRUE),
                                   mean = predsize.mean,
                                   sd = predsize.sd)
 
@@ -189,7 +189,7 @@
   counts = matrix(
     stats::rnbinom(nsamples * ngenes,
                    mu = 2^mumat-1,
-                   size = 2^sizevec-1),
+                   size = 2^sizevec),
     ncol = nsamples,
     nrow = ngenes,
     dimnames = list(paste0(rownames(mumat),"_", seq_len(ngenes)),
@@ -247,8 +247,8 @@
                                         xout = lmu, rule=2)$y)
   predsize.sd[predsize.sd==0] = min(predsize.sd > 0, na.rm = TRUE)
   sizevec = truncnorm::rtruncnorm(n = length(lmu),
-                                  a = min(pos.sizes, na.rm = TRUE),
-                                  b = Inf,
+                                  a = min(log2(pos.sizes), na.rm = TRUE),
+                                  b = max(log2(pos.sizes), na.rm = TRUE),
                                   mean = predsize.mean,
                                   sd = predsize.sd)
 
@@ -373,7 +373,7 @@
     counts.nb = matrix(
       stats::rnbinom(nsamples * ngenes,
                      mu = 2^mumat-1,
-                     size = 2^sizevec-1),
+                     size = 2^sizevec),
       ncol = nsamples,
       nrow = ngenes)
 
@@ -474,8 +474,8 @@
                                         xout = lmu, rule=2)$y)
   predsize.sd[predsize.sd==0] = min(predsize.sd > 0, na.rm = TRUE)
   sizevec = truncnorm::rtruncnorm(n = length(lmu),
-                                  a = min(sizes, na.rm = TRUE),
-                                  b = Inf,
+                                  a = min(log2(sizes), na.rm = TRUE),
+                                  b = max(log2(sizes), na.rm = TRUE),
                                   mean = predsize.mean,
                                   sd = predsize.sd)
 
@@ -489,7 +489,7 @@
   dcounts[d.index,] = suppressWarnings(
     matrix(stats::rnbinom(nsamples * ndrop,
                            mu = 2^effective.means-1,
-                           size = 2^sizevec-1),
+                           size = 2^sizevec),
             ncol = nsamples,
             nrow = ndrop)
     )
