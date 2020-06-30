@@ -1,4 +1,8 @@
 
+# Version 1.2.3 (2020-6-30)
+
+* Adapt methods of moments estimation of mean, dispersion and dropout during simulation.
+
 # Version 1.2.2 (2020-6-18)
 
 * Ensuring compability with R version 4.0 (e.g. deprecated DEDS Bioconductor package)

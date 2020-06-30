@@ -71,7 +71,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">powsimR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.3</span>
       </span>
     </div>
 
@@ -117,18 +117,25 @@
       <small>Source: <a href='https://github.com/bvieth/powsimR/blob/master/NEWS.md'><code>NEWS.md</code></a></small>
     </div>
 
-    <div id="version-1-2-2-2020-6-18" class="section level1">
+    <div id="version-123-2020-6-30" class="section level1">
+<h1 class="page-header" data-toc-text="1.2.3">
+<a href="#version-123-2020-6-30" class="anchor"></a>Version 1.2.3 (2020-6-30)</h1>
+<ul>
+<li>Adapt methods of moments estimation of mean, dispersion and dropout during simulation.</li>
+</ul>
+</div>
+    <div id="version-122-2020-6-18" class="section level1">
 <h1 class="page-header" data-toc-text="1.2.2">
-<a href="#version-1-2-2-2020-6-18" class="anchor"></a>Version 1.2.2 (2020-6-18)</h1>
+<a href="#version-122-2020-6-18" class="anchor"></a>Version 1.2.2 (2020-6-18)</h1>
 <ul>
 <li>Ensuring compability with R version 4.0 (e.g. deprecated DEDS Bioconductor package)</li>
 <li>Adapt log fold change model matrix addition</li>
 <li>Adding log fold changes to fraction of replicates per group (option <code>p.G</code> in <code><a href="../reference/Setup.html">Setup()</a></code>)</li>
 </ul>
 </div>
-    <div id="version-1-2-0-2019-7-30" class="section level1">
+    <div id="version-120-2019-7-30" class="section level1">
 <h1 class="page-header" data-toc-text="1.2.0">
-<a href="#version-1-2-0-2019-7-30" class="anchor"></a>Version 1.2.0 (2019-7-30)</h1>
+<a href="#version-120-2019-7-30" class="anchor"></a>Version 1.2.0 (2019-7-30)</h1>
 <ul>
 <li>Downsampling of count matrices using binomial thinning implemented in <code><a href="../reference/estimateParam.html">estimateParam()</a></code> (UMI-read ratio estimation) and <code><a href="../reference/simulateDE.html">simulateDE()</a></code>.</li>
 <li>Setup of DE simulations now in one function (<code><a href="../reference/Setup.html">Setup()</a></code>) instead of two.</li>
@@ -137,34 +144,34 @@
 <li>implement sctransform as a single cell normalisation method.</li>
 </ul>
 </div>
-    <div id="version-1-1-3-2018-07-10" class="section level1">
+    <div id="version-113-2018-07-10" class="section level1">
 <h1 class="page-header" data-toc-text="1.1.3">
-<a href="#version-1-1-3-2018-07-10" class="anchor"></a>Version 1.1.3 (2018-07-10)</h1>
+<a href="#version-113-2018-07-10" class="anchor"></a>Version 1.1.3 (2018-07-10)</h1>
 <ul>
 <li>
 <code><a href="../reference/simulateDE.html">simulateDE()</a></code> using SCnorm scaling factors as weights in limma-trend, limma-voom.</li>
 </ul>
 </div>
-    <div id="version-1-1-2-2018-06-20" class="section level1">
+    <div id="version-112-2018-06-20" class="section level1">
 <h1 class="page-header" data-toc-text="1.1.2">
-<a href="#version-1-1-2-2018-06-20" class="anchor"></a>Version 1.1.2 (2018-06-20)</h1>
+<a href="#version-112-2018-06-20" class="anchor"></a>Version 1.1.2 (2018-06-20)</h1>
 <ul>
 <li>
 <code><a href="../reference/estimateParam.html">estimateParam()</a></code> error fixed concerning expression cleanup.</li>
 <li>precompiled vignette in inst/doc/.</li>
 </ul>
 </div>
-    <div id="version-1-1-1-2018-04-19" class="section level1">
+    <div id="version-111-2018-04-19" class="section level1">
 <h1 class="page-header" data-toc-text="1.1.1">
-<a href="#version-1-1-1-2018-04-19" class="anchor"></a>Version 1.1.1 (2018-04-19)</h1>
+<a href="#version-111-2018-04-19" class="anchor"></a>Version 1.1.1 (2018-04-19)</h1>
 <ul>
 <li>
 <code><a href="../reference/simulateDE.html">simulateDE()</a></code> now with the option to perform DE testing on filtered/imputed counts (option <code>DEFilter</code>)</li>
 </ul>
 </div>
-    <div id="version-1-1-0-2018-03-29" class="section level1">
+    <div id="version-110-2018-03-29" class="section level1">
 <h1 class="page-header" data-toc-text="1.1.0">
-<a href="#version-1-1-0-2018-03-29" class="anchor"></a>Version 1.1.0 (2018-03-29)</h1>
+<a href="#version-110-2018-03-29" class="anchor"></a>Version 1.1.0 (2018-03-29)</h1>
 <ul>
 <li>simulation of batch effects (see options <code>p.B</code>, <code>bLFC</code> and <code>bPattern</code> in <code>DESetup()</code> and <code>simulateCounts()</code>)</li>
 <li>simulation of spike-in expression (see <code>estimateSpike</code> , <code>plotSpike</code> and option <code>spikeIns</code> in <code>simulateDE</code> and <code>simulateCounts()</code>)</li>

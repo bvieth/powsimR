@@ -31,7 +31,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">powsimR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.3</span>
       </span>
     </div>
 
@@ -70,7 +70,7 @@
 
       
 
-      </header><div class="row">
+      </header><script src="powsimR_files/accessible-code-block-0.0.1/empty-anchor.js"></script><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>powsimR</h1>
@@ -86,7 +86,7 @@
 <div id="abstract" class="section level1 unnumbered">
 <h1 class="hasAnchor">
 <a href="#abstract" class="anchor"></a>Abstract</h1>
-<p>This vignette describes the R package <code>powsimR</code> <span class="citation">(Vieth et al. <a href="#ref-Vieth2017-lh">2017</a>)</span>. It aims to be at once a demonstration of its features and a guide to its usage. Statistical power analysis is essential to optimize the design of RNA-seq experiments and to assess and compare the power to detect differentially expressed genes in RNA-seq data. <code>powsimR</code> is a flexible tool to simulate and evaluate differential expression from bulk and especially single-cell RNA-seq data making it suitable for a priori and posterior power analyses.</p>
+<p>This vignette describes the R package <code>powsimR</code> <span class="citation">(Vieth et al. <a href="#ref-Vieth2017-lh" role="doc-biblioref">2017</a>)</span>. It aims to be at once a demonstration of its features and a guide to its usage. Statistical power analysis is essential to optimize the design of RNA-seq experiments and to assess and compare the power to detect differentially expressed genes in RNA-seq data. <code>powsimR</code> is a flexible tool to simulate and evaluate differential expression from bulk and especially single-cell RNA-seq data making it suitable for a priori and posterior power analyses.</p>
 <p>For our count simulations, we (1) reliably model the mean, dispersion and dropout distributions as well as the relationship between those factors from the data. (2) Simulate counts from the empirical mean-variance and dropout relations, while offering flexible choices of the number of differentially expressed genes, effect sizes, DE testing and normalisation method. (3) Finally, we evaluate the power over various sample sizes and visualise the results with error rates plots.</p>
 <p><strong>Note:</strong> if you use powsimR in published research, please cite:</p>
 <blockquote>
@@ -171,7 +171,7 @@
 <div id="introduction" class="section level1">
 <h1 class="hasAnchor">
 <a href="#introduction" class="anchor"></a>Introduction</h1>
-<p>In this vignette, we illustrate the features of <code>powsimR</code> by assessing the power to detect differential expression between two groups of mouse embryonic stem cells cultured in standard 2i/LIF culture medium <a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE75790">GSE75790</a> <span class="citation">(Ziegenhain et al. <a href="#ref-Ziegenhain2017-sf">2017</a>)</span>.</p>
+<p>In this vignette, we illustrate the features of <code>powsimR</code> by assessing the power to detect differential expression between two groups of mouse embryonic stem cells cultured in standard 2i/LIF culture medium <a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE75790">GSE75790</a> <span class="citation">(Ziegenhain et al. <a href="#ref-Ziegenhain2017-sf" role="doc-biblioref">2017</a>)</span>.</p>
 <div id="powsimr-workflow" class="section level2">
 <h2 class="hasAnchor">
 <a href="#powsimr-workflow" class="anchor"></a>powsimR Workflow</h2>
@@ -199,7 +199,7 @@ PowsimR schematic overview. We want to investigate the statistical power to dete
 <p>In both cases matching moments estimation of mean and dispersion are based on normalized counts.</p>
 <p>The user can choose between multiple normalisation methods (see Details section of <code>estimateParam</code>). Furthermore, a number of methods are group sensitive (e.g. batch labels can be provided in SCnorm). For single cell data, it is important to filter out genes and/or cells that are outliers or deemed undetected (see options SampleFilter and GeneFilter).</p>
 <p>The estimates, sequencing depth and normalisation factors are plotted with <code>plotParam</code>.</p>
-<p>With the following command, we estimate and plot the parameters for the mouse embryonic stem cells profiled with CELseq2 <span class="citation">(Ziegenhain et al. <a href="#ref-Ziegenhain2017-sf">2017</a>)</span> (Figure @ref(fig:geneparamsplot)). Firstly, we can examine the quality of the data set using the metrics in Figure @ref(fig:geneparamsplot) A. But most importantly, we see that the variability (i.e. dispersion) and dropout rates are high (Figure @ref(fig:geneparamsplot) B). Furthermore, the dispersion depends on the mean and does not level off with higher mean values compared to bulk data (Figure @ref(fig:geneparamsplot) D).</p>
+<p>With the following command, we estimate and plot the parameters for the mouse embryonic stem cells profiled with CELseq2 <span class="citation">(Ziegenhain et al. <a href="#ref-Ziegenhain2017-sf" role="doc-biblioref">2017</a>)</span> (Figure @ref(fig:geneparamsplot)). Firstly, we can examine the quality of the data set using the metrics in Figure @ref(fig:geneparamsplot) A. But most importantly, we see that the variability (i.e. dispersion) and dropout rates are high (Figure @ref(fig:geneparamsplot) B). Furthermore, the dispersion depends on the mean and does not level off with higher mean values compared to bulk data (Figure @ref(fig:geneparamsplot) D).</p>
 <div class="sourceCode" id="cb6"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span>(<span class="st">"CELseq2_Gene_UMI_Counts"</span>)
 <span class="no">batch</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html">sapply</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/strsplit.html">strsplit</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/colnames.html">colnames</a></span>(<span class="no">CELseq2_Gene_UMI_Counts</span>), <span class="st">"_"</span>), <span class="st">"[["</span>, <span class="fl">1</span>)
 <span class="no">Batches</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span>(<span class="kw">Batch</span> <span class="kw">=</span> <span class="no">batch</span>,
@@ -229,20 +229,20 @@ Estimated parameters for CEL-seq2 libraries from Ziegenhain et al. 2017. A) Qua
 </div>
 <p>We have implemented a count simulation framework assuming either a negative binomial distribution or a zero-inflated negative binomial distribution. To predict the dispersion given a random draw of mean expression value observed, we apply a locally weighted polynomial regression fit (solid orange line in Figure @ref(fig:geneparamsplot) D). To capture the variability of dispersion estimates observed, a local variability prediction band is applied (dashed orange lines in Figure @ref(fig:geneparamsplot) D).</p>
 <p>For bulk RNA-seq experiments, dropouts are less probable but can still occur. To include this phenomenon we sample from the observed dropout rates for genes that have a mean expression value below 5% dropout probability determined by a decrease constrained B-splines regression of dropout rate against mean expression (<code>cobs</code>).</p>
-<p>For the zero-inflated negative binomial distribution, the mean-dispersion relation is similarly estimated, but based on positive read counts. Furthermore, the dropouts are also predicted based on a locally weighted polynomial regression fit between mean and dropouts. Of note, this fit is done separately for amplified and non-amplified transcripts and similar proportions of genes as observed are also generated in the simulations <span class="citation">(Ziegenhain et al. <a href="#ref-Ziegenhain2017-sf">2017</a>)</span>.</p>
-<p>We and others have found that the negative binomial (NB) distribution is particularly suited for scRNA-seq protocols with UMIs (e.g. SCRB-Seq, Drop-Seq, 10XGenomics) <span class="citation">(Svensson <a href="#ref-Svensson2020-ip">2020</a>)</span> whereas non-UMI methods like Smartseq2 show a considerable proportion of genes with zero-inflated count distributions and the zero-inflated negative binomial (ZINB) is then more appropiate <span class="citation">(Vieth et al. <a href="#ref-Vieth2017-lh">2017</a>)</span>. In addition, we recommend the NB distribution for bulk RNA-seq and only recommend the option ‘singlecell’ in <code><a href="../reference/estimateParam.html">estimateParam()</a></code> and specialised single cell tools for e.g. normalisation if the data is extremely sparse.</p>
+<p>For the zero-inflated negative binomial distribution, the mean-dispersion relation is similarly estimated, but based on positive read counts. Furthermore, the dropouts are also predicted based on a locally weighted polynomial regression fit between mean and dropouts. Of note, this fit is done separately for amplified and non-amplified transcripts and similar proportions of genes as observed are also generated in the simulations <span class="citation">(Ziegenhain et al. <a href="#ref-Ziegenhain2017-sf" role="doc-biblioref">2017</a>)</span>.</p>
+<p>We and others have found that the negative binomial (NB) distribution is particularly suited for scRNA-seq protocols with UMIs (e.g. SCRB-Seq, Drop-Seq, 10XGenomics) <span class="citation">(Svensson <a href="#ref-Svensson2020-ip" role="doc-biblioref">2020</a>)</span> whereas non-UMI methods like Smartseq2 show a considerable proportion of genes with zero-inflated count distributions and the zero-inflated negative binomial (ZINB) is then more appropiate <span class="citation">(Vieth et al. <a href="#ref-Vieth2017-lh" role="doc-biblioref">2017</a>)</span>. In addition, we recommend the NB distribution for bulk RNA-seq and only recommend the option ‘singlecell’ in <code><a href="../reference/estimateParam.html">estimateParam()</a></code> and specialised single cell tools for e.g. normalisation if the data is extremely sparse.</p>
 </div>
 <div id="spike-ins" class="section level2">
 <h2 class="hasAnchor">
 <a href="#spike-ins" class="anchor"></a>Spike-Ins</h2>
-<p>Some normalisation methods can use spike-ins as part of their normalisation (e.g. SCnorm, scran, Census). We have found that using spike-ins when comparing expression across cells with strong asymmetric differences is important, e.g. comparing resting cells to very transcriptionally active cells <span class="citation">(Vieth et al. <a href="#ref-Vieth2019-ld">2019</a>)</span>. To use spike-in information in the simulations, their distributional characteristics need to be estimated. We follow the estimation and simulation framework presented in <span class="citation">(Kim et al. <a href="#ref-Kim2015-zo">2015</a>)</span> where the variance is decomposed into shot noise and mRNA loss due to capture and sequencing efficiency. In short, the parameters for a Beta-distribution describes the RNA molecule capture efficiency and the parameters of a Gamma distribution describes the sequencing efficiency, which we can then use to simulate in silico spike-ins given a mean expression value. We assume that biological variance does not contribute to spike-in expression.</p>
+<p>Some normalisation methods can use spike-ins as part of their normalisation (e.g. SCnorm, scran, Census). We have found that using spike-ins when comparing expression across cells with strong asymmetric differences is important, e.g. comparing resting cells to very transcriptionally active cells <span class="citation">(Vieth et al. <a href="#ref-Vieth2019-ld" role="doc-biblioref">2019</a>)</span>. To use spike-in information in the simulations, their distributional characteristics need to be estimated. We follow the estimation and simulation framework presented in <span class="citation">(Kim et al. <a href="#ref-Kim2015-zo" role="doc-biblioref">2015</a>)</span> where the variance is decomposed into shot noise and mRNA loss due to capture and sequencing efficiency. In short, the parameters for a Beta-distribution describes the RNA molecule capture efficiency and the parameters of a Gamma distribution describes the sequencing efficiency, which we can then use to simulate in silico spike-ins given a mean expression value. We assume that biological variance does not contribute to spike-in expression.</p>
 <p>The user needs to define the spike-in expression table and the spike-in information table (IDs, molecules, lengths per spike-in) in the function <code>estimateSpike</code>.</p>
 <p>The following formula can help the user to calculate the number of molecules of spike-ins:</p>
 <p><span class="math display">\[\begin{equation}
     Y_{j} = c_{j} * V * 10^{-3} * D^{-1} * 10^{-18} * {Avogadro}, \quad j=1,\dots,92
 \end{equation}\]</span></p>
 <p>The number of molecules <span class="math inline">\(Y_{j}\)</span> for each ERCC spike-in species is the product of the molar concentration <span class="math inline">\(c_{j}\)</span> (attomoles per microlitre), the dilution factor <span class="math inline">\(1/D\)</span>, the volume <span class="math inline">\(V\)</span> (nanolitre), Avogadros’ constant (<span class="math inline">\(6.02214129*10^{23}\)</span>) and conversion factors between unit scales.</p>
-<p>With the following command, we estimate the parameters for the spike-ins added during library preparation of mouse embryonic stem cells cultured in standard 2i+lif medium <span class="citation">(Ziegenhain et al. <a href="#ref-Ziegenhain2017-sf">2017</a>)</span>. Descriptive plots of the spike-ins can be drawn with <code>plotSpike</code> (Figure @ref(fig:spikeplot)).</p>
+<p>With the following command, we estimate the parameters for the spike-ins added during library preparation of mouse embryonic stem cells cultured in standard 2i+lif medium <span class="citation">(Ziegenhain et al. <a href="#ref-Ziegenhain2017-sf" role="doc-biblioref">2017</a>)</span>. Descriptive plots of the spike-ins can be drawn with <code>plotSpike</code> (Figure @ref(fig:spikeplot)).</p>
 <div class="sourceCode" id="cb7"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span>(<span class="st">"CELseq2_SpikeIns_UMI_Counts"</span>)
 <span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span>(<span class="st">"CELseq2_SpikeInfo"</span>)
 <span class="no">batch</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html">sapply</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/strsplit.html">strsplit</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/colnames.html">colnames</a></span>(<span class="no">CELseq2_SpikeIns_UMI_Counts</span>), <span class="st">"_"</span>), <span class="st">"[["</span>, <span class="fl">1</span>)
@@ -317,7 +317,7 @@ Examples of Log Fold Changes following a gamma, normal and uniform distribution.
 <div id="differential-expression" class="section level2">
 <h2 class="hasAnchor">
 <a href="#differential-expression" class="anchor"></a>Differential Expression</h2>
-<p>The results of differential expression simulation are evaluated with <code>evaluateDE</code>. We have separated the evaluation from DE detection to allow the user to evaluate power in a comprehensive way as advocated by <span class="citation">(Wu, Wang, and Wu <a href="#ref-Wu2015-uj">2015</a>)</span>. In this function, the proportions and error rates are estimated. The rates can be stratified by mean, dispersion, dropout or log fold change. Furthermore, the user can choose between different multiple testing correction methods (see <code><a href="https://rdrr.io/r/stats/p.adjust.html">p.adjust.methods()</a></code>, <code>ihw()</code> in and <code>qvalue()</code> in ). Also, the genes can be filtered by mean, dispersion or dropout. To define biologically interesting genes, a cutoff for the log fold change with <code>delta</code> can be set.</p>
+<p>The results of differential expression simulation are evaluated with <code>evaluateDE</code>. We have separated the evaluation from DE detection to allow the user to evaluate power in a comprehensive way as advocated by <span class="citation">(Wu, Wang, and Wu <a href="#ref-Wu2015-uj" role="doc-biblioref">2015</a>)</span>. In this function, the proportions and error rates are estimated. The rates can be stratified by mean, dispersion, dropout or log fold change. Furthermore, the user can choose between different multiple testing correction methods (see <code><a href="https://rdrr.io/r/stats/p.adjust.html">p.adjust.methods()</a></code>, <code>ihw()</code> in and <code>qvalue()</code> in ). Also, the genes can be filtered by mean, dispersion or dropout. To define biologically interesting genes, a cutoff for the log fold change with <code>delta</code> can be set.</p>
 <p>With the following command we evaluate the marginal TPR and FDR conditional on the mean expression:</p>
 <div class="sourceCode" id="cb10"><html><body><pre class="r"><span class="no">evalderes</span> <span class="kw">=</span> <span class="fu"><a href="../reference/evaluateDE.html">evaluateDE</a></span>(<span class="kw">simRes</span> <span class="kw">=</span> <span class="no">simres</span>,
                      <span class="kw">alpha.type</span> <span class="kw">=</span> <span class="st">'adjusted'</span>,
@@ -349,7 +349,7 @@ Stratified Error Rates. (A) Conditional FDR and TPR per sample size comparison p
 </p>
 </div>
 <p>In addition to the classical evaluation of power analyses, <code>powsimR</code> also includes the option to evaluate the simulations using summary metrics such as the Receiver-Operator-Characteristic (ROC) Curve as well as accuracy, F1 score and Matthews Correlation Coefficient.</p>
-<p>With the following command we calculate these metrics with <code><a href="../reference/evaluateROC.html">evaluateROC()</a></code> and plot them with <code><a href="../reference/plotEvalROC.html">plotEvalROC()</a></code>. The classical ROC curve as well as precision-recall curve, which is more appropiate for imbalanced number of true positives and negatives, can be helpful to identify the optimal sample size setup (Figure @ref(fig:evalrocresplot) A and B). Most importantly, we can check if the FDR is controlled at the chosen nominal level (Figure @ref(fig:evalrocresplot) C). If that is not the case, then the chosen pipeline, particularly the normalisation and DE testing, might be an issue <span class="citation">(Vieth et al. <a href="#ref-Vieth2019-ld">2019</a>)</span>.</p>
+<p>With the following command we calculate these metrics with <code><a href="../reference/evaluateROC.html">evaluateROC()</a></code> and plot them with <code><a href="../reference/plotEvalROC.html">plotEvalROC()</a></code>. The classical ROC curve as well as precision-recall curve, which is more appropiate for imbalanced number of true positives and negatives, can be helpful to identify the optimal sample size setup (Figure @ref(fig:evalrocresplot) A and B). Most importantly, we can check if the FDR is controlled at the chosen nominal level (Figure @ref(fig:evalrocresplot) C). If that is not the case, then the chosen pipeline, particularly the normalisation and DE testing, might be an issue <span class="citation">(Vieth et al. <a href="#ref-Vieth2019-ld" role="doc-biblioref">2019</a>)</span>.</p>
 <div class="sourceCode" id="cb12"><html><body><pre class="r"><span class="no">evalrocres</span> <span class="kw">=</span> <span class="fu"><a href="../reference/evaluateROC.html">evaluateROC</a></span>(<span class="kw">simRes</span> <span class="kw">=</span> <span class="no">simres</span>,
                          <span class="kw">alpha.type</span><span class="kw">=</span><span class="st">"adjusted"</span>,
                          <span class="kw">MTC</span><span class="kw">=</span><span class="st">'BH'</span>,
@@ -411,7 +411,7 @@ Computational Run Time in seconds per simulateDE() pipeline step.
 <div id="access-to-raw-read-counts-stored-in-online-data-bases" class="section level3">
 <h3 class="hasAnchor">
 <a href="#access-to-raw-read-counts-stored-in-online-data-bases" class="anchor"></a>Access to raw read counts stored in online data bases</h3>
-<p>We have provided a number of exemplary single cell RNA-seq data sets for parameter estimation. Nevertheless, you might not find a data set that matches your own experimental setup. In those cases, we recommend to check online repositories for a suitable data set. Below you can find an example script to get count tables from <a href="https://jhubiostatistics.shinyapps.io/recount/">recount2</a> <span class="citation">(Collado-Torres et al. <a href="#ref-Collado-Torres2017-mo">2017</a>)</span>. For a single cell RNA-seq data base, see <a href="http://imlspenticton.uzh.ch:3838/conquer/">conquer</a> <span class="citation">(Soneson and Robinson <a href="#ref-Soneson2018-xe">2018</a>)</span>.</p>
+<p>We have provided a number of exemplary single cell RNA-seq data sets for parameter estimation. Nevertheless, you might not find a data set that matches your own experimental setup. In those cases, we recommend to check online repositories for a suitable data set. Below you can find an example script to get count tables from <a href="https://jhubiostatistics.shinyapps.io/recount/">recount2</a> <span class="citation">(Collado-Torres et al. <a href="#ref-Collado-Torres2017-mo" role="doc-biblioref">2017</a>)</span>. For a single cell RNA-seq data base, see <a href="http://imlspenticton.uzh.ch:3838/conquer/">conquer</a> <span class="citation">(Soneson and Robinson <a href="#ref-Soneson2018-xe" role="doc-biblioref">2018</a>)</span>.</p>
 <p>As before, the user can then estimate the negative binomial parameters with <code><a href="../reference/estimateParam.html">estimateParam()</a></code>, view these estimates with <code><a href="../reference/plotParam.html">plotParam()</a></code> and use it as an input for <code><a href="../reference/Setup.html">Setup()</a></code>.</p>
 <div class="sourceCode" id="cb14"><html><body><pre class="r"><span class="co"># Install and load the R package</span>
 <span class="kw pkg">BiocManager</span><span class="kw ns">::</span><span class="fu"><a href="https://rdrr.io/pkg/BiocManager/man/install.html">install</a></span>(<span class="st">"recount"</span>)
@@ -437,10 +437,10 @@ Computational Run Time in seconds per simulateDE() pipeline step.
 <div id="what-is-the-best-fitting-distribution-for-my-data" class="section level2">
 <h2 class="hasAnchor">
 <a href="#what-is-the-best-fitting-distribution-for-my-data" class="anchor"></a>What is the best fitting distribution for my data?</h2>
-<p>It is important to validate the appropiateness of the chosen simulation framework. The function <code><a href="../reference/evaluateDist.html">evaluateDist()</a></code> compares the theoretical fit of the Poisson, negative binomial, zero-inflated Poisson and zero-inflated negative binomial and beta-Poisson distribution to the empirical RNA-seq read counts (<span class="citation">(Colin Cameron and Trivedi <a href="#ref-Colin_Cameron2013-vb">2013</a>)</span>, <span class="citation">(Kim and Marioni <a href="#ref-Kim2013-qo">2013</a>)</span>, <span class="citation">(Delmans and Hemberg <a href="#ref-Delmans2016-ef">2016</a>)</span>).</p>
+<p>It is important to validate the appropiateness of the chosen simulation framework. The function <code><a href="../reference/evaluateDist.html">evaluateDist()</a></code> compares the theoretical fit of the Poisson, negative binomial, zero-inflated Poisson and zero-inflated negative binomial and beta-Poisson distribution to the empirical RNA-seq read counts (<span class="citation">(Colin Cameron and Trivedi <a href="#ref-Colin_Cameron2013-vb" role="doc-biblioref">2013</a>)</span>, <span class="citation">(Kim and Marioni <a href="#ref-Kim2013-qo" role="doc-biblioref">2013</a>)</span>, <span class="citation">(Delmans and Hemberg <a href="#ref-Delmans2016-ef" role="doc-biblioref">2016</a>)</span>).</p>
 <p>The evaluation is then plotted with the function <code><a href="../reference/plotEvalDist.html">plotEvalDist()</a></code> which summarizes the best fitting distribution per gene based on goodness-of-fit statistics (Chi-square test), Akaike Information Criterium, comparing observed dropouts with zero count prediction of the models and comparing the model fitness with Likelihood Ratio Test and Vuong Test.</p>
-<p>As noted by other developers, goodness-of-fit tests are not an objective tool and heavily depend on sample sizes <span class="citation">(Delignette-Muller and Dutang <a href="#ref-Delignette-Muller2015-ie">2015</a>)</span>. A graphical evaluation of the fitted distribution is considered the most appropiate way but for high-throughput sequencing this is an unrealistic recommendation. Bulk RNA-seq experiments are usually conducted with a small number of samples. We therefore recommend to rely on the goodness-of-fit validation by <span class="citation">(Mi, Di, and Schafer <a href="#ref-Mi2015-ri">2015</a>)</span>.</p>
-<p>With the following command, we determine and plot the fitting for the embryonic stem cells cultured in standard 2i+lif medium profiled with the Smartseq2 protocol <span class="citation">(Ziegenhain et al. <a href="#ref-Ziegenhain2017-sf">2017</a>)</span>. Note that the results shown in Figure @ref(fig:evaldistplot) will differ from the executed command since I reduced the data set and evaluate the fitting only for a fraction of genes.</p>
+<p>As noted by other developers, goodness-of-fit tests are not an objective tool and heavily depend on sample sizes <span class="citation">(Delignette-Muller and Dutang <a href="#ref-Delignette-Muller2015-ie" role="doc-biblioref">2015</a>)</span>. A graphical evaluation of the fitted distribution is considered the most appropiate way but for high-throughput sequencing this is an unrealistic recommendation. Bulk RNA-seq experiments are usually conducted with a small number of samples. We therefore recommend to rely on the goodness-of-fit validation by <span class="citation">(Mi, Di, and Schafer <a href="#ref-Mi2015-ri" role="doc-biblioref">2015</a>)</span>.</p>
+<p>With the following command, we determine and plot the fitting for the embryonic stem cells cultured in standard 2i+lif medium profiled with the Smartseq2 protocol <span class="citation">(Ziegenhain et al. <a href="#ref-Ziegenhain2017-sf" role="doc-biblioref">2017</a>)</span>. Note that the results shown in Figure @ref(fig:evaldistplot) will differ from the executed command since I reduced the data set and evaluate the fitting only for a fraction of genes.</p>
 <div class="sourceCode" id="cb15"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span>(<span class="st">"SmartSeq2_Gene_Read_Counts"</span>)
 <span class="no">evalDistRes</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/evaluateDist.html">evaluateDist</a></span>(<span class="kw">countData</span> <span class="kw">=</span> <span class="no">SmartSeq2_Gene_Read_Counts</span>,
                             <span class="kw">batchData</span> <span class="kw">=</span> <span class="kw">NULL</span>,
@@ -524,7 +524,7 @@ Distribution Evaluation. A) Goodness-of-fit of the model assessed with a Chi-Squ
 <h1 class="hasAnchor">
 <a href="#session-info" class="anchor"></a>Session info</h1>
 <p>Here is the output of <code><a href="https://rdrr.io/r/utils/sessionInfo.html">sessionInfo()</a></code> on the system on which this document was compiled:</p>
-<pre><code>R version 4.0.1 (2020-06-06)
+<pre><code>R version 4.0.2 (2020-06-22)
 Platform: x86_64-pc-linux-gnu (64-bit)
 Running under: Ubuntu 18.04.4 LTS
 
@@ -544,23 +544,23 @@ attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
-[1] qvalue_2.20.0    IHW_1.16.0       rmdformats_0.3.7 knitr_1.28      
+[1] qvalue_2.20.0    IHW_1.16.0       rmdformats_0.3.7 knitr_1.29      
 
 loaded via a namespace (and not attached):
  [1] Rcpp_1.0.4.6        plyr_1.8.6          pillar_1.4.4       
- [4] compiler_4.0.1      formatR_1.7         highr_0.8          
- [7] tools_4.0.1         digest_0.6.25       evaluate_0.14      
+ [4] compiler_4.0.2      formatR_1.7         highr_0.8          
+ [7] tools_4.0.2         digest_0.6.25       evaluate_0.14      
 [10] memoise_1.1.0       lifecycle_0.2.0     tibble_3.0.1       
 [13] gtable_0.3.0        pkgconfig_2.0.3     png_0.1-7          
 [16] rlang_0.4.6         lpsymphony_1.16.0   rstudioapi_0.11    
-[19] yaml_2.2.1          parallel_4.0.1      pkgdown_1.5.1      
-[22] xfun_0.14           dplyr_1.0.0         stringr_1.4.0      
+[19] yaml_2.2.1          parallel_4.0.2      pkgdown_1.5.1      
+[22] xfun_0.15           dplyr_1.0.0         stringr_1.4.0      
 [25] generics_0.0.2      vctrs_0.3.1         desc_1.2.0         
 [28] fs_1.4.1            tidyselect_1.1.0    rprojroot_1.3-2    
-[31] grid_4.0.1          glue_1.4.1          R6_2.4.1           
-[34] fdrtool_1.2.15      rmarkdown_2.2       bookdown_0.19      
-[37] reshape2_1.4.4      purrr_0.3.4         ggplot2_3.3.1      
-[40] magrittr_1.5        splines_4.0.1       ellipsis_0.3.1     
+[31] grid_4.0.2          glue_1.4.1          R6_2.4.1           
+[34] fdrtool_1.2.15      rmarkdown_2.3       bookdown_0.20      
+[37] reshape2_1.4.4      purrr_0.3.4         ggplot2_3.3.2      
+[40] magrittr_1.5        splines_4.0.2       ellipsis_0.3.1     
 [43] backports_1.1.8     scales_1.1.1        htmltools_0.5.0    
 [46] MASS_7.3-51.6       BiocGenerics_0.34.0 assertthat_0.2.1   
 [49] colorspace_1.4-1    stringi_1.4.6       munsell_0.5.0      

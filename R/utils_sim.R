@@ -147,11 +147,9 @@
   predsize.mean = suppressWarnings(approx(meansizefit$x,
                                           meansizefit$y,
                                           xout = lmu, rule=2)$y)
-  predsize.mean[predsize.mean==0] = min(predsize.mean > 0, na.rm = TRUE)
   predsize.sd = suppressWarnings(approx(meansizefit$x,
                                         meansizefit$sd,
                                         xout = lmu, rule=2)$y)
-  predsize.sd[predsize.sd==0] = min(predsize.sd > 0, na.rm = TRUE)
   sizevec = truncnorm::rtruncnorm(n = length(lmu),
                                   a = min(log2(sizes), na.rm = TRUE),
                                   b = max(log2(sizes), na.rm = TRUE),
@@ -202,8 +200,8 @@
   return(list(counts=counts,
               sf=all.facs,
               mus=true.means,
-              disps=1/sizevec,
-              sizes=sizevec,
+              disps=1/(2^sizevec),
+              sizes=2^sizevec,
               drops=dropout))
 }
 
@@ -241,11 +239,9 @@
   predsize.mean = suppressWarnings(approx(meansizefit$x,
                                           meansizefit$y,
                                           xout = lmu, rule=2)$y)
-  predsize.mean[predsize.mean==0] = min(predsize.mean > 0, na.rm = TRUE)
   predsize.sd = suppressWarnings(approx(meansizefit$x,
                                         meansizefit$sd,
                                         xout = lmu, rule=2)$y)
-  predsize.sd[predsize.sd==0] = min(predsize.sd > 0, na.rm = TRUE)
   sizevec = truncnorm::rtruncnorm(n = length(lmu),
                                   a = min(log2(pos.sizes), na.rm = TRUE),
                                   b = max(log2(pos.sizes), na.rm = TRUE),
@@ -468,11 +464,9 @@
   predsize.mean = suppressWarnings(approx(meansizefit$x,
                                           meansizefit$y,
                                           xout = lmu, rule=2)$y)
-  predsize.mean[predsize.mean==0] = min(predsize.mean > 0, na.rm = TRUE)
   predsize.sd = suppressWarnings(approx(meansizefit$x,
                                         meansizefit$sd,
                                         xout = lmu, rule=2)$y)
-  predsize.sd[predsize.sd==0] = min(predsize.sd > 0, na.rm = TRUE)
   sizevec = truncnorm::rtruncnorm(n = length(lmu),
                                   a = min(log2(sizes), na.rm = TRUE),
                                   b = max(log2(sizes), na.rm = TRUE),

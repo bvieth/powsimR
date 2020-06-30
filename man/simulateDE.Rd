@@ -45,8 +45,8 @@ This is only implemented for scran and SCnorm.
 Possible options include the default \code{"none"}
 which means that no sample group information is considered for normalisation;
 \code{"known"} means that the simulated group labels are used and \code{"clustering"}
-which applies an unsupervised hierarchical clustering to determine the group labels.
-For details, see \code{\link[scran]{quickCluster}}).}
+which applies an unsupervised hierarchical clustering to determine the group labels
+(see \code{\link[scran]{quickCluster}} for details).}
 
 \item{DEmethod}{A character vector specifying the DE detection method to be used.
 Please consult the Details section for available options.}

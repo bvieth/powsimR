@@ -593,16 +593,27 @@
   nsamples = ncol(norm.counts)
   ngenes = nrow(norm.counts)
 
-  # calculate mean, dispersion and dropouts
-  means = rowMeans(norm.counts)
-  s2 = rowSums((norm.counts - means)^2)/(nsamples - 1)
+  # calculate mean, dispersion and dropouts (irrespective of group label)
+  # means = rowMeans(norm.counts)
+  # s2 = rowSums((norm.counts - means)^2)/(nsamples - 1)
+  # size = means^2/(s2 - means + 1e-04)
+  # size = ifelse(size > 0, size, NA)
+  # dispersion = 1/size
+  # counts0 = countData == 0
+  # nn0 = rowSums(!counts0)
+  # g0 = (nsamples - nn0)/nsamples
+
+  # calculate mean, dispersion and dropouts (group-specific)
+  norm.counts.red = norm.counts[, group == -1]
+  nsamples.red = ncol(norm.counts.red)
+  means = rowSums(norm.counts.red)/nsamples.red
+  s2 = rowSums((norm.counts.red - means)^2)/(nsamples.red - 1)
   size = means^2/(s2 - means + 1e-04)
   size = ifelse(size > 0, size, NA)
   dispersion = 1/size
   counts0 = countData == 0
   nn0 = rowSums(!counts0)
   g0 = (nsamples - nn0)/nsamples
-
 
   # calculate log fold changes
   lfc = .comp.FC(X = log2(norm.counts+1), L=group, is.log = T, FUN = mean)
