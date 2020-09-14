@@ -120,7 +120,7 @@ For examples and tips on using the package, please consult the vignette after su
 browseVignettes('powsimR')
 ```
 
-Some users have experienced issues installing powsimR due to vignette compilation errors. If that is the case, you can leave out building the vignette (by setting build_vignettes to FALSE) and read it on my Github Page of [powsimR](https://bvieth.github.io/powsimR/articles/powsimR.html) or download it as a html file [here](https://github.com/bvieth/powsimR/tree/master/inst/doc/powsimR.html).
+Some users have experienced issues installing powsimR due to vignette compilation errors or because they are missing the necessary R packages to build the vignette, i.e. knitr and rmdformats.  If that is the case, you can either install these dependencies or leave out building the vignette (by setting build_vignettes to FALSE) and read it on my Github Page of [powsimR](https://bvieth.github.io/powsimR/articles/powsimR.html) or download it as a html file [here](https://github.com/bvieth/powsimR/blob/master/vignettes/powsimR.html).
 
 ### DLLs and ulimit
 
