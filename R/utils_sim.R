@@ -129,6 +129,7 @@
 
   # define NB params
   means = simOptions$estParamRes$Parameters[[simOptions$DESetup$Draw$MoM]]$means
+  means = means[means>0]
   sizes = simOptions$estParamRes$Parameters[[simOptions$DESetup$Draw$MoM]]$size
   meansizefit = simOptions$estParamRes$Fit[[simOptions$DESetup$Draw$Fit]]$meansizefit
 
@@ -143,18 +144,19 @@
   true.means = means[index]
 
   # estimate size parameter associated with true mean values
-  lmu = log2(true.means+1)
+  lmu = log2(true.means)
   predsize.mean = suppressWarnings(approx(meansizefit$x,
                                           meansizefit$y,
                                           xout = lmu, rule=2)$y)
   predsize.sd = suppressWarnings(approx(meansizefit$x,
                                         meansizefit$sd,
                                         xout = lmu, rule=2)$y)
-  sizevec = truncnorm::rtruncnorm(n = length(lmu),
+  lsizevec = truncnorm::rtruncnorm(n = length(lmu),
                                   a = min(log2(sizes), na.rm = TRUE),
                                   b = max(log2(sizes), na.rm = TRUE),
                                   mean = predsize.mean,
                                   sd = predsize.sd)
+  sizevec = 2^lsizevec
 
   # size factor
   if (simOptions$SimSetup$LibSize == "equal") {
@@ -180,14 +182,15 @@
   ind = !apply(modelmatrix, 2, function(x) { all(x == 1) })
   mod = cbind(modelmatrix[, ind])
   beta = cbind(coef.dat[, ind])
-  mumat = log2(effective.means+1) + beta %*% t(mod)
-  mumat[mumat < 0] = min(log2(effective.means+1))
+  coef.mat = 2^beta %*% t(mod)
+  mumat = effective.means * coef.mat
+  # mumat[mumat < 0] = min(log2(effective.means+1))
 
   # result count matrix
   counts = matrix(
     stats::rnbinom(nsamples * ngenes,
-                   mu = 2^mumat-1,
-                   size = 2^sizevec),
+                   mu = mumat,
+                   size = sizevec),
     ncol = nsamples,
     nrow = ngenes,
     dimnames = list(paste0(rownames(mumat),"_", seq_len(ngenes)),
@@ -200,8 +203,8 @@
   return(list(counts=counts,
               sf=all.facs,
               mus=true.means,
-              disps=1/(2^sizevec),
-              sizes=2^sizevec,
+              disps=1/sizevec,
+              sizes=sizevec,
               drops=dropout))
 }
 
@@ -221,6 +224,7 @@
 
   # define ZINB params
   pos.means = simOptions$estParamRes$Parameters[[simOptions$DESetup$Draw$MoM]]$pos.means
+  pos.means = pos.means[pos.means>0]
   pos.sizes = simOptions$estParamRes$Parameters[[simOptions$DESetup$Draw$MoM]]$pos.size
   meansizefit = simOptions$estParamRes$Fit[[simOptions$DESetup$Draw$Fit]]$meansizefit
 
@@ -235,18 +239,19 @@
   true.means = pos.means[index]
 
   # estimate size parameter associated with true mean values
-  lmu = log2(true.means+1)
+  lmu = log2(true.means)
   predsize.mean = suppressWarnings(approx(meansizefit$x,
                                           meansizefit$y,
                                           xout = lmu, rule=2)$y)
   predsize.sd = suppressWarnings(approx(meansizefit$x,
                                         meansizefit$sd,
                                         xout = lmu, rule=2)$y)
-  sizevec = truncnorm::rtruncnorm(n = length(lmu),
+  lsizevec = truncnorm::rtruncnorm(n = length(lmu),
                                   a = min(log2(pos.sizes), na.rm = TRUE),
                                   b = max(log2(pos.sizes), na.rm = TRUE),
                                   mean = predsize.mean,
                                   sd = predsize.sd)
+  sizevec = 2^lsizevec
 
   # size factor
   if (simOptions$SimSetup$LibSize == "equal") {
@@ -272,8 +277,9 @@
   ind = !apply(modelmatrix, 2, function(x) { all(x == 1) })
   mod = cbind(modelmatrix[, ind])
   beta = cbind(coef.dat[, ind])
-  mumat = log2(effective.means+1) + beta %*% t(mod)
-  mumat[mumat < 0] = min(log2(effective.means+1))
+  coef.mat = 2^beta %*% t(mod)
+  mumat = effective.means * coef.mat
+  # mumat[mumat < 0] = min(log2(effective.means+1))
 
   meang0fit.nonamplified = simOptions$estParamRes$Fit[[simOptions$DESetup$Draw$Fit]]$meang0fit.nonamplified
   meang0fit.amplified = simOptions$estParamRes$Fit[[simOptions$DESetup$Draw$Fit]]$meang0fit.amplified
@@ -368,8 +374,8 @@
   # make the count matrix
     counts.nb = matrix(
       stats::rnbinom(nsamples * ngenes,
-                     mu = 2^mumat-1,
-                     size = 2^sizevec),
+                     mu = mumat,
+                     size = sizevec),
       ncol = nsamples,
       nrow = ngenes)
 
@@ -403,7 +409,8 @@
   return(list(counts=counts,
               sf=all.facs,
               mus=true.means,
-              disps=sizevec,
+              disps=1/sizevec,
+              sizes=sizevec,
               drops=dropout))
 
 }

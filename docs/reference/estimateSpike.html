@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">powsimR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.4</span>
       </span>
     </div>
 
@@ -123,15 +123,15 @@
     <p>This function estimates and returns parameters needed for spike-in count simulations using supplementary code from Kim et al. 2016 (DOI: 10.1038/ncomms9687).</p>
     </div>
 
-    <pre class="usage"><span class='fu'>estimateSpike</span>(<span class='no'>spikeData</span>,
-<span class='no'>spikeInfo</span>,
-<span class='kw'>MeanFragLengths</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-<span class='kw'>batchData</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-<span class='kw'>Normalisation</span><span class='kw'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>'depth'</span>,<span class='st'>'none'</span>),
-<span class='kw'>SampleFilter</span> <span class='kw'>=</span> <span class='fl'>3</span>,
-<span class='kw'>RNAseq</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"bulk"</span>, <span class='st'>"singlecell"</span>),
-<span class='kw'>Protocol</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>'UMI'</span>, <span class='st'>'Read'</span>),
-<span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)</pre>
+    <pre class="usage"><span class='fu'>estimateSpike</span><span class='op'>(</span><span class='va'>spikeData</span>,
+<span class='va'>spikeInfo</span>,
+MeanFragLengths <span class='op'>=</span> <span class='cn'>NULL</span>,
+batchData <span class='op'>=</span> <span class='cn'>NULL</span>,
+Normalisation<span class='op'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>'depth'</span>,<span class='st'>'none'</span><span class='op'>)</span>,
+SampleFilter <span class='op'>=</span> <span class='fl'>3</span>,
+RNAseq <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"bulk"</span>, <span class='st'>"singlecell"</span><span class='op'>)</span>,
+Protocol <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>'UMI'</span>, <span class='st'>'Read'</span><span class='op'>)</span>,
+verbose <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -172,7 +172,7 @@ so that outlying samples are removed prior to normalisation and parameter estima
 The default is <code>5</code>, i.e. at least 5 MADs away from the median.
 Choose higher values if you want to filter out less samples.
 This parameter is particularly important for single cells to ensure reliable parameter estimation.
-For more information, please consult <code><a href='https://rdrr.io/pkg/scater/man/isOutlier.html'>isOutlier</a></code>.</p></td>
+For more information, please consult <code><a href='https://rdrr.io/pkg/scuttle/man/isOutlier.html'>isOutlier</a></code>.</p></td>
     </tr>
     <tr>
       <th>RNAseq</th>
@@ -208,30 +208,34 @@ filtered so that only spike-ins with nonzero expression and samples with at leas
 
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    <p>Normalisation methods</p><dl'>
+    <p>Normalisation methods</p><dl>
 <dt>'depth'</dt><dd><p>applies the depth normalization method as implemented in <code><a href='https://rdrr.io/pkg/scran/man/computeSpikeFactors.html'>computeSpikeFactors</a></code>.</p></dd>
 <dt>'none'</dt><dd><p>No normalisation is applied. This approach can be used for prenormalized expression estimates, e.g. TPM/FPKM/RPKM estimated by RSEM, salmon, cufflinks etc.</p></dd>
 
 </dl>
 
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Beate Vieth</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='kw'>if</span> (<span class='fl'>FALSE</span>) {
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='st'>"SmartSeq2_SpikeIns_Read_Counts"</span>)
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='st'>"SmartSeq2_SpikeInfo"</span>)
-<span class='no'>Batches</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span>(<span class='kw'>Batch</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/lapply.html'>sapply</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/strsplit.html'>strsplit</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>SmartSeq2_SpikeIns_Read_Counts</span>),
-                                    <span class='st'>"_"</span>), <span class='st'>"[["</span>, <span class='fl'>1</span>),
-                     <span class='kw'>stringsAsFactors</span> <span class='kw'>=</span> <span class='no'>F</span>,
-                     <span class='kw'>row.names</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>SmartSeq2_SpikeIns_Read_Counts</span>))
+    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='st'>"SmartSeq2_SpikeIns_Read_Counts"</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='st'>"SmartSeq2_SpikeInfo"</span><span class='op'>)</span>
+<span class='va'>Batches</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span><span class='op'>(</span>Batch <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/lapply.html'>sapply</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/strsplit.html'>strsplit</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span><span class='op'>(</span><span class='va'>SmartSeq2_SpikeIns_Read_Counts</span><span class='op'>)</span>,
+                                    <span class='st'>"_"</span><span class='op'>)</span>, <span class='st'>"[["</span>, <span class='fl'>1</span><span class='op'>)</span>,
+                     stringsAsFactors <span class='op'>=</span> <span class='cn'>F</span>,
+                     row.names <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span><span class='op'>(</span><span class='va'>SmartSeq2_SpikeIns_Read_Counts</span><span class='op'>)</span><span class='op'>)</span>
 <span class='co'># estimation</span>
-<span class='no'>spike_param</span> <span class='kw'>&lt;-</span> <span class='fu'>estimateSpike</span>(<span class='kw'>spikeData</span> <span class='kw'>=</span> <span class='no'>SmartSeq2_SpikeIns_Read_Counts</span>,
-<span class='kw'>spikeInfo</span> <span class='kw'>=</span> <span class='no'>SmartSeq2_SpikeInfo</span>,
-<span class='kw'>MeanFragLength</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-<span class='kw'>batchData</span> <span class='kw'>=</span> <span class='no'>Batches</span>,
-<span class='kw'>Normalisation</span> <span class='kw'>=</span> <span class='st'>'depth'</span>)
+<span class='va'>spike_param</span> <span class='op'>&lt;-</span> <span class='fu'>estimateSpike</span><span class='op'>(</span>spikeData <span class='op'>=</span> <span class='va'>SmartSeq2_SpikeIns_Read_Counts</span>,
+spikeInfo <span class='op'>=</span> <span class='va'>SmartSeq2_SpikeInfo</span>,
+MeanFragLength <span class='op'>=</span> <span class='cn'>NULL</span>,
+batchData <span class='op'>=</span> <span class='va'>Batches</span>,
+Normalisation <span class='op'>=</span> <span class='st'>'depth'</span><span class='op'>)</span>
 <span class='co'># plotting</span>
-<span class='fu'><a href='plotSpike.html'>plotSpike</a></span>(<span class='kw'>estSpike</span> <span class='kw'>=</span> <span class='no'>spike_param</span>, <span class='kw'>Annot</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
-}</div></pre>
+<span class='fu'><a href='plotSpike.html'>plotSpike</a></span><span class='op'>(</span>estSpike <span class='op'>=</span> <span class='va'>spike_param</span>, Annot <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span>
+<span class='op'>}</span>
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
@@ -247,7 +251,7 @@ filtered so that only spike-ins with nonzero expression and samples with at leas
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>

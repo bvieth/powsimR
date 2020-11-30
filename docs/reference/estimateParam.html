@@ -74,7 +74,7 @@ The other parameters are optional (additional data) or have preset values (gene 
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">powsimR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.4</span>
       </span>
     </div>
 
@@ -127,24 +127,24 @@ The user needs to choose the following options at least: specify a gene expressi
 The other parameters are optional (additional data) or have preset values (gene and sample filtering). Please consult the detailed arguments description.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>estimateParam</span>(<span class='no'>countData</span>,
-<span class='kw'>readData</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-<span class='kw'>batchData</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-<span class='kw'>spikeData</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-<span class='kw'>spikeInfo</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-<span class='kw'>Lengths</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-<span class='kw'>MeanFragLengths</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-<span class='kw'>RNAseq</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>'bulk'</span>, <span class='st'>'singlecell'</span>),
-<span class='kw'>Protocol</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>'UMI'</span>, <span class='st'>'Read'</span>),
-<span class='kw'>Distribution</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>'NB'</span>, <span class='st'>'ZINB'</span>),
-<span class='kw'>Normalisation</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"TMM"</span>, <span class='st'>"MR"</span>, <span class='st'>"PosCounts"</span>, <span class='st'>"UQ"</span>,
+    <pre class="usage"><span class='fu'>estimateParam</span><span class='op'>(</span><span class='va'>countData</span>,
+readData <span class='op'>=</span> <span class='cn'>NULL</span>,
+batchData <span class='op'>=</span> <span class='cn'>NULL</span>,
+spikeData <span class='op'>=</span> <span class='cn'>NULL</span>,
+spikeInfo <span class='op'>=</span> <span class='cn'>NULL</span>,
+Lengths <span class='op'>=</span> <span class='cn'>NULL</span>,
+MeanFragLengths <span class='op'>=</span> <span class='cn'>NULL</span>,
+RNAseq <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>'bulk'</span>, <span class='st'>'singlecell'</span><span class='op'>)</span>,
+Protocol <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>'UMI'</span>, <span class='st'>'Read'</span><span class='op'>)</span>,
+Distribution <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>'NB'</span>, <span class='st'>'ZINB'</span><span class='op'>)</span>,
+Normalisation <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"TMM"</span>, <span class='st'>"MR"</span>, <span class='st'>"PosCounts"</span>, <span class='st'>"UQ"</span>,
 <span class='st'>"scran"</span>, <span class='st'>"Linnorm"</span>, <span class='st'>"sctransform"</span>,
-<span class='st'>"SCnorm"</span>, <span class='st'>"Census"</span>, <span class='st'>"depth"</span>, <span class='st'>"none"</span>),
-<span class='kw'>GeneFilter</span> <span class='kw'>=</span> <span class='fl'>0.05</span>,
-<span class='kw'>SampleFilter</span> <span class='kw'>=</span> <span class='fl'>5</span>,
-<span class='kw'>sigma</span> <span class='kw'>=</span> <span class='fl'>1.96</span>,
-<span class='kw'>NCores</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-<span class='kw'>verbose</span><span class='kw'>=</span><span class='fl'>TRUE</span>)</pre>
+<span class='st'>"SCnorm"</span>, <span class='st'>"Census"</span>, <span class='st'>"depth"</span>, <span class='st'>"none"</span><span class='op'>)</span>,
+GeneFilter <span class='op'>=</span> <span class='fl'>0.05</span>,
+SampleFilter <span class='op'>=</span> <span class='fl'>5</span>,
+sigma <span class='op'>=</span> <span class='fl'>1.96</span>,
+NCores <span class='op'>=</span> <span class='cn'>NULL</span>,
+verbose<span class='op'>=</span><span class='cn'>TRUE</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -225,7 +225,7 @@ so that outlying samples are removed prior to normalisation and parameter estima
 The default is <code>5</code>, i.e. at least 5 MADs away from the median.
 Choose higher values if you want to filter out less samples.
 This parameter is particularly important for single cells to ensure reliable parameter estimation.
-For more information, please consult <code><a href='https://rdrr.io/pkg/scater/man/isOutlier.html'>isOutlier</a></code>.</p></td>
+For more information, please consult <code><a href='https://rdrr.io/pkg/scuttle/man/isOutlier.html'>isOutlier</a></code>.</p></td>
     </tr>
     <tr>
       <th>sigma</th>
@@ -255,7 +255,7 @@ Default is <code>TRUE</code>.</p></td>
 
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    <p><strong>Normalisation Methods</strong></p><dl'>
+    <p><strong>Normalisation Methods</strong></p><dl>
 <dt>TMM, UQ</dt><dd><p>employ the edgeR style normalization of weighted trimmed mean of M-values and upperquartile
 as implemented in <code><a href='https://rdrr.io/pkg/edgeR/man/calcNormFactors.html'>calcNormFactors</a></code>, respectively.</p></dd>
 <dt>MR, PosCounts</dt><dd><p>employ the DESeq2 style normalization of median ratio method and a modified geometric mean method
@@ -275,43 +275,47 @@ The authors state that Census should not be used for UMI data.</p></dd>
 
 </dl>
 
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Beate Vieth</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='kw'>if</span> (<span class='fl'>FALSE</span>) {
+    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
 <span class='co'># Single Cells</span>
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='st'>"SmartSeq2_Gene_Read_Counts"</span>)
-<span class='no'>Batches</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span>(<span class='kw'>Batch</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/lapply.html'>sapply</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/strsplit.html'>strsplit</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>SmartSeq2_Gene_Read_Counts</span>), <span class='st'>"_"</span>), <span class='st'>"[["</span>, <span class='fl'>1</span>),
-                      <span class='kw'>stringsAsFactors</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>row.names</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>SmartSeq2_Gene_Read_Counts</span>))
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='st'>"GeneLengths_mm10"</span>)
-<span class='no'>estparam</span> <span class='kw'>&lt;-</span> <span class='fu'>estimateParam</span>(<span class='kw'>countData</span> <span class='kw'>=</span> <span class='no'>SmartSeq2_Gene_Read_Counts</span>,
-                          <span class='kw'>readData</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-                          <span class='kw'>batchData</span> <span class='kw'>=</span> <span class='no'>Batches</span>,
-                          <span class='kw'>spikeData</span> <span class='kw'>=</span> <span class='no'>SmartSeq2_SpikeIns_Read_Counts</span>,
-                          <span class='kw'>spikeInfo</span> <span class='kw'>=</span> <span class='no'>SmartSeq2_SpikeInfo</span>,
-                          <span class='kw'>Lengths</span> <span class='kw'>=</span> <span class='no'>GeneLengths</span>, <span class='kw'>MeanFragLengths</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-                          <span class='kw'>RNAseq</span> <span class='kw'>=</span> <span class='st'>'singlecell'</span>, <span class='kw'>Protocol</span> <span class='kw'>=</span> <span class='st'>'Read'</span>,
-                          <span class='kw'>Distribution</span> <span class='kw'>=</span> <span class='st'>'ZINB'</span>, <span class='kw'>Normalisation</span> <span class='kw'>=</span> <span class='st'>"scran"</span>,
-                          <span class='kw'>GeneFilter</span> <span class='kw'>=</span> <span class='fl'>0.1</span>, <span class='kw'>SampleFilter</span> <span class='kw'>=</span> <span class='fl'>3</span>,
-                          <span class='kw'>sigma</span> <span class='kw'>=</span> <span class='fl'>1.96</span>, <span class='kw'>NCores</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='st'>"SmartSeq2_Gene_Read_Counts"</span><span class='op'>)</span>
+<span class='va'>Batches</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span><span class='op'>(</span>Batch <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/lapply.html'>sapply</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/strsplit.html'>strsplit</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span><span class='op'>(</span><span class='va'>SmartSeq2_Gene_Read_Counts</span><span class='op'>)</span>, <span class='st'>"_"</span><span class='op'>)</span>, <span class='st'>"[["</span>, <span class='fl'>1</span><span class='op'>)</span>,
+                      stringsAsFactors <span class='op'>=</span> <span class='cn'>FALSE</span>, row.names <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span><span class='op'>(</span><span class='va'>SmartSeq2_Gene_Read_Counts</span><span class='op'>)</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='st'>"GeneLengths_mm10"</span><span class='op'>)</span>
+<span class='va'>estparam</span> <span class='op'>&lt;-</span> <span class='fu'>estimateParam</span><span class='op'>(</span>countData <span class='op'>=</span> <span class='va'>SmartSeq2_Gene_Read_Counts</span>,
+                          readData <span class='op'>=</span> <span class='cn'>NULL</span>,
+                          batchData <span class='op'>=</span> <span class='va'>Batches</span>,
+                          spikeData <span class='op'>=</span> <span class='va'>SmartSeq2_SpikeIns_Read_Counts</span>,
+                          spikeInfo <span class='op'>=</span> <span class='va'>SmartSeq2_SpikeInfo</span>,
+                          Lengths <span class='op'>=</span> <span class='va'>GeneLengths</span>, MeanFragLengths <span class='op'>=</span> <span class='cn'>NULL</span>,
+                          RNAseq <span class='op'>=</span> <span class='st'>'singlecell'</span>, Protocol <span class='op'>=</span> <span class='st'>'Read'</span>,
+                          Distribution <span class='op'>=</span> <span class='st'>'ZINB'</span>, Normalisation <span class='op'>=</span> <span class='st'>"scran"</span>,
+                          GeneFilter <span class='op'>=</span> <span class='fl'>0.1</span>, SampleFilter <span class='op'>=</span> <span class='fl'>3</span>,
+                          sigma <span class='op'>=</span> <span class='fl'>1.96</span>, NCores <span class='op'>=</span> <span class='cn'>NULL</span>, verbose <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
 
 <span class='co'># Bulk</span>
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='st'>"Bulk_Read_Counts"</span>)
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='st'>"GeneLengths_hg19"</span>)
-<span class='no'>estparam</span> <span class='kw'>&lt;-</span> <span class='fu'>estimateParam</span>(<span class='kw'>countData</span> <span class='kw'>=</span> <span class='no'>Bulk_Read_Counts</span>,
-                          <span class='kw'>readData</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-                          <span class='kw'>batchData</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-                          <span class='kw'>spikeData</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-                          <span class='kw'>spikeInfo</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-                         <span class='kw'>Lengths</span> <span class='kw'>=</span> <span class='no'>GeneLengths_hg19</span>,
-                          <span class='kw'>MeanFragLengths</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-                          <span class='kw'>RNAseq</span> <span class='kw'>=</span> <span class='st'>'bulk'</span>, <span class='kw'>Protocol</span> <span class='kw'>=</span> <span class='st'>'Read'</span>,
-                          <span class='kw'>Distribution</span> <span class='kw'>=</span> <span class='st'>'NB'</span>, <span class='kw'>Normalisation</span> <span class='kw'>=</span> <span class='st'>"MR"</span>,
-                          <span class='kw'>GeneFilter</span> <span class='kw'>=</span> <span class='fl'>0.1</span>, <span class='kw'>SampleFilter</span> <span class='kw'>=</span> <span class='fl'>3</span>,
-                          <span class='kw'>sigma</span> <span class='kw'>=</span> <span class='fl'>1.96</span>, <span class='kw'>NCores</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='st'>"Bulk_Read_Counts"</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='st'>"GeneLengths_hg19"</span><span class='op'>)</span>
+<span class='va'>estparam</span> <span class='op'>&lt;-</span> <span class='fu'>estimateParam</span><span class='op'>(</span>countData <span class='op'>=</span> <span class='va'>Bulk_Read_Counts</span>,
+                          readData <span class='op'>=</span> <span class='cn'>NULL</span>,
+                          batchData <span class='op'>=</span> <span class='cn'>NULL</span>,
+                          spikeData <span class='op'>=</span> <span class='cn'>NULL</span>,
+                          spikeInfo <span class='op'>=</span> <span class='cn'>NULL</span>,
+                         Lengths <span class='op'>=</span> <span class='va'>GeneLengths_hg19</span>,
+                          MeanFragLengths <span class='op'>=</span> <span class='cn'>NULL</span>,
+                          RNAseq <span class='op'>=</span> <span class='st'>'bulk'</span>, Protocol <span class='op'>=</span> <span class='st'>'Read'</span>,
+                          Distribution <span class='op'>=</span> <span class='st'>'NB'</span>, Normalisation <span class='op'>=</span> <span class='st'>"MR"</span>,
+                          GeneFilter <span class='op'>=</span> <span class='fl'>0.1</span>, SampleFilter <span class='op'>=</span> <span class='fl'>3</span>,
+                          sigma <span class='op'>=</span> <span class='fl'>1.96</span>, NCores <span class='op'>=</span> <span class='cn'>NULL</span>, verbose <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
 
 <span class='co'># plot the results of estimation</span>
-<span class='fu'><a href='plotParam.html'>plotParam</a></span>(<span class='no'>estparam</span>, <span class='kw'>Annot</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
-}</div></pre>
+<span class='fu'><a href='plotParam.html'>plotParam</a></span><span class='op'>(</span><span class='va'>estparam</span>, Annot <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span>
+<span class='op'>}</span>
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
@@ -327,7 +331,7 @@ The authors state that Census should not be used for UMI data.</p></dd>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>

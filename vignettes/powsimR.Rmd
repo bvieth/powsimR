@@ -260,17 +260,16 @@ knitr::include_graphics("estparam_spike_celseq2.png")
 
 ## Setup
 
-For simulating differential expression between two groups, the number of genes, number of simulations, percentage of differential expression and effect size are set up with the function `Setup`. The effect size is here defined as the log fold change which can be a constant (e.g. 1.5), sampled from a vector of anticipated fold changes (e.g. derived from pilot experiments) or function. The uniform, normal and gamma distributions are possible options and illustrated in figure \@ref(fig:lfcs). Depending on the settings, these distribution can be broader or narrower. If using this option, we recommend to choose a distribution that closely resembles previously observed or expected fold changes. 
+For simulating differential expression between two groups, the number of genes, number of simulations, percentage of differential expression and effect size are set up with the function `Setup`. The effect size is here defined as the log fold change which can be a constant (e.g. 2), sampled from a vector of anticipated log fold changes (e.g. derived from pilot experiments) or a function. The uniform, normal and gamma distributions are possible options and illustrated in figure \@ref(fig:lfcs). Depending on the settings, these distribution can be broader or narrower. If using this option, we recommend to choose a distribution that closely resembles previously observed or expected fold changes. 
 There is also the possibility to include batch effects, see the Details section in `Setup()`.
 
 ```{r lfcs, echo=F, eval=T, include=T, fig.cap="Examples of Log Fold Changes following a gamma, normal and uniform distribution."}
 knitr::include_graphics("lfcdist.png")
 ```
 
-The number of replicates per group (n1 and n2) are also defined in `Setup` which can be unbalanced. In addition the user can choose to include the simulaiton of dropout genes so that the resulting count matrix has a percentage of dropouts equal to the rate filtered out during estimation.
+The number of replicates per group (n1 and n2) are also defined in `Setup` which can be unbalanced. In addition the user can choose to include the simulation of dropout genes so that the resulting count matrix has a percentage of dropouts equal to the rate filtered out during estimation.
 
 The distribution estimates and these settings are then combined into one object.
-The following command sets up simulations with 10,000 genes, 20\% genes being DE, log fold change sampled from a narrow gamma distribution and parameter estimates based on Smartseq2 libraries in Ziegenhain dataset. Please note that I decreased the number of simulations for this illustration.
 
 The following command sets up simulations with 10,000 genes, 5\% genes being DE, log fold change sample from a narrow gamma distribution and parameter estimates based on CEL-seq2 libraries in Ziegenhain dataset. The spike-ins are only necessary if we wish to apply imputation, normalisation and/or DE-tools that can utilize spike-ins, see the Details section of `estimateParam()` and `simulateDE()`.
 
@@ -338,11 +337,10 @@ plotEvalDE(evalRes = evalderes, rate = 'conditional', quick = TRUE, Annot = TRUE
 
 ```
 
-
 * **rate:** The user can choose to plot the 'marginal' or 'stratified' error rates. The number of genes per stratum are also summarised.
 * **quick:** If this is set to `TRUE` then only the TPR and FDR will be plotted.
 
-The quick marginal and conditional power assessment for the Ziegenhain data is plotted in Figure \@ref(fig:evaldeplot1) and \@ref(fig:evaldeplot2). As expected the power (TPR) to detect differential expression increases with sample size (Figure \@ref(fig:evaldeplot1)). On the other hand, the ability to control the false detection (FDR) at the chosen nominal level depends on the average expression of DE genes (Figure \@ref(fig:evaldeplot2)). In addition, the detection of true positives with small mean expression needs far more replicates per group.
+The quick marginal and conditional power assessment for the Ziegenhain data is plotted in Figure \@ref(fig:evaldeplot1) and \@ref(fig:evaldeplot2). As expected the power (TPR) to detect differential expression increases with sample size (Figure \@ref(fig:evaldeplot1)). On the other hand, the ability to control the false detection (FDR) at the chosen nominal level depends on the average expression of DE genes (Figure \@ref(fig:evaldeplot2)). Furthermore, the detection of true positives with small mean expression needs far more replicates per group.
 
 ```{r evaldeplot1, echo=F, eval=T, fig.cap="Marginal Error Rates. (A) Marginal FDR and TPR per sample size comparison. (B) Marginal FDR and TPR per sample size comparison with dashed line indicating nominal alpha level (type I error) and nominal 1-beta level, i.e. 80% power (type II error)."}
 knitr::include_graphics("evalderes_marginal_celseq2.png")
@@ -431,11 +429,11 @@ gene.info <- data.frame(GeneID=rowData(rse_gene)@listData$gene_id,
 
 ## What is the best fitting distribution for my data?
 
-It is important to validate the appropiateness of the chosen simulation framework. The function `evaluateDist()` compares the theoretical fit of the Poisson, negative binomial, zero-inflated Poisson and zero-inflated negative binomial and beta-Poisson distribution to the empirical RNA-seq read counts ([@Colin_Cameron2013-vb], [@Kim2013-qo], [@Delmans2016-ef]).
+It is important to validate the appropriateness of the chosen simulation framework. The function `evaluateDist()` compares the theoretical fit of the Poisson, negative binomial, zero-inflated Poisson and zero-inflated negative binomial and beta-Poisson distribution to the empirical RNA-seq read counts ([@Colin_Cameron2013-vb], [@Kim2013-qo], [@Delmans2016-ef]).
 
 The evaluation is then plotted with the function `plotEvalDist()` which summarizes the best fitting distribution per gene based on goodness-of-fit statistics (Chi-square test), Akaike Information Criterium, comparing observed dropouts with zero count prediction of the models and comparing the model fitness with Likelihood Ratio Test and Vuong Test.
 
-As noted by other developers, goodness-of-fit tests are not an objective tool and heavily depend on sample sizes [@Delignette-Muller2015-ie]. A graphical evaluation of the fitted distribution is considered the most appropiate way but for high-throughput sequencing this is an unrealistic recommendation.
+As noted by other developers, goodness-of-fit tests are not an objective tool and heavily depend on sample sizes [@Delignette-Muller2015-ie]. A graphical evaluation of the fitted distribution is considered the most appropriate way but for high-throughput sequencing this is an unrealistic recommendation.
 Bulk RNA-seq experiments are usually conducted with a small number of samples. We therefore recommend to rely on the goodness-of-fit validation by [@Mi2015-ri]. 
 
 With the following command, we determine and plot the fitting for the embryonic stem cells cultured in standard 2i+lif medium profiled with the Smartseq2 protocol [@Ziegenhain2017-sf]. Note that the results shown in Figure \@ref(fig:evaldistplot) will differ from the executed command since I reduced the data set and evaluate the fitting only for a fraction of genes. 
@@ -460,7 +458,7 @@ knitr::include_graphics("evaldist_smartseq2.png")
 
 ## Simulation Settings
 
-### Replicates with partial phenotypic differences
+### Phenotypic differences only in a subset of replicates
 
 By default, all replicates per group express the phenotypic differences in gene expression defined by `pLFC`. If the user wishes for a more varied expression profile, i.e. only a proportion of replicates per group with a difference in expression, these patterns can be defined by changing `p.G` (see Details section of `Setup()`). 
 
