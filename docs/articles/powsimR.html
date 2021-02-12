@@ -31,7 +31,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">powsimR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.3</span>
       </span>
     </div>
 
@@ -70,8 +70,7 @@
 
       
 
-      </header><script src="powsimR_files/header-attrs-2.5/header-attrs.js"></script><link href="powsimR_files/anchor-sections-1.0/anchor-sections.css" rel="stylesheet">
-<script src="powsimR_files/anchor-sections-1.0/anchor-sections.js"></script><div class="row">
+      </header><script src="powsimR_files/accessible-code-block-0.0.1/empty-anchor.js"></script><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>powsimR</h1>
@@ -87,7 +86,7 @@
 <div id="abstract" class="section level1 unnumbered">
 <h1 class="hasAnchor">
 <a href="#abstract" class="anchor"></a>Abstract</h1>
-<p>This vignette describes the R package <code>powsimR</code> <span class="citation">(<a href="#ref-Vieth2017-lh" role="doc-biblioref">Vieth et al. 2017</a>)</span>. It aims to be at once a demonstration of its features and a guide to its usage. Statistical power analysis is essential to optimize the design of RNA-seq experiments and to assess and compare the power to detect differentially expressed genes in RNA-seq data. <code>powsimR</code> is a flexible tool to simulate and evaluate differential expression from bulk and especially single-cell RNA-seq data making it suitable for a priori and posterior power analyses.</p>
+<p>This vignette describes the R package <code>powsimR</code> <span class="citation">(Vieth et al. <a href="#ref-Vieth2017-lh" role="doc-biblioref">2017</a>)</span>. It aims to be at once a demonstration of its features and a guide to its usage. Statistical power analysis is essential to optimize the design of RNA-seq experiments and to assess and compare the power to detect differentially expressed genes in RNA-seq data. <code>powsimR</code> is a flexible tool to simulate and evaluate differential expression from bulk and especially single-cell RNA-seq data making it suitable for a priori and posterior power analyses.</p>
 <p>For our count simulations, we (1) reliably model the mean, dispersion and dropout distributions as well as the relationship between those factors from the data. (2) Simulate counts from the empirical mean-variance and dropout relations, while offering flexible choices of the number of differentially expressed genes, effect sizes, DE testing and normalisation method. (3) Finally, we evaluate the power over various sample sizes and visualise the results with error rates plots.</p>
 <p><strong>Note:</strong> if you use powsimR in published research, please cite:</p>
 <blockquote>
@@ -98,86 +97,81 @@
 <h1 class="hasAnchor">
 <a href="#installation-guide" class="anchor"></a>Installation Guide</h1>
 <p>For the installation, the R package <code>devtools</code> is needed.</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span><span class="op">(</span><span class="st">'devtools'</span><span class="op">)</span>
-<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://devtools.r-lib.org/">devtools</a></span><span class="op">)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span>(<span class="st">'devtools'</span>)
+<span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">devtools</span>)</pre></body></html></div>
 <p><code>powsimR</code> has a number of dependencies that need to be installed before hand (see also the README file on github). I recommend to install first the dependencies manually and then powsimR. If you plan to use MAGIC for imputation, then please follow their <a href="https://github.com/KrishnaswamyLab/MAGIC">instruction</a> to install the python implementation before installing powsimR.</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">ipak</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">pkg</span>, <span class="va">repository</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">'CRAN'</span>, <span class="st">'Bioconductor'</span>, <span class="st">'github'</span><span class="op">)</span><span class="op">)</span><span class="op">{</span>
-  <span class="va">new.pkg</span> <span class="op">&lt;-</span> <span class="va">pkg</span><span class="op">[</span><span class="op">!</span><span class="op">(</span><span class="va">pkg</span> <span class="op">%in%</span> <span class="fu"><a href="https://rdrr.io/r/utils/installed.packages.html">installed.packages</a></span><span class="op">(</span><span class="op">)</span><span class="op">[</span>, <span class="st">"Package"</span><span class="op">]</span><span class="op">)</span><span class="op">]</span>
+<div class="sourceCode" id="cb2"><html><body><pre class="r"><span class="no">ipak</span> <span class="kw">&lt;-</span> <span class="kw">function</span>(<span class="no">pkg</span>, <span class="no">repository</span><span class="kw">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">'CRAN'</span>, <span class="st">'Bioconductor'</span>, <span class="st">'github'</span>)){
+  <span class="no">new.pkg</span> <span class="kw">&lt;-</span> <span class="no">pkg</span>[!(<span class="no">pkg</span> <span class="kw">%in%</span> <span class="fu"><a href="https://rdrr.io/r/utils/installed.packages.html">installed.packages</a></span>()[, <span class="st">"Package"</span>])]
   <span class="co"># new.pkg &lt;- pkg</span>
-  <span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html">length</a></span><span class="op">(</span><span class="va">new.pkg</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span>
-    <span class="kw">if</span><span class="op">(</span><span class="va">repository</span><span class="op">==</span><span class="st">'CRAN'</span><span class="op">)</span> <span class="op">{</span>
-      <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span><span class="op">(</span><span class="va">new.pkg</span>, dependencies <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
-    <span class="op">}</span>
-    <span class="kw">if</span><span class="op">(</span><span class="va">repository</span><span class="op">==</span><span class="st">'Bioconductor'</span><span class="op">)</span> <span class="op">{</span>
-      <span class="kw">if</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/strsplit.html">strsplit</a></span><span class="op">(</span><span class="va">version</span><span class="op">[[</span><span class="st">'version.string'</span><span class="op">]</span><span class="op">]</span>, <span class="st">' '</span><span class="op">)</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">[</span><span class="fl">3</span><span class="op">]</span> <span class="op">&gt;</span> <span class="st">"3.6.0"</span><span class="op">)</span><span class="op">{</span>
-        <span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html">requireNamespace</a></span><span class="op">(</span><span class="st">"BiocManager"</span><span class="op">)</span><span class="op">)</span><span class="op">{</span>
-            <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span><span class="op">(</span><span class="st">"BiocManager"</span><span class="op">)</span>
-        <span class="op">}</span>
-            <span class="fu">BiocManager</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/BiocManager/man/install.html">install</a></span><span class="op">(</span><span class="va">new.pkg</span>, dependencies<span class="op">=</span><span class="cn">TRUE</span>, ask<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span>
-      <span class="op">}</span>
-      <span class="kw">if</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/strsplit.html">strsplit</a></span><span class="op">(</span><span class="va">version</span><span class="op">[[</span><span class="st">'version.string'</span><span class="op">]</span><span class="op">]</span>, <span class="st">' '</span><span class="op">)</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">[</span><span class="fl">3</span><span class="op">]</span> <span class="op">&lt;</span> <span class="st">"3.6.0"</span><span class="op">)</span><span class="op">{</span>
-        <span class="kw"><a href="https://rdrr.io/r/base/stop.html">stop</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/message.html">message</a></span><span class="op">(</span><span class="st">"powsimR depends on packages that are only available in R 3.6.0 and higher."</span><span class="op">)</span><span class="op">)</span>
-      <span class="op">}</span>
-    <span class="op">}</span>
-    <span class="kw">if</span><span class="op">(</span><span class="va">repository</span><span class="op">==</span><span class="st">'github'</span><span class="op">)</span> <span class="op">{</span>
-      <span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org//reference/remote-reexports.html">install_github</a></span><span class="op">(</span><span class="va">new.pkg</span>, build_vignettes <span class="op">=</span> <span class="cn">FALSE</span>, force <span class="op">=</span> <span class="cn">FALSE</span>, dependencies<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span>
-    <span class="op">}</span>
-  <span class="op">}</span>
-<span class="op">}</span>
+  <span class="kw">if</span> (<span class="fu"><a href="https://rdrr.io/r/base/length.html">length</a></span>(<span class="no">new.pkg</span>)) {
+    <span class="kw">if</span>(<span class="no">repository</span><span class="kw">==</span><span class="st">'CRAN'</span>) {
+      <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span>(<span class="no">new.pkg</span>, <span class="kw">dependencies</span> <span class="kw">=</span> <span class="fl">TRUE</span>)
+    }
+    <span class="kw">if</span>(<span class="no">repository</span><span class="kw">==</span><span class="st">'Bioconductor'</span>) {
+      <span class="kw">if</span>(<span class="fu"><a href="https://rdrr.io/r/base/strsplit.html">strsplit</a></span>(<span class="no">version</span><span class="kw">[[</span><span class="st">'version.string'</span>]], <span class="st">' '</span>)<span class="kw">[[</span><span class="fl">1</span>]][<span class="fl">3</span>] <span class="kw">&gt;</span> <span class="st">"3.6.0"</span>){
+        <span class="kw">if</span> (!<span class="fu"><a href="https://rdrr.io/r/base/ns-load.html">requireNamespace</a></span>(<span class="st">"BiocManager"</span>)){
+            <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span>(<span class="st">"BiocManager"</span>)
+        }
+            <span class="kw pkg">BiocManager</span><span class="kw ns">::</span><span class="fu"><a href="https://rdrr.io/pkg/BiocManager/man/install.html">install</a></span>(<span class="no">new.pkg</span>, <span class="kw">dependencies</span><span class="kw">=</span><span class="fl">TRUE</span>, <span class="kw">ask</span><span class="kw">=</span><span class="fl">FALSE</span>)
+      }
+      <span class="kw">if</span>(<span class="fu"><a href="https://rdrr.io/r/base/strsplit.html">strsplit</a></span>(<span class="no">version</span><span class="kw">[[</span><span class="st">'version.string'</span>]], <span class="st">' '</span>)<span class="kw">[[</span><span class="fl">1</span>]][<span class="fl">3</span>] <span class="kw">&lt;</span> <span class="st">"3.6.0"</span>){
+        <span class="fu"><a href="https://rdrr.io/r/base/stop.html">stop</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/message.html">message</a></span>(<span class="st">"powsimR depends on packages that are only available in R 3.6.0 and higher."</span>))
+      }
+    }
+    <span class="kw">if</span>(<span class="no">repository</span><span class="kw">==</span><span class="st">'github'</span>) {
+      <span class="kw pkg">devtools</span><span class="kw ns">::</span><span class="fu"><a href="https://devtools.r-lib.org//reference/remote-reexports.html">install_github</a></span>(<span class="no">new.pkg</span>, <span class="kw">build_vignettes</span> <span class="kw">=</span> <span class="fl">FALSE</span>, <span class="kw">force</span> <span class="kw">=</span> <span class="fl">FALSE</span>, <span class="kw">dependencies</span><span class="kw">=</span><span class="fl">TRUE</span>)
+    }
+  }
+}
 
 <span class="co"># CRAN PACKAGES</span>
-<span class="va">cranpackages</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"broom"</span>, <span class="st">"cobs"</span>, <span class="st">"cowplot"</span>, 
-                  <span class="st">"data.table"</span>, <span class="st">"doParallel"</span>, <span class="st">"dplyr"</span>, <span class="st">"DrImpute"</span>, 
+<span class="no">cranpackages</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"broom"</span>, <span class="st">"cobs"</span>, <span class="st">"cowplot"</span>,
+                  <span class="st">"data.table"</span>, <span class="st">"doParallel"</span>, <span class="st">"dplyr"</span>, <span class="st">"DrImpute"</span>,
                   <span class="st">"fastICA"</span>, <span class="st">"fitdistrplus"</span>, <span class="st">"foreach"</span>, <span class="st">"future"</span>,
                   <span class="st">"gamlss.dist"</span>, <span class="st">"ggplot2"</span>, <span class="st">"ggpubr"</span>, <span class="st">"ggstance"</span>, <span class="st">"grDevices"</span>,
                   <span class="st">"grid"</span>, <span class="st">"Hmisc"</span>, <span class="st">"kernlab"</span>, <span class="st">"MASS"</span>, <span class="st">"magrittr"</span>, <span class="st">"MBESS"</span>, <span class="st">"Matrix"</span>,
-                  <span class="st">"matrixStats"</span>, <span class="st">"mclust"</span>, <span class="st">"methods"</span>, <span class="st">"minpack.lm"</span>, <span class="st">"moments"</span>, <span class="st">"msir"</span>, 
+                  <span class="st">"matrixStats"</span>, <span class="st">"mclust"</span>, <span class="st">"methods"</span>, <span class="st">"minpack.lm"</span>, <span class="st">"moments"</span>, <span class="st">"msir"</span>,
                   <span class="st">"NBPSeq"</span>, <span class="st">"nonnest2"</span>, <span class="st">"parallel"</span>, <span class="st">"penalized"</span>, <span class="st">"plyr"</span>, <span class="st">"pscl"</span>,
-                  <span class="st">"reshape2"</span>, <span class="st">"Rmagic"</span>, <span class="st">"rsvd"</span>, <span class="st">"Rtsne"</span>, <span class="st">"scales"</span>, <span class="st">"Seurat"</span>, <span class="st">"snow"</span>, <span class="st">"sctransform"</span>, 
-                  <span class="st">"stats"</span>, <span class="st">"tibble"</span>, <span class="st">"tidyr"</span>, <span class="st">"truncnorm"</span>, <span class="st">"VGAM"</span>, <span class="st">"ZIM"</span>, <span class="st">"zoo"</span><span class="op">)</span>
-<span class="fu">ipak</span><span class="op">(</span><span class="va">cranpackages</span>, repository<span class="op">=</span><span class="st">'CRAN'</span><span class="op">)</span>
+                  <span class="st">"reshape2"</span>, <span class="st">"Rmagic"</span>, <span class="st">"rsvd"</span>, <span class="st">"Rtsne"</span>, <span class="st">"scales"</span>, <span class="st">"Seurat"</span>, <span class="st">"snow"</span>, <span class="st">"sctransform"</span>,
+                  <span class="st">"stats"</span>, <span class="st">"tibble"</span>, <span class="st">"tidyr"</span>, <span class="st">"truncnorm"</span>, <span class="st">"VGAM"</span>, <span class="st">"ZIM"</span>, <span class="st">"zoo"</span>)
+<span class="fu">ipak</span>(<span class="no">cranpackages</span>, <span class="kw">repository</span><span class="kw">=</span><span class="st">'CRAN'</span>)
 
 <span class="co"># BIOCONDUCTOR</span>
-<span class="va">biocpackages</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"bayNorm"</span>, <span class="st">"baySeq"</span>, <span class="st">"BiocGenerics"</span>, <span class="st">"BiocParallel"</span>, 
+<span class="no">biocpackages</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"bayNorm"</span>, <span class="st">"baySeq"</span>, <span class="st">"BiocGenerics"</span>, <span class="st">"BiocParallel"</span>,
                   <span class="st">"DESeq2"</span>, <span class="st">"EBSeq"</span>, <span class="st">"edgeR"</span>, <span class="st">"IHW"</span>, <span class="st">"iCOBRA"</span>,
-                  <span class="st">"limma"</span>, <span class="st">"Linnorm"</span>, <span class="st">"MAST"</span>, <span class="st">"monocle"</span>, <span class="st">"NOISeq"</span>, <span class="st">"qvalue"</span>, <span class="st">"ROTS"</span>, <span class="st">"RUVSeq"</span>, 
-                  <span class="st">"S4Vectors"</span>, <span class="st">"scater"</span>, <span class="st">"scDD"</span>, <span class="st">"scde"</span>, <span class="st">"scone"</span>, <span class="st">"scran"</span>, <span class="st">"SCnorm"</span>, 
-                  <span class="st">"SingleCellExperiment"</span>, <span class="st">"SummarizedExperiment"</span>, <span class="st">"zinbwave"</span><span class="op">)</span>
-<span class="fu">ipak</span><span class="op">(</span><span class="va">biocpackages</span>, repository<span class="op">=</span><span class="st">'Bioconductor'</span><span class="op">)</span>
+                  <span class="st">"limma"</span>, <span class="st">"Linnorm"</span>, <span class="st">"MAST"</span>, <span class="st">"monocle"</span>, <span class="st">"NOISeq"</span>, <span class="st">"qvalue"</span>, <span class="st">"ROTS"</span>, <span class="st">"RUVSeq"</span>,
+                  <span class="st">"S4Vectors"</span>, <span class="st">"scater"</span>, <span class="st">"scDD"</span>, <span class="st">"scde"</span>, <span class="st">"scone"</span>, <span class="st">"scran"</span>, <span class="st">"SCnorm"</span>,
+                  <span class="st">"SingleCellExperiment"</span>, <span class="st">"SummarizedExperiment"</span>, <span class="st">"zinbwave"</span>)
+<span class="fu">ipak</span>(<span class="no">biocpackages</span>, <span class="kw">repository</span><span class="kw">=</span><span class="st">'Bioconductor'</span>)
 
 <span class="co"># GITHUB</span>
-<span class="va">githubpackages</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">'cz-ye/DECENT'</span>, <span class="st">'nghiavtr/BPSC'</span>, 
+<span class="no">githubpackages</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">'cz-ye/DECENT'</span>, <span class="st">'nghiavtr/BPSC'</span>,
                     <span class="st">'mohuangx/SAVER'</span>, <span class="st">'statOmics/zingeR'</span>,
-                    <span class="st">'Vivianstats/scImpute'</span><span class="op">)</span>
-<span class="fu">ipak</span><span class="op">(</span><span class="va">githubpackages</span>, repository <span class="op">=</span> <span class="st">'github'</span><span class="op">)</span></code></pre></div>
+                    <span class="st">'Vivianstats/scImpute'</span>)
+<span class="fu">ipak</span>(<span class="no">githubpackages</span>, <span class="kw">repository</span> <span class="kw">=</span> <span class="st">'github'</span>)</pre></body></html></div>
 <p>To check whether all dependencies are installed, you can run the following lines:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">powsimRdeps</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span><span class="op">(</span>Package <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="va">cranpackages</span>, 
-                                      <span class="va">biocpackages</span>, 
-                                      <span class="fu"><a href="https://rdrr.io/r/base/lapply.html">sapply</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/strsplit.html">strsplit</a></span><span class="op">(</span><span class="va">githubpackages</span>, <span class="st">"/"</span><span class="op">)</span>, <span class="st">"[["</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span>, 
-                          stringsAsFactors <span class="op">=</span> <span class="cn">F</span><span class="op">)</span>
+<div class="sourceCode" id="cb3"><html><body><pre class="r"><span class="no">powsimRdeps</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span>(<span class="kw">Package</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="no">cranpackages</span>,
+                                      <span class="no">biocpackages</span>,
+                                      <span class="fu"><a href="https://rdrr.io/r/base/lapply.html">sapply</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/strsplit.html">strsplit</a></span>(<span class="no">githubpackages</span>, <span class="st">"/"</span>), <span class="st">"[["</span>, <span class="fl">2</span>)),
+                          <span class="kw">stringsAsFactors</span> <span class="kw">=</span> <span class="no">F</span>)
 
-<span class="va">ip</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html">as.data.frame</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/installed.packages.html">installed.packages</a></span><span class="op">(</span><span class="op">)</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">3</span><span class="op">:</span><span class="fl">4</span><span class="op">)</span><span class="op">]</span>, stringsAsFactors <span class="op">=</span> <span class="cn">F</span><span class="op">)</span>
+<span class="no">ip</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html">as.data.frame</a></span>(<span class="fu"><a href="https://rdrr.io/r/utils/installed.packages.html">installed.packages</a></span>()[,<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">1</span>,<span class="fl">3</span>:<span class="fl">4</span>)], <span class="kw">stringsAsFactors</span> <span class="kw">=</span> <span class="no">F</span>)
 
-<span class="va">ip.check</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html">cbind</a></span><span class="op">(</span><span class="va">powsimRdeps</span>, 
-                  Version <span class="op">=</span> <span class="va">ip</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/match.html">match</a></span><span class="op">(</span><span class="va">powsimRdeps</span><span class="op">$</span><span class="va">Package</span>, <span class="fu"><a href="https://rdrr.io/r/base/colnames.html">rownames</a></span><span class="op">(</span><span class="va">ip</span><span class="op">)</span><span class="op">)</span>,<span class="st">"Version"</span><span class="op">]</span><span class="op">)</span> 
+<span class="no">ip.check</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html">cbind</a></span>(<span class="no">powsimRdeps</span>,
+                  <span class="kw">Version</span> <span class="kw">=</span> <span class="no">ip</span>[<span class="fu"><a href="https://rdrr.io/r/base/match.html">match</a></span>(<span class="no">powsimRdeps</span>$<span class="no">Package</span>, <span class="fu"><a href="https://rdrr.io/r/base/colnames.html">rownames</a></span>(<span class="no">ip</span>)),<span class="st">"Version"</span>])
 
-<span class="fu"><a href="https://rdrr.io/r/base/table.html">table</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html">is.na</a></span><span class="op">(</span><span class="va">ip.check</span><span class="op">$</span><span class="va">Version</span><span class="op">)</span><span class="op">)</span>  <span class="co"># all should be FALSE</span></code></pre></div>
+<span class="fu"><a href="https://rdrr.io/r/base/table.html">table</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/NA.html">is.na</a></span>(<span class="no">ip.check</span>$<span class="no">Version</span>))  <span class="co"># all should be FALSE</span></pre></body></html></div>
 <p>After installing the dependencies, powsimR can be installed by using devtools as well.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org//reference/remote-reexports.html">install_github</a></span><span class="op">(</span><span class="st">"bvieth/powsimR"</span>, build_vignettes <span class="op">=</span> <span class="cn">TRUE</span>, dependencies <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span>
-<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="st"><a href="https://github.com/bvieth/powsimR">"powsimR"</a></span><span class="op">)</span></code></pre></div>
+<div class="sourceCode" id="cb4"><html><body><pre class="r"><span class="kw pkg">devtools</span><span class="kw ns">::</span><span class="fu"><a href="https://devtools.r-lib.org//reference/remote-reexports.html">install_github</a></span>(<span class="st">"bvieth/powsimR"</span>, <span class="kw">build_vignettes</span> <span class="kw">=</span> <span class="fl">TRUE</span>, <span class="kw">dependencies</span> <span class="kw">=</span> <span class="fl">FALSE</span>)
+<span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="st">"powsimR"</span>)</pre></body></html></div>
 <p>Some users have experienced issues installing powsimR due to vignette compilation errors. If that is the case, you can leave out building the vignette (by setting build_vignettes to FALSE).</p>
 <p>Alternative, you can try to install powsimR and its dependencies directly using devtools:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org//reference/remote-reexports.html">install_github</a></span><span class="op">(</span><span class="st">"bvieth/powsimR"</span><span class="op">)</span></code></pre></div>
+<div class="sourceCode" id="cb5"><html><body><pre class="r"><span class="kw pkg">devtools</span><span class="kw ns">::</span><span class="fu"><a href="https://devtools.r-lib.org//reference/remote-reexports.html">install_github</a></span>(<span class="st">"bvieth/powsimR"</span>)</pre></body></html></div>
 </div>
 <div id="introduction" class="section level1">
 <h1 class="hasAnchor">
 <a href="#introduction" class="anchor"></a>Introduction</h1>
-<p>In this vignette, we illustrate the features of <code>powsimR</code> by assessing the power to detect differential expression between two groups of mouse embryonic stem cells cultured in standard 2i/LIF culture medium <a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE75790">GSE75790</a> <span class="citation">(<a href="#ref-Ziegenhain2017-sf" role="doc-biblioref">Ziegenhain et al. 2017</a>)</span>.</p>
+<p>In this vignette, we illustrate the features of <code>powsimR</code> by assessing the power to detect differential expression between two groups of mouse embryonic stem cells cultured in standard 2i/LIF culture medium <a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE75790">GSE75790</a> <span class="citation">(Ziegenhain et al. <a href="#ref-Ziegenhain2017-sf" role="doc-biblioref">2017</a>)</span>.</p>
 <div id="powsimr-workflow" class="section level2">
 <h2 class="hasAnchor">
 <a href="#powsimr-workflow" class="anchor"></a>powsimR Workflow</h2>
@@ -205,29 +199,28 @@ PowsimR schematic overview. We want to investigate the statistical power to dete
 <p>In both cases matching moments estimation of mean and dispersion are based on normalized counts.</p>
 <p>The user can choose between multiple normalisation methods (see Details section of <code>estimateParam</code>). Furthermore, a number of methods are group sensitive (e.g. batch labels can be provided in SCnorm). For single cell data, it is important to filter out genes and/or cells that are outliers or deemed undetected (see options SampleFilter and GeneFilter).</p>
 <p>The estimates, sequencing depth and normalisation factors are plotted with <code>plotParam</code>.</p>
-<p>With the following command, we estimate and plot the parameters for the mouse embryonic stem cells profiled with CELseq2 <span class="citation">(<a href="#ref-Ziegenhain2017-sf" role="doc-biblioref">Ziegenhain et al. 2017</a>)</span> (Figure @ref(fig:geneparamsplot)). Firstly, we can examine the quality of the data set using the metrics in Figure @ref(fig:geneparamsplot) A. But most importantly, we see that the variability (i.e. dispersion) and dropout rates are high (Figure @ref(fig:geneparamsplot) B). Furthermore, the dispersion depends on the mean and does not level off with higher mean values compared to bulk data (Figure @ref(fig:geneparamsplot) D).</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span><span class="op">(</span><span class="st">"CELseq2_Gene_UMI_Counts"</span><span class="op">)</span>
-<span class="va">batch</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html">sapply</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/strsplit.html">strsplit</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html">colnames</a></span><span class="op">(</span><span class="va">CELseq2_Gene_UMI_Counts</span><span class="op">)</span>, <span class="st">"_"</span><span class="op">)</span>, <span class="st">"[["</span>, <span class="fl">1</span><span class="op">)</span>
-<span class="va">Batches</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span><span class="op">(</span>Batch <span class="op">=</span> <span class="va">batch</span>,
-                      stringsAsFactors <span class="op">=</span> <span class="cn">FALSE</span>, 
-                      row.names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html">colnames</a></span><span class="op">(</span><span class="va">CELseq2_Gene_UMI_Counts</span><span class="op">)</span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span><span class="op">(</span><span class="st">"GeneLengths_mm10"</span><span class="op">)</span>
+<p>With the following command, we estimate and plot the parameters for the mouse embryonic stem cells profiled with CELseq2 <span class="citation">(Ziegenhain et al. <a href="#ref-Ziegenhain2017-sf" role="doc-biblioref">2017</a>)</span> (Figure @ref(fig:geneparamsplot)). Firstly, we can examine the quality of the data set using the metrics in Figure @ref(fig:geneparamsplot) A. But most importantly, we see that the variability (i.e. dispersion) and dropout rates are high (Figure @ref(fig:geneparamsplot) B). Furthermore, the dispersion depends on the mean and does not level off with higher mean values compared to bulk data (Figure @ref(fig:geneparamsplot) D).</p>
+<div class="sourceCode" id="cb6"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span>(<span class="st">"CELseq2_Gene_UMI_Counts"</span>)
+<span class="no">batch</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html">sapply</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/strsplit.html">strsplit</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/colnames.html">colnames</a></span>(<span class="no">CELseq2_Gene_UMI_Counts</span>), <span class="st">"_"</span>), <span class="st">"[["</span>, <span class="fl">1</span>)
+<span class="no">Batches</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span>(<span class="kw">Batch</span> <span class="kw">=</span> <span class="no">batch</span>,
+                      <span class="kw">stringsAsFactors</span> <span class="kw">=</span> <span class="fl">FALSE</span>,
+                      <span class="kw">row.names</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html">colnames</a></span>(<span class="no">CELseq2_Gene_UMI_Counts</span>))
+<span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span>(<span class="st">"GeneLengths_mm10"</span>)
 
 <span class="co"># estimation</span>
-<span class="va">estparam_gene</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/estimateParam.html">estimateParam</a></span><span class="op">(</span>countData <span class="op">=</span> <span class="va">CELseq2_Gene_UMI_Counts</span>,
-                          readData <span class="op">=</span> <span class="cn">NULL</span>,
-                          batchData <span class="op">=</span> <span class="va">Batches</span>,
-                          spikeData <span class="op">=</span> <span class="cn">NULL</span>,
-                          spikeInfo <span class="op">=</span> <span class="cn">NULL</span>,
-                          Lengths <span class="op">=</span> <span class="va">GeneLengths</span>, MeanFragLengths <span class="op">=</span> <span class="cn">NULL</span>,
-                          RNAseq <span class="op">=</span> <span class="st">'singlecell'</span>, Protocol <span class="op">=</span> <span class="st">'UMI'</span>,
-                          Distribution <span class="op">=</span> <span class="st">'NB'</span>, Normalisation <span class="op">=</span> <span class="st">"scran"</span>,
-                          GeneFilter <span class="op">=</span> <span class="fl">0.1</span>, SampleFilter <span class="op">=</span> <span class="fl">3</span>,
-                          sigma <span class="op">=</span> <span class="fl">1.96</span>, NCores <span class="op">=</span> <span class="cn">NULL</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
+<span class="no">estparam_gene</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/estimateParam.html">estimateParam</a></span>(<span class="kw">countData</span> <span class="kw">=</span> <span class="no">CELseq2_Gene_UMI_Counts</span>,
+                          <span class="kw">readData</span> <span class="kw">=</span> <span class="kw">NULL</span>,
+                          <span class="kw">batchData</span> <span class="kw">=</span> <span class="no">Batches</span>,
+                          <span class="kw">spikeData</span> <span class="kw">=</span> <span class="kw">NULL</span>,
+                          <span class="kw">spikeInfo</span> <span class="kw">=</span> <span class="kw">NULL</span>,
+                          <span class="kw">Lengths</span> <span class="kw">=</span> <span class="no">GeneLengths</span>, <span class="kw">MeanFragLengths</span> <span class="kw">=</span> <span class="kw">NULL</span>,
+                          <span class="kw">RNAseq</span> <span class="kw">=</span> <span class="st">'singlecell'</span>, <span class="kw">Protocol</span> <span class="kw">=</span> <span class="st">'UMI'</span>,
+                          <span class="kw">Distribution</span> <span class="kw">=</span> <span class="st">'NB'</span>, <span class="kw">Normalisation</span> <span class="kw">=</span> <span class="st">"scran"</span>,
+                          <span class="kw">GeneFilter</span> <span class="kw">=</span> <span class="fl">0.1</span>, <span class="kw">SampleFilter</span> <span class="kw">=</span> <span class="fl">3</span>,
+                          <span class="kw">sigma</span> <span class="kw">=</span> <span class="fl">1.96</span>, <span class="kw">NCores</span> <span class="kw">=</span> <span class="kw">NULL</span>, <span class="kw">verbose</span> <span class="kw">=</span> <span class="fl">TRUE</span>)
 
 <span class="co"># plotting</span>
-<span class="fu"><a href="../reference/plotParam.html">plotParam</a></span><span class="op">(</span>estParamRes <span class="op">=</span> <span class="va">estparam_gene</span>, Annot <span class="op">=</span> <span class="cn">T</span><span class="op">)</span></code></pre></div>
+<span class="fu"><a href="../reference/plotParam.html">plotParam</a></span>(<span class="kw">estParamRes</span> <span class="kw">=</span> <span class="no">estparam_gene</span>, <span class="kw">Annot</span> <span class="kw">=</span> <span class="no">T</span>)</pre></body></html></div>
 <div class="figure">
 <img src="estparam_gene_celseq2.png" alt="Estimated parameters for CEL-seq2 libraries from Ziegenhain et al. 2017. A) Quality Control Metrics: Sequencing depth; Library size factors with median (black line) for the filtered data set; Detected genes; Ratio of gene to spike-in counts (if spike-ins were provided). Outliers are marked in red. B) Marginal Distribution of gene mean, dispersion and dropout rate per estimation set. C) Number of genes and samples per estimation set. Provided by the user; Detected = number of genes and samples with at least one count; All = number of genes for which mean, dispersion and dropout could be estimated using non-outlying samples. 
 Filtered = number of genes above filter threshold for which mean, dispersion and dropout could be estimated using non-outlying samples. Dropout Genes = number of genes filtered out due to dropout rate. D) Local polynomial regression fit between mean and dispersion estimates with variability band per gene (yellow). Common dispersion estimate (grey dashed line). E) Fraction of dropouts versus estimated mean expression per gene." width="755"><p class="caption">
@@ -236,36 +229,35 @@ Estimated parameters for CEL-seq2 libraries from Ziegenhain et al. 2017. A) Qua
 </div>
 <p>We have implemented a count simulation framework assuming either a negative binomial distribution or a zero-inflated negative binomial distribution. To predict the dispersion given a random draw of mean expression value observed, we apply a locally weighted polynomial regression fit (solid orange line in Figure @ref(fig:geneparamsplot) D). To capture the variability of dispersion estimates observed, a local variability prediction band is applied (dashed orange lines in Figure @ref(fig:geneparamsplot) D).</p>
 <p>For bulk RNA-seq experiments, dropouts are less probable but can still occur. To include this phenomenon we sample from the observed dropout rates for genes that have a mean expression value below 5% dropout probability determined by a decrease constrained B-splines regression of dropout rate against mean expression (<code>cobs</code>).</p>
-<p>For the zero-inflated negative binomial distribution, the mean-dispersion relation is similarly estimated, but based on positive read counts. Furthermore, the dropouts are also predicted based on a locally weighted polynomial regression fit between mean and dropouts. Of note, this fit is done separately for amplified and non-amplified transcripts and similar proportions of genes as observed are also generated in the simulations <span class="citation">(<a href="#ref-Ziegenhain2017-sf" role="doc-biblioref">Ziegenhain et al. 2017</a>)</span>.</p>
-<p>We and others have found that the negative binomial (NB) distribution is particularly suited for scRNA-seq protocols with UMIs (e.g. SCRB-Seq, Drop-Seq, 10XGenomics) <span class="citation">(<a href="#ref-Svensson2020-ip" role="doc-biblioref">Svensson 2020</a>)</span> whereas non-UMI methods like Smartseq2 show a considerable proportion of genes with zero-inflated count distributions and the zero-inflated negative binomial (ZINB) is then more appropiate <span class="citation">(<a href="#ref-Vieth2017-lh" role="doc-biblioref">Vieth et al. 2017</a>)</span>. In addition, we recommend the NB distribution for bulk RNA-seq and only recommend the option ‘singlecell’ in <code><a href="../reference/estimateParam.html">estimateParam()</a></code> and specialised single cell tools for e.g. normalisation if the data is extremely sparse.</p>
+<p>For the zero-inflated negative binomial distribution, the mean-dispersion relation is similarly estimated, but based on positive read counts. Furthermore, the dropouts are also predicted based on a locally weighted polynomial regression fit between mean and dropouts. Of note, this fit is done separately for amplified and non-amplified transcripts and similar proportions of genes as observed are also generated in the simulations <span class="citation">(Ziegenhain et al. <a href="#ref-Ziegenhain2017-sf" role="doc-biblioref">2017</a>)</span>.</p>
+<p>We and others have found that the negative binomial (NB) distribution is particularly suited for scRNA-seq protocols with UMIs (e.g. SCRB-Seq, Drop-Seq, 10XGenomics) <span class="citation">(Svensson <a href="#ref-Svensson2020-ip" role="doc-biblioref">2020</a>)</span> whereas non-UMI methods like Smartseq2 show a considerable proportion of genes with zero-inflated count distributions and the zero-inflated negative binomial (ZINB) is then more appropiate <span class="citation">(Vieth et al. <a href="#ref-Vieth2017-lh" role="doc-biblioref">2017</a>)</span>. In addition, we recommend the NB distribution for bulk RNA-seq and only recommend the option ‘singlecell’ in <code><a href="../reference/estimateParam.html">estimateParam()</a></code> and specialised single cell tools for e.g. normalisation if the data is extremely sparse.</p>
 </div>
 <div id="spike-ins" class="section level2">
 <h2 class="hasAnchor">
 <a href="#spike-ins" class="anchor"></a>Spike-Ins</h2>
-<p>Some normalisation methods can use spike-ins as part of their normalisation (e.g. SCnorm, scran, Census). We have found that using spike-ins when comparing expression across cells with strong asymmetric differences is important, e.g. comparing resting cells to very transcriptionally active cells <span class="citation">(<a href="#ref-Vieth2019-ld" role="doc-biblioref">Vieth et al. 2019</a>)</span>. To use spike-in information in the simulations, their distributional characteristics need to be estimated. We follow the estimation and simulation framework presented in <span class="citation">(<a href="#ref-Kim2015-zo" role="doc-biblioref">Kim et al. 2015</a>)</span> where the variance is decomposed into shot noise and mRNA loss due to capture and sequencing efficiency. In short, the parameters for a Beta-distribution describes the RNA molecule capture efficiency and the parameters of a Gamma distribution describes the sequencing efficiency, which we can then use to simulate in silico spike-ins given a mean expression value. We assume that biological variance does not contribute to spike-in expression.</p>
+<p>Some normalisation methods can use spike-ins as part of their normalisation (e.g. SCnorm, scran, Census). We have found that using spike-ins when comparing expression across cells with strong asymmetric differences is important, e.g. comparing resting cells to very transcriptionally active cells <span class="citation">(Vieth et al. <a href="#ref-Vieth2019-ld" role="doc-biblioref">2019</a>)</span>. To use spike-in information in the simulations, their distributional characteristics need to be estimated. We follow the estimation and simulation framework presented in <span class="citation">(Kim et al. <a href="#ref-Kim2015-zo" role="doc-biblioref">2015</a>)</span> where the variance is decomposed into shot noise and mRNA loss due to capture and sequencing efficiency. In short, the parameters for a Beta-distribution describes the RNA molecule capture efficiency and the parameters of a Gamma distribution describes the sequencing efficiency, which we can then use to simulate in silico spike-ins given a mean expression value. We assume that biological variance does not contribute to spike-in expression.</p>
 <p>The user needs to define the spike-in expression table and the spike-in information table (IDs, molecules, lengths per spike-in) in the function <code>estimateSpike</code>.</p>
 <p>The following formula can help the user to calculate the number of molecules of spike-ins:</p>
 <p><span class="math display">\[\begin{equation}
     Y_{j} = c_{j} * V * 10^{-3} * D^{-1} * 10^{-18} * {Avogadro}, \quad j=1,\dots,92
 \end{equation}\]</span></p>
 <p>The number of molecules <span class="math inline">\(Y_{j}\)</span> for each ERCC spike-in species is the product of the molar concentration <span class="math inline">\(c_{j}\)</span> (attomoles per microlitre), the dilution factor <span class="math inline">\(1/D\)</span>, the volume <span class="math inline">\(V\)</span> (nanolitre), Avogadros’ constant (<span class="math inline">\(6.02214129*10^{23}\)</span>) and conversion factors between unit scales.</p>
-<p>With the following command, we estimate the parameters for the spike-ins added during library preparation of mouse embryonic stem cells cultured in standard 2i+lif medium <span class="citation">(<a href="#ref-Ziegenhain2017-sf" role="doc-biblioref">Ziegenhain et al. 2017</a>)</span>. Descriptive plots of the spike-ins can be drawn with <code>plotSpike</code> (Figure @ref(fig:spikeplot)).</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span><span class="op">(</span><span class="st">"CELseq2_SpikeIns_UMI_Counts"</span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span><span class="op">(</span><span class="st">"CELseq2_SpikeInfo"</span><span class="op">)</span>
-<span class="va">batch</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html">sapply</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/strsplit.html">strsplit</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html">colnames</a></span><span class="op">(</span><span class="va">CELseq2_SpikeIns_UMI_Counts</span><span class="op">)</span>, <span class="st">"_"</span><span class="op">)</span>, <span class="st">"[["</span>, <span class="fl">1</span><span class="op">)</span>
-<span class="va">Batches</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span><span class="op">(</span>Batch <span class="op">=</span> <span class="va">batch</span>,
-                       stringsAsFactors <span class="op">=</span> <span class="cn">F</span>,
-                       row.names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html">colnames</a></span><span class="op">(</span><span class="va">CELseq2_SpikeIns_UMI_Counts</span><span class="op">)</span><span class="op">)</span>
+<p>With the following command, we estimate the parameters for the spike-ins added during library preparation of mouse embryonic stem cells cultured in standard 2i+lif medium <span class="citation">(Ziegenhain et al. <a href="#ref-Ziegenhain2017-sf" role="doc-biblioref">2017</a>)</span>. Descriptive plots of the spike-ins can be drawn with <code>plotSpike</code> (Figure @ref(fig:spikeplot)).</p>
+<div class="sourceCode" id="cb7"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span>(<span class="st">"CELseq2_SpikeIns_UMI_Counts"</span>)
+<span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span>(<span class="st">"CELseq2_SpikeInfo"</span>)
+<span class="no">batch</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html">sapply</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/strsplit.html">strsplit</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/colnames.html">colnames</a></span>(<span class="no">CELseq2_SpikeIns_UMI_Counts</span>), <span class="st">"_"</span>), <span class="st">"[["</span>, <span class="fl">1</span>)
+<span class="no">Batches</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span>(<span class="kw">Batch</span> <span class="kw">=</span> <span class="no">batch</span>,
+                       <span class="kw">stringsAsFactors</span> <span class="kw">=</span> <span class="no">F</span>,
+                       <span class="kw">row.names</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html">colnames</a></span>(<span class="no">CELseq2_SpikeIns_UMI_Counts</span>))
 <span class="co"># estimation</span>
-<span class="va">estparam_spike</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/estimateSpike.html">estimateSpike</a></span><span class="op">(</span>spikeData <span class="op">=</span> <span class="va">CELseq2_SpikeIns_UMI_Counts</span>,
-spikeInfo <span class="op">=</span> <span class="va">CELseq2_SpikeInfo</span>,
-MeanFragLength <span class="op">=</span> <span class="cn">NULL</span>,
-batchData <span class="op">=</span> <span class="va">Batches</span>,
-Normalisation <span class="op">=</span> <span class="st">'depth'</span><span class="op">)</span>
+<span class="no">estparam_spike</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/estimateSpike.html">estimateSpike</a></span>(<span class="kw">spikeData</span> <span class="kw">=</span> <span class="no">CELseq2_SpikeIns_UMI_Counts</span>,
+<span class="kw">spikeInfo</span> <span class="kw">=</span> <span class="no">CELseq2_SpikeInfo</span>,
+<span class="kw">MeanFragLength</span> <span class="kw">=</span> <span class="kw">NULL</span>,
+<span class="kw">batchData</span> <span class="kw">=</span> <span class="no">Batches</span>,
+<span class="kw">Normalisation</span> <span class="kw">=</span> <span class="st">'depth'</span>)
 
 <span class="co"># plotting</span>
-<span class="fu"><a href="../reference/plotSpike.html">plotSpike</a></span><span class="op">(</span><span class="va">estparam_spike</span><span class="op">)</span></code></pre></div>
+<span class="fu"><a href="../reference/plotSpike.html">plotSpike</a></span>(<span class="no">estparam_spike</span>)</pre></body></html></div>
 <div class="figure" style="text-align: centered">
 <img src="estparam_spike_celseq2.png" alt="Estimated parameters for the spike-ins added to CEL-seq2 libraries in Ziegenhain et al. 2017 (A) Sequencing depth per sample with median sequencing depth (grey dashed line). (B) Library size normalisation factor per sample with median size factor (grey dashed line). (C) Calibration curve with mean expression estimates and average R squared over all cells. (D) Capture efficiency with binomial logistic regression fit over all cells." width="572"><p class="caption">
 Estimated parameters for the spike-ins added to CEL-seq2 libraries in Ziegenhain et al. 2017 (A) Sequencing depth per sample with median sequencing depth (grey dashed line). (B) Library size normalisation factor per sample with median size factor (grey dashed line). (C) Calibration curve with mean expression estimates and average R squared over all cells. (D) Capture efficiency with binomial logistic regression fit over all cells.
@@ -279,27 +271,26 @@ Estimated parameters for the spike-ins added to CEL-seq2 libraries in Ziegenhain
 <div id="setup" class="section level2">
 <h2 class="hasAnchor">
 <a href="#setup" class="anchor"></a>Setup</h2>
-<p>For simulating differential expression between two groups, the number of genes, number of simulations, percentage of differential expression and effect size are set up with the function <code>Setup</code>. The effect size is here defined as the log fold change which can be a constant (e.g. 2), sampled from a vector of anticipated log fold changes (e.g. derived from pilot experiments) or a function. The uniform, normal and gamma distributions are possible options and illustrated in figure @ref(fig:lfcs). Depending on the settings, these distribution can be broader or narrower. If using this option, we recommend to choose a distribution that closely resembles previously observed or expected fold changes. There is also the possibility to include batch effects, see the Details section in <code><a href="../reference/Setup.html">Setup()</a></code>.</p>
+<p>For simulating differential expression between two groups, the number of genes, number of simulations, percentage of differential expression and effect size are set up with the function <code>Setup</code>. The effect size is here defined as the log fold change which can be a constant (e.g. 1.5), sampled from a vector of anticipated fold changes (e.g. derived from pilot experiments) or function. The uniform, normal and gamma distributions are possible options and illustrated in figure @ref(fig:lfcs). Depending on the settings, these distribution can be broader or narrower. If using this option, we recommend to choose a distribution that closely resembles previously observed or expected fold changes. There is also the possibility to include batch effects, see the Details section in <code><a href="../reference/Setup.html">Setup()</a></code>.</p>
 <div class="figure">
 <img src="lfcdist.png" alt="Examples of Log Fold Changes following a gamma, normal and uniform distribution." width="886"><p class="caption">
 Examples of Log Fold Changes following a gamma, normal and uniform distribution.
 </p>
 </div>
-<p>The number of replicates per group (n1 and n2) are also defined in <code>Setup</code> which can be unbalanced. In addition the user can choose to include the simulation of dropout genes so that the resulting count matrix has a percentage of dropouts equal to the rate filtered out during estimation.</p>
-<p>The distribution estimates and these settings are then combined into one object.</p>
+<p>The number of replicates per group (n1 and n2) are also defined in <code>Setup</code> which can be unbalanced. In addition the user can choose to include the simulaiton of dropout genes so that the resulting count matrix has a percentage of dropouts equal to the rate filtered out during estimation.</p>
+<p>The distribution estimates and these settings are then combined into one object. The following command sets up simulations with 10,000 genes, 20% genes being DE, log fold change sampled from a narrow gamma distribution and parameter estimates based on Smartseq2 libraries in Ziegenhain dataset. Please note that I decreased the number of simulations for this illustration.</p>
 <p>The following command sets up simulations with 10,000 genes, 5% genes being DE, log fold change sample from a narrow gamma distribution and parameter estimates based on CEL-seq2 libraries in Ziegenhain dataset. The spike-ins are only necessary if we wish to apply imputation, normalisation and/or DE-tools that can utilize spike-ins, see the Details section of <code><a href="../reference/estimateParam.html">estimateParam()</a></code> and <code><a href="../reference/simulateDE.html">simulateDE()</a></code>.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co"># define log fold change</span>
-<span class="va">p.lfc</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">)</span>, size<span class="op">=</span><span class="va">x</span>,replace<span class="op">=</span><span class="cn">T</span><span class="op">)</span><span class="op">*</span><span class="fu"><a href="https://rdrr.io/r/stats/GammaDist.html">rgamma</a></span><span class="op">(</span><span class="va">x</span>, shape <span class="op">=</span> <span class="fl">1</span>, rate <span class="op">=</span> <span class="fl">2</span><span class="op">)</span>
+<div class="sourceCode" id="cb8"><html><body><pre class="r"><span class="co"># define log fold change</span>
+<span class="no">p.lfc</span> <span class="kw">&lt;-</span> <span class="kw">function</span>(<span class="no">x</span>) <span class="fu"><a href="https://rdrr.io/r/base/sample.html">sample</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(-<span class="fl">1</span>,<span class="fl">1</span>), <span class="kw">size</span><span class="kw">=</span><span class="no">x</span>,<span class="kw">replace</span><span class="kw">=</span><span class="no">T</span>)*<span class="fu"><a href="https://rdrr.io/r/stats/GammaDist.html">rgamma</a></span>(<span class="no">x</span>, <span class="kw">shape</span> <span class="kw">=</span> <span class="fl">1</span>, <span class="kw">rate</span> <span class="kw">=</span> <span class="fl">2</span>)
 <span class="co"># set up simulations</span>
-<span class="va">setupres</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup.html">Setup</a></span><span class="op">(</span>ngenes <span class="op">=</span> <span class="fl">10000</span>, nsims <span class="op">=</span> <span class="fl">25</span>,
-                  p.DE <span class="op">=</span> <span class="fl">0.05</span>, pLFC <span class="op">=</span> <span class="va">p.lfc</span>,
-                  n1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">48</span>, <span class="fl">96</span>, <span class="fl">384</span>, <span class="fl">800</span><span class="op">)</span>, n2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">48</span>, <span class="fl">96</span>, <span class="fl">384</span>, <span class="fl">800</span><span class="op">)</span>,
-                  Thinning <span class="op">=</span> <span class="cn">NULL</span>, LibSize <span class="op">=</span> <span class="st">'equal'</span>,
-                  estParamRes <span class="op">=</span> <span class="va">estparam_gene</span>,
-                  estSpikeRes <span class="op">=</span> <span class="cn">NULL</span>,
-                  DropGenes <span class="op">=</span> <span class="cn">TRUE</span>,
-                  setup.seed <span class="op">=</span> <span class="fl">5299</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></code></pre></div>
+<span class="no">setupres</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/Setup.html">Setup</a></span>(<span class="kw">ngenes</span> <span class="kw">=</span> <span class="fl">10000</span>, <span class="kw">nsims</span> <span class="kw">=</span> <span class="fl">25</span>,
+                  <span class="kw">p.DE</span> <span class="kw">=</span> <span class="fl">0.05</span>, <span class="kw">pLFC</span> <span class="kw">=</span> <span class="no">p.lfc</span>,
+                  <span class="kw">n1</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">48</span>, <span class="fl">96</span>, <span class="fl">384</span>, <span class="fl">800</span>), <span class="kw">n2</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">48</span>, <span class="fl">96</span>, <span class="fl">384</span>, <span class="fl">800</span>),
+                  <span class="kw">Thinning</span> <span class="kw">=</span> <span class="kw">NULL</span>, <span class="kw">LibSize</span> <span class="kw">=</span> <span class="st">'equal'</span>,
+                  <span class="kw">estParamRes</span> <span class="kw">=</span> <span class="no">estparam_gene</span>,
+                  <span class="kw">estSpikeRes</span> <span class="kw">=</span> <span class="kw">NULL</span>,
+                  <span class="kw">DropGenes</span> <span class="kw">=</span> <span class="fl">TRUE</span>,
+                  <span class="kw">setup.seed</span> <span class="kw">=</span> <span class="fl">5299</span>, <span class="kw">verbose</span> <span class="kw">=</span> <span class="fl">TRUE</span>)</pre></body></html></div>
 </div>
 <div id="running-differential-expression-simulations" class="section level2">
 <h2 class="hasAnchor">
@@ -312,12 +303,11 @@ Examples of Log Fold Changes following a gamma, normal and uniform distribution.
 <strong>Normalisation:</strong> The normalisation method. The user can choose between 10 methods in total. 5 developed for bulk, 5 developed for single cells (see the Details section of <code>simulateDE</code>).</li>
 </ul>
 <p>There are also additional options: Whether to apply a prefiltering or imputation step prior to normalisation; whether spike-in information should be used (if available). For more information, please consult the Details section of <code>simulateDE</code>.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">simres</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/simulateDE.html">simulateDE</a></span><span class="op">(</span>SetupRes <span class="op">=</span> <span class="va">setupres</span>,
-                     Prefilter <span class="op">=</span> <span class="cn">NULL</span>, Imputation <span class="op">=</span> <span class="cn">NULL</span>,
-                     Normalisation <span class="op">=</span> <span class="st">'scran'</span>,
-                     DEmethod <span class="op">=</span> <span class="st">"limma-trend"</span>, DEFilter <span class="op">=</span> <span class="cn">FALSE</span>,
-                     NCores <span class="op">=</span> <span class="cn">NULL</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></code></pre></div>
+<div class="sourceCode" id="cb9"><html><body><pre class="r"><span class="no">simres</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/simulateDE.html">simulateDE</a></span>(<span class="kw">SetupRes</span> <span class="kw">=</span> <span class="no">setupres</span>,
+                     <span class="kw">Prefilter</span> <span class="kw">=</span> <span class="kw">NULL</span>, <span class="kw">Imputation</span> <span class="kw">=</span> <span class="kw">NULL</span>,
+                     <span class="kw">Normalisation</span> <span class="kw">=</span> <span class="st">'scran'</span>,
+                     <span class="kw">DEmethod</span> <span class="kw">=</span> <span class="st">"limma-trend"</span>, <span class="kw">DEFilter</span> <span class="kw">=</span> <span class="fl">FALSE</span>,
+                     <span class="kw">NCores</span> <span class="kw">=</span> <span class="kw">NULL</span>, <span class="kw">verbose</span> <span class="kw">=</span> <span class="fl">TRUE</span>)</pre></body></html></div>
 </div>
 </div>
 <div id="evaluation" class="section level1 tabset">
@@ -327,29 +317,27 @@ Examples of Log Fold Changes following a gamma, normal and uniform distribution.
 <div id="differential-expression" class="section level2">
 <h2 class="hasAnchor">
 <a href="#differential-expression" class="anchor"></a>Differential Expression</h2>
-<p>The results of differential expression simulation are evaluated with <code>evaluateDE</code>. We have separated the evaluation from DE detection to allow the user to evaluate power in a comprehensive way as advocated by <span class="citation">(<a href="#ref-Wu2015-uj" role="doc-biblioref">Wu, Wang, and Wu 2015</a>)</span>. In this function, the proportions and error rates are estimated. The rates can be stratified by mean, dispersion, dropout or log fold change. Furthermore, the user can choose between different multiple testing correction methods (see <code><a href="https://rdrr.io/r/stats/p.adjust.html">p.adjust.methods()</a></code>, <code>ihw()</code> in and <code>qvalue()</code> in ). Also, the genes can be filtered by mean, dispersion or dropout. To define biologically interesting genes, a cutoff for the log fold change with <code>delta</code> can be set.</p>
+<p>The results of differential expression simulation are evaluated with <code>evaluateDE</code>. We have separated the evaluation from DE detection to allow the user to evaluate power in a comprehensive way as advocated by <span class="citation">(Wu, Wang, and Wu <a href="#ref-Wu2015-uj" role="doc-biblioref">2015</a>)</span>. In this function, the proportions and error rates are estimated. The rates can be stratified by mean, dispersion, dropout or log fold change. Furthermore, the user can choose between different multiple testing correction methods (see <code><a href="https://rdrr.io/r/stats/p.adjust.html">p.adjust.methods()</a></code>, <code>ihw()</code> in and <code>qvalue()</code> in ). Also, the genes can be filtered by mean, dispersion or dropout. To define biologically interesting genes, a cutoff for the log fold change with <code>delta</code> can be set.</p>
 <p>With the following command we evaluate the marginal TPR and FDR conditional on the mean expression:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">evalderes</span> <span class="op">=</span> <span class="fu"><a href="../reference/evaluateDE.html">evaluateDE</a></span><span class="op">(</span>simRes <span class="op">=</span> <span class="va">simres</span>,
-                     alpha.type <span class="op">=</span> <span class="st">'adjusted'</span>,
-                     MTC <span class="op">=</span> <span class="st">'BH'</span>,
-                     alpha.nominal <span class="op">=</span> <span class="fl">0.1</span>,
-                     stratify.by <span class="op">=</span> <span class="st">'mean'</span>,
-                     filter.by <span class="op">=</span> <span class="st">'none'</span>,
-                     strata.filtered <span class="op">=</span> <span class="fl">1</span>,
-                     target.by <span class="op">=</span> <span class="st">'lfc'</span>,
-                     delta <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></code></pre></div>
+<div class="sourceCode" id="cb10"><html><body><pre class="r"><span class="no">evalderes</span> <span class="kw">=</span> <span class="fu"><a href="../reference/evaluateDE.html">evaluateDE</a></span>(<span class="kw">simRes</span> <span class="kw">=</span> <span class="no">simres</span>,
+                     <span class="kw">alpha.type</span> <span class="kw">=</span> <span class="st">'adjusted'</span>,
+                     <span class="kw">MTC</span> <span class="kw">=</span> <span class="st">'BH'</span>,
+                     <span class="kw">alpha.nominal</span> <span class="kw">=</span> <span class="fl">0.1</span>,
+                     <span class="kw">stratify.by</span> <span class="kw">=</span> <span class="st">'mean'</span>,
+                     <span class="kw">filter.by</span> <span class="kw">=</span> <span class="st">'none'</span>,
+                     <span class="kw">strata.filtered</span> <span class="kw">=</span> <span class="fl">1</span>,
+                     <span class="kw">target.by</span> <span class="kw">=</span> <span class="st">'lfc'</span>,
+                     <span class="kw">delta</span> <span class="kw">=</span> <span class="fl">0</span>)</pre></body></html></div>
 <p>The results of the evaluation can be plotted with <code><a href="../reference/plotEvalDE.html">plotEvalDE()</a></code>.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="../reference/plotEvalDE.html">plotEvalDE</a></span><span class="op">(</span>evalRes <span class="op">=</span> <span class="va">evalderes</span>, rate <span class="op">=</span> <span class="st">'marginal'</span>, quick <span class="op">=</span> <span class="cn">TRUE</span>, Annot <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
-<span class="fu"><a href="../reference/plotEvalDE.html">plotEvalDE</a></span><span class="op">(</span>evalRes <span class="op">=</span> <span class="va">evalderes</span>, rate <span class="op">=</span> <span class="st">'conditional'</span>, quick <span class="op">=</span> <span class="cn">TRUE</span>, Annot <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></code></pre></div>
+<div class="sourceCode" id="cb11"><html><body><pre class="r"><span class="fu"><a href="../reference/plotEvalDE.html">plotEvalDE</a></span>(<span class="kw">evalRes</span> <span class="kw">=</span> <span class="no">evalderes</span>, <span class="kw">rate</span> <span class="kw">=</span> <span class="st">'marginal'</span>, <span class="kw">quick</span> <span class="kw">=</span> <span class="fl">TRUE</span>, <span class="kw">Annot</span> <span class="kw">=</span> <span class="fl">TRUE</span>)
+<span class="fu"><a href="../reference/plotEvalDE.html">plotEvalDE</a></span>(<span class="kw">evalRes</span> <span class="kw">=</span> <span class="no">evalderes</span>, <span class="kw">rate</span> <span class="kw">=</span> <span class="st">'conditional'</span>, <span class="kw">quick</span> <span class="kw">=</span> <span class="fl">TRUE</span>, <span class="kw">Annot</span> <span class="kw">=</span> <span class="fl">TRUE</span>)</pre></body></html></div>
 <ul>
 <li>
 <strong>rate:</strong> The user can choose to plot the ‘marginal’ or ‘stratified’ error rates. The number of genes per stratum are also summarised.</li>
 <li>
 <strong>quick:</strong> If this is set to <code>TRUE</code> then only the TPR and FDR will be plotted.</li>
 </ul>
-<p>The quick marginal and conditional power assessment for the Ziegenhain data is plotted in Figure @ref(fig:evaldeplot1) and @ref(fig:evaldeplot2). As expected the power (TPR) to detect differential expression increases with sample size (Figure @ref(fig:evaldeplot1)). On the other hand, the ability to control the false detection (FDR) at the chosen nominal level depends on the average expression of DE genes (Figure @ref(fig:evaldeplot2)). Furthermore, the detection of true positives with small mean expression needs far more replicates per group.</p>
+<p>The quick marginal and conditional power assessment for the Ziegenhain data is plotted in Figure @ref(fig:evaldeplot1) and @ref(fig:evaldeplot2). As expected the power (TPR) to detect differential expression increases with sample size (Figure @ref(fig:evaldeplot1)). On the other hand, the ability to control the false detection (FDR) at the chosen nominal level depends on the average expression of DE genes (Figure @ref(fig:evaldeplot2)). In addition, the detection of true positives with small mean expression needs far more replicates per group.</p>
 <div class="figure">
 <img src="evalderes_marginal_celseq2.png" alt="Marginal Error Rates. (A) Marginal FDR and TPR per sample size comparison. (B) Marginal FDR and TPR per sample size comparison with dashed line indicating nominal alpha level (type I error) and nominal 1-beta level, i.e. 80% power (type II error)." width="584"><p class="caption">
 Marginal Error Rates. (A) Marginal FDR and TPR per sample size comparison. (B) Marginal FDR and TPR per sample size comparison with dashed line indicating nominal alpha level (type I error) and nominal 1-beta level, i.e. 80% power (type II error).
@@ -361,14 +349,13 @@ Stratified Error Rates. (A) Conditional FDR and TPR per sample size comparison p
 </p>
 </div>
 <p>In addition to the classical evaluation of power analyses, <code>powsimR</code> also includes the option to evaluate the simulations using summary metrics such as the Receiver-Operator-Characteristic (ROC) Curve as well as accuracy, F1 score and Matthews Correlation Coefficient.</p>
-<p>With the following command we calculate these metrics with <code><a href="../reference/evaluateROC.html">evaluateROC()</a></code> and plot them with <code><a href="../reference/plotEvalROC.html">plotEvalROC()</a></code>. The classical ROC curve as well as precision-recall curve, which is more appropiate for imbalanced number of true positives and negatives, can be helpful to identify the optimal sample size setup (Figure @ref(fig:evalrocresplot) A and B). Most importantly, we can check if the FDR is controlled at the chosen nominal level (Figure @ref(fig:evalrocresplot) C). If that is not the case, then the chosen pipeline, particularly the normalisation and DE testing, might be an issue <span class="citation">(<a href="#ref-Vieth2019-ld" role="doc-biblioref">Vieth et al. 2019</a>)</span>.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">evalrocres</span> <span class="op">=</span> <span class="fu"><a href="../reference/evaluateROC.html">evaluateROC</a></span><span class="op">(</span>simRes <span class="op">=</span> <span class="va">simres</span>,
-                         alpha.type<span class="op">=</span><span class="st">"adjusted"</span>,
-                         MTC<span class="op">=</span><span class="st">'BH'</span>,
-                         alpha.nominal <span class="op">=</span> <span class="fl">0.1</span><span class="op">)</span>
+<p>With the following command we calculate these metrics with <code><a href="../reference/evaluateROC.html">evaluateROC()</a></code> and plot them with <code><a href="../reference/plotEvalROC.html">plotEvalROC()</a></code>. The classical ROC curve as well as precision-recall curve, which is more appropiate for imbalanced number of true positives and negatives, can be helpful to identify the optimal sample size setup (Figure @ref(fig:evalrocresplot) A and B). Most importantly, we can check if the FDR is controlled at the chosen nominal level (Figure @ref(fig:evalrocresplot) C). If that is not the case, then the chosen pipeline, particularly the normalisation and DE testing, might be an issue <span class="citation">(Vieth et al. <a href="#ref-Vieth2019-ld" role="doc-biblioref">2019</a>)</span>.</p>
+<div class="sourceCode" id="cb12"><html><body><pre class="r"><span class="no">evalrocres</span> <span class="kw">=</span> <span class="fu"><a href="../reference/evaluateROC.html">evaluateROC</a></span>(<span class="kw">simRes</span> <span class="kw">=</span> <span class="no">simres</span>,
+                         <span class="kw">alpha.type</span><span class="kw">=</span><span class="st">"adjusted"</span>,
+                         <span class="kw">MTC</span><span class="kw">=</span><span class="st">'BH'</span>,
+                         <span class="kw">alpha.nominal</span> <span class="kw">=</span> <span class="fl">0.1</span>)
 
-<span class="fu"><a href="../reference/plotEvalROC.html">plotEvalROC</a></span><span class="op">(</span>evalRes <span class="op">=</span> <span class="va">evalrocres</span>, cutoff <span class="op">=</span> <span class="st">"liberal"</span><span class="op">)</span></code></pre></div>
+<span class="fu"><a href="../reference/plotEvalROC.html">plotEvalROC</a></span>(<span class="kw">evalRes</span> <span class="kw">=</span> <span class="no">evalrocres</span>, <span class="kw">cutoff</span> <span class="kw">=</span> <span class="st">"liberal"</span>)</pre></body></html></div>
 <div class="figure">
 <img src="evalrocres_liberal_celseq2.png" alt="A) Receiver-Operator-Characteristics (ROC) Curve per sample size setup. 
 B) Precision-Recall (PR) Curve per sample size setup. 
@@ -391,12 +378,11 @@ D) Summary Statistics per sample size setup rounded to two digits." width="570">
 <a href="#pipeline" class="anchor"></a>Pipeline</h2>
 <p>We can also check in how far our pipeline choices are affecting our ability to correctly identify differential expression in <code><a href="../reference/evaluateSim.html">evaluateSim()</a></code>.</p>
 <p>With the following command we calculate these metrics. Of note here is particular in how far our estimated log fold changes deviate from the simulated fold changes as well as how the normalisation is able to ensure comparability across sample groups (Figure @(fig:evalsimresplot)).</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">evalsimres</span> <span class="op">=</span> <span class="fu"><a href="../reference/evaluateSim.html">evaluateSim</a></span><span class="op">(</span>simRes <span class="op">=</span> <span class="va">simres</span><span class="op">)</span>
+<div class="sourceCode" id="cb13"><html><body><pre class="r"><span class="no">evalsimres</span> <span class="kw">=</span> <span class="fu"><a href="../reference/evaluateSim.html">evaluateSim</a></span>(<span class="kw">simRes</span> <span class="kw">=</span> <span class="no">simres</span>)
 
-<span class="fu"><a href="../reference/plotEvalSim.html">plotEvalSim</a></span><span class="op">(</span>evalRes <span class="op">=</span> <span class="va">evalsimres</span><span class="op">)</span>
+<span class="fu"><a href="../reference/plotEvalSim.html">plotEvalSim</a></span>(<span class="kw">evalRes</span> <span class="kw">=</span> <span class="no">evalsimres</span>)
 
-<span class="fu"><a href="../reference/plotTime.html">plotTime</a></span><span class="op">(</span>evalRes <span class="op">=</span> <span class="va">evalsimres</span><span class="op">)</span></code></pre></div>
+<span class="fu"><a href="../reference/plotTime.html">plotTime</a></span>(<span class="kw">evalRes</span> <span class="kw">=</span> <span class="no">evalsimres</span>)</pre></body></html></div>
 <div class="figure">
 <img src="evalsimres_celseq2.png" alt="Pipeline Evaluation. A) Mean Absolute Error (MAE), Root Mean Squared Error (RMSE) and robust Root Mean Squared Error (rRMSE) for the estimated log fold changes of all (ALL), differentially expressed (DE) and equally expressed (EE) genes compared to the true log fold changes. 
 B) Median absolute deviation (MAD) and robust Root Mean Squared Error (rRMSE) between estimated and simulated size factors. 
@@ -425,49 +411,47 @@ Computational Run Time in seconds per simulateDE() pipeline step.
 <div id="access-to-raw-read-counts-stored-in-online-data-bases" class="section level3">
 <h3 class="hasAnchor">
 <a href="#access-to-raw-read-counts-stored-in-online-data-bases" class="anchor"></a>Access to raw read counts stored in online data bases</h3>
-<p>We have provided a number of exemplary single cell RNA-seq data sets for parameter estimation. Nevertheless, you might not find a data set that matches your own experimental setup. In those cases, we recommend to check online repositories for a suitable data set. Below you can find an example script to get count tables from <a href="https://jhubiostatistics.shinyapps.io/recount/">recount2</a> <span class="citation">(<a href="#ref-Collado-Torres2017-mo" role="doc-biblioref">Collado-Torres et al. 2017</a>)</span>. For a single cell RNA-seq data base, see <a href="http://imlspenticton.uzh.ch:3838/conquer/">conquer</a> <span class="citation">(<a href="#ref-Soneson2018-xe" role="doc-biblioref">Soneson and Robinson 2018</a>)</span>.</p>
+<p>We have provided a number of exemplary single cell RNA-seq data sets for parameter estimation. Nevertheless, you might not find a data set that matches your own experimental setup. In those cases, we recommend to check online repositories for a suitable data set. Below you can find an example script to get count tables from <a href="https://jhubiostatistics.shinyapps.io/recount/">recount2</a> <span class="citation">(Collado-Torres et al. <a href="#ref-Collado-Torres2017-mo" role="doc-biblioref">2017</a>)</span>. For a single cell RNA-seq data base, see <a href="http://imlspenticton.uzh.ch:3838/conquer/">conquer</a> <span class="citation">(Soneson and Robinson <a href="#ref-Soneson2018-xe" role="doc-biblioref">2018</a>)</span>.</p>
 <p>As before, the user can then estimate the negative binomial parameters with <code><a href="../reference/estimateParam.html">estimateParam()</a></code>, view these estimates with <code><a href="../reference/plotParam.html">plotParam()</a></code> and use it as an input for <code><a href="../reference/Setup.html">Setup()</a></code>.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co"># Install and load the R package</span>
-<span class="fu">BiocManager</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/BiocManager/man/install.html">install</a></span><span class="op">(</span><span class="st">"recount"</span><span class="op">)</span>
-<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="st"><a href="https://github.com/leekgroup/recount">'recount'</a></span><span class="op">)</span>
+<div class="sourceCode" id="cb14"><html><body><pre class="r"><span class="co"># Install and load the R package</span>
+<span class="kw pkg">BiocManager</span><span class="kw ns">::</span><span class="fu"><a href="https://rdrr.io/pkg/BiocManager/man/install.html">install</a></span>(<span class="st">"recount"</span>)
+<span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="st">'recount'</span>)
 
 <span class="co"># Download the data set</span>
-<span class="va">url</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/recount/man/download_study.html">download_study</a></span><span class="op">(</span><span class="st">'SRP060416'</span><span class="op">)</span>
+<span class="no">url</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/recount/man/download_study.html">download_study</a></span>(<span class="st">'SRP060416'</span>)
 
 <span class="co"># Load the data</span>
-<span class="fu"><a href="https://rdrr.io/r/base/load.html">load</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="st">'SRP060416'</span>, <span class="st">'rse_gene.Rdata'</span><span class="op">)</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/base/load.html">load</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span>(<span class="st">'SRP060416'</span>, <span class="st">'rse_gene.Rdata'</span>))
 
 <span class="co"># count table</span>
-<span class="va">cnts</span> <span class="op">&lt;-</span> <span class="fu">assay</span><span class="op">(</span><span class="va">rse_gene</span><span class="op">)</span>
+<span class="no">cnts</span> <span class="kw">&lt;-</span> <span class="fu">assay</span>(<span class="no">rse_gene</span>)
 <span class="co"># sample annotation</span>
-<span class="va">sample.info</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span><span class="op">(</span><span class="fu">colData</span><span class="op">(</span><span class="va">rse_gene</span><span class="op">)</span><span class="op">@</span><span class="va">listData</span>, 
-                          stringsAsFactors<span class="op">=</span><span class="cn">F</span><span class="op">)</span>
+<span class="no">sample.info</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span>(<span class="fu">colData</span>(<span class="no">rse_gene</span>)@<span class="kw">listData</span>,
+                          <span class="kw">stringsAsFactors</span><span class="kw">=</span><span class="no">F</span>)
 <span class="co"># gene annotation</span>
-<span class="va">gene.info</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span><span class="op">(</span>GeneID<span class="op">=</span><span class="fu">rowData</span><span class="op">(</span><span class="va">rse_gene</span><span class="op">)</span><span class="op">@</span><span class="va">listData</span><span class="op">$</span><span class="va">gene_id</span>, 
-                        GeneLength<span class="op">=</span><span class="fu">rowData</span><span class="op">(</span><span class="va">rse_gene</span><span class="op">)</span><span class="op">@</span><span class="va">listData</span><span class="op">$</span><span class="va">bp_length</span>, 
-                        stringsAsFactors<span class="op">=</span><span class="cn">F</span><span class="op">)</span></code></pre></div>
+<span class="no">gene.info</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span>(<span class="kw">GeneID</span><span class="kw">=</span><span class="fu">rowData</span>(<span class="no">rse_gene</span>)@<span class="kw">listData</span>$<span class="no">gene_id</span>,
+                        <span class="kw">GeneLength</span><span class="kw">=</span><span class="fu">rowData</span>(<span class="no">rse_gene</span>)@<span class="kw">listData</span>$<span class="no">bp_length</span>,
+                        <span class="kw">stringsAsFactors</span><span class="kw">=</span><span class="no">F</span>)</pre></body></html></div>
 </div>
 </div>
 <div id="what-is-the-best-fitting-distribution-for-my-data" class="section level2">
 <h2 class="hasAnchor">
 <a href="#what-is-the-best-fitting-distribution-for-my-data" class="anchor"></a>What is the best fitting distribution for my data?</h2>
-<p>It is important to validate the appropriateness of the chosen simulation framework. The function <code><a href="../reference/evaluateDist.html">evaluateDist()</a></code> compares the theoretical fit of the Poisson, negative binomial, zero-inflated Poisson and zero-inflated negative binomial and beta-Poisson distribution to the empirical RNA-seq read counts (<span class="citation">(<a href="#ref-Colin_Cameron2013-vb" role="doc-biblioref">Colin Cameron and Trivedi 2013</a>)</span>, <span class="citation">(<a href="#ref-Kim2013-qo" role="doc-biblioref">Kim and Marioni 2013</a>)</span>, <span class="citation">(<a href="#ref-Delmans2016-ef" role="doc-biblioref">Delmans and Hemberg 2016</a>)</span>).</p>
+<p>It is important to validate the appropiateness of the chosen simulation framework. The function <code><a href="../reference/evaluateDist.html">evaluateDist()</a></code> compares the theoretical fit of the Poisson, negative binomial, zero-inflated Poisson and zero-inflated negative binomial and beta-Poisson distribution to the empirical RNA-seq read counts (<span class="citation">(Colin Cameron and Trivedi <a href="#ref-Colin_Cameron2013-vb" role="doc-biblioref">2013</a>)</span>, <span class="citation">(Kim and Marioni <a href="#ref-Kim2013-qo" role="doc-biblioref">2013</a>)</span>, <span class="citation">(Delmans and Hemberg <a href="#ref-Delmans2016-ef" role="doc-biblioref">2016</a>)</span>).</p>
 <p>The evaluation is then plotted with the function <code><a href="../reference/plotEvalDist.html">plotEvalDist()</a></code> which summarizes the best fitting distribution per gene based on goodness-of-fit statistics (Chi-square test), Akaike Information Criterium, comparing observed dropouts with zero count prediction of the models and comparing the model fitness with Likelihood Ratio Test and Vuong Test.</p>
-<p>As noted by other developers, goodness-of-fit tests are not an objective tool and heavily depend on sample sizes <span class="citation">(<a href="#ref-Delignette-Muller2015-ie" role="doc-biblioref">Delignette-Muller and Dutang 2015</a>)</span>. A graphical evaluation of the fitted distribution is considered the most appropriate way but for high-throughput sequencing this is an unrealistic recommendation. Bulk RNA-seq experiments are usually conducted with a small number of samples. We therefore recommend to rely on the goodness-of-fit validation by <span class="citation">(<a href="#ref-Mi2015-ri" role="doc-biblioref">Mi, Di, and Schafer 2015</a>)</span>.</p>
-<p>With the following command, we determine and plot the fitting for the embryonic stem cells cultured in standard 2i+lif medium profiled with the Smartseq2 protocol <span class="citation">(<a href="#ref-Ziegenhain2017-sf" role="doc-biblioref">Ziegenhain et al. 2017</a>)</span>. Note that the results shown in Figure @ref(fig:evaldistplot) will differ from the executed command since I reduced the data set and evaluate the fitting only for a fraction of genes.</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span><span class="op">(</span><span class="st">"SmartSeq2_Gene_Read_Counts"</span><span class="op">)</span>
-<span class="va">evalDistRes</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/evaluateDist.html">evaluateDist</a></span><span class="op">(</span>countData <span class="op">=</span> <span class="va">SmartSeq2_Gene_Read_Counts</span>, 
-                            batchData <span class="op">=</span> <span class="cn">NULL</span>,
-                            spikeData <span class="op">=</span> <span class="cn">NULL</span>, spikeInfo <span class="op">=</span> <span class="cn">NULL</span>,
-                            Lengths <span class="op">=</span> <span class="cn">NULL</span>, MeanFragLengths <span class="op">=</span> <span class="cn">NULL</span>,
-                            RNAseq <span class="op">=</span> <span class="st">"singlecell"</span>, Protocol <span class="op">=</span> <span class="st">"UMI"</span>,
-                            Normalisation <span class="op">=</span> <span class="st">"scran"</span>,
-                            GeneFilter <span class="op">=</span> <span class="fl">0.1</span>, SampleFilter <span class="op">=</span> <span class="fl">3</span>,
-                            FracGenes <span class="op">=</span> <span class="fl">0.1</span>,
-                            verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
-<span class="fu"><a href="../reference/plotEvalDist.html">plotEvalDist</a></span><span class="op">(</span><span class="va">evalDistRes</span><span class="op">)</span></code></pre></div>
+<p>As noted by other developers, goodness-of-fit tests are not an objective tool and heavily depend on sample sizes <span class="citation">(Delignette-Muller and Dutang <a href="#ref-Delignette-Muller2015-ie" role="doc-biblioref">2015</a>)</span>. A graphical evaluation of the fitted distribution is considered the most appropiate way but for high-throughput sequencing this is an unrealistic recommendation. Bulk RNA-seq experiments are usually conducted with a small number of samples. We therefore recommend to rely on the goodness-of-fit validation by <span class="citation">(Mi, Di, and Schafer <a href="#ref-Mi2015-ri" role="doc-biblioref">2015</a>)</span>.</p>
+<p>With the following command, we determine and plot the fitting for the embryonic stem cells cultured in standard 2i+lif medium profiled with the Smartseq2 protocol <span class="citation">(Ziegenhain et al. <a href="#ref-Ziegenhain2017-sf" role="doc-biblioref">2017</a>)</span>. Note that the results shown in Figure @ref(fig:evaldistplot) will differ from the executed command since I reduced the data set and evaluate the fitting only for a fraction of genes.</p>
+<div class="sourceCode" id="cb15"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span>(<span class="st">"SmartSeq2_Gene_Read_Counts"</span>)
+<span class="no">evalDistRes</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/evaluateDist.html">evaluateDist</a></span>(<span class="kw">countData</span> <span class="kw">=</span> <span class="no">SmartSeq2_Gene_Read_Counts</span>,
+                            <span class="kw">batchData</span> <span class="kw">=</span> <span class="kw">NULL</span>,
+                            <span class="kw">spikeData</span> <span class="kw">=</span> <span class="kw">NULL</span>, <span class="kw">spikeInfo</span> <span class="kw">=</span> <span class="kw">NULL</span>,
+                            <span class="kw">Lengths</span> <span class="kw">=</span> <span class="kw">NULL</span>, <span class="kw">MeanFragLengths</span> <span class="kw">=</span> <span class="kw">NULL</span>,
+                            <span class="kw">RNAseq</span> <span class="kw">=</span> <span class="st">"singlecell"</span>, <span class="kw">Protocol</span> <span class="kw">=</span> <span class="st">"UMI"</span>,
+                            <span class="kw">Normalisation</span> <span class="kw">=</span> <span class="st">"scran"</span>,
+                            <span class="kw">GeneFilter</span> <span class="kw">=</span> <span class="fl">0.1</span>, <span class="kw">SampleFilter</span> <span class="kw">=</span> <span class="fl">3</span>,
+                            <span class="kw">FracGenes</span> <span class="kw">=</span> <span class="fl">0.1</span>,
+                            <span class="kw">verbose</span> <span class="kw">=</span> <span class="fl">TRUE</span>)
+<span class="fu"><a href="../reference/plotEvalDist.html">plotEvalDist</a></span>(<span class="no">evalDistRes</span>)</pre></body></html></div>
 <div class="figure">
 <img src="evaldist_smartseq2.png" alt="Distribution Evaluation. A) Goodness-of-fit of the model assessed with a Chi-Square Test based on residual deviance and degrees of freedom. B) Akaike Information Criterion per gene: Model with the lowest AIC. Model with the lowest AIC and passed goodness-of-fit statistic test.  C) Observed versus predicted dropouts per model and gene plotted without outliers. D) Model Assessment based on LRT for nested models and Vuong test for nonnested models." width="396"><p class="caption">
 Distribution Evaluation. A) Goodness-of-fit of the model assessed with a Chi-Square Test based on residual deviance and degrees of freedom. B) Akaike Information Criterion per gene: Model with the lowest AIC. Model with the lowest AIC and passed goodness-of-fit statistic test. C) Observed versus predicted dropouts per model and gene plotted without outliers. D) Model Assessment based on LRT for nested models and Vuong test for nonnested models.
@@ -477,9 +461,9 @@ Distribution Evaluation. A) Goodness-of-fit of the model assessed with a Chi-Squ
 <div id="simulation-settings" class="section level2">
 <h2 class="hasAnchor">
 <a href="#simulation-settings" class="anchor"></a>Simulation Settings</h2>
-<div id="phenotypic-differences-only-in-a-subset-of-replicates" class="section level3">
+<div id="replicates-with-partial-phenotypic-differences" class="section level3">
 <h3 class="hasAnchor">
-<a href="#phenotypic-differences-only-in-a-subset-of-replicates" class="anchor"></a>Phenotypic differences only in a subset of replicates</h3>
+<a href="#replicates-with-partial-phenotypic-differences" class="anchor"></a>Replicates with partial phenotypic differences</h3>
 <p>By default, all replicates per group express the phenotypic differences in gene expression defined by <code>pLFC</code>. If the user wishes for a more varied expression profile, i.e. only a proportion of replicates per group with a difference in expression, these patterns can be defined by changing <code>p.G</code> (see Details section of <code><a href="../reference/Setup.html">Setup()</a></code>).</p>
 </div>
 <div id="include-differences-in-library-sizes" class="section level3">
@@ -492,48 +476,47 @@ Distribution Evaluation. A) Goodness-of-fit of the model assessed with a Chi-Squ
 <a href="#downsample-simulated-count-matrices-by-binomial-thinning" class="anchor"></a>Downsample simulated count matrices by binomial thinning</h3>
 <p>There is the additional option to downsample simulated count matrices with the option <code>Thinning</code> in <code><a href="../reference/Setup.html">Setup()</a></code> in order to know in how far a shallower sequencing depth affects the power to detect differential expression. For example, the estimation was done using 500 cells and in the simulations we would like to compare two groups with a total of 1000 cells but do not want to increase the sequencing depth compared to the pilot data. Thus we can set the Thinning parameters to 0.5 to half the number of counts per cell. Please note, that the thinning assumes that the count matrix is based on reads, not UMIs. For UMI-methods, please supply the UMI count matrix as <code>countData</code> in <code><a href="../reference/estimateParam.html">estimateParam()</a></code> and the raw read count matrix without UMI deduplication as <code>readData</code>. For more information, please check out the help page of <code><a href="../reference/estimateParam.html">estimateParam()</a></code>.</p>
 <p>Below you can find an example script using the CELSeq2 libraries from Ziegenhain et al.:</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span><span class="op">(</span><span class="st">"CELseq2_Gene_UMI_Counts"</span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span><span class="op">(</span><span class="st">"CELseq2_Gene_Read_Counts"</span><span class="op">)</span>
-<span class="va">batch</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html">sapply</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/strsplit.html">strsplit</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html">colnames</a></span><span class="op">(</span><span class="va">CELseq2_Gene_UMI_Counts</span><span class="op">)</span>, <span class="st">"_"</span><span class="op">)</span>, <span class="st">"[["</span>, <span class="fl">1</span><span class="op">)</span>
-<span class="va">Batches</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span><span class="op">(</span>Batch <span class="op">=</span> <span class="va">batch</span>,
-                      stringsAsFactors <span class="op">=</span> <span class="cn">FALSE</span>, 
-                      row.names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html">colnames</a></span><span class="op">(</span><span class="va">CELseq2_Gene_UMI_Counts</span><span class="op">)</span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span><span class="op">(</span><span class="st">"GeneLengths_mm10"</span><span class="op">)</span>
+<div class="sourceCode" id="cb16"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span>(<span class="st">"CELseq2_Gene_UMI_Counts"</span>)
+<span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span>(<span class="st">"CELseq2_Gene_Read_Counts"</span>)
+<span class="no">batch</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html">sapply</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/strsplit.html">strsplit</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/colnames.html">colnames</a></span>(<span class="no">CELseq2_Gene_UMI_Counts</span>), <span class="st">"_"</span>), <span class="st">"[["</span>, <span class="fl">1</span>)
+<span class="no">Batches</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span>(<span class="kw">Batch</span> <span class="kw">=</span> <span class="no">batch</span>,
+                      <span class="kw">stringsAsFactors</span> <span class="kw">=</span> <span class="fl">FALSE</span>,
+                      <span class="kw">row.names</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html">colnames</a></span>(<span class="no">CELseq2_Gene_UMI_Counts</span>))
+<span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span>(<span class="st">"GeneLengths_mm10"</span>)
 
 <span class="co"># estimation</span>
-<span class="va">estparam_gene</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/estimateParam.html">estimateParam</a></span><span class="op">(</span>countData <span class="op">=</span> <span class="va">CELseq2_Gene_UMI_Counts</span>,
-                               readData <span class="op">=</span> <span class="va">CELseq2_Gene_Read_Counts</span>,
-                               batchData <span class="op">=</span> <span class="va">Batches</span>,
-                               spikeData <span class="op">=</span> <span class="cn">NULL</span>,
-                               spikeInfo <span class="op">=</span> <span class="cn">NULL</span>,
-                               Lengths <span class="op">=</span> <span class="va">GeneLengths</span>, MeanFragLengths <span class="op">=</span> <span class="cn">NULL</span>,
-                               RNAseq <span class="op">=</span> <span class="st">'singlecell'</span>, Protocol <span class="op">=</span> <span class="st">'UMI'</span>,
-                               Distribution <span class="op">=</span> <span class="st">'NB'</span>, Normalisation <span class="op">=</span> <span class="st">"scran"</span>,
-                               GeneFilter <span class="op">=</span> <span class="fl">0.1</span>, SampleFilter <span class="op">=</span> <span class="fl">3</span>,
-                               sigma <span class="op">=</span> <span class="fl">1.96</span>, NCores <span class="op">=</span> <span class="cn">NULL</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
+<span class="no">estparam_gene</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/estimateParam.html">estimateParam</a></span>(<span class="kw">countData</span> <span class="kw">=</span> <span class="no">CELseq2_Gene_UMI_Counts</span>,
+                               <span class="kw">readData</span> <span class="kw">=</span> <span class="no">CELseq2_Gene_Read_Counts</span>,
+                               <span class="kw">batchData</span> <span class="kw">=</span> <span class="no">Batches</span>,
+                               <span class="kw">spikeData</span> <span class="kw">=</span> <span class="kw">NULL</span>,
+                               <span class="kw">spikeInfo</span> <span class="kw">=</span> <span class="kw">NULL</span>,
+                               <span class="kw">Lengths</span> <span class="kw">=</span> <span class="no">GeneLengths</span>, <span class="kw">MeanFragLengths</span> <span class="kw">=</span> <span class="kw">NULL</span>,
+                               <span class="kw">RNAseq</span> <span class="kw">=</span> <span class="st">'singlecell'</span>, <span class="kw">Protocol</span> <span class="kw">=</span> <span class="st">'UMI'</span>,
+                               <span class="kw">Distribution</span> <span class="kw">=</span> <span class="st">'NB'</span>, <span class="kw">Normalisation</span> <span class="kw">=</span> <span class="st">"scran"</span>,
+                               <span class="kw">GeneFilter</span> <span class="kw">=</span> <span class="fl">0.1</span>, <span class="kw">SampleFilter</span> <span class="kw">=</span> <span class="fl">3</span>,
+                               <span class="kw">sigma</span> <span class="kw">=</span> <span class="fl">1.96</span>, <span class="kw">NCores</span> <span class="kw">=</span> <span class="kw">NULL</span>, <span class="kw">verbose</span> <span class="kw">=</span> <span class="fl">TRUE</span>)
 
-<span class="fu"><a href="../reference/plotParam.html">plotParam</a></span><span class="op">(</span>estParamRes <span class="op">=</span> <span class="va">estparam_gene</span><span class="op">)</span>
+<span class="fu"><a href="../reference/plotParam.html">plotParam</a></span>(<span class="kw">estParamRes</span> <span class="kw">=</span> <span class="no">estparam_gene</span>)
 
 <span class="co"># define log fold change</span>
-<span class="va">p.lfc</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">)</span>, size<span class="op">=</span><span class="va">x</span>,replace<span class="op">=</span><span class="cn">T</span><span class="op">)</span><span class="op">*</span><span class="fu"><a href="https://rdrr.io/r/stats/GammaDist.html">rgamma</a></span><span class="op">(</span><span class="va">x</span>, shape <span class="op">=</span> <span class="fl">1</span>, rate <span class="op">=</span> <span class="fl">2</span><span class="op">)</span>
+<span class="no">p.lfc</span> <span class="kw">&lt;-</span> <span class="kw">function</span>(<span class="no">x</span>) <span class="fu"><a href="https://rdrr.io/r/base/sample.html">sample</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(-<span class="fl">1</span>,<span class="fl">1</span>), <span class="kw">size</span><span class="kw">=</span><span class="no">x</span>,<span class="kw">replace</span><span class="kw">=</span><span class="no">T</span>)*<span class="fu"><a href="https://rdrr.io/r/stats/GammaDist.html">rgamma</a></span>(<span class="no">x</span>, <span class="kw">shape</span> <span class="kw">=</span> <span class="fl">1</span>, <span class="kw">rate</span> <span class="kw">=</span> <span class="fl">2</span>)
 
 <span class="co"># set up simulations</span>
-<span class="va">setupres</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup.html">Setup</a></span><span class="op">(</span>ngenes <span class="op">=</span> <span class="fl">10000</span>, nsims <span class="op">=</span> <span class="fl">25</span>,
-                  p.DE <span class="op">=</span> <span class="fl">0.1</span>, pLFC <span class="op">=</span> <span class="va">p.lfc</span>,
-                  n1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">500</span>, <span class="fl">1000</span><span class="op">)</span>, n2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">500</span>, <span class="fl">1000</span><span class="op">)</span>,
-                  Thinning <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">0.5</span><span class="op">)</span>, LibSize <span class="op">=</span> <span class="st">'given'</span>,
-                  estParamRes <span class="op">=</span> <span class="va">estparam_gene</span>,
-                  estSpikeRes <span class="op">=</span> <span class="cn">NULL</span>,
-                  DropGenes <span class="op">=</span> <span class="cn">TRUE</span>,
-                  setup.seed <span class="op">=</span> <span class="fl">5299</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
+<span class="no">setupres</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/Setup.html">Setup</a></span>(<span class="kw">ngenes</span> <span class="kw">=</span> <span class="fl">10000</span>, <span class="kw">nsims</span> <span class="kw">=</span> <span class="fl">25</span>,
+                  <span class="kw">p.DE</span> <span class="kw">=</span> <span class="fl">0.1</span>, <span class="kw">pLFC</span> <span class="kw">=</span> <span class="no">p.lfc</span>,
+                  <span class="kw">n1</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">500</span>, <span class="fl">1000</span>), <span class="kw">n2</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">500</span>, <span class="fl">1000</span>),
+                  <span class="kw">Thinning</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">1</span>, <span class="fl">0.5</span>), <span class="kw">LibSize</span> <span class="kw">=</span> <span class="st">'given'</span>,
+                  <span class="kw">estParamRes</span> <span class="kw">=</span> <span class="no">estparam_gene</span>,
+                  <span class="kw">estSpikeRes</span> <span class="kw">=</span> <span class="kw">NULL</span>,
+                  <span class="kw">DropGenes</span> <span class="kw">=</span> <span class="fl">TRUE</span>,
+                  <span class="kw">setup.seed</span> <span class="kw">=</span> <span class="fl">5299</span>, <span class="kw">verbose</span> <span class="kw">=</span> <span class="fl">TRUE</span>)
 
 <span class="co"># run simulations</span>
-<span class="va">simres</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/simulateDE.html">simulateDE</a></span><span class="op">(</span>SetupRes <span class="op">=</span> <span class="va">setupres</span>,
-                     Prefilter <span class="op">=</span> <span class="st">"FreqFilter"</span>, Imputation <span class="op">=</span> <span class="cn">NULL</span>,
-                     Normalisation <span class="op">=</span> <span class="st">'scran'</span>,
-                     DEmethod <span class="op">=</span> <span class="st">"limma-trend"</span>, DEFilter <span class="op">=</span> <span class="cn">FALSE</span>,
-                     NCores <span class="op">=</span> <span class="cn">NULL</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></code></pre></div>
+<span class="no">simres</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/simulateDE.html">simulateDE</a></span>(<span class="kw">SetupRes</span> <span class="kw">=</span> <span class="no">setupres</span>,
+                     <span class="kw">Prefilter</span> <span class="kw">=</span> <span class="st">"FreqFilter"</span>, <span class="kw">Imputation</span> <span class="kw">=</span> <span class="kw">NULL</span>,
+                     <span class="kw">Normalisation</span> <span class="kw">=</span> <span class="st">'scran'</span>,
+                     <span class="kw">DEmethod</span> <span class="kw">=</span> <span class="st">"limma-trend"</span>, <span class="kw">DEFilter</span> <span class="kw">=</span> <span class="fl">FALSE</span>,
+                     <span class="kw">NCores</span> <span class="kw">=</span> <span class="kw">NULL</span>, <span class="kw">verbose</span> <span class="kw">=</span> <span class="fl">TRUE</span>)</pre></body></html></div>
 </div>
 </div>
 </div>
@@ -541,9 +524,9 @@ Distribution Evaluation. A) Goodness-of-fit of the model assessed with a Chi-Squ
 <h1 class="hasAnchor">
 <a href="#session-info" class="anchor"></a>Session info</h1>
 <p>Here is the output of <code><a href="https://rdrr.io/r/utils/sessionInfo.html">sessionInfo()</a></code> on the system on which this document was compiled:</p>
-<pre><code>R version 4.0.3 (2020-10-10)
+<pre><code>R version 4.0.2 (2020-06-22)
 Platform: x86_64-pc-linux-gnu (64-bit)
-Running under: Ubuntu 18.04.5 LTS
+Running under: Ubuntu 18.04.4 LTS
 
 Matrix products: default
 BLAS:   /usr/lib/x86_64-linux-gnu/openblas/libblas.so.3
@@ -561,70 +544,70 @@ attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
-[1] qvalue_2.22.0    IHW_1.18.0       rmdformats_1.0.0 knitr_1.30      
+[1] qvalue_2.20.0    IHW_1.16.0       rmdformats_0.3.7 knitr_1.29      
 
 loaded via a namespace (and not attached):
- [1] Rcpp_1.0.5          plyr_1.8.6          pillar_1.4.7       
- [4] compiler_4.0.3      formatR_1.7         highr_0.8          
- [7] tools_4.0.3         digest_0.6.27       tibble_3.0.4       
-[10] evaluate_0.14       memoise_1.1.0       lifecycle_0.2.0    
+ [1] Rcpp_1.0.4.6        plyr_1.8.6          pillar_1.4.4       
+ [4] compiler_4.0.2      formatR_1.7         highr_0.8          
+ [7] tools_4.0.2         digest_0.6.25       evaluate_0.14      
+[10] memoise_1.1.0       lifecycle_0.2.0     tibble_3.0.1       
 [13] gtable_0.3.0        pkgconfig_2.0.3     png_0.1-7          
-[16] rlang_0.4.9         lpsymphony_1.18.0   rstudioapi_0.13    
-[19] yaml_2.2.1          parallel_4.0.3      pkgdown_1.6.1      
-[22] xfun_0.19           dplyr_1.0.2         stringr_1.4.0      
-[25] generics_0.1.0      vctrs_0.3.5         desc_1.2.0         
-[28] fs_1.5.0            systemfonts_0.3.2   tidyselect_1.1.0   
-[31] rprojroot_2.0.2     grid_4.0.3          glue_1.4.2         
-[34] R6_2.5.0            textshaping_0.2.1   fdrtool_1.2.15     
-[37] rmarkdown_2.5       bookdown_0.21       reshape2_1.4.4     
-[40] purrr_0.3.4         ggplot2_3.3.2       magrittr_2.0.1     
-[43] splines_4.0.3       ellipsis_0.3.1      scales_1.1.1       
-[46] htmltools_0.5.0     BiocGenerics_0.36.0 assertthat_0.2.1   
-[49] colorspace_2.0-0    ragg_0.4.0          stringi_1.5.3      
-[52] munsell_0.5.0       slam_0.1-47         crayon_1.3.4       </code></pre>
+[16] rlang_0.4.6         lpsymphony_1.16.0   rstudioapi_0.11    
+[19] yaml_2.2.1          parallel_4.0.2      pkgdown_1.5.1      
+[22] xfun_0.15           dplyr_1.0.0         stringr_1.4.0      
+[25] generics_0.0.2      vctrs_0.3.1         desc_1.2.0         
+[28] fs_1.4.1            tidyselect_1.1.0    rprojroot_1.3-2    
+[31] grid_4.0.2          glue_1.4.1          R6_2.4.1           
+[34] fdrtool_1.2.15      rmarkdown_2.3       bookdown_0.20      
+[37] reshape2_1.4.4      purrr_0.3.4         ggplot2_3.3.2      
+[40] magrittr_1.5        splines_4.0.2       ellipsis_0.3.1     
+[43] backports_1.1.8     scales_1.1.1        htmltools_0.5.0    
+[46] MASS_7.3-51.6       BiocGenerics_0.34.0 assertthat_0.2.1   
+[49] colorspace_1.4-1    stringi_1.4.6       munsell_0.5.0      
+[52] slam_0.1-47         crayon_1.3.4       </code></pre>
 </div>
 <div id="references" class="section level1 unnumbered">
 <h1 class="hasAnchor">
 <a href="#references" class="anchor"></a>References</h1>
-<div id="refs" class="references csl-bib-body hanging-indent">
-<div id="ref-Colin_Cameron2013-vb" class="csl-entry">
-Colin Cameron, A, and Pravin K Trivedi. 2013. <em>Regression Analysis of Count Data (econometric Society Monographs)</em>. 2 edition. Cambridge University Press.
+<div id="refs" class="references">
+<div id="ref-Colin_Cameron2013-vb">
+<p>Colin Cameron, A, and Pravin K Trivedi. 2013. <em>Regression Analysis of Count Data (Econometric Society Monographs)</em>. 2 edition. Cambridge University Press.</p>
 </div>
-<div id="ref-Collado-Torres2017-mo" class="csl-entry">
-Collado-Torres, Leonardo, Abhinav Nellore, Kai Kammers, Shannon E Ellis, Margaret A Taub, Kasper D Hansen, Andrew E Jaffe, Ben Langmead, and Jeffrey T Leek. 2017. <span>“Reproducible <span class="nocase">RNA-seq</span> Analysis Using Recount2.”</span> <em>Nat. Biotechnol.</em> 35 (4): 319–21. <a href="https://doi.org/10.1038/nbt.3838">https://doi.org/10.1038/nbt.3838</a>.
+<div id="ref-Collado-Torres2017-mo">
+<p>Collado-Torres, Leonardo, Abhinav Nellore, Kai Kammers, Shannon E Ellis, Margaret A Taub, Kasper D Hansen, Andrew E Jaffe, Ben Langmead, and Jeffrey T Leek. 2017. “Reproducible RNA-seq Analysis Using Recount2.” <em>Nat. Biotechnol.</em> 35 (4): 319–21. <a href="https://doi.org/10.1038/nbt.3838">https://doi.org/10.1038/nbt.3838</a>.</p>
 </div>
-<div id="ref-Delignette-Muller2015-ie" class="csl-entry">
-Delignette-Muller, Marie, and Christophe Dutang. 2015. <span>“Fitdistrplus: An <span>R</span> Package for Fitting Distributions.”</span> <em>J. Stat. Softw.</em> 64 (1): 1–34. <a href="https://doi.org/10.18637/jss.v064.i04">https://doi.org/10.18637/jss.v064.i04</a>.
+<div id="ref-Delignette-Muller2015-ie">
+<p>Delignette-Muller, Marie, and Christophe Dutang. 2015. “Fitdistrplus: An R Package for Fitting Distributions.” <em>J. Stat. Softw.</em> 64 (1): 1–34. <a href="https://doi.org/10.18637/jss.v064.i04">https://doi.org/10.18637/jss.v064.i04</a>.</p>
 </div>
-<div id="ref-Delmans2016-ef" class="csl-entry">
-Delmans, Mihails, and Martin Hemberg. 2016. <span>“Discrete Distributional Differential Expression (<span class="nocase">D3E)–a</span> Tool for Gene Expression Analysis of Single-Cell <span class="nocase">RNA-seq</span> Data.”</span> <em>BMC Bioinformatics</em> 17: 110. <a href="https://doi.org/10.1186/s12859-016-0944-6">https://doi.org/10.1186/s12859-016-0944-6</a>.
+<div id="ref-Delmans2016-ef">
+<p>Delmans, Mihails, and Martin Hemberg. 2016. “Discrete Distributional Differential Expression (D3E)–a Tool for Gene Expression Analysis of Single-Cell RNA-seq Data.” <em>BMC Bioinformatics</em> 17: 110. <a href="https://doi.org/10.1186/s12859-016-0944-6">https://doi.org/10.1186/s12859-016-0944-6</a>.</p>
 </div>
-<div id="ref-Kim2015-zo" class="csl-entry">
-Kim, Jong Kyoung, Aleksandra A Kolodziejczyk, Tomislav Illicic, Sarah A Teichmann, and John C Marioni. 2015. <span>“Characterizing Noise Structure in Single-Cell <span class="nocase">RNA-seq</span> Distinguishes Genuine from Technical Stochastic Allelic Expression.”</span> <em>Nat. Commun.</em> 6: 8687. <a href="https://doi.org/10.1038/ncomms9687">https://doi.org/10.1038/ncomms9687</a>.
+<div id="ref-Kim2015-zo">
+<p>Kim, Jong Kyoung, Aleksandra A Kolodziejczyk, Tomislav Illicic, Sarah A Teichmann, and John C Marioni. 2015. “Characterizing Noise Structure in Single-Cell RNA-seq Distinguishes Genuine from Technical Stochastic Allelic Expression.” <em>Nat. Commun.</em> 6: 8687. <a href="https://doi.org/10.1038/ncomms9687">https://doi.org/10.1038/ncomms9687</a>.</p>
 </div>
-<div id="ref-Kim2013-qo" class="csl-entry">
-Kim, Jong Kyoung, and John C Marioni. 2013. <span>“Inferring the Kinetics of Stochastic Gene Expression from Single-Cell <span class="nocase">RNA-sequencing</span> Data.”</span> <em>Genome Biol.</em> 14 (1): R7. <a href="https://doi.org/10.1186/gb-2013-14-1-r7">https://doi.org/10.1186/gb-2013-14-1-r7</a>.
+<div id="ref-Kim2013-qo">
+<p>Kim, Jong Kyoung, and John C Marioni. 2013. “Inferring the Kinetics of Stochastic Gene Expression from Single-Cell RNA-sequencing Data.” <em>Genome Biol.</em> 14 (1): R7. <a href="https://doi.org/10.1186/gb-2013-14-1-r7">https://doi.org/10.1186/gb-2013-14-1-r7</a>.</p>
 </div>
-<div id="ref-Mi2015-ri" class="csl-entry">
-Mi, Gu, Yanming Di, and Daniel W Schafer. 2015. <span>“Goodness-of-Fit Tests and Model Diagnostics for Negative Binomial Regression of <span>RNA</span> Sequencing Data.”</span> <em>PLoS One</em> 10 (3): e0119254. <a href="https://doi.org/10.1371/journal.pone.0119254">https://doi.org/10.1371/journal.pone.0119254</a>.
+<div id="ref-Mi2015-ri">
+<p>Mi, Gu, Yanming Di, and Daniel W Schafer. 2015. “Goodness-of-Fit Tests and Model Diagnostics for Negative Binomial Regression of RNA Sequencing Data.” <em>PLoS One</em> 10 (3): e0119254. <a href="https://doi.org/10.1371/journal.pone.0119254">https://doi.org/10.1371/journal.pone.0119254</a>.</p>
 </div>
-<div id="ref-Soneson2018-xe" class="csl-entry">
-Soneson, Charlotte, and Mark D Robinson. 2018. <span>“Bias, Robustness and Scalability in Single-Cell Differential Expression Analysis.”</span> <em>Nat. Methods</em>, February. <a href="https://doi.org/10.1038/nmeth.4612">https://doi.org/10.1038/nmeth.4612</a>.
+<div id="ref-Soneson2018-xe">
+<p>Soneson, Charlotte, and Mark D Robinson. 2018. “Bias, Robustness and Scalability in Single-Cell Differential Expression Analysis.” <em>Nat. Methods</em>, February. <a href="https://doi.org/10.1038/nmeth.4612">https://doi.org/10.1038/nmeth.4612</a>.</p>
 </div>
-<div id="ref-Svensson2020-ip" class="csl-entry">
-Svensson, Valentine. 2020. <span>“Droplet <span class="nocase">scRNA-seq</span> Is Not Zero-Inflated.”</span> <em>Nat. Biotechnol.</em>, January. <a href="https://doi.org/10.1038/s41587-019-0379-5">https://doi.org/10.1038/s41587-019-0379-5</a>.
+<div id="ref-Svensson2020-ip">
+<p>Svensson, Valentine. 2020. “Droplet scRNA-seq Is Not Zero-Inflated.” <em>Nat. Biotechnol.</em>, January. <a href="https://doi.org/10.1038/s41587-019-0379-5">https://doi.org/10.1038/s41587-019-0379-5</a>.</p>
 </div>
-<div id="ref-Vieth2019-ld" class="csl-entry">
-Vieth, Beate, Swati Parekh, Christoph Ziegenhain, Wolfgang Enard, and Ines Hellmann. 2019. <span>“A Systematic Evaluation of Single Cell <span class="nocase">RNA-seq</span> Analysis Pipelines.”</span> <em>Nat. Commun.</em> 10 (1): 4667. <a href="https://doi.org/10.1038/s41467-019-12266-7">https://doi.org/10.1038/s41467-019-12266-7</a>.
+<div id="ref-Vieth2019-ld">
+<p>Vieth, Beate, Swati Parekh, Christoph Ziegenhain, Wolfgang Enard, and Ines Hellmann. 2019. “A Systematic Evaluation of Single Cell RNA-seq Analysis Pipelines.” <em>Nat. Commun.</em> 10 (1): 4667. <a href="https://doi.org/10.1038/s41467-019-12266-7">https://doi.org/10.1038/s41467-019-12266-7</a>.</p>
 </div>
-<div id="ref-Vieth2017-lh" class="csl-entry">
-Vieth, Beate, Christoph Ziegenhain, Swati Parekh, Wolfgang Enard, and Ines Hellmann. 2017. <span>“powsimR: Power Analysis for Bulk and Single Cell <span class="nocase">RNA-seq</span> Experiments.”</span> <em>Bioinformatics</em> 33 (21): 3486–88. <a href="https://doi.org/10.1093/bioinformatics/btx435">https://doi.org/10.1093/bioinformatics/btx435</a>.
+<div id="ref-Vieth2017-lh">
+<p>Vieth, Beate, Christoph Ziegenhain, Swati Parekh, Wolfgang Enard, and Ines Hellmann. 2017. “PowsimR: Power Analysis for Bulk and Single Cell RNA-seq Experiments.” <em>Bioinformatics</em> 33 (21): 3486–8. <a href="https://doi.org/10.1093/bioinformatics/btx435">https://doi.org/10.1093/bioinformatics/btx435</a>.</p>
 </div>
-<div id="ref-Wu2015-uj" class="csl-entry">
-Wu, Hao, Chi Wang, and Zhijin Wu. 2015. <span>“<span>PROPER</span>: Comprehensive Power Evaluation for Differential Expression Using <span class="nocase">RNA-seq</span>.”</span> <em>Bioinformatics</em> 31 (2): 233–41. <a href="https://doi.org/10.1093/bioinformatics/btu640">https://doi.org/10.1093/bioinformatics/btu640</a>.
+<div id="ref-Wu2015-uj">
+<p>Wu, Hao, Chi Wang, and Zhijin Wu. 2015. “PROPER: Comprehensive Power Evaluation for Differential Expression Using RNA-seq.” <em>Bioinformatics</em> 31 (2): 233–41. <a href="https://doi.org/10.1093/bioinformatics/btu640">https://doi.org/10.1093/bioinformatics/btu640</a>.</p>
 </div>
-<div id="ref-Ziegenhain2017-sf" class="csl-entry">
-Ziegenhain, Christoph, Beate Vieth, Swati Parekh, Björn Reinius, Amy Guillaumet-Adkins, Martha Smets, Heinrich Leonhardt, Holger Heyn, Ines Hellmann, and Wolfgang Enard. 2017. <span>“Comparative Analysis of <span>Single-Cell</span> <span>RNA</span> Sequencing Methods.”</span> <em>Mol. Cell</em> 65 (4): 631–643.e4. <a href="https://doi.org/10.1016/j.molcel.2017.01.023">https://doi.org/10.1016/j.molcel.2017.01.023</a>.
+<div id="ref-Ziegenhain2017-sf">
+<p>Ziegenhain, Christoph, Beate Vieth, Swati Parekh, Björn Reinius, Amy Guillaumet-Adkins, Martha Smets, Heinrich Leonhardt, Holger Heyn, Ines Hellmann, and Wolfgang Enard. 2017. “Comparative Analysis of Single-Cell RNA Sequencing Methods.” <em>Mol. Cell</em> 65 (4): 631–643.e4. <a href="https://doi.org/10.1016/j.molcel.2017.01.023">https://doi.org/10.1016/j.molcel.2017.01.023</a>.</p>
 </div>
 </div>
 </div>
@@ -645,7 +628,7 @@ Ziegenhain, Christoph, Beate Vieth, Swati Parekh, Björn Reinius, Amy Guillaumet
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>

@@ -128,7 +128,7 @@ Note that the error "maximal number of DLLs reached..." might occur due to the l
 Starting with R version 3.4.0, one can set the environmental variable 'R_MAX_NUM_DLLS' to a higher number. See `?Startup()` for more information. I recommend to increase the maximum number of DLLs that can be loaded to 500. The environmental variable R\_MAX\_NUM\_DLLS can be set in R\_HOME/etc/Renviron prior to starting R. For that locate the Renviron file and add the following line: R\_MAX\_NUM\_DLLS=xy where xy is the number of DLLs.
 On my Ubuntu machine, the Renviron file is in /usr/lib/R/etc/ and I can set it to 500.
 
-In addition, the user limits for open files (unix: ulimit) might have to be set to a higher number to accommodate the increase in DLLs. Please check out the help pages for [MACs](https://gist.github.com/tombigel/d503800a282fcadbee14b537735d202c) and [Linux](https://glassonionblog.wordpress.com/2013/01/27/increase-ulimit-and-file-descriptors-limit/) for guidance.
+In addition, the user limits for open files (unix: ulimit) might have to be set to a higher number to accomodate the increase in DLLs. Please check out the help pages for [MACs](https://gist.github.com/tombigel/d503800a282fcadbee14b537735d202c) and [Linux](https://glassonionblog.wordpress.com/2013/01/27/increase-ulimit-and-file-descriptors-limit/) for guidance.
 
 ## :scroll: Citation
 

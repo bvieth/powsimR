@@ -5,10 +5,10 @@
 #' @title Setup options for RNA-seq count simulations
 #' @description This function generates the settings needed for \code{\link{simulateDE}}.
 #' Firstly a set of differential expressed gene IDs with
-#' associated log fold changes for a given number of genes, simulations and
+#' associated fold changes for a given number of genes, simulations and
 #' fraction of DE genes is generated. There are also a number of options relating
 #'  to count simulations such as downsampling.
-#'  Secondly, the estimated parameters for count simulations of genes (and spikes) as well as samples are added.
+#'  Secondly, the estimated parameters for count simulations of genes (and spikes) are added.
 #' @usage Setup(ngenes=NULL, nsims=25,
 #' p.DE = 0.1, pLFC = 1, p.G = 1,
 #' p.B=NULL, bLFC=NULL, bPattern="uncorrelated",
@@ -24,7 +24,6 @@
 #' @param p.DE Numeric vector between 0 and 1 representing
 #' the percentage of genes being differentially expressed due to phenotype,
 #' i.e. biological signal. Default is \code{0.1}.
-#' If no differential expression is desired, then set \code{p.DE=0}.
 #' @param pLFC The log phenotypic fold change for DE genes. This can be:
 #' (1) a constant, e.g. 2;
 #' (2) a vector of values with length being number of DE genes.
@@ -32,10 +31,10 @@
 #' it will be sampled with replacement to generate log fold changes;
 #' (3) a function that takes an integer n, and generates a vector of length n,
 #' e.g. function(x) rnorm(x, mean=0, sd=1.5).
-#' Default is \code{1}, i.e. a log2 fold change of 1 or fold change of 2.
-#' Please note that the log fold change should be on \code{\link[base]{log2}} scale!
+#' Default is \code{1}.
+#' Please note that the fold change should be on \code{\link[base]{log2}} scale!
 #' @param p.G Numeric vector indicating the proportion of replicates per group
-#' that express the phenotypic fold change. Default is \code{1}, this means all show the expression difference.
+#' that express the phenotypic fold change. Default is \code{1}, this means all show the expressiond difference.
 #' For example, if \code{0.5} and \code{n1 = 10} and \code{n2 = 8},
 #' then only 5 replicates in group 1 and 4 replicates in group 2 express the phenotypic fold change.
 #' @param p.B Numeric vector between 0 and 1 representing the percentage of genes
@@ -50,7 +49,7 @@
 #'  e.g. function(x) rnorm(x, mean=0, sd=1.5).
 #' Note that the simulations of only two batches is implemented.
 #' Default is \code{NULL}, i.e. no batch effect.
-#' Please note that the log fold change should be on \code{\link[base]{log2}} scale!
+#' Please note that the fold change should be on \code{\link[base]{log2}} scale!
 #' @param bPattern Character vector for batch effect pattern if \code{p.B} is non-null.
 #' Possible options include:
 #' "uncorrelated", "orthogonal" and " correlated".
@@ -119,7 +118,7 @@
 #'                                RNAseq = 'singlecell', Protocol = 'Read',
 #'                                Distribution = 'ZINB', Normalisation = "scran",
 #'                                GeneFilter = 0.1, SampleFilter = 3,
-#'                                sigma = 1.96, NCores = NULL, verbose = TRUE)
+#'                               sigma = 1.96, NCores = NULL, verbose = TRUE)
 #' # estimate spike parameters
 #' data("SmartSeq2_SpikeIns_Read_Counts")
 #' data("SmartSeq2_SpikeInfo")

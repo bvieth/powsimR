@@ -73,7 +73,7 @@ and computes receiver operator characteristics (ROC) and area under the curve va
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">powsimR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.3</span>
       </span>
     </div>
 
@@ -125,13 +125,13 @@ and computes receiver operator characteristics (ROC) and area under the curve va
 and computes receiver operator characteristics (ROC) and area under the curve values (AUC) with the help of functions implemented in <code><a href='https://rdrr.io/pkg/iCOBRA/man/calculate_performance.html'>calculate_performance</a></code>.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>evaluateROC</span><span class='op'>(</span><span class='va'>simRes</span>,
-alpha.type<span class='op'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"adjusted"</span>,<span class='st'>"raw"</span><span class='op'>)</span>,
-MTC<span class='op'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>'BY'</span>, <span class='st'>'BH'</span>, <span class='st'>'Storey'</span>, <span class='st'>'IHW'</span>,
-<span class='st'>'holm'</span>, <span class='st'>'hochberg'</span>, <span class='st'>'hommel'</span>, <span class='st'>'bonferroni'</span><span class='op'>)</span>,
-alpha.nominal <span class='op'>=</span> <span class='fl'>0.1</span>,
-target.by<span class='op'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"lfc"</span>, <span class='st'>"effectsize"</span><span class='op'>)</span>, delta<span class='op'>=</span><span class='fl'>0</span>,
-raw <span class='op'>=</span> <span class='cn'>FALSE</span>, verbose <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>evaluateROC</span>(<span class='no'>simRes</span>,
+<span class='kw'>alpha.type</span><span class='kw'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"adjusted"</span>,<span class='st'>"raw"</span>),
+<span class='kw'>MTC</span><span class='kw'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>'BY'</span>, <span class='st'>'BH'</span>, <span class='st'>'Storey'</span>, <span class='st'>'IHW'</span>,
+<span class='st'>'holm'</span>, <span class='st'>'hochberg'</span>, <span class='st'>'hommel'</span>, <span class='st'>'bonferroni'</span>),
+<span class='kw'>alpha.nominal</span> <span class='kw'>=</span> <span class='fl'>0.1</span>,
+<span class='kw'>target.by</span><span class='kw'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"lfc"</span>, <span class='st'>"effectsize"</span>), <span class='kw'>delta</span><span class='kw'>=</span><span class='fl'>0</span>,
+<span class='kw'>raw</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -188,7 +188,7 @@ Default is <code>TRUE</code>.</p></td>
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
     <p>A list with the following entries:</p>
-<dt>Performances</dt><dd><p>The output of <code><a href='https://rdrr.io/pkg/iCOBRA/man/calculate_performance.html'>calculate_performance</a></code> of aspect "fdrtprcurve" calculating the proportions of TN, FN, TP and FP and related rates which uses <code><a href='http://ipa-tys.github.io/ROCR/reference/prediction.html'>prediction</a></code> and <code><a href='http://ipa-tys.github.io/ROCR/reference/performance.html'>performance</a></code> internally.</p></dd>
+<dt>Performances</dt><dd><p>The output of <code><a href='https://rdrr.io/pkg/iCOBRA/man/calculate_performance.html'>calculate_performance</a></code> of aspect "fdrtprcurve" calculating the proportions of TN, FN, TP and FP and related rates which uses <code><a href='https://rdrr.io/pkg/ROCR/man/prediction.html'>prediction</a></code> and <code><a href='https://rdrr.io/pkg/ROCR/man/performance.html'>performance</a></code> internally.</p></dd>
 <dt>TPRvsFDR</dt><dd><p>The output of <code><a href='https://rdrr.io/pkg/iCOBRA/man/calculate_performance.html'>calculate_performance</a></code> of aspect "fdrtpr" calculating the proportions of TN, FN, TP and FP and associated TPR and observed FDR for each nominal level from 0.01 to 1 in steps of 0.01.</p></dd>
 <dt>Scores</dt><dd><p>The mean +/- standard error of performance measures and area under the curve. These are calculated once for conservative (extension "conv") and once for liberal nominal (extension "lib") FDR levels. Measures include: accuracy (ACC), F-measure of precision and recall (F1score), Matthew's correlation coefficient (MCC), partial Area under the Curve of TPR vs FDR (TPRvsFDR_pAUC), area under the ROC-curve (TPRvsFPR_AUC) and area under the PR-curve (TPRvsPPV_AUC).</p></dd>
 <dt>Raw</dt><dd><p>If <code>raw</code> is <code>TRUE</code>, then the intermediate calculations of the above three list entries is also included in the output.</p></dd>
@@ -199,49 +199,45 @@ Default is <code>TRUE</code>.</p></td>
     <div class='dont-index'><p><code><a href='estimateParam.html'>estimateParam</a></code> for parameter estimation needed for simulations,
 <code><a href='Setup.html'>Setup</a></code> for setting up simulation parameters and
 <code><a href='simulateDE.html'>simulateDE</a></code> for simulating differential expression.</p></div>
-    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
-
-    <p>Beate Vieth</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
+    <pre class="examples"><div class='input'><span class='kw'>if</span> (<span class='fl'>FALSE</span>) {
 <span class='co'># estimate gene parameters</span>
-<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='st'>"SmartSeq2_Gene_Read_Counts"</span><span class='op'>)</span>
-<span class='va'>estparam_gene</span> <span class='op'>&lt;-</span> <span class='fu'><a href='estimateParam.html'>estimateParam</a></span><span class='op'>(</span>countData <span class='op'>=</span> <span class='va'>SmartSeq2_Gene_Read_Counts</span>,
-                               readData <span class='op'>=</span> <span class='cn'>NULL</span>,
-                              batchData <span class='op'>=</span> <span class='cn'>NULL</span>,
-                               spikeData <span class='op'>=</span> <span class='cn'>NULL</span>, spikeInfo <span class='op'>=</span> <span class='cn'>NULL</span>,
-                               Lengths <span class='op'>=</span> <span class='cn'>NULL</span>, MeanFragLengths <span class='op'>=</span> <span class='cn'>NULL</span>,
-                               RNAseq <span class='op'>=</span> <span class='st'>'singlecell'</span>, Protocol <span class='op'>=</span> <span class='st'>'Read'</span>,
-                               Distribution <span class='op'>=</span> <span class='st'>'ZINB'</span>, Normalisation <span class='op'>=</span> <span class='st'>"scran"</span>,
-                               GeneFilter <span class='op'>=</span> <span class='fl'>0.1</span>, SampleFilter <span class='op'>=</span> <span class='fl'>3</span>,
-                               sigma <span class='op'>=</span> <span class='fl'>1.96</span>, NCores <span class='op'>=</span> <span class='cn'>NULL</span>, verbose <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
+<span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='st'>"SmartSeq2_Gene_Read_Counts"</span>)
+<span class='no'>estparam_gene</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='estimateParam.html'>estimateParam</a></span>(<span class='kw'>countData</span> <span class='kw'>=</span> <span class='no'>SmartSeq2_Gene_Read_Counts</span>,
+                               <span class='kw'>readData</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+                              <span class='kw'>batchData</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+                               <span class='kw'>spikeData</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>spikeInfo</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+                               <span class='kw'>Lengths</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>MeanFragLengths</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+                               <span class='kw'>RNAseq</span> <span class='kw'>=</span> <span class='st'>'singlecell'</span>, <span class='kw'>Protocol</span> <span class='kw'>=</span> <span class='st'>'Read'</span>,
+                               <span class='kw'>Distribution</span> <span class='kw'>=</span> <span class='st'>'ZINB'</span>, <span class='kw'>Normalisation</span> <span class='kw'>=</span> <span class='st'>"scran"</span>,
+                               <span class='kw'>GeneFilter</span> <span class='kw'>=</span> <span class='fl'>0.1</span>, <span class='kw'>SampleFilter</span> <span class='kw'>=</span> <span class='fl'>3</span>,
+                               <span class='kw'>sigma</span> <span class='kw'>=</span> <span class='fl'>1.96</span>, <span class='kw'>NCores</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
 <span class='co'># define log2 fold change</span>
-<span class='va'>p.lfc</span> <span class='op'>&lt;-</span> <span class='kw'>function</span><span class='op'>(</span><span class='va'>x</span><span class='op'>)</span> <span class='fu'><a href='https://rdrr.io/r/base/sample.html'>sample</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='op'>-</span><span class='fl'>1</span>,<span class='fl'>1</span><span class='op'>)</span>, size<span class='op'>=</span><span class='va'>x</span>,replace<span class='op'>=</span><span class='cn'>T</span><span class='op'>)</span><span class='op'>*</span><span class='fu'><a href='https://rdrr.io/r/stats/GammaDist.html'>rgamma</a></span><span class='op'>(</span><span class='va'>x</span>, shape <span class='op'>=</span> <span class='fl'>1</span>, rate <span class='op'>=</span> <span class='fl'>2</span><span class='op'>)</span>
+<span class='no'>p.lfc</span> <span class='kw'>&lt;-</span> <span class='kw'>function</span>(<span class='no'>x</span>) <span class='fu'><a href='https://rdrr.io/r/base/sample.html'>sample</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(-<span class='fl'>1</span>,<span class='fl'>1</span>), <span class='kw'>size</span><span class='kw'>=</span><span class='no'>x</span>,<span class='kw'>replace</span><span class='kw'>=</span><span class='no'>T</span>)*<span class='fu'><a href='https://rdrr.io/r/stats/GammaDist.html'>rgamma</a></span>(<span class='no'>x</span>, <span class='kw'>shape</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>rate</span> <span class='kw'>=</span> <span class='fl'>2</span>)
 <span class='co'># set up simulations</span>
-<span class='va'>setupres</span> <span class='op'>&lt;-</span> <span class='fu'><a href='Setup.html'>Setup</a></span><span class='op'>(</span>ngenes <span class='op'>=</span> <span class='fl'>10000</span>, nsims <span class='op'>=</span> <span class='fl'>10</span>,
-                  p.DE <span class='op'>=</span> <span class='fl'>0.1</span>, pLFC <span class='op'>=</span> <span class='va'>p.lfc</span>,
-                  n1 <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>20</span>,<span class='fl'>50</span>,<span class='fl'>100</span><span class='op'>)</span>, n2 <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>30</span>,<span class='fl'>60</span>,<span class='fl'>120</span><span class='op'>)</span>,
-                  Thinning <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>1</span>,<span class='fl'>0.9</span>,<span class='fl'>0.8</span><span class='op'>)</span>, LibSize <span class='op'>=</span> <span class='st'>'given'</span>,
-                  estParamRes <span class='op'>=</span> <span class='va'>estparam_gene</span>,
-                  estSpikeRes <span class='op'>=</span> <span class='cn'>NULL</span>,
-                  DropGenes <span class='op'>=</span> <span class='cn'>TRUE</span>,
-                  sim.seed <span class='op'>=</span> <span class='fl'>83596</span>, verbose <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
+<span class='no'>setupres</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='Setup.html'>Setup</a></span>(<span class='kw'>ngenes</span> <span class='kw'>=</span> <span class='fl'>10000</span>, <span class='kw'>nsims</span> <span class='kw'>=</span> <span class='fl'>10</span>,
+                  <span class='kw'>p.DE</span> <span class='kw'>=</span> <span class='fl'>0.1</span>, <span class='kw'>pLFC</span> <span class='kw'>=</span> <span class='no'>p.lfc</span>,
+                  <span class='kw'>n1</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>20</span>,<span class='fl'>50</span>,<span class='fl'>100</span>), <span class='kw'>n2</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>30</span>,<span class='fl'>60</span>,<span class='fl'>120</span>),
+                  <span class='kw'>Thinning</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>,<span class='fl'>0.9</span>,<span class='fl'>0.8</span>), <span class='kw'>LibSize</span> <span class='kw'>=</span> <span class='st'>'given'</span>,
+                  <span class='kw'>estParamRes</span> <span class='kw'>=</span> <span class='no'>estparam_gene</span>,
+                  <span class='kw'>estSpikeRes</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+                  <span class='kw'>DropGenes</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+                  <span class='kw'>sim.seed</span> <span class='kw'>=</span> <span class='fl'>83596</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
 <span class='co'># run simulation</span>
-<span class='va'>simres</span> <span class='op'>&lt;-</span> <span class='fu'><a href='simulateDE.html'>simulateDE</a></span><span class='op'>(</span>SetupRes <span class='op'>=</span> <span class='va'>setupres</span>,
-                     Prefilter <span class='op'>=</span> <span class='st'>"FreqFilter"</span>, Imputation <span class='op'>=</span> <span class='cn'>NULL</span>,
-                     Normalisation <span class='op'>=</span> <span class='st'>'scran'</span>, Label <span class='op'>=</span> <span class='st'>'none'</span>,
-                     DEmethod <span class='op'>=</span> <span class='st'>"limma-trend"</span>, DEFilter <span class='op'>=</span> <span class='cn'>FALSE</span>,
-                     NCores <span class='op'>=</span> <span class='cn'>NULL</span>, verbose <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
+<span class='no'>simres</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='simulateDE.html'>simulateDE</a></span>(<span class='kw'>SetupRes</span> <span class='kw'>=</span> <span class='no'>setupres</span>,
+                     <span class='kw'>Prefilter</span> <span class='kw'>=</span> <span class='st'>"FreqFilter"</span>, <span class='kw'>Imputation</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+                     <span class='kw'>Normalisation</span> <span class='kw'>=</span> <span class='st'>'scran'</span>, <span class='kw'>Label</span> <span class='kw'>=</span> <span class='st'>'none'</span>,
+                     <span class='kw'>DEmethod</span> <span class='kw'>=</span> <span class='st'>"limma-trend"</span>, <span class='kw'>DEFilter</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+                     <span class='kw'>NCores</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
 <span class='co'># evaluation</span>
-<span class='va'>evalrocres</span> <span class='op'>&lt;-</span> <span class='fu'>evaluateROC</span><span class='op'>(</span>simRes <span class='op'>=</span> <span class='va'>simres</span>,
-                          alpha.type <span class='op'>=</span> <span class='st'>"adjusted"</span>,
-                          MTC <span class='op'>=</span> <span class='st'>'BH'</span>, alpha.nominal <span class='op'>=</span> <span class='fl'>0.05</span>,
-                          raw <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span>
+<span class='no'>evalrocres</span> <span class='kw'>&lt;-</span> <span class='fu'>evaluateROC</span>(<span class='kw'>simRes</span> <span class='kw'>=</span> <span class='no'>simres</span>,
+                          <span class='kw'>alpha.type</span> <span class='kw'>=</span> <span class='st'>"adjusted"</span>,
+                          <span class='kw'>MTC</span> <span class='kw'>=</span> <span class='st'>'BH'</span>, <span class='kw'>alpha.nominal</span> <span class='kw'>=</span> <span class='fl'>0.05</span>,
+                          <span class='kw'>raw</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
 <span class='co'># plot evaluation</span>
-<span class='fu'><a href='plotEvalROC.html'>plotEvalROC</a></span><span class='op'>(</span>evalRes <span class='op'>=</span> <span class='va'>evalrocres</span><span class='op'>)</span>
-<span class='op'>}</span>
-</div></pre>
+<span class='fu'><a href='plotEvalROC.html'>plotEvalROC</a></span>(<span class='kw'>evalRes</span> <span class='kw'>=</span> <span class='no'>evalrocres</span>)
+}</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
@@ -257,7 +253,7 @@ Default is <code>TRUE</code>.</p></td>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>

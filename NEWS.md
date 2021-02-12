@@ -1,6 +1,3 @@
-# Version 1.2.4 (2020-11-30)
-
-* Change description of log fold change.  Change settings in simulation to matrix multiplication.
 
 # Version 1.2.3 (2020-6-30)
 
