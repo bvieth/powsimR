@@ -144,19 +144,18 @@
   true.means = means[index]
 
   # estimate size parameter associated with true mean values
-  lmu = log2(true.means)
+  lmu = log2(true.means+1)
   predsize.mean = suppressWarnings(approx(meansizefit$x,
                                           meansizefit$y,
                                           xout = lmu, rule=2)$y)
   predsize.sd = suppressWarnings(approx(meansizefit$x,
                                         meansizefit$sd,
                                         xout = lmu, rule=2)$y)
-  lsizevec = truncnorm::rtruncnorm(n = length(lmu),
+  sizevec = truncnorm::rtruncnorm(n = length(lmu),
                                   a = min(log2(sizes), na.rm = TRUE),
                                   b = max(log2(sizes), na.rm = TRUE),
                                   mean = predsize.mean,
                                   sd = predsize.sd)
-  sizevec = 2^lsizevec
 
   # size factor
   if (simOptions$SimSetup$LibSize == "equal") {
@@ -182,15 +181,14 @@
   ind = !apply(modelmatrix, 2, function(x) { all(x == 1) })
   mod = cbind(modelmatrix[, ind])
   beta = cbind(coef.dat[, ind])
-  coef.mat = 2^beta %*% t(mod)
-  mumat = effective.means * coef.mat
-  # mumat[mumat < 0] = min(log2(effective.means+1))
+  mumat = log2(effective.means+1) + beta %*% t(mod)
+  mumat[mumat < 0] = min(log2(effective.means+1))
 
   # result count matrix
   counts = matrix(
     stats::rnbinom(nsamples * ngenes,
-                   mu = mumat,
-                   size = sizevec),
+                   mu = 2^mumat-1,
+                   size = 2^sizevec),
     ncol = nsamples,
     nrow = ngenes,
     dimnames = list(paste0(rownames(mumat),"_", seq_len(ngenes)),
@@ -203,8 +201,8 @@
   return(list(counts=counts,
               sf=all.facs,
               mus=true.means,
-              disps=1/sizevec,
-              sizes=sizevec,
+              disps=1/(2^sizevec),
+              sizes=2^sizevec,
               drops=dropout))
 }
 
@@ -239,19 +237,18 @@
   true.means = pos.means[index]
 
   # estimate size parameter associated with true mean values
-  lmu = log2(true.means)
+  lmu = log2(true.means+1)
   predsize.mean = suppressWarnings(approx(meansizefit$x,
                                           meansizefit$y,
                                           xout = lmu, rule=2)$y)
   predsize.sd = suppressWarnings(approx(meansizefit$x,
                                         meansizefit$sd,
                                         xout = lmu, rule=2)$y)
-  lsizevec = truncnorm::rtruncnorm(n = length(lmu),
+  sizevec = truncnorm::rtruncnorm(n = length(lmu),
                                   a = min(log2(pos.sizes), na.rm = TRUE),
                                   b = max(log2(pos.sizes), na.rm = TRUE),
                                   mean = predsize.mean,
                                   sd = predsize.sd)
-  sizevec = 2^lsizevec
 
   # size factor
   if (simOptions$SimSetup$LibSize == "equal") {
@@ -277,9 +274,8 @@
   ind = !apply(modelmatrix, 2, function(x) { all(x == 1) })
   mod = cbind(modelmatrix[, ind])
   beta = cbind(coef.dat[, ind])
-  coef.mat = 2^beta %*% t(mod)
-  mumat = effective.means * coef.mat
-  # mumat[mumat < 0] = min(log2(effective.means+1))
+  mumat = log2(effective.means+1) +  beta %*% t(mod)
+  mumat[mumat < 0] = min(log2(effective.means+1))
 
   meang0fit.nonamplified = simOptions$estParamRes$Fit[[simOptions$DESetup$Draw$Fit]]$meang0fit.nonamplified
   meang0fit.amplified = simOptions$estParamRes$Fit[[simOptions$DESetup$Draw$Fit]]$meang0fit.amplified
@@ -374,8 +370,8 @@
   # make the count matrix
     counts.nb = matrix(
       stats::rnbinom(nsamples * ngenes,
-                     mu = mumat,
-                     size = sizevec),
+                     mu = 2^mumat-1,
+                     size = 2^sizevec),
       ncol = nsamples,
       nrow = ngenes)
 
@@ -409,8 +405,8 @@
   return(list(counts=counts,
               sf=all.facs,
               mus=true.means,
-              disps=1/sizevec,
-              sizes=sizevec,
+              disps=1/(2^sizevec),
+              sizes=2^sizevec,
               drops=dropout))
 
 }
