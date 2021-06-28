@@ -317,7 +317,8 @@
 
 # scran ------------------------------------------------------
 
-#' @importFrom scran calculateSumFactors computeSpikeFactors
+#' @importFrom scran calculateSumFactors 
+#' @importFrom scuttle computeSpikeFactors
 #' @importFrom SingleCellExperiment SingleCellExperiment sizeFactors altExp
 #' @importFrom SummarizedExperiment SummarizedExperiment rowData
 .scran.calc <- function(countData, spikeData, verbose) {
@@ -331,7 +332,7 @@
     sce.spike <- SummarizedExperiment::SummarizedExperiment(assays = list(counts = spikeData))
     SummarizedExperiment::rowData(sce.spike)$IDs <- rownames(spikeData)
     SingleCellExperiment::altExp(sce, "Spikes") <- sce.spike
-    sce <- scran::computeSpikeFactors(x = sce, spikes = "Spikes", assay.type = "counts")
+    sce <- scuttle::computeSpikeFactors(x = sce, spikes = "Spikes", assay.type = "counts")
     sf <- SingleCellExperiment::sizeFactors(sce)
 
   }
