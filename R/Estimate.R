@@ -86,7 +86,7 @@
 #' \item{MR, PosCounts}{employ the DESeq2 style normalization of median ratio method and a modified geometric mean method
 #' as implemented in \code{\link[DESeq2]{estimateSizeFactors}}, respectively.}
 #' \item{scran, SCnorm}{apply the deconvolution and quantile regression normalization methods developed for sparse RNA-seq data
-#' as implemented in \code{\link[scran]{calculateSumFactors}} and \code{\link[SCnorm]{SCnorm}}, respectively. Spike-ins can also be supplied for both methods via \code{spikeData}. Note, however that this means for scran that the normalisation as implemented in \code{\link[scran]{computeSpikeFactors}} is also applied to genes (\code{general.use=TRUE}).}
+#' as implemented in \code{\link[scran]{calculateSumFactors}} and \code{\link[SCnorm]{SCnorm}}, respectively. Spike-ins can also be supplied for both methods via \code{spikeData}. Note, however that this means for scran that the normalisation as implemented in \code{\link[scuttle]{computeSpikeFactors}} is also applied to genes (\code{general.use=TRUE}).}
 #' \item{Linnorm}{apply the normalization method for sparse RNA-seq data
 #' as implemented in \code{\link[Linnorm]{Linnorm.Norm}}.
 #' For \code{Linnorm}, the user can also supply \code{spikeData}.}
