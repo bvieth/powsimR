@@ -31,7 +31,7 @@ Remotes: nghiavtr/BPSC, cz-ye/DECENT, mohuangx/SAVER, rhondabacher/SCnorm, statO
              bioc::qvalue, bioc::ROTS, bioc::RUVSeq, bioc::S4Vectors, bioc::scater, bioc::scDD, bioc::scde,
              bioc::scone, bioc::scran, bioc::SingleCellExperiment, bioc::SummarizedExperiment, bioc::zinbwave
 Depends: R (>= 4.0), gamlss.dist
-Suggests: BiocStyle, knitr, rmdformats, mvtnorm, MBESS
+Suggests: BiocStyle, knitr, rmarkdown, rmdformats, mvtnorm, MBESS
 LazyData: TRUE
 Encoding: UTF-8
 VignetteBuilder: knitr
