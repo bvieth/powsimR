@@ -327,7 +327,7 @@ estimateParam <- function(countData,
 #' @details
 #' Normalisation methods
 #' \describe{
-#' \item{'depth'}{applies the depth normalization method as implemented in \code{\link[scran]{computeSpikeFactors}}.}
+#' \item{'depth'}{applies the depth normalization method as implemented in \code{\link[scuttle]{computeSpikeFactors}}.}
 #' \item{'none'}{No normalisation is applied. This approach can be used for prenormalized expression estimates, e.g. TPM/FPKM/RPKM estimated by RSEM, salmon, cufflinks etc.}
 #' }
 #' @author Beate Vieth
