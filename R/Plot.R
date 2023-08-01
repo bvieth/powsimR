@@ -201,7 +201,7 @@ plotSpike <- function(estSpike, Annot = TRUE) {
                                     ggplot2::aes_(x = quote(Sample),
                                                   y = quote(Seqdepth))) +
       ggplot2::geom_bar(stat="identity",width=.5) +
-      ggplot2::geom_hline(yintercept = median(lib.size.dat$Seqdepth),
+      ggplot2::geom_hline(yintercept = stats::median(lib.size.dat$Seqdepth),
                           linetype = 2, colour="grey40") +
       ggplot2::labs(x=NULL, y="Sequencing Depth") +
       ggplot2::scale_y_continuous(labels=.plain) +
@@ -212,7 +212,7 @@ plotSpike <- function(estSpike, Annot = TRUE) {
                                ggplot2::aes_(x = quote(Sample),
                                              y = quote(SizeFactor))) +
       ggplot2::geom_bar(stat="identity",width=.5) +
-      ggplot2::geom_hline(yintercept = median(sf.dat$SizeFactor),
+      ggplot2::geom_hline(yintercept = stats::median(sf.dat$SizeFactor),
                           linetype = 2, colour="grey40") +
       ggplot2::labs(x=NULL, y="Library Size Factor") +
       ggplot2::scale_y_continuous(labels=.plain) +
@@ -224,7 +224,7 @@ plotSpike <- function(estSpike, Annot = TRUE) {
     libsize.plot <- ggplot2::ggplot(data = lib.size.dat,
                                     ggplot2::aes_(quote(Seqdepth))) +
       ggplot2::geom_density() +
-      ggplot2::geom_vline(xintercept = median(lib.size.dat$Seqdepth),
+      ggplot2::geom_vline(xintercept = stats::median(lib.size.dat$Seqdepth),
                           linetype = 2, colour="grey40") +
       ggplot2::labs(x="Sequencing Depth", y="Density") +
       ggplot2::scale_x_continuous(labels=.plain) +
@@ -233,7 +233,7 @@ plotSpike <- function(estSpike, Annot = TRUE) {
     sf.plot <- ggplot2::ggplot(data = sf.dat,
                                ggplot2::aes_(quote(SizeFactor))) +
       ggplot2::geom_density() +
-      ggplot2::geom_vline(xintercept = median(sf.dat$SizeFactor), linetype = 2, colour="grey40") +
+      ggplot2::geom_vline(xintercept = stats::median(sf.dat$SizeFactor), linetype = 2, colour="grey40") +
       ggplot2::labs(x="Library Size Factor", y="Density") +
       ggplot2::scale_x_continuous(labels=.plain) +
       .theme_eval_time()

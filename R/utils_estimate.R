@@ -1,8 +1,7 @@
 # checkup -----------------------------------------------------------------
 
 #' @importFrom SingleCellExperiment SingleCellExperiment
-#' @importFrom scater isOutlier
-#' @importFrom BiocGenerics counts
+#' @importFrom scuttle isOutlier
 .run.checkup <- function(countData,
                          readData,
                          batchData,
@@ -147,6 +146,7 @@
 # estParam ----------------------------------------------------------------
 
 #' @importFrom parallel detectCores
+#' @importFrom stats median
 .run.estParam <- function(countData,
                           readData,
                           batchData,
@@ -227,16 +227,16 @@
   }
   # define outliers as determined by SampleFilter using sequencing depth, detected features and spike/gene count ratio
   totCounts <- colSums(countData)
-  libsize.drop <- scater::isOutlier(totCounts, nmads=SampleFilter, type="both",
+  libsize.drop <- scuttle::isOutlier(totCounts, nmads=SampleFilter, type="both",
                                     log=TRUE, batch = bData)
   totFeatures <- colSums(countData>0)
-  feature.drop <- scater::isOutlier(totFeatures, nmads=SampleFilter, type="both",
+  feature.drop <- scuttle::isOutlier(totFeatures, nmads=SampleFilter, type="both",
                                     log=TRUE, batch = bData)
 
   if(!is.null(spikeData)){
     totSpike <- colSums(spikeData)
     GeneSpikeRatio <- totSpike / (totSpike + totCounts) * 100
-    genespike.drop <- scater::isOutlier(GeneSpikeRatio, nmads=SampleFilter, type="higher",
+    genespike.drop <- scuttle::isOutlier(GeneSpikeRatio, nmads=SampleFilter, type="higher",
                                         log=FALSE, batch = bData)
   }
   if(is.null(spikeData)){

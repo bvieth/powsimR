@@ -70,7 +70,7 @@
   gammaThetaSample[gammaThetaSample[,1]==1,1] = 0.9999
 
   abTheta = try(MASS::fitdistr(gammaThetaSample[,1], "beta", list(shape1=0.5, shape2=0.5)), silent=TRUE)
-  if (class(abTheta) == "try-error") {
+  if (inherits(abTheta,"try-error")) {
     VTheta = stats::var(gammaThetaSample[,1], na.rm=TRUE)
   } else {
     aTheta = abTheta$estimate[[1]]
@@ -78,7 +78,7 @@
     VTheta = (aTheta*bTheta) / ( (aTheta+bTheta)^2*(aTheta+bTheta+1))
   }
   abGamma = try(MASS::fitdistr(gammaThetaSample[,2], "gamma"), silent=TRUE)
-  if (class(abGamma) == "try-error") {
+  if (inherits(abGamma,"try-error")) {
     VGamma = stats::var(gammaThetaSample[,2], na.rm=TRUE)
   } else {
     aGamma = abGamma$estimate[[1]]

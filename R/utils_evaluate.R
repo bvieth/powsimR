@@ -50,7 +50,6 @@
 }
 
 #' @importFrom stats aggregate
-#' @importFrom tidyr %>%
 .ratio.sf <- function(estimated.nsf, true.nsf, group) {
   dat <- data.frame(estimated.nsf, true.nsf, ratio=estimated.nsf/true.nsf, group=as.factor(group))
   dat.proc <- stats::aggregate(ratio ~ group, data=dat, FUN= mean)
@@ -150,7 +149,7 @@
 }
 
 #' @importFrom dplyr select group_by summarise_all
-#' @importFrom tidyr pivot_longer
+#' @importFrom tidyr pivot_longer %>%
 #' @importFrom rlang .data
 #' @importFrom plotrix std.error
 .scores.summary.calc <- function(calc.obj) {

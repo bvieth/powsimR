@@ -18,14 +18,23 @@ Please also consult my Github Page of [powsimR](https://bvieth.github.io/powsimR
 
 ## :arrow_double_down: Installation Guide
 
-For the installation, the R package `devtools` is needed.
+For the installation, `devtools` is needed.
 
 ```{r, echo=T, eval=F, tidy=T}
 install.packages('devtools')
 library(devtools)
 ```
 
-I recommend to install first the dependencies manually and then powsimR. If you plan to use MAGIC for imputation, then please follow their [instruction](https://github.com/KrishnaswamyLab/MAGIC) to install the python implementation before installing powsimR.  
+I have compiled a lite version of powsimR package on the lite branch which only includes our recommended tools for normalisation, imputation and DE-testing. You can install this version using devtools:
+
+```{r, echo=T, eval=F, tidy=T}
+install_github("bvieth/powsimR",
+               ref='lite', 
+               dependencies = TRUE,
+               upgrade = "ask")
+```
+
+I recommend to install first the dependencies manually and then powsimR. If you plan to use MAGIC for imputation, then please follow their [instruction](https://github.com/KrishnaswamyLab/MAGIC) to install the python implementation before installing powsimR-master.  
 
 ```{r, echo=T, eval=F, tidy=T}
 ipak <- function(pkg, repository=c('CRAN', 'Bioconductor', 'github')){
@@ -47,7 +56,7 @@ ipak <- function(pkg, repository=c('CRAN', 'Bioconductor', 'github')){
       }
     }
     if(repository=='github') {
-      devtools::install_github(new.pkg, build_vignettes = FALSE, force = FALSE, dependencies=TRUE)
+      remotes::install_github(new.pkg, build_vignettes = FALSE, force = FALSE, dependencies=TRUE)
     }
   }
 }
@@ -100,7 +109,7 @@ table(is.na(ip.check$Version))  # all should be FALSE
 After installing the dependencies, powsimR can be installed by using devtools as well.
 
 ```{r, echo=T, eval=F, tidy=T}
-devtools::install_github('bvieth/powsimR', 
+remotes::install_github('bvieth/powsimR', 
                          build_vignettes = TRUE, 
                          dependencies=FALSE)
 library("powsimR")
@@ -109,7 +118,7 @@ library("powsimR")
 Alternative, you can try to install powsimR and its dependencies directly using devtools:
 
 ```{r, echo=T, eval=F, tidy=T}
-devtools::install_github("bvieth/powsimR")
+remotes::install_github("bvieth/powsimR")
 ```
 
 ## :book: User Guide

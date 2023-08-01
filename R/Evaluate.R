@@ -145,7 +145,7 @@ evaluateDist <- function(countData, batchData = NULL,
   }
 
   # fill in size factors and use only detected genes
-  sf <- structure(colSums(countData) / median(colSums(countData)), names = colnames(countData))
+  sf <- structure(colSums(countData) / stats::median(colSums(countData)), names = colnames(countData))
   sf[names(estParam$sf)] <- estParam$sf
   countData <- countData[rownames(countData) %in% detect.genes, ]
 

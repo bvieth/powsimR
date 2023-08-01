@@ -14,9 +14,9 @@ MeanFragLengths = NULL,
 RNAseq = c('bulk', 'singlecell'),
 Protocol = c('UMI', 'Read'),
 Distribution = c('NB', 'ZINB'),
-Normalisation = c("TMM", "MR", "PosCounts", "UQ",
-"scran", "Linnorm", "sctransform",
-"SCnorm", "Census", "depth", "none"),
+Normalisation = c("TMM", "MR",
+"scran",
+"depth", "none"),
 GeneFilter = 0.05,
 SampleFilter = 5,
 sigma = 1.96,
@@ -60,8 +60,7 @@ Options are "UMI" (e.g. 10X Genomics, CEL-seq2) or "Read" (e.g. Smart-seq2).}
 
 \item{Distribution}{is a character value: "NB" for negative binomial or "ZINB" for zero-inflated negative binomial distribution fitting.}
 
-\item{Normalisation}{is a character value: 'TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm',
-'SCnorm', 'Census', 'depth', 'none'.
+\item{Normalisation}{is a character value: 'TMM', 'MR', 'scran', 'depth', 'none'.
 For more information, please consult the Details section.}
 
 \item{GeneFilter}{is a numeric vector indicating the minimal proportion of nonzero expression values
@@ -74,7 +73,7 @@ so that outlying samples are removed prior to normalisation and parameter estima
 The default is \code{5}, i.e. at least 5 MADs away from the median.
 Choose higher values if you want to filter out less samples.
 This parameter is particularly important for single cells to ensure reliable parameter estimation.
-For more information, please consult \code{\link[scater]{isOutlier}}.}
+For more information, please consult \code{\link[scuttle]{isOutlier}}.}
 
 \item{sigma}{The variability band width for mean-dispersion loess fit defining the prediction interval for read count simulation. Default is 1.96, i.e. 95\% interval. For more information see \code{\link[msir]{loess.sd}}.}
 

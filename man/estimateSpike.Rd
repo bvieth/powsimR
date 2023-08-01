@@ -39,7 +39,7 @@ so that outlying samples are removed prior to normalisation and parameter estima
 The default is \code{5}, i.e. at least 5 MADs away from the median.
 Choose higher values if you want to filter out less samples.
 This parameter is particularly important for single cells to ensure reliable parameter estimation.
-For more information, please consult \code{\link[scater]{isOutlier}}.}
+For more information, please consult \code{\link[scuttle]{isOutlier}}.}
 
 \item{RNAseq}{is a character value: "bulk" or "singlecell".}
 

@@ -175,7 +175,7 @@
                                       y = quote(Seqdepth),
                                       fill = quote(Dropout)),
                         stat="identity", width=.5) +
-      ggplot2::geom_hline(yintercept = median(lib.size.dat$Seqdepth),
+      ggplot2::geom_hline(yintercept = stats::median(lib.size.dat$Seqdepth),
                           linetype = 2, colour="grey40") +
       ggplot2::scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
                              labels = scales::trans_format("log10", scales::math_format(10^.x))) +
@@ -207,9 +207,9 @@
                            fill = "grey90", width = 0.8, color = "black") +
       ggplot2::stat_summary(data = sf.dat,
                             ggplot2::aes_(x = 1, y=quote(SizeFactor)),
-                            fun = median,
-                            fun.min = median,
-                            fun.max = median,
+                            fun = stats::median,
+                            fun.min = stats::median,
+                            fun.max = stats::median,
                             color = "black",
                             width = 0.5,
                             geom = "crossbar") +
@@ -229,9 +229,9 @@
                             fill = "grey75") +
       ggplot2::stat_summary(data = sf.dat,
                             ggplot2::aes_(x = 1, y=quote(SizeFactor)),
-                            fun = median,
-                            fun.min = median,
-                            fun.max = median,
+                            fun = stats::median,
+                            fun.min = stats::median,
+                            fun.max = stats::median,
                             color = "black",
                             width = 0.5,
                             geom = "crossbar") +
@@ -284,7 +284,7 @@
                                       y = quote(TotFeatures),
                                       fill = quote(Dropout)),
                         stat="identity", width=.5) +
-      ggplot2::geom_hline(yintercept =median(totfeatures.dat$TotFeatures),
+      ggplot2::geom_hline(yintercept =stats::median(totfeatures.dat$TotFeatures),
                           linetype = 2, colour="grey40") +
       ggplot2::scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
                              labels = scales::trans_format("log10", scales::math_format(10^.x))) +
@@ -339,9 +339,9 @@
                             dotsize=0.75) +
       ggplot2::stat_summary(data = genespike.dat,
                             ggplot2::aes_(x = 1, y=quote(Ratio)),
-                            fun = median,
-                            fun.min = median,
-                            fun.max = median,
+                            fun = stats::median,
+                            fun.min = stats::median,
+                            fun.max = stats::median,
                             color = "black",
                             width = 0.5,
                             geom = "crossbar") +
@@ -395,9 +395,9 @@
   margs.plot <- ggplot2::ggplot(margs.dat,
                                 ggplot2::aes_(x=quote(Set), y=quote(value))) +
     ggplot2::geom_violin(fill = "#597EB5", alpha = 0.5) +
-    ggplot2::stat_summary(fun = median,
-                          fun.min = median,
-                          fun.max = median,
+    ggplot2::stat_summary(fun = stats::median,
+                          fun.min = stats::median,
+                          fun.max = stats::median,
                           color = "black",
                           width = 0.5,
                           geom = "crossbar") +

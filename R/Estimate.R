@@ -5,7 +5,7 @@
 #' @aliases estimateParam
 #' @title Estimate simulation parameters
 #' @description This function estimates and returns parameters needed for power simulations.\cr
-#' The user needs to choose the following options at least: specify a gene expression matrix; the type of RNA-seq experiment, i.e. bulk or single cell; the recommended distribution is negative binomial (NB) except for single-cell full-length Smart-seq2 read data where we recommend zero-inflated NB (ZINB); the preferred normalisation method, we recommend scran for single cell and TMM or MR for bulk.\cr
+#' The user needs to choose the following options at least: specify a gene expression matrix; the type of RNA-seq experiment, i.e. bulk or single cell; the recommended distribution is negative binomial (NB) except for single-cell full-length Smart-seq2 read data where we recommend zero-inflated negative binomial (ZINB); the preferred normalisation method, we recommend scran for single cell and TMM or MR for bulk.\cr
 #' The other parameters are optional (additional data) or have preset values (gene and sample filtering). Please consult the detailed arguments description.
 #' @usage estimateParam(countData,
 #' readData = NULL,
@@ -17,9 +17,9 @@
 #' RNAseq = c('bulk', 'singlecell'),
 #' Protocol = c('UMI', 'Read'),
 #' Distribution = c('NB', 'ZINB'),
-#' Normalisation = c("TMM", "MR", "PosCounts", "UQ",
-#' "scran", "Linnorm", "sctransform",
-#' "SCnorm", "Census", "depth", "none"),
+#' Normalisation = c("TMM", "MR",
+#' "scran",
+#' "depth", "none"),
 #' GeneFilter = 0.05,
 #' SampleFilter = 5,
 #' sigma = 1.96,
@@ -51,8 +51,7 @@
 #' @param Protocol is a character value defining the type of counts given in \code{countData}.
 #' Options are "UMI" (e.g. 10X Genomics, CEL-seq2) or "Read" (e.g. Smart-seq2).
 #' @param Distribution is a character value: "NB" for negative binomial or "ZINB" for zero-inflated negative binomial distribution fitting.
-#' @param Normalisation is a character value: 'TMM', 'MR', 'PosCounts', 'UQ', 'scran', 'Linnorm',
-#' 'SCnorm', 'Census', 'depth', 'none'.
+#' @param Normalisation is a character value: 'TMM', 'MR', 'scran', 'depth', 'none'.
 #' For more information, please consult the Details section.
 #' @param GeneFilter is a numeric vector indicating the minimal proportion of nonzero expression values
 #' for a gene across all samples to be considered expressed and used for normalisation and parameter estimation.
@@ -63,7 +62,7 @@
 #' The default is \code{5}, i.e. at least 5 MADs away from the median.
 #' Choose higher values if you want to filter out less samples.
 #' This parameter is particularly important for single cells to ensure reliable parameter estimation.
-#' For more information, please consult \code{\link[scater]{isOutlier}}.
+#' For more information, please consult \code{\link[scuttle]{isOutlier}}.
 #' @param sigma The variability band width for mean-dispersion loess fit defining the prediction interval for read count simulation. Default is 1.96, i.e. 95\% interval. For more information see \code{\link[msir]{loess.sd}}.
 #' @param NCores The number of cores for normalisation method SCnorm and Census.
 #' The default \code{NULL} means 1 core.
@@ -148,9 +147,9 @@ estimateParam <- function(countData,
                           RNAseq = c('bulk', 'singlecell'),
                           Protocol = c('UMI', 'Read'),
                           Distribution = c('NB', 'ZINB'),
-                          Normalisation = c("TMM", "MR", "PosCounts", "UQ",
-                                            "scran", "Linnorm", "sctransform",
-                                            "SCnorm", "Census", "depth", "none"),
+                          Normalisation = c("TMM", "MR",
+                                            "scran",
+                                            "depth", "none"),
                           GeneFilter = 0.05,
                           SampleFilter = 5,
                           sigma = 1.96,
@@ -166,24 +165,12 @@ estimateParam <- function(countData,
     if(verbose) {message(paste0(Normalisation, " has been developed for bulk data and it is rather likely that it will not work.
                                 \nPlease consider using a method that can handle single cell data, e.g. PosCounts, scran, SCnorm."))}
   }
-  if (Normalisation=='Census' && Protocol == "UMI") {
-    if(verbose) {message(paste0(Normalisation, " should only be used for non-UMI methods! \nFor more information, please consult the monocle vignette."))}
-    if (Normalisation=='Census' && is.null(Lengths) && Protocol == "Read") {
-      if(verbose) {message(paste0(Normalisation, " should be used in combination with transcript lengths.
-                                   \nIf the library is paired-end, please also provide the mean fragment lengths which can be determined by e.g. Picard."))}
-    }
-  }
-
-  # STOP if combination of options is not supported/would not work!
-  if (RNAseq=='bulk' && Normalisation == 'Census') {
-    stop(message(paste0(Normalisation, " is only developed and implemented for single cell RNA-seq experiments.")))
-  }
 
   if (Normalisation=='none' && all((countData - round(countData)) == 0)) {
     stop(message(paste0("No normalisation should only be done with pre-normalized data, eg. RSEM output, but the provided input matrix contains only integer values!")))
   }
 
-  if (Normalisation %in% c('TMM', 'UQ', 'depth', 'none') && !is.null(spikeData)) {
+  if (Normalisation %in% c('TMM', 'depth', 'none') && !is.null(spikeData)) {
     message(paste0("The normalisation method ", Normalisation, " does not utilize spike-ins."))
     spikeData = NULL
     spikeInfo = NULL
@@ -288,7 +275,7 @@ estimateParam <- function(countData,
 #' The default is \code{5}, i.e. at least 5 MADs away from the median.
 #' Choose higher values if you want to filter out less samples.
 #' This parameter is particularly important for single cells to ensure reliable parameter estimation.
-#' For more information, please consult \code{\link[scater]{isOutlier}}.
+#' For more information, please consult \code{\link[scuttle]{isOutlier}}.
 #' @param RNAseq is a character value: "bulk" or "singlecell".
 #' @param Protocol is a character value defining the type of counts given in \code{countData}.
 #' Options are "UMI" (e.g. 10X Genomics, CEL-seq2) or "Read" (e.g. Smart-seq2).
@@ -380,10 +367,10 @@ estimateSpike <- function(spikeData,
 
   # define outliers as determined by SampleFilter using sequencing depth, detected features
   totCounts <- colSums(spikeData)
-  libsize.drop <- scater::isOutlier(totCounts, nmads=SampleFilter, type="both",
+  libsize.drop <- scuttle::isOutlier(totCounts, nmads=SampleFilter, type="both",
                                     log=TRUE, batch = bData)
   totFeatures <- colSums(spikeData>0)
-  feature.drop <- scater::isOutlier(totFeatures, nmads=SampleFilter, type="both",
+  feature.drop <- scuttle::isOutlier(totFeatures, nmads=SampleFilter, type="both",
                                     log=TRUE, batch = bData)
   minexpr.drop <- colSums(spikeData)<100
   # kick out spike-ins with no expression values
